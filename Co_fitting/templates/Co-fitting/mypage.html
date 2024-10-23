@@ -1,0 +1,23 @@
+{% extends './base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">   
+        <h2>マイページ</h2>
+        <h3>ユーザー情報</h3>
+        <p>ユーザー名: {{ username }}</p>
+        <p>メールアドレス: {{ email }}</p>
+
+        <h3>マイプリセット</h3>
+        <div>
+            <!-- todo:ユーザのマイプリセットを全部表示する -->
+        </div>
+        <div class="button-parent">
+            <a href="{% url 'precet-create' %}" class="button">マイプリセットを新規登録</a>
+        </div>
+    </div>
+{% endblock %}
