@@ -4,7 +4,7 @@ $(document).ready(function() {
     $('#ice-check').on('change', function(){
         // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
         let iceInputDivText= `
-            <label for="ice-input">変換前レシピの氷量(g): </label>
+            <label for="ice-input">レシピの氷量(g): </label>
             <input type="text" id="ice-input" maxlength="3" onkeyup="nextField(this)"> g
         `;
         if($(this).prop('checked')){
@@ -118,7 +118,7 @@ $(document).ready(function() {
         presetActivate(PresetId);
     });
 
-    // 変換前レシピ入力欄の出力
+    // レシピ入力欄の出力
     $('#pour-times-input').on('change', function(){
         const InputPourTimes = $('#pour-times-input').val();
         const CurrentPourTimes = $('.origin-process').children().length;
