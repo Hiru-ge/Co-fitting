@@ -1,0 +1,145 @@
+{% extends './base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="introduce">
+        <h2 class="sub-title">バランスキープ、量変換。<br>既存レシピの調整に</h2>
+    </div>
+
+    <div class="ice-check-container">
+        <div class="ice-check-item">
+            <input type="checkbox" id="ice-check">
+            <label for="ice-check">アイスモード</label>
+        </div>
+    </div>
+
+    <!-- コンテンツはFlexBoxでレイアウト指定する -->
+    <div class="container">
+        <div id="preset-recipe-div" class="item">
+            <h3 class="accordion-head">
+                <div class="accordion-toggle">></div>
+                <p>プリセットレシピ呼び出し</p>
+            </h3>
+            <div class="preset-buttons">
+                <div class="accordion-item">
+                    <button id="4-6method" class="preset-button">4:6メソッド</button>
+                </div>
+                <div class="accordion-item">
+                    <button id="4-6method-ice" class="preset-button">4:6メソッド(アイス)</button>
+                </div>
+                <div class="accordion-item">
+                    <button id="hatakeyamasan" class="preset-button">畠山大輝氏レシピ</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="item origin-recipe-div">
+            <h3>変換前レシピ入力欄</h3>
+            <form action="#">
+                <!--変換前レシピの投数入力欄-->
+                <div>
+                    <label for="pour-times-input">変換前レシピの投数: </label>
+                    <input type="text" id="pour-times-input" maxlength="1" onkeyup="nextField(this)"> 投
+                </div>
+                <!--変換前レシピの豆量入力欄-->
+                <div>
+                    <label for="bean-input">変換前レシピの豆量(g): </label>
+                    <input type="text" id="bean-input" maxlength="2" onkeyup="nextField(this)"> g
+                </div>
+                <!-- 変換前レシピの比率表示欄 -->
+                <div>
+                    <p>変換前の豆と湯の比率: 1:<span id="origin-ratio"></span></p>
+                </div>
+                <div class="ice-input-div">
+                </div>
+                <!--変換前レシピの入力欄(pour-times-inputの投数分だけフォームを生成)-->
+                <h4>変換前レシピ</h4>
+                <p>投数 経過時間 総注湯量</p>
+                <div class="origin-process"><!--変換前レシピの入力欄を生成するためのdiv-->
+                    <!-- 1･2投目は確実に使うだろうから最初から表示しておく -->
+                    <div class="pour-step1">
+                        <label>1投目</label>
+                        <input type="text" class="minutes" value="0" maxlength="1" onkeyup="nextField(this)">:<input
+                            type="text" class="seconds" value="00" maxlength="2" onkeyup="nextField(this)">
+                        <input type="text" class="pour-ml wide-input" value="30" maxlength="2"
+                            onkeyup="nextField(this)"> ml
+                    </div>
+                    <div class="pour-step2">
+                        <label>2投目</label>
+                        <input type="text" class="minutes" value="0" maxlength="1" onkeyup="nextField(this)">:<input
+                            type="text" class="seconds" value="30" maxlength="2" onkeyup="nextField(this)">
+                        <input type="text" class="pour-ml wide-input" maxlength="3" onkeyup="nextField(this)"> ml
+                    </div>
+                </div>
+            </form>
+        </div> <!--/変換前レシピの入力欄-->
+
+        <!--変換目標入力欄-->
+        <div class="item target-recipe-div">
+            <form action="#">
+                <h3>変換目標入力欄</h3>
+                <div>
+                    <label for="bean-target">変換後の豆量(g): </label>
+                    <input type="text" id="bean-target" class="targetBrewParameter wide-input"> g
+                </div>
+                <div>
+                    <label for="water-target">変換後の合計量(ml): </label>
+                    <input type="text" id="water-target" class="targetBrewParameter wide-input"> ml
+                </div>
+                <div>
+                    <label for="ratio-target">変換後の豆と湯の比率: 1:</label>
+                    <input type="text" id="ratio-target" class="targetBrewParameter wide-input">
+                </div>
+                <div>
+                    <!-- 単純な倍率での入力 -->
+                    <label for="magnification">倍率: </label>
+                    <input type="text" id="magnification" class="targetBrewParameter wide-input">倍
+                </div>
+                <div>
+                    <!--蒸らし固定ON/OFF-->
+                    <input type="checkbox" id="steep-keep-check">
+                    <label for="steep-keep-check">蒸らし湯量固定</label>
+                </div>
+                <div class="convert-buttons">
+                    <div class="convert-button-parent">
+                        <button class="convert-button">変換</button>
+                    </div>
+                    <div class="convert-button-parent">
+                        <button class="clear-button">クリア</button>
+                    </div>
+                </div>
+
+            </form>
+        </div> <!--/item:変換目標入力欄-->
+
+        <!--変換後レシピの出力欄-->
+        <div class="item output-recipe-div">
+            <h3>変換後レシピ</h3>
+            <p>豆量:<span class="bean-output"></span> g</p>
+            <p>総湯量:<span class="water-output wide-input"></span> ml</p>
+            <p class="ice-mode-show">氷量:<span class="ice-output wide-input"></span> g</p>
+            <table class="recipe-output">
+            </table>
+        </div> <!-- /item:変換後レシピの出力欄 -->
+
+        <!--ストップウォッチ-->
+        <div class="item timer-div">
+            <h3 class="accordion-head">
+                <div class="accordion-toggle">></div>
+                <p>ストップウォッチ</p>
+            </h3>
+            <div class="timer-items">
+                <p id="time" class="timer-item accordion-item">00:00</p> <!--ここに時間表示-->
+                <div id="timer-buttons" class="timer-item accordion-item">
+                    <button class="timer-button" id="start">▶</button>
+                    <button class="timer-button" id="stop">■</button>
+                    <button class="timer-button" id="reset">↻</button>
+                </div>
+            </div>
+        </div> <!--/item:ストップウォッチ-->
+    </div> <!--/container-->
+{% endblock %}
