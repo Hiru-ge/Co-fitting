@@ -2,12 +2,60 @@
 {% load static %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/preset-create.css' %}">
 {% endblock %}
 
 {% block content %}
     <div class="container">
         <h2>マイプリセットの新規登録</h2>
-        <!-- todo:新規登録したいプリセットを入力・DBに保存するためのフォーム枠組みを書く -->
+        <div class="ice-check-container">
+            <div class="ice-check-item">
+                <input type="checkbox" id="ice-check">
+                <label for="ice-check">アイス用レシピ</label>
+            </div>
+        </div>
+        <div class="item origin-recipe-div">
+            <h3>レシピ入力欄</h3>
+            <form action="#">
+                <!--レシピの投数入力欄-->
+                <div>
+                    <label for="pour-times-input">レシピの投数: </label>
+                    <input type="text" id="pour-times-input" maxlength="1" onkeyup="nextField(this)"> 投
+                </div>
+                <!--レシピの豆量入力欄-->
+                <div>
+                    <label for="bean-input">レシピの豆量(g): </label>
+                    <input type="text" id="bean-input" maxlength="2" onkeyup="nextField(this)"> g
+                </div>
+                <!-- レシピの比率表示欄 -->
+                <div>
+                    <p>豆と湯の比率: 1:<span id="origin-ratio"></span></p>
+                </div>
+                <div class="ice-input-div">
+                </div>
+                <!--レシピの入力欄(pour-times-inputの投数分だけフォームを生成)-->
+                <h4>レシピ</h4>
+                <p>投数 経過時間 総注湯量</p>
+                <div class="origin-process"><!--レシピの入力欄を生成するためのdiv-->
+                    <!-- 1･2投目は確実に使うだろうから最初から表示しておく -->
+                    <div class="pour-step1">
+                        <label>1投目</label>
+                        <input type="text" class="minutes" value="0" maxlength="1" onkeyup="nextField(this)">:<input
+                            type="text" class="seconds" value="00" maxlength="2" onkeyup="nextField(this)">
+                        <input type="text" class="pour-ml wide-input" value="30" maxlength="2"
+                            onkeyup="nextField(this)"> ml
+                    </div>
+                    <div class="pour-step2">
+                        <label>2投目</label>
+                        <input type="text" class="minutes" value="0" maxlength="1" onkeyup="nextField(this)">:<input
+                            type="text" class="seconds" value="30" maxlength="2" onkeyup="nextField(this)">
+                        <input type="text" class="pour-ml wide-input" maxlength="3" onkeyup="nextField(this)"> ml
+                    </div>
+                </div>
+                <div class="preset-create-button-parent">
+                    <button type="button" class="preset-create-button">登録</button>
+                </div>
+            </form>
+        </div> <!--/レシピの入力欄-->
     </div>
 {% endblock %}
