@@ -15,27 +15,3 @@ def introduce_preset(request):
 
 def coffee_theory(request):
     return render(request, 'Co-fitting/coffee-theory.html')
-
-
-def login(request):
-    return render(request, 'Co-fitting/login.html')
-
-
-def loginAuthorize(request):
-    username = request.POST['username']
-    password = request.POST['password']
-    params = {
-        'username': username,
-        'password': password
-    }
-    # TODO: DB内の情報と照合してログイン許可する処理を追加
-
-    return render(request, 'Co-fitting/mypage.html', params)
-
-
-def mypage(request):
-    return render(request, 'Co-fitting/mypage.html')
-
-
-def preset_create(request):
-    return render(request, 'Co-fitting/preset-create.html')
