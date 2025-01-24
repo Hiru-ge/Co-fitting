@@ -30,5 +30,5 @@ def loginAuthorize(request):
 def mypage(request):
     return render(request, 'Co-fitting/mypage.html')
 
-def precet_create(request):
-    return render(request, 'Co-fitting/precet-create.html')
+def preset_create(request):
+    return render(request, 'Co-fitting/preset-create.html')
