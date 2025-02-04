@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Recipe
 
 
 def index(request):
@@ -15,3 +17,21 @@ def introduce_preset(request):
 
 def coffee_theory(request):
     return render(request, 'Co-fitting/coffee-theory.html')
+
+
+@login_required
+def signup(request):
+    pass
+
+
+@login_required
+def mypage(request):
+    user = request.user
+    recipes = Recipe.objects.filter(create_user=user.id)
+
+    params = {
+        'user': user,
+        'recipes': recipes,
+    }
+
+    return render(request, 'Co-fitting/mypage.html', params)
