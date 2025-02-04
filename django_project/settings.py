@@ -74,6 +74,11 @@ WSGI_APPLICATION = 'django_project.wsgi.application'
 # userには、こちらで拡張したカスタムユーザーモデルを使う
 AUTH_USER_MODEL = 'users.CustomUser'
 
+# ログイン周りのリダイレクト先
+LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = '/mypage'
+LOGOUT_REDIRECT_URL = '/login'
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
