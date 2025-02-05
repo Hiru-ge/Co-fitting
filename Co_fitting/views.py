@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .models import Recipe
-from .forms import SignUpForm
+from .forms import SignUpForm, EmailChangeForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 
@@ -56,3 +56,21 @@ def mypage(request):
     }
 
     return render(request, 'Co-fitting/mypage.html', params)
+
+
+@login_required
+def change_email(request):
+    if request.method == "POST":
+        form = EmailChangeForm(request.POST)
+        if form.is_valid():
+            new_email = form.cleaned_data["email"]
+            request.user.email = new_email
+            request.user.save()
+            messages.success(request, "メールアドレスを更新しました。")
+            return redirect("mypage")
+        else:
+            messages.error(request, "入力に誤りがあります。")
+    else:
+        form = EmailChangeForm()
+
+    return render(request, "Co-fitting/change_email.html", {"form": form})

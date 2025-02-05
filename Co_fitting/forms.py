@@ -30,3 +30,17 @@ class SignUpForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("入力内容を確認してください。")
         return email
+
+
+class EmailChangeForm(forms.Form):
+    email = forms.EmailField(
+        label='新しいメールアドレス',
+        max_length=255,
+        widget=forms.EmailInput(attrs={"class": "form-control"})
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data["email"]
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("このメールアドレスは既に使用されています")
+        return email

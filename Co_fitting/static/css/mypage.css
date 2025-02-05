@@ -20,6 +20,10 @@
     border-radius: 1rem;
 }
 
+h3 {
+    margin-top: 2rem;
+}
+
 
 /*ボタン部分*/
 div.button-parent {
@@ -41,8 +45,8 @@ div.button-parent button {
     cursor: pointer;
 }
 
-div.button-parent button.preset-create-button{
+div.button-parent button.long-button{
     background-color: #000;
     color: #fff;
-    width: 15rem;
+    width: 13rem;
 }

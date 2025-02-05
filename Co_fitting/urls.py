@@ -9,6 +9,7 @@ urlpatterns = [
     path('logout', LogoutView.as_view(), name='logout'),
     path('signup', views.signup, name='signup'),
     path('mypage', views.mypage, name='mypage'),
+    path('change-email', views.change_email, name='change-email'),
     path('how-to-use', views.how_to_use, name='how-to-use'),
     path('introduce-preset', views.introduce_preset, name='introduce-preset'),
     path('coffee-theory', views.coffee_theory, name='coffee-theory'),
