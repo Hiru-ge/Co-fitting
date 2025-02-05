@@ -34,6 +34,12 @@ label {
     margin: 0.5rem 1rem;
 }
 
+.error {
+    color: #f00;
+    margin: 0.5rem 2rem;
+    font-size: 0.8rem;
+}
+
 /*入力欄部分*/
 input[type="text"],
 input[type="password"] {

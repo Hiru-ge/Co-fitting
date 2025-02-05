@@ -18,6 +18,16 @@
             <label for="password_field">パスワード</label>
             <input type="password" name="password" id="password_field" required>
         </div>
+
+        <!-- エラーの表示 -->
+        {% if messages %}
+        <ul>
+            {% for message in messages|dictsort:"message" %}
+                <p class="error">{{ message }}</p>
+            {% endfor %}
+        </ul>
+        {% endif %}    
+
         <div class="button-parent">
             <button type="submit">ログイン</button>
         </div>

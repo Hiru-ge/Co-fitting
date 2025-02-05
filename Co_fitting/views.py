@@ -3,6 +3,8 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .models import Recipe
 from .forms import SignUpForm
+from django.contrib.auth.views import LoginView
+from django.contrib import messages
 
 
 def index(request):
@@ -33,6 +35,14 @@ def signup(request):
         form = SignUpForm()
 
     return render(request, "Co-fitting/signup.html", {"form": form})
+
+
+class CustomLoginView(LoginView):
+    # エラーメッセージの出し方を少し変更
+    # 「このメールアドレスは使用済みです」だと、攻撃者からメールが使用可能であることが一目で分かりやすいので避けたい
+    def form_invalid(self, form):
+        messages.error(self.request, "メールアドレスまたはパスワードが正しくありません。")
+        return super().form_invalid(form)
 
 
 @login_required
