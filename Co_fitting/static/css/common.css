@@ -4,7 +4,8 @@ body{
   overflow-x: hidden;   /* 横スクロールの停止(横にはみ出た分は非表示) */
 }
 
-.header-area {
+.header-area,
+.header-right-area {
     display: flex;
     justify-content: space-between;
     height: 2.5rem;
