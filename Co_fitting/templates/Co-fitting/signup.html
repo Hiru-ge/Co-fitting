@@ -1,0 +1,47 @@
+{% extends './base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>サインアップ</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label for="username">ユーザー名</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div class="error">{{ form.username.errors }}</div>
+            {% endif %}
+        </div>
+        <div>
+            <label for="email">メールアドレス</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <div class="error">{{ form.email.errors }}</div>
+            {% endif %}
+        </div>
+        <div>
+            <label for="password1">パスワード</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+                <div class="error">{{ form.password1.errors }}</div>
+            {% endif %}
+        </div>
+        <div>
+            <label for="password2">パスワード(確認)</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+                <div class="error">{{ form.password2.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="button-parent">
+            <button type="submit">サインアップ</button>
+        </div>
+    </form>
+    <p>すでにアカウントをお持ちですか？ <a href="{% url 'login' %}">ログイン</a></p>
+</div>
+{% endblock %}

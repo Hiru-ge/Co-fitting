@@ -1,6 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .models import Recipe
+from .forms import SignUpForm
 
 
 def index(request):
@@ -19,9 +21,18 @@ def coffee_theory(request):
     return render(request, 'Co-fitting/coffee-theory.html')
 
 
-@login_required
 def signup(request):
-    pass
+    if request.method == "POST":
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.save()
+            login(request, user)
+            return redirect("mypage")
+    else:
+        form = SignUpForm()
+
+    return render(request, "Co-fitting/signup.html", {"form": form})
 
 
 @login_required
