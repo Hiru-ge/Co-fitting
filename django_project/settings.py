@@ -72,7 +72,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'django_project.wsgi.application'
 
 # userには、こちらで拡張したカスタムユーザーモデルを使う
-AUTH_USER_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'users.User'
 
 # ログイン周りのリダイレクト先
 LOGIN_URL = '/login'

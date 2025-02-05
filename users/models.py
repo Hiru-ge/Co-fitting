@@ -2,8 +2,11 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     preset_limit = models.IntegerField(default=1)
+
+    class Meta:
+        db_table = "User"   # テーブル名
 
     def __str__(self):
         return self.username

@@ -1,10 +1,10 @@
 from django.db import models
-from users.models import CustomUser
+from users.models import User
 
 
 class Recipe(models.Model):
     name = models.CharField(max_length=30)
-    create_user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    create_user = models.ForeignKey(User, on_delete=models.CASCADE)
     is_ice = models.BooleanField(default=False)
     len_steps = models.IntegerField()
     bean_g = models.FloatField()
