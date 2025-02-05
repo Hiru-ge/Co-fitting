@@ -3,6 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True)
     preset_limit = models.IntegerField(default=1)
 
     class Meta:
