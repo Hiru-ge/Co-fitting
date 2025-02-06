@@ -5,11 +5,25 @@ from recipes.models import Recipe, RecipeStep
 
 
 @admin.register(User)
-class UserAdmin(UserAdmin):
-    fieldsets = UserAdmin.fieldsets + (
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'is_staff', 'preset_limit')
+
+    fieldsets = (
+        (None, {'fields': ('email', 'password')}),
+        ('Personal Info', {'fields': ('username',)}),
+        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Custom Fields', {'fields': ('preset_limit',)}),
     )
-    list_display = ('username', 'email', 'is_staff', 'preset_limit')
+
+    # 管理画面からユーザー追加を行う際のフォーム設定
+    add_fieldsets = (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('email', 'username', 'password1', 'password2', 'preset_limit'),
+        }),
+    )
+
+    search_fields = ('email', 'username')
 
 
 class RecipeStepInline(admin.TabularInline):  # RecipeStepをRecipeの詳細ページにインラインで表示するための設定
