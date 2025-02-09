@@ -131,3 +131,12 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# メール送信用の設定
+# TODO:今は開発用の設定。後で実際の環境に移したときに改めて送信テストを行う
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # 開発用
+EMAIL_HOST = "smtp.example.com"  # 実際のSMTPサーバーに変更
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "your-email@example.com"
+EMAIL_HOST_PASSWORD = "your-email-password"

@@ -7,5 +7,6 @@ urlpatterns = [
     path('login', views.CustomLoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout', LogoutView.as_view(), name='logout'),
     path('signup', views.signup, name='signup'),
-    path('change-email', views.change_email, name='change-email'),
+    path("change-email/", views.change_email_request, name="change_email_request"),
+    path("change-email/confirm/<uidb64>/<token>/<email>/", views.change_email_confirm, name="change_email_confirm"),
 ]
