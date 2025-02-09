@@ -29,6 +29,11 @@ form div {
     margin: 0.5rem 0;
 }
 
+ul.caption li{
+    font-size: 0.85rem;
+    margin-left: 3rem;
+}
+
 label {
     font-size: 1.125rem;
     margin: 0.5rem 1rem;
