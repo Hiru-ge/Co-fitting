@@ -14,18 +14,56 @@ from .models import User
 from django.utils.http import urlsafe_base64_decode
 
 
-def signup(request):
+def signup_request(request):
+    """サインアップリクエスト（確認メール送信）"""
     if request.method == "POST":
         form = SignUpForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.save()
-            login(request, user)
+            user.is_active = False
+            form.save()
+
+            # 認証用のトークンを生成
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            email = user.email
+            confirmation_link = request.build_absolute_uri(
+                reverse("users:signup_confirm", kwargs={"uidb64": uid, "token": token, "email": email})
+            )
+
+            # メール送信
+            mail_subject = "サインアップ確認"
+            message = render_to_string("users/signup_email.html", {
+                "user": user,
+                "confirmation_link": confirmation_link,
+            })
+            send_mail(mail_subject, message, "no-reply@example.com", [email])
+
+            messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。")
             return redirect("mypage")
     else:
         form = SignUpForm()
 
-    return render(request, "users/signup.html", {"form": form})
+    return render(request, "users/signup_request.html", {"form": form})
+
+
+def signup_confirm(request, uidb64, token, email):
+    """サインアップの確認（リンクをクリック）"""
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+        login(request, user)
+        messages.success(request, "ユーザー登録が完了しました。")
+        return redirect("mypage")
+    else:
+        messages.error(request, "無効なリンクです。")
+        return redirect("users:signup_request")
 
 
 class CustomLoginView(LoginView):
