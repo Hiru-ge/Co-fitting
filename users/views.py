@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import SignUpForm, EmailChangeForm
 from django.contrib.auth.views import LoginView
@@ -9,7 +9,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from .models import User
 from django.utils.http import urlsafe_base64_decode
 
@@ -123,3 +123,17 @@ def change_email_confirm(request, uidb64, token, email):
     else:
         messages.error(request, "無効なリンクです。")
         return redirect("users:change_email_request")
+
+
+@login_required
+def account_delete(request):
+    if request.method == 'POST':
+        user = request.user
+        user.is_active = False  # 物理削除ではなく、論理削除
+        user.save()
+        logout(request)
+
+        return redirect(reverse_lazy('index'))  # 退会後トップページへリダイレクト
+    else:
+
+        return render(request, "users/account_delete.html")

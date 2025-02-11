@@ -27,5 +27,7 @@ urlpatterns = [
             success_url=reverse_lazy('users:password_reset_complete')), name='password_reset_confirm'),
     path('reset/done/', PasswordResetCompleteView.as_view(
             template_name='users/password_change_done.html'), name='password_reset_complete'),
-                                                      
+
+    path('account_delete/', views.account_delete, name="account_delete"),
+
 ]
