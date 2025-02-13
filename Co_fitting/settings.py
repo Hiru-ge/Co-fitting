@@ -57,7 +57,10 @@ ROOT_URLCONF = 'Co_fitting.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'users', 'static', 'templates')],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'Co_fitting', 'static', 'templates'),  # 共通テンプレート用ディレクトリ
+            os.path.join(BASE_DIR, 'users', 'static', 'templates'),  # 既存のテンプレートディレクトリ
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
