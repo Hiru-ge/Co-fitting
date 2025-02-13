@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.core import mail
 from django.urls import reverse
 from users.models import User
+from bs4 import BeautifulSoup
 
 
 class SignUpTestCase(TestCase):
@@ -215,3 +216,46 @@ class PasswordChangeTestCase(TestCase):
         self.client.logout()
         login_success = self.client.login(username="test@example.com", password="newpassword123")
         self.assertTrue(login_success)  # 新しいパスワードでログインできるか確認
+
+
+class PasswordResetTestCase(TestCase):
+    def setUp(self):
+        """テスト用ユーザー作成・有効化 & ログイン"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        self.password_reset_url = reverse("users:password_reset")
+
+    def test_user_can_password_reset(self):
+        """正常にパスワードリセットができるかテスト"""
+        response = self.client.post(self.password_reset_url, {
+            'email': 'test@example.com',
+        })
+        self.assertRedirects(response, reverse('users:password_reset_done'))
+
+        # メール本文をHTMLとして解析し、リンクを抽出
+        soup = BeautifulSoup(mail.outbox[0].body, 'html.parser')
+        confirmation_url = soup.find('a')['href']
+        response = self.client.get(confirmation_url)
+        password_enter_url = response.url   # リダイレクト先であるパスワード入力ページのURLを取得
+
+        response = self.client.post(password_enter_url, {
+            "new_password1": "newpassword123",
+            "new_password2": "newpassword123",
+        })
+        self.assertRedirects(response, reverse('users:password_reset_complete'))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("newpassword123"))  # パスワードが変更されているか確認
+
+    def test_invalid_email_login(self):
+        """存在しないメールアドレスでリクエストしても、メールが送信されないことを確認"""
+        response = self.client.post(self.password_reset_url, {
+            'email': 'nonexistent@example.com',
+        })
+        self.assertRedirects(response, reverse('users:password_reset_done'))  # 成功時と同じリダイレクトが起こる
+        self.assertEqual(len(mail.outbox), 0)  # メールが送信されていないことを確認
