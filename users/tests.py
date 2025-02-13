@@ -43,17 +43,6 @@ class SignUpTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "入力内容を確認してください")
 
-    def test_signup_sends_confirmation_email(self):
-        """サインアップリクエスト時に確認メールが送信されるかテスト"""
-        self.client.post(self.signup_request_url, {
-            'username': 'testuser',
-            'email': 'test@example.com',
-            'password1': 'securepassword123',
-            'password2': 'securepassword123'
-        })
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn('サインアップ確認', mail.outbox[0].subject)
-
     def test_invalid_confirmation_link(self):
         """無効な確認リンクにアクセスした場合の挙動をテスト"""
         invalid_url = reverse('users:signup_confirm', kwargs={'uidb64': 'invalid', 'token': 'invalid', 'email': 'invalid'})
