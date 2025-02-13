@@ -75,7 +75,7 @@ class CustomLoginView(LoginView):
 
 
 @login_required
-def change_email_request(request):
+def email_change_request(request):
     """メールアドレス変更リクエスト（確認メール送信）"""
     if request.method == "POST":
         form = EmailChangeForm(request.POST)
@@ -87,12 +87,12 @@ def change_email_request(request):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
             confirmation_link = request.build_absolute_uri(
-                reverse("users:change_email_confirm", kwargs={"uidb64": uid, "token": token, "email": new_email})
+                reverse("users:email_change_confirm", kwargs={"uidb64": uid, "token": token, "email": new_email})
             )
 
             # メール送信
             mail_subject = "メールアドレス変更確認"
-            message = render_to_string("users/change_email_email.html", {
+            message = render_to_string("users/email_change_email.html", {
                 "user": user,
                 "confirmation_link": confirmation_link,
             })
@@ -103,11 +103,11 @@ def change_email_request(request):
     else:
         form = EmailChangeForm()
 
-    return render(request, "users/change_email_request.html", {"form": form})
+    return render(request, "users/email_change_request.html", {"form": form})
 
 
 @login_required
-def change_email_confirm(request, uidb64, token, email):
+def email_change_confirm(request, uidb64, token, email):
     """メールアドレス変更の確認（リンクをクリック）"""
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
@@ -122,7 +122,7 @@ def change_email_confirm(request, uidb64, token, email):
         return redirect("mypage")
     else:
         messages.error(request, "無効なリンクです。")
-        return redirect("users:change_email_request")
+        return redirect("users:email_change_request")
 
 
 @login_required

@@ -10,8 +10,8 @@ urlpatterns = [
     path('signup/', views.signup_request, name='signup_request'),
     path('signup/confirm/<uidb64>/<token>/<email>', views.signup_confirm, name='signup_confirm'),
 
-    path("change-email/", views.change_email_request, name="change_email_request"),
-    path("change-email/confirm/<uidb64>/<token>/<email>/", views.change_email_confirm, name="change_email_confirm"),
+    path("email_change/", views.email_change_request, name="email_change_request"),
+    path("email_change/confirm/<uidb64>/<token>/<email>/", views.email_change_confirm, name="email_change_confirm"),
 
     path('password_change/', PasswordChangeView.as_view(template_name='users/password_change.html', success_url=reverse_lazy('users:password_change_done')), name='password_change'),
     path('password_change_done/', PasswordChangeDoneView.as_view(template_name='users/password_change_done.html'), name='password_change_done'),

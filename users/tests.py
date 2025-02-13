@@ -120,13 +120,13 @@ class EmailChangeTestCase(TestCase):
         success = self.client.login(username='test@example.com', password='securepassword123')
         self.assertTrue(success)    # ログインが成功したかチェック
 
-        self.change_email_url = reverse('users:change_email_request')
+        self.email_change_url = reverse('users:email_change_request')
 
     def test_user_can_email_change(self):
         """正常にメールアドレス変更ができるかテスト"""
         # メール送信
         new_email = 'new@example.com'
-        self.client.post(self.change_email_url, {'email': new_email})
+        self.client.post(self.email_change_url, {'email': new_email})
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('メールアドレス変更確認', mail.outbox[0].subject)
 
@@ -143,18 +143,18 @@ class EmailChangeTestCase(TestCase):
         """すでに登録されているメールアドレスには変更できないか"""
         User.objects.create_user(username='otheruser', email='taken@example.com', password='password123')
 
-        response = self.client.post(self.change_email_url, {'email': 'taken@example.com'})
+        response = self.client.post(self.email_change_url, {'email': 'taken@example.com'})
         self.assertEqual(response.status_code, 200)  # フォームを再表示
         self.assertContains(response, "このメールアドレスは既に使用されています")
 
     def test_invalid_confirmation_link(self):
         """無効な確認リンクにアクセスした場合の挙動をテスト"""
-        invalid_url = reverse('users:change_email_confirm', kwargs={'uidb64': 'invalid', 'token': 'invalid', 'email': 'invalid'})
+        invalid_url = reverse('users:email_change_confirm', kwargs={'uidb64': 'invalid', 'token': 'invalid', 'email': 'invalid'})
         response = self.client.get(invalid_url)
 
         # サインアップリクエストページにリダイレクトされることを確認
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('users:change_email_request'))
+        self.assertRedirects(response, reverse('users:email_change_request'))
 
 
 class PasswordChangeTestCase(TestCase):
