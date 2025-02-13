@@ -162,3 +162,56 @@ class EmailChangeTestCase(TestCase):
         # サインアップリクエストページにリダイレクトされることを確認
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('users:change_email_request'))
+
+
+class PasswordChangeTestCase(TestCase):
+    def setUp(self):
+        """テスト用ユーザー作成・有効化 & ログイン"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='oldpassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        success = self.client.login(username='test@example.com', password='oldpassword123')
+        self.assertTrue(success)    # ログインが成功したかチェック
+
+        self.password_change_url = reverse("users:password_change")
+
+    def user_can_password_change(self):
+        """正常にパスワード変更できるか"""
+        response = self.client.post(self.password_change_url, {
+            "old_password": "oldpassword123",
+            "new_password1": "newpassword123",
+            "new_password2": "newpassword123",
+        })
+        self.assertEqual(response.status_code, 302)  # リダイレクトされることを確認
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("newpassword123"))  # パスワード変更が適用されているか
+
+    def test_password_change_fails_with_wrong_old_password(self):
+        """現在のパスワードが間違っていた場合は変更できないことをテスト"""
+        response = self.client.post(self.password_change_url, {
+            "old_password": "wrongpassword",
+            "new_password1": "newpassword123",
+            "new_password2": "newpassword123",
+        })
+        self.assertEqual(response.status_code, 200)  # 失敗時はフォームが再表示される
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("oldpassword123"))  # パスワードが変更されていないか確認
+
+    def test_login_with_new_password_after_change(self):
+        """変更後、新しいパスワードでログインできるか"""
+        # まずパスワード変更
+        self.client.post(self.password_change_url, {
+            "old_password": "oldpassword123",
+            "new_password1": "newpassword123",
+            "new_password2": "newpassword123",
+        })
+
+        # ログアウトして新しいパスワードでログイン
+        self.client.logout()
+        login_success = self.client.login(username="test@example.com", password="newpassword123")
+        self.assertTrue(login_success)  # 新しいパスワードでログインできるか確認
