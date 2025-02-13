@@ -112,3 +112,53 @@ class LoginTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
+
+
+class EmailChangeTestCase(TestCase):
+    def setUp(self):
+        """テスト用ユーザー作成・有効化 & ログイン"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(success)    # ログインが成功したかチェック
+
+        self.change_email_url = reverse('users:change_email_request')
+
+    def test_user_can_email_change(self):
+        """正常にメールアドレス変更ができるかテスト"""
+        # メール送信
+        new_email = 'new@example.com'
+        self.client.post(self.change_email_url, {'email': new_email})
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('メールアドレス変更確認', mail.outbox[0].subject)
+
+        # メール内の確認URLを取得・変更を確認
+        confirmation_url = mail.outbox[0].body.split('a href="')[1].split('">')[0]
+        response = self.client.get(confirmation_url)
+
+        self.assertEqual(response.status_code, 302)  # 成功時のリダイレクト確認
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, new_email)  # メールアドレスが変更されたか
+
+    def test_user_cannot_change_to_existing_email(self):
+        """すでに登録されているメールアドレスには変更できないか"""
+        User.objects.create_user(username='otheruser', email='taken@example.com', password='password123')
+
+        response = self.client.post(self.change_email_url, {'email': 'taken@example.com'})
+        self.assertEqual(response.status_code, 200)  # フォームを再表示
+        self.assertContains(response, "このメールアドレスは既に使用されています")
+
+    def test_invalid_confirmation_link(self):
+        """無効な確認リンクにアクセスした場合の挙動をテスト"""
+        invalid_url = reverse('users:change_email_confirm', kwargs={'uidb64': 'invalid', 'token': 'invalid', 'email': 'invalid'})
+        response = self.client.get(invalid_url)
+
+        # サインアップリクエストページにリダイレクトされることを確認
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('users:change_email_request'))
