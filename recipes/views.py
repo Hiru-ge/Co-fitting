@@ -4,19 +4,19 @@ from .models import Recipe
 
 
 def index(request):
-    return render(request, 'Co-fitting/index.html')
+    return render(request, 'recipes/index.html')
 
 
 def how_to_use(request):
-    return render(request, 'Co-fitting/how-to-use.html')
+    return render(request, 'recipes/how-to-use.html')
 
 
 def introduce_preset(request):
-    return render(request, 'Co-fitting/introduce-preset.html')
+    return render(request, 'recipes/introduce-preset.html')
 
 
 def coffee_theory(request):
-    return render(request, 'Co-fitting/coffee-theory.html')
+    return render(request, 'recipes/coffee-theory.html')
 
 
 @login_required
@@ -29,4 +29,4 @@ def mypage(request):
         'recipes': recipes,
     }
 
-    return render(request, 'Co-fitting/mypage.html', params)
+    return render(request, 'recipes/mypage.html', params)
