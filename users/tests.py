@@ -259,3 +259,35 @@ class PasswordResetTestCase(TestCase):
         })
         self.assertRedirects(response, reverse('users:password_reset_done'))  # 成功時と同じリダイレクトが起こる
         self.assertEqual(len(mail.outbox), 0)  # メールが送信されていないことを確認
+
+
+class AccountDeleteTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+        self.client.login(username='test@example.com', password='securepassword123')
+        self.delete_account_url = reverse('users:account_delete')
+
+    def test_user_cannot_login_after_deletion(self):
+        """退会処理後、非アクティブになりログインできなくなることをテスト"""
+        response = self.client.post(self.delete_account_url)
+        self.assertRedirects(response, reverse('index'))  # 退会後のリダイレクト先は変換ページ
+
+        # ユーザーが非アクティブになっているか確認
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+        # ログインを試みて失敗することを確認
+        login_successful = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertFalse(login_successful)
+
+    def test_user_data_after_deletion(self):
+        """退会後にユーザーデータが論理削除されていることをテスト"""
+        self.client.post(self.delete_account_url)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
