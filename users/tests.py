@@ -59,3 +59,56 @@ class SignUpTestCase(TestCase):
         # サインアップリクエストページにリダイレクトされることを確認
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, reverse('users:signup_request'))
+
+
+class LoginTestCase(TestCase):
+    def setUp(self):
+        """テスト用ユーザー作成"""
+        self.login_url = reverse('users:login')
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+
+    def test_valid_login(self):
+        """正しいメールアドレスとパスワードでログインできることをテスト"""
+        response = self.client.post(self.login_url, {
+            'username': 'test@example.com',
+            'password': 'securepassword123'
+        })
+        self.assertEqual(response.status_code, 200)
+
+    def test_invalid_password_login(self):
+        """間違ったパスワードではログインできないことをテスト"""
+        response = self.client.post(self.login_url, {
+            'username': 'test@example.com',
+            'password': 'wrongpassword'
+        })
+        self.assertEqual(response.status_code, 200)  # フォームを再表示
+        self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
+
+    def test_invalid_email_login(self):
+        """存在しないメールアドレスではログインできないことをテスト"""
+        response = self.client.post(self.login_url, {
+            'username': 'notexist@example.com',
+            'password': 'securepassword123'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
+
+    def test_inactive_user_cannot_login(self):
+        """無効化されたユーザーはログインできないことをテスト"""
+        inactive_user = User.objects.create_user(
+            username='inactiveuser',
+            email='inactive@example.com',
+            password='securepassword123',
+        )
+        inactive_user.is_active = False     # 無効化
+
+        response = self.client.post(self.login_url, {
+            'username': 'inactive@example.com',
+            'password': 'securepassword123'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
