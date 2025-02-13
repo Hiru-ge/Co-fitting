@@ -19,7 +19,9 @@ class SignUpTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 302)
 
-        confirmation_url = mail.outbox[0].body.split('a href="')[1].split('">')[0]  # メール内の確認URLを取得
+        # メール本文をHTMLとして解析し、リンクを抽出
+        soup = BeautifulSoup(mail.outbox[0].body, 'html.parser')
+        confirmation_url = soup.find('a')['href']
         self.assertTrue(User.objects.filter(username='testuser').exists())
 
         response = self.client.get(confirmation_url)
@@ -140,7 +142,8 @@ class EmailChangeTestCase(TestCase):
         self.assertIn('メールアドレス変更確認', mail.outbox[0].subject)
 
         # メール内の確認URLを取得・変更を確認
-        confirmation_url = mail.outbox[0].body.split('a href="')[1].split('">')[0]
+        soup = BeautifulSoup(mail.outbox[0].body, 'html.parser')
+        confirmation_url = soup.find('a')['href']
         response = self.client.get(confirmation_url)
 
         self.assertEqual(response.status_code, 302)  # 成功時のリダイレクト確認
