@@ -6,6 +6,7 @@ class Recipe(models.Model):
     name = models.CharField(max_length=30)
     create_user = models.ForeignKey(User, on_delete=models.CASCADE)
     is_ice = models.BooleanField(default=False)
+    ice_g = models.FloatField(blank=True, null=True)
     len_steps = models.IntegerField()
     bean_g = models.FloatField()
     water_ml = models.FloatField()
