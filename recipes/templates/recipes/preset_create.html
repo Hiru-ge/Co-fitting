@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="introduce">
+        <h2>マイプリセットの新規登録</h2>
+    </div>
+    <div class="container">
+        {% if error_message %}
+            <p class="error">{{ error_message }}</p>
+        {% endif %}
+        <form id="preset-create-form" method="post" action="preset_create">
+            {% csrf_token %}
+            
+            <div class="ice-check-container">
+                <div class="ice-check-item">
+                    <input type="checkbox" id="is_ice" name="is_ice">
+                    <label for="is_ice">アイスレシピ</label>
+                </div>
+            </div>
+    
+            <div class="item">
+                <div>
+                    <label for="preset-name-input">プリセット名: </label>
+                    <input type="text" id="preset-name-input" class="super-wide-input" name="name" maxlength="50" required>
+                </div>
+                <div>
+                    <label for="pour-times-input">投数: </label>
+                    <input type="number" id="pour-times-input" name="len_steps" min="1" max="9" required> 投
+                </div>
+                <div>
+                    <label for="bean-input">豆量(g): </label>
+                    <input type="number" id="bean-input" name="bean_g" min="1" step="0.1" required> g
+                </div>
+                <div class="ice_g-div">
+                </div>
+
+                <!-- レシピ入力欄 -->
+                <h4>レシピ詳細</h4>
+                <p>投数 経過時間 総注湯量</p>
+                <div class="origin-process">
+                    <!-- JavaScriptで動的にステップが追加される部分(変換ページ同様、2投分はデフォルトで表示しておく) -->
+                    <div class="pour-step1">
+                        <label>1投目</label>
+                        <input type="number" class="minutes" name="step1_minute" min="0" max="59" maxlength="1" value="0" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step1_second" min="0" max="59"  maxlength="2" value="00" onkeyup="nextField(this)" required>
+                        <input type="number" class="pour-ml wide-input" name="step1_water" min="1" maxlength="3" value="30" onkeyup="nextField(this)" required> ml
+                    </div>                    
+                    <div class="pour-step2">
+                        <label>2投目</label>
+                        <input type="number" class="minutes" name="step2_minute" min="0" max="59" maxlength="1" value="0" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step2_second" min="0" max="59"  maxlength="2" value="00" onkeyup="nextField(this)" required>
+                        <input type="number" class="pour-ml wide-input" name="step2_water" min="1" maxlength="3" value="30" onkeyup="nextField(this)" required> ml
+                    </div>
+                </div>                    
+                <div>
+                    <label for="memo">メモ:</label>
+                    <textarea id="memo" name="memo" rows="4"></textarea>
+                </div>
+                <div class='convert-buttons'>
+                    <button type="submit" class='preset-button'>保存</button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'script/index.js' %}"></script>
+{% endblock %}

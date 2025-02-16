@@ -115,6 +115,12 @@ textarea {
     max-width: 300px;
 }
 
+.error {
+    color: #f00;
+    margin: 0.5rem 2rem;
+    font-weight: 700;
+}
+
 /*ボタン部分*/
 .preset-button {
     font-family: "M PLUS Rounded 1c", sans-serif;
