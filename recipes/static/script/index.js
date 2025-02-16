@@ -1,18 +1,18 @@
 'use strict';
 $(document).ready(function() {
     // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
-    $('#ice-check').on('change', function(){
+    $('#ice-check, #is_ice').on('change', function(){
         // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
         let iceInputDivText= `
-            <label for="ice-input">レシピの氷量(g): </label>
-            <input type="text" id="ice-input" maxlength="3" onkeyup="nextField(this)"> g
+            <label for="ice_g">レシピの氷量(g): </label>
+            <input type="number" id="ice_g" name="ice_g" maxlength="3" onkeyup="nextField(this)"> g
         `;
         if($(this).prop('checked')){
-            $('.ice-input-div').html(iceInputDivText);
+            $('.ice_g-div').html(iceInputDivText);
             $('.ice-mode-show').show();
             $('html, header, footer').addClass('ice-mode'); // アイスモード時のスタイル変更用
         }else{
-            $('.ice-input-div').html('');
+            $('.ice_g-div').html('');
             $('.ice-mode-show').hide();
             $('html, header, footer').removeClass('ice-mode');  // アイスモード時のスタイル変更用
         }
@@ -48,10 +48,11 @@ $(document).ready(function() {
                 let processInput = `
                     <div class="pour-step${i + 1}">
                         <label>${i + 1}投目</label>
-                        <input type="text" class="minutes" maxlength="1" onkeyup="nextField(this)">:<input type="text" class="seconds" maxlength="2" onkeyup="nextField(this)">
-                        <input type="text" class="pour-ml wide-input" maxlength="3" onkeyup="nextField(this)"> ml
-                    </div>
-                `;
+                        <input type="number" class="minutes" name="step${i + 1}_minute" min="0" max="59" required>:
+                        <input type="number" class="seconds" name="step${i + 1}_second" min="0" max="59" required>
+                        <input type="number" class="pour-ml wide-input" name="step${i + 1}_water" min="1" required> ml
+                    </div>`
+                    ;
                 $('.origin-process').append(processInput);
             }
         } else if (InputPourTimes < CurrentPourTimes) {
@@ -82,7 +83,7 @@ $(document).ready(function() {
             // アイス用のレシピの場合は、アイスモードをONにする
             if(SelectedRecipe.ice_g){
                 $('#ice-check').prop('checked', true).change();
-                $('#ice-input').val(SelectedRecipe.ice_g);
+                $('#ice_g').val(SelectedRecipe.ice_g);
             }else{
                 $('#ice-check').prop('checked', false).change();
             }
@@ -149,7 +150,7 @@ $(document).ready(function() {
         const OriginSumWater = $(`.pour-step${PourTimes}`).children('.pour-ml').val();
         let isIceMode = $('#ice-check').prop('checked');
         if(isIceMode){
-            OriginSumWater = Number(OriginSumWater) + Number($('#ice-input').val());
+            OriginSumWater = Number(OriginSumWater) + Number($('#ice_g').val());
         }
         const OriginBean = $('#bean-input').val();
         if (OriginBean && OriginSumWater) {
@@ -250,7 +251,7 @@ $(document).ready(function() {
         let originWaterTotal_ml = $(`.pour-step${pourTimes}`).children('.pour-ml').val();
         let ice_g = 0;  // ice_gの初期値は0としてNanを防ぎ、ice-modeなら正しい値で更新する
         if($('#ice-check').prop('checked')){
-            ice_g = $('#ice-input').val();
+            ice_g = $('#ice_g').val();
         }
 
         let targetBean_g, targetWaterTotal_ml, convertRate;

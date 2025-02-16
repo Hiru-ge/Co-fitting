@@ -85,6 +85,7 @@ label {
 
 /*入力欄部分*/
 input[type="text"],
+input[type="number"],
 textarea {
     font-weight: 700;
     background: rgba(255, 255, 255, 0.5);
@@ -92,14 +93,26 @@ textarea {
     border-radius: 5px;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="number"] {
     width: 10%;
     max-width: 100px;
 }
 
-input[type="text"].wide-input {
+input[type="text"].wide-input,
+input[type="number"].wide-input {
     width: 15%;
     max-width: 100px;
+}
+
+input[type="text"].super-wide-input {
+    width: 70%;
+    max-width: 250px;
+}
+
+textarea {
+    width: 80%;
+    max-width: 300px;
 }
 
 /*ボタン部分*/
