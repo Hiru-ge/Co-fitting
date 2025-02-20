@@ -56,18 +56,18 @@ def preset_create(request):
                 len_steps = recipe.len_steps
                 total_water_ml = 0
                 for step_number in range(1, len_steps + 1):
-                    water_ml_this_step = request.POST.get(f'step{step_number}_water')
+                    total_water_ml_this_step = request.POST.get(f'step{step_number}_water')
                     minute = request.POST.get(f'step{step_number}_minute')
                     second = request.POST.get(f'step{step_number}_second')
-                    if water_ml_this_step and minute and second:
+                    if total_water_ml_this_step and minute and second:
                         RecipeStep.objects.create(
                             recipe_id=recipe,
                             step_number=step_number,
                             minute=int(minute),
                             seconds=int(second),
-                            water_ml_this_step=float(water_ml_this_step),
+                            total_water_ml_this_step=float(total_water_ml_this_step),
                         )
-                        total_water_ml += float(water_ml_this_step)
+                        total_water_ml = float(total_water_ml_this_step)
 
                 recipe.water_ml = total_water_ml
                 recipe.save()

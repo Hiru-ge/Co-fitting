@@ -21,7 +21,7 @@ class RecipeStep(models.Model):
     step_number = models.IntegerField()
     minute = models.IntegerField()
     seconds = models.IntegerField()
-    water_ml_this_step = models.FloatField()
+    total_water_ml_this_step = models.FloatField()
 
     class Meta:
         ordering = ['step_number']  # 手順の順番で並べる

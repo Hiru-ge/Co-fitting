@@ -11,4 +11,4 @@ class RecipeForm(forms.ModelForm):
 class RecipeStepForm(forms.ModelForm):
     class Meta:
         model = RecipeStep
-        fields = ['minute', 'seconds', 'water_ml_this_step']
+        fields = ['minute', 'seconds', 'total_water_ml_this_step']

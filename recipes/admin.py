@@ -29,7 +29,7 @@ class CustomUserAdmin(UserAdmin):
 class RecipeStepInline(admin.TabularInline):  # RecipeStepをRecipeの詳細ページにインラインで表示するための設定
     model = RecipeStep
     extra = 1  # 新しいRecipeStepを追加するための空白フォームの数
-    fields = ('step_number', 'water_ml_this_step', 'minute', 'seconds')
+    fields = ('step_number', 'total_water_ml_this_step', 'minute', 'seconds')
 
 
 @admin.register(Recipe)
