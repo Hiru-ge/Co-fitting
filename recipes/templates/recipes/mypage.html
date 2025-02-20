@@ -31,7 +31,7 @@
                     {{ recipe.name }}
 
                     <div class="button-parent">
-                        <button>編集</button>
+                        <button onclick="location.href='{% url 'preset_edit' recipe.id %}'">編集</button>
                         <button>削除</button>
                     </div>
                 </div>

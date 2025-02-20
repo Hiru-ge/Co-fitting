@@ -1,22 +1,35 @@
 'use strict';
 $(document).ready(function() {
-    // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
-    $('#ice-check, #is_ice').on('change', function(){
-        // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
-        let iceInputDivText= `
+    function iceModeApply(isIce, ice_gFromDB){
+            // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
+            let iceInputDivText= `
             <label for="ice_g">レシピの氷量(g): </label>
-            <input type="number" id="ice_g" name="ice_g" maxlength="3" onkeyup="nextField(this)"> g
+            <input type="number" id="ice_g" class="wide-input" name="ice_g" maxlength="3" onkeyup="nextField(this)"> g
         `;
-        if($(this).prop('checked')){
+        if(isIce==true){
             $('.ice_g-div').html(iceInputDivText);
             $('.ice-mode-show').show();
             $('html, header, footer').addClass('ice-mode'); // アイスモード時のスタイル変更用
+            if(ice_gFromDB!=null){        
+                // マイプリセット編集画面でDBから氷量が渡された場合、氷量は入力欄確保後に明示的に格納(そうしないとvalueを格納できなかった)
+                $('#ice_g').val(ice_gFromDB); 
+            }
         }else{
             $('.ice_g-div').html('');
             $('.ice-mode-show').hide();
             $('html, header, footer').removeClass('ice-mode');  // アイスモード時のスタイル変更用
         }
+    }
+
+    // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
+    $('#ice-check, #is_ice').on('change', function(){
+        iceModeApply(this.checked, /*ice_gFromDB=*/null)
     });
+
+    // ページロード時にアイスモードをチェック
+    if ($('#is_ice').prop('checked')) {
+        iceModeApply(true, ice_gFromDB)
+    }
 
     // プリセットレシピ呼び出し
         // プリセットレシピ用のデータをオブジェクトで持っておき、それを呼び出す

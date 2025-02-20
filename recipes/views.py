@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Recipe, RecipeStep
 from .forms import RecipeForm
@@ -77,3 +77,47 @@ def preset_create(request):
         recipe_form = RecipeForm()
 
     return render(request, 'recipes/preset_create.html', {'recipe_form': recipe_form})
+
+
+@login_required
+def preset_edit(request, recipe_id):
+    recipe = get_object_or_404(Recipe, id=recipe_id, create_user=request.user)
+    steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+
+    if request.method == 'POST':
+        recipe_form = RecipeForm(request.POST, instance=recipe)
+        if recipe_form.is_valid():
+            updated_recipe = recipe_form.save(commit=False)
+            updated_recipe.water_ml = 0
+            updated_recipe.save()
+
+            RecipeStep.objects.filter(recipe_id=recipe).delete()
+            total_water_ml = 0
+            for step_number in range(1, updated_recipe.len_steps + 1):
+                total_water_ml_this_step = request.POST.get(f'step{step_number}_water')
+                minute = request.POST.get(f'step{step_number}_minute')
+                second = request.POST.get(f'step{step_number}_second')
+
+                if total_water_ml_this_step and minute and second:
+                    RecipeStep.objects.create(
+                        recipe_id=updated_recipe,
+                        step_number=step_number,
+                        minute=int(minute),
+                        seconds=int(second),
+                        total_water_ml_this_step=float(total_water_ml_this_step),
+                    )
+                    total_water_ml = float(total_water_ml_this_step)
+
+            updated_recipe.water_ml = total_water_ml
+            updated_recipe.save()
+
+            return redirect('mypage')
+
+    else:
+        recipe_form = RecipeForm(instance=recipe)
+
+    return render(request, 'recipes/preset_edit.html', {
+        'recipe_form': recipe_form,
+        'recipe': recipe,
+        'steps': steps
+    })

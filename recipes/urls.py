@@ -9,4 +9,5 @@ urlpatterns = [
     path('introduce-preset', views.introduce_preset, name='introduce-preset'),
     path('coffee-theory', views.coffee_theory, name='coffee-theory'),
     path('preset_create', views.preset_create, name='preset_create'),
+    path('preset_edit/<recipe_id>', views.preset_edit, name='preset_edit'),
 ]
