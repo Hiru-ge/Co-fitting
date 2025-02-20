@@ -17,6 +17,7 @@
         <h3>ユーザー情報</h3>
         <p>ユーザー名: {{ user.username }}</p>
         <p>メールアドレス: {{ user.email }}</p>
+        <p>所有プリセット枠: <b>{{user.preset_limit}}</b><p>
         <div class="button-parent">
             <button class="long-button" onclick="location.href='./users/email_change'">メールアドレス変更</button>
         </div>
