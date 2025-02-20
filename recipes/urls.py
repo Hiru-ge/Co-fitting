@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views import PresetDeleteView
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -10,4 +11,5 @@ urlpatterns = [
     path('coffee-theory', views.coffee_theory, name='coffee-theory'),
     path('preset_create', views.preset_create, name='preset_create'),
     path('preset_edit/<recipe_id>', views.preset_edit, name='preset_edit'),
+    path('preset/<int:pk>/delete', PresetDeleteView.as_view(), name='preset_delete'),
 ]

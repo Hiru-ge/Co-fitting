@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Recipe, RecipeStep
 from .forms import RecipeForm
+from django.urls import reverse_lazy
+from django.views.generic import DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 def index(request):
@@ -121,3 +124,15 @@ def preset_edit(request, recipe_id):
         'recipe': recipe,
         'steps': steps
     })
+
+
+class PresetDeleteView(LoginRequiredMixin, DeleteView):
+    model = Recipe
+    template_name = 'recipes/preset_delete_confirm.html'
+    success_url = reverse_lazy('mypage')
+
+    def get_queryset(self):
+        """
+        ログインユーザーが作成したレシピのみ削除可能にする。
+        """
+        return Recipe.objects.filter(create_user=self.request.user)
