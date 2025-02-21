@@ -45,6 +45,10 @@ label {
     font-size: 0.8rem;
 }
 
+.center {
+    text-align: center;
+}
+
 /*入力欄部分*/
 input[type="text"],
 input[type="password"],
