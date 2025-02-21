@@ -106,6 +106,38 @@ class LoginTestCase(TestCase):
         self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
 
 
+class LogoutTestCase(TestCase):
+    def setUp(self):
+        """テストユーザーを作成してログイン"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        # indexでDefaultPresetが居ることを前提とした処理があるので、テストにも追加する必要がある
+        self.default_preset_user = User.objects.create_user(
+            username='DefaultPreset',
+            email='default@example.com',
+            password='defaultpassword123'
+        )
+        self.client.login(username='test@example.com', password='securepassword123')
+        self.logout_url = reverse('users:logout')
+
+    def test_user_can_logout(self):
+        """ログアウトが正常に行われることをテスト"""
+        response = self.client.post(self.logout_url)
+        self.assertRedirects(response, reverse('users:login'))  # ログアウト後はログイン画面へリダイレクト
+
+        # セッションがクリアされていることを確認
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_access_protected_page_after_logout(self):
+        """ログアウト後に保護されたページへアクセスできないことをテスト"""
+        self.client.get(self.logout_url)  # まずログアウト
+        response = self.client.get(reverse('mypage'))  # マイページなど保護ページにアクセス
+        self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('mypage')}")
+
+
 class EmailChangeTestCase(TestCase):
     def setUp(self):
         """テスト用ユーザー作成・有効化 & ログイン"""
