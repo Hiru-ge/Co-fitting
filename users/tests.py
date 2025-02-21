@@ -255,6 +255,12 @@ class PasswordResetTestCase(TestCase):
 
 class AccountDeleteTestCase(TestCase):
     def setUp(self):
+        # indexでDefaultPresetが居ることを前提とした処理があるので、テストにも追加する必要があった
+        self.default_preset_user = User.objects.create_user(
+            username='DefaultPreset',
+            email='default@example.com',
+            password='defaultpassword123'
+        )
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
