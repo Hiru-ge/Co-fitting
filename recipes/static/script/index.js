@@ -31,30 +31,6 @@ $(document).ready(function() {
         iceModeApply(true, ice_gFromDB)
     }
 
-    // プリセットレシピ呼び出し
-        // プリセットレシピ用のデータをオブジェクトで持っておき、それを呼び出す
-    const PresetRecipes = {
-        "4-6method" : {
-            bean_g: '20',
-            water_ml: '300',
-            recipe: [['0:00', 60], ['0:45', 120], ['1:30', 180], ['2:10', 240], ['2:45', 300]]
-        },
-
-        "4-6method-ice" : {
-            bean_g: '20',
-            ice_g: '80',
-            water_ml: '150',
-            recipe: [['0:00', 30], ['0:40', 60], ['1:10', 90], ['1:40', 120], ['2:10', 150]]
-        },
-
-        "hatakeyamasan" : {
-            bean_g: '15',
-            water_ml: '230',
-            recipe: [['0:00',30], ['0:30', 120], ['1:00', 150], ['1:20', 190], ['1:40', 230]]
-        }        
-        
-    };
-
     function originRecipeFormLengthAdjuster(InputPourTimes, CurrentPourTimes){
         if (InputPourTimes > CurrentPourTimes) {
             for (let i = CurrentPourTimes; i < InputPourTimes; i++) {                
@@ -80,56 +56,50 @@ $(document).ready(function() {
         $(`#${DarkButtonId}`).addClass('selected-button');
     }
 
-    function presetActivate(PresetId){
-        // PresetIdがPresetRecipesに存在するか確認して、存在すればフォームに反映
-        if(PresetRecipes[PresetId]){
-            const SelectedRecipe = PresetRecipes[PresetId];
-            selectedButtonDarkener('preset-button', PresetId);
+    function presetActivate(recipe){
+        $('#pour-times-input').val(recipe.len_steps);
+        const InputPourTimes = $('#pour-times-input').val();
+        const CurrentPourTimes = $('.origin-process').children().length;
+        originRecipeFormLengthAdjuster(InputPourTimes, CurrentPourTimes);
 
-            // 変換前レシピの入力欄を生成   
-            $('#pour-times-input').val(SelectedRecipe.recipe.length);
-            const InputPourTimes = $('#pour-times-input').val();
-            const CurrentPourTimes = $('.origin-process').children().length;
-            originRecipeFormLengthAdjuster(InputPourTimes, CurrentPourTimes);
+        $('#ice-check').prop('checked', recipe.is_ice).change();
+        $('#ice_g').val(recipe.ice_g)
+        $('#bean-input').val(recipe.bean_g);
 
-            // プリセットレシピの内容をフォームに反映
-            // アイス用のレシピの場合は、アイスモードをONにする
-            if(SelectedRecipe.ice_g){
-                $('#ice-check').prop('checked', true).change();
-                $('#ice_g').val(SelectedRecipe.ice_g);
-            }else{
-                $('#ice-check').prop('checked', false).change();
-            }
-            $('#bean-input').val(SelectedRecipe.bean_g);    // 豆量転記
+        recipe.steps.forEach(step => {
+            $(`.pour-step${step.step_number} .minutes`).val(step.minute);
+            $(`.pour-step${step.step_number} .seconds`).val(step.seconds);
+            $(`.pour-step${step.step_number} .pour-ml`).val(step.total_water_ml_this_step);
+        });
 
-            for (let i = 1; i <= InputPourTimes; i++) {
-                let minutes = SelectedRecipe.recipe[i-1][0].split(':')[0];
-                let seconds = SelectedRecipe.recipe[i-1][0].split(':')[1];
-                let pour_ml = SelectedRecipe.recipe[i-1][1];
-                $(`.pour-step${i}`).children('.minutes').val(minutes);
-                $(`.pour-step${i}`).children('.seconds').val(seconds);
-                $(`.pour-step${i}`).children('.pour-ml').val(pour_ml);
-            }
-
-            // プリセットレシピの比率を計算して表示
-            let selectedRecipeSumWater;
-            if(SelectedRecipe.ice_g){
-                // 氷量のデフォルト値を0として計算させても良いような気はするが、とりあえずはこの形で書いておく(後でリファクタリングするかも)
-                selectedRecipeSumWater = Number(SelectedRecipe.water_ml) + Number(SelectedRecipe.ice_g);
-            }else{
-                selectedRecipeSumWater = SelectedRecipe.water_ml;
-            }
-            const OriginRatio = brewParameterCompleter([SelectedRecipe.bean_g, selectedRecipeSumWater, '']);
-            $('#origin-ratio').html(OriginRatio);
-        }else{
-            console.log('Error[presetActivate]: プリセットIDが不正です');
-            return 'Error';
+        let selectedRecipeSumWater;
+        if (recipe.ice_g) {
+            selectedRecipeSumWater = Number(recipe.water_ml) + Number(recipe.ice_g);
+        } else {
+            selectedRecipeSumWater = recipe.water_ml;
         }
+        const OriginRatio = brewParameterCompleter([recipe.bean_g, selectedRecipeSumWater, '']);
+        $('#origin-ratio').html(OriginRatio);
     }
 
-    $('.preset-button').on('click', function(){
-        const PresetId = $(this).attr('id');
-        presetActivate(PresetId);
+    function getPresetRecipeData(presetId) {
+        const DefaultPresetRecipesJSON = JSON.parse($('#default_preset_recipes').text());
+        const UsersPresetRecipesJSON = JSON.parse($('#users_preset_recipes').text());
+        const PresetRecipesJSON = DefaultPresetRecipesJSON.concat(UsersPresetRecipesJSON);
+        console.log(PresetRecipesJSON)
+        for (var i = 0; i < PresetRecipesJSON.length; i++) {
+            if (PresetRecipesJSON[i].id == presetId) {
+                return PresetRecipesJSON[i];
+            }
+        }
+        return null;
+    }
+
+    $('.preset-button').on('click', function() {
+        const presetId = $(this).attr('id');
+        const recipe = getPresetRecipeData(presetId);
+        console.log(recipe);
+        presetActivate(recipe);
     });
 
     // レシピ入力欄の出力

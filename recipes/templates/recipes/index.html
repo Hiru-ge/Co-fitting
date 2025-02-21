@@ -25,15 +25,19 @@
                 <p>プリセットレシピ呼び出し</p>
             </h3>
             <div class="preset-buttons">
-                <div class="accordion-item">
-                    <button id="4-6method" class="preset-button">4:6メソッド</button>
-                </div>
-                <div class="accordion-item">
-                    <button id="4-6method-ice" class="preset-button">4:6メソッド(アイス)</button>
-                </div>
-                <div class="accordion-item">
-                    <button id="hatakeyamasan" class="preset-button">畠山大輝氏レシピ</button>
-                </div>
+                {% for default_preset_recipe in default_preset_recipes %}
+                    <div class="accordion-item">
+                        <button id="{{default_preset_recipe.id}}" class="preset-button">{{default_preset_recipe.name}}</button>
+                    </div>
+                {% endfor %}
+                
+                {% if users_preset_recipes %}
+                    {% for users_preset_recipe in users_preset_recipes %}
+                        <div class="accordion-item">
+                            <button id="{{users_preset_recipe.id}}" class="preset-button">{{users_preset_recipe.name}}</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
             </div>
         </div>
 
@@ -139,6 +143,15 @@
             </div>
         </div> <!--/item:ストップウォッチ-->
     </div> <!--/container-->
+
+    <!-- JSONデータをスクリプトタグに埋め込む -->
+    <span id="default_preset_recipes">
+    {{ default_preset_recipes|json_script:"default_preset_recipes" }}
+    </span>
+    
+    <span id="users_preset_recipes">
+    {{ users_preset_recipes|json_script:"users_preset_recipes" }}
+    </span>
 {% endblock %}
 
 {% block extra_js %}

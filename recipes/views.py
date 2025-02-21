@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Recipe, RecipeStep
+from .models import Recipe, RecipeStep, User
 from .forms import RecipeForm
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView
@@ -8,7 +8,32 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 
 def index(request):
-    return render(request, 'recipes/index.html')
+    user = request.user
+    users_preset_recipes = Recipe.objects.filter(create_user=user.id)
+
+    default_preset_user = User.objects.get(username='DefaultPreset')
+    default_preset_recipes = Recipe.objects.filter(create_user=default_preset_user.id)
+
+    def recipe_to_dict(recipe):
+        steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+        steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
+        return {
+            'id': recipe.id,
+            'name': recipe.name,
+            'is_ice': recipe.is_ice,
+            'len_steps': recipe.len_steps,
+            'bean_g': recipe.bean_g,
+            'water_ml': recipe.water_ml,
+            'ice_g': recipe.ice_g,
+            'steps': steps_data
+        }
+
+    context = {
+        'users_preset_recipes': [recipe_to_dict(recipe) for recipe in users_preset_recipes],
+        'default_preset_recipes': [recipe_to_dict(recipe) for recipe in default_preset_recipes]
+    }
+
+    return render(request, 'recipes/index.html', context)
 
 
 def how_to_use(request):
