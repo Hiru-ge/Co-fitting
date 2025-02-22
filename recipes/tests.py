@@ -251,3 +251,66 @@ class RecipeDeleteTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('users:login')))  # ログイン画面にリダイレクトされることを確認
         self.assertTrue(Recipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
+
+
+class RecipeActivationTestCase(TestCase):
+    def setUp(self):
+        """テスト用ユーザーとレシピの作成"""
+        self.default_preset_user = User.objects.create_user(
+            username='DefaultPreset',
+            email='default@example.com',
+            password='defaultpassword123'
+        )
+        self.default_preset_user.is_active = True
+        self.default_preset_user.save()
+        self.default_preset_recipe = Recipe.objects.create(
+            name="デフォルトプリセットレシピ",
+            create_user=self.default_preset_user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20,
+            water_ml=100,
+            memo="デフォルトプリセットメモ"
+        )
+        RecipeStep.objects.create(
+            recipe_id=self.default_preset_recipe,
+            step_number=1,
+            minute=0,
+            seconds=0,
+            total_water_ml_this_step=100,
+        )
+
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)
+
+        self.recipe = Recipe.objects.create(
+            name="ユーザープセットレシピ",
+            create_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20,
+            water_ml=200,
+            memo="ユーザープリセットメモ"
+        )
+        RecipeStep.objects.create(
+            recipe_id=self.recipe,
+            step_number=1,
+            minute=0,
+            seconds=0,
+            total_water_ml_this_step=200,
+        )
+        self.index_url = reverse('index')  # 呼び出しを行うページのURL
+
+    def test_preset_recipes_displayed_on_conversion_page(self):
+        """変換ページにプリセットレシピが表示されていることを確認"""
+        response = self.client.get(self.index_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "デフォルトプリセットレシピ")
+        self.assertContains(response, "ユーザープリセットレシピ")
