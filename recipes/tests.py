@@ -189,3 +189,65 @@ class RecipeEditTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)  # リダイレクトされることを確認
         self.assertTrue(response.url.startswith(reverse('users:login')))  # ログインページへリダイレクトされることを確認
+
+
+class RecipeDeleteTestCase(TestCase):
+    def setUp(self):
+        """テスト用ユーザーとレシピの作成"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        self.other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='securepassword456'
+        )
+        self.other_user.is_active = True
+        self.other_user.save()
+
+        self.recipe = Recipe.objects.create(
+            name="削除対象レシピ",
+            create_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20,
+            water_ml=200,
+            memo="削除対象のメモ"
+        )
+        RecipeStep.objects.create(
+            recipe_id=self.recipe,
+            step_number=1,
+            minute=0,
+            seconds=0,
+            total_water_ml_this_step=200,
+        )
+        self.delete_url = reverse('preset_delete', kwargs={'pk': self.recipe.id})  # 削除URL
+
+    def test_delete_recipe_success(self):
+        """プリセットレシピ削除が正常にできるか"""
+        self.client.login(username='test@example.com', password='securepassword123')
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 302)  # リダイレクト確認
+        self.assertFalse(Recipe.objects.filter(id=self.recipe.id).exists())  # DBから削除されたことを確認
+
+    def test_delete_recipe_not_owner(self):
+        """他のユーザーのプリセットレシピ削除ができないことを確認"""
+        self.client.login(username='other@example.com', password='securepassword456')
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 404)  # 権限なしなら404が返る
+        self.assertTrue(Recipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
+
+    def test_delete_recipe_not_logged_in(self):
+        """ログインしていない状態でレシピを削除できないことを確認"""
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith(reverse('users:login')))  # ログイン画面にリダイレクトされることを確認
+        self.assertTrue(Recipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
