@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from users.models import User
-from recipes.models import Recipe
+from recipes.models import Recipe, RecipeStep
 
 
 class RecipeCreateTestCase(TestCase):
@@ -81,3 +81,111 @@ class RecipeCreateTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "エラー：プリセットレシピ上限を超過しています")  # エラーメッセージが表示されるか確認
         self.assertFalse(Recipe.objects.filter(name="上限超えレシピ", create_user=self.user).exists())  # DBに登録されていないことを確認
+
+
+class RecipeEditTestCase(TestCase):
+    def setUp(self):
+        """テストユーザーの作成とログイン"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)
+
+        # テスト用のレシピを作成
+        self.recipe = Recipe.objects.create(
+            name="編集前レシピ",
+            create_user=self.user,
+            is_ice=False,
+            len_steps=2,
+            bean_g=20,
+            water_ml=200,
+            memo="編集前のメモ"
+        )
+        RecipeStep.objects.create(
+            recipe_id=self.recipe,
+            step_number=1,
+            minute=0,
+            seconds=0,
+            total_water_ml_this_step=30,
+        )
+        RecipeStep.objects.create(
+            recipe_id=self.recipe,
+            step_number=2,
+            minute=1,
+            seconds=20,
+            total_water_ml_this_step=150,
+        )
+        self.edit_url = reverse('preset_edit', kwargs={'recipe_id': self.recipe.id})  # レシピ編集URL
+
+    def test_edit_recipe_success(self):
+        """プリセットレシピ編集が正常にできるか"""
+        response = self.client.post(self.edit_url, {
+            "name": "編集後レシピ",
+            "len_steps": 3,
+            "bean_g": 25,
+            'step1_minute': 0,
+            'step1_second': 30,
+            'step1_water': 40,
+            'step2_minute': 1,
+            'step2_second': 30,
+            'step2_water': 100,
+            'step3_minute': 2,
+            'step3_second': 00,
+            'step3_water': 150,
+            "memo": "編集後のメモ",
+        })
+
+        self.assertEqual(response.status_code, 302)  # 成功時はリダイレクト
+        self.recipe.refresh_from_db()  # DBの変更を反映
+        self.assertEqual(self.recipe.name, "編集後レシピ")  # 名前が変更されているか
+        self.assertEqual(self.recipe.len_steps, 3)  # ステップ数が変更されているか
+        self.assertEqual(self.recipe.bean_g, 25)  # 豆の量が変更されているか
+        self.assertEqual(self.recipe.memo, "編集後のメモ")  # メモが変更されているか
+
+    def test_edit_recipe_404_for_other_user(self):
+        """他のユーザーが編集を試みた場合、404 Page not found になるか"""
+        self.otheruser = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='otherpassword123'
+        )
+        self.otheruser.is_active = True
+        self.otheruser.save()
+        login_success = self.client.login(username='other@example.com', password='otherpassword123')
+        self.assertTrue(login_success)
+
+        response = self.client.post(self.edit_url, {
+            "name": "他人による編集",
+            "len_steps": 1,
+            "bean_g": 15,
+            'step1_minute': 0,
+            'step1_second': 0,
+            'step1_water': 30,
+            "memo": "他人が編集しようとしたメモ",
+        })
+        self.assertEqual(response.status_code, 404)  # 404が返ってくることを確認
+        self.recipe.refresh_from_db()
+        self.assertNotEqual(self.recipe.name, "他人による編集")  # 名前が変更されていないことを確認
+
+    def test_edit_recipe_redirects_for_anonymous_user(self):
+        """未ログインユーザーが編集を試みた場合、ログインページにリダイレクトされるか"""
+        self.client.logout()
+
+        response = self.client.post(self.edit_url, {
+            "name": "未ログインユーザーの編集",
+            "len_steps": 1,
+            "bean_g": 15,
+            'step1_minute': 0,
+            'step1_second': 00,
+            'step1_water': 30,
+            "memo": "未ログインで編集",
+        })
+
+        self.assertEqual(response.status_code, 302)  # リダイレクトされることを確認
+        self.assertTrue(response.url.startswith(reverse('users:login')))  # ログインページへリダイレクトされることを確認
