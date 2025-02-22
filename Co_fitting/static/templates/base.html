@@ -79,6 +79,17 @@
         </ul>
     </header>
 
+    <!-- エラーの表示 -->
+    {% if messages %}
+        {%for message in messages%}
+        <script>
+        window.onload = function() {
+            alert("{{ message }}");
+        };
+        </script>
+        {% endfor %}
+    {% endif %}
+
     {% block content %}
     {% endblock %}
 
