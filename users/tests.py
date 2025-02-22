@@ -60,8 +60,10 @@ class LoginTestCase(TestCase):
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
-            password='securepassword123'
+            password='securepassword123',
         )
+        self.user.is_active = True
+        self.user.save()
 
     def test_valid_login(self):
         """正しいメールアドレスとパスワードでログインできることをテスト"""
@@ -69,7 +71,8 @@ class LoginTestCase(TestCase):
             'username': 'test@example.com',
             'password': 'securepassword123'
         })
-        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response)   # ログインが成功すればTrueが入っている
+        self.assertEqual(response.status_code, 302)     # マイページにリダイレクト
 
     def test_invalid_password_login(self):
         """間違ったパスワードではログインできないことをテスト"""
@@ -97,6 +100,7 @@ class LoginTestCase(TestCase):
             password='securepassword123',
         )
         inactive_user.is_active = False     # 無効化
+        self.user.save()
 
         response = self.client.post(self.login_url, {
             'username': 'inactive@example.com',
@@ -114,26 +118,33 @@ class LogoutTestCase(TestCase):
             email='test@example.com',
             password='securepassword123'
         )
+        self.user.is_active = True
+        self.user.save()
         # indexでDefaultPresetが居ることを前提とした処理があるので、テストにも追加する必要がある
         self.default_preset_user = User.objects.create_user(
             username='DefaultPreset',
             email='default@example.com',
             password='defaultpassword123'
         )
-        self.client.login(username='test@example.com', password='securepassword123')
+        self.default_preset_user.is_active = True
+        self.default_preset_user.save()
+
+        self.login_url = reverse('users:login')
         self.logout_url = reverse('users:logout')
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)    # ログインが成功したかチェック
 
     def test_user_can_logout(self):
         """ログアウトが正常に行われることをテスト"""
         response = self.client.post(self.logout_url)
-        self.assertRedirects(response, reverse('users:login'))  # ログアウト後はログイン画面へリダイレクト
+        self.assertRedirects(response, self.login_url)  # ログアウト後はログイン画面へリダイレクト
 
         # セッションがクリアされていることを確認
         self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_access_protected_page_after_logout(self):
         """ログアウト後に保護されたページへアクセスできないことをテスト"""
-        self.client.get(self.logout_url)  # まずログアウト
+        self.client.post(self.logout_url)  # まずログアウト
         response = self.client.get(reverse('mypage'))  # マイページなど保護ページにアクセス
         self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('mypage')}")
 
@@ -200,8 +211,8 @@ class PasswordChangeTestCase(TestCase):
         self.user.is_active = True
         self.user.save()
 
-        success = self.client.login(username='test@example.com', password='oldpassword123')
-        self.assertTrue(success)    # ログインが成功したかチェック
+        login_success = self.client.login(username='test@example.com', password='oldpassword123')
+        self.assertTrue(login_success)    # ログインが成功したかチェック
 
         self.password_change_url = reverse("users:password_change")
 
@@ -253,6 +264,9 @@ class PasswordResetTestCase(TestCase):
         self.user.is_active = True
         self.user.save()
 
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)    # ログインが成功したかチェック
+
         self.password_reset_url = reverse("users:password_reset")
 
     def test_user_can_password_reset(self):
@@ -300,7 +314,8 @@ class AccountDeleteTestCase(TestCase):
         )
         self.user.is_active = True
         self.user.save()
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)
         self.delete_account_url = reverse('users:account_delete')
 
     def test_user_cannot_login_after_deletion(self):
