@@ -53,6 +53,10 @@ def privacy_policy(request):
     return render(request, 'recipes/privacy-policy.html')
 
 
+def mypreset_describe(request):
+    return render(request, 'recipes/mypreset-describe.html')
+
+
 @login_required
 def mypage(request):
     user = request.user
