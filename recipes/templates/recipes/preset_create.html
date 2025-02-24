@@ -10,9 +10,6 @@
         <h2>マイプリセットの新規登録</h2>
     </div>
     <div class="container">
-        {% if error_message %}
-            <p class="error">{{ error_message }}</p>
-        {% endif %}
         <form id="preset-create-form" method="post" action="preset_create">
             {% csrf_token %}
             

@@ -291,7 +291,7 @@ class RecipeActivationTestCase(TestCase):
         self.assertTrue(login_success)
 
         self.recipe = Recipe.objects.create(
-            name="ユーザープセットレシピ",
+            name="ユーザープリセットレシピ",
             create_user=self.user,
             is_ice=False,
             len_steps=1,

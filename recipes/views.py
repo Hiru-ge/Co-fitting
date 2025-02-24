@@ -5,6 +5,7 @@ from .forms import RecipeForm
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 
 
 def index(request):
@@ -68,10 +69,9 @@ def preset_create(request):
         canCreate = len_usersPreset < request.user.preset_limit
 
         if not canCreate:
-            # TODO: エラーは一旦HTMLに表示させるが、いずれはwindow.alertにする
-            error_message = "エラー：プリセットレシピ上限を超過しています"
+            messages.success(request, "エラー：プリセットレシピ上限を超過しています")
             recipe_form = RecipeForm()
-            return render(request, 'recipes/preset_create.html', {'recipe_form': recipe_form, 'error_message': error_message})
+            return render(request, 'recipes/preset_create.html', {'recipe_form': recipe_form})
         else:
             recipe_form = RecipeForm(request.POST)
             if recipe_form.is_valid():

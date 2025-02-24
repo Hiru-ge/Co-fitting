@@ -6,14 +6,8 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container">   
+    <div class="container">
         <h2>マイページ</h2>
-        <!-- TODO:一旦ここに表示しているメッセージはJavaScriptのWindow.alert()で表示する -->
-        {% if messages %}
-            {%for message in messages%}
-                <p>{{message}}</p>
-            {% endfor %}
-        {% endif %}
         <h3>ユーザー情報</h3>
         <p>ユーザー名: {{ user.username }}</p>
         <p>メールアドレス: {{ user.email }}</p>

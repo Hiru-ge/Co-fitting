@@ -8,12 +8,6 @@
 {% block content %}
 <div class="container">
     <h2>サインアップ</h2>
-    <!-- TODO:一旦ここに表示しているメッセージはJavaScriptのWindow.alert()で表示する -->
-    {% if messages %}
-        {%for message in messages%}
-            <p>{{message}}</p>
-        {% endfor %}
-    {% endif %}
     <form method="post">
         {% csrf_token %}
         <div>
