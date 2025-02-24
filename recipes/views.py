@@ -49,6 +49,10 @@ def coffee_theory(request):
     return render(request, 'recipes/coffee-theory.html')
 
 
+def privacy_policy(request):
+    return render(request, 'recipes/privacy-policy.html')
+
+
 @login_required
 def mypage(request):
     user = request.user
