@@ -3,6 +3,9 @@ from django.core import mail
 from django.urls import reverse
 from users.models import User
 from bs4 import BeautifulSoup
+from django.utils import timezone
+from datetime import timedelta
+from django.core.management import call_command
 
 
 class SignUpTestCase(TestCase):
@@ -336,3 +339,16 @@ class AccountDeleteTestCase(TestCase):
         self.client.post(self.delete_account_url)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
+
+    def test_inactive_user_deletion(self):
+        """一定期間(30日)を過ぎた非アクティブユーザーが削除されることをテスト"""
+        self.user.is_active = False
+        self.user.deactivated_at = timezone.now() - timedelta(days=31)
+        self.user.save()
+
+        # コマンドを実行して非アクティブユーザーを削除
+        call_command('delete_inactive_users')
+
+        # ユーザーが削除されていることを確認
+        with self.assertRaises(User.DoesNotExist):
+            User.objects.get(username='testuser')

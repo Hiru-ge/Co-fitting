@@ -36,6 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     preset_limit = models.IntegerField(default=1)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
+    deactivated_at = models.DateTimeField(null=True, blank=True)  # 退会日時を記録するフィールド(退会から30日経ったらDBから完全削除する)
 
     objects = UserManager()
 

@@ -12,6 +12,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse, reverse_lazy
 from .models import User
 from django.utils.http import urlsafe_base64_decode
+from django.utils import timezone
 
 
 def signup_request(request):
@@ -130,6 +131,7 @@ def account_delete(request):
     if request.method == 'POST':
         user = request.user
         user.is_active = False  # 物理削除ではなく、論理削除
+        user.deactivated_at = timezone.now()  # 退会日時を記録(30日経ったら物理削除するための記録用)
         user.save()
         logout(request)
 
