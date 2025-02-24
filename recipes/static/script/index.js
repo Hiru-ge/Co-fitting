@@ -98,7 +98,7 @@ $(document).ready(function() {
     $('.preset-button').on('click', function() {
         const presetId = $(this).attr('id');
         const recipe = getPresetRecipeData(presetId);
-        console.log(recipe);
+        selectedButtonDarkener('preset-button', presetId);
         presetActivate(recipe);
     });
 
