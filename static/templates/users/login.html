@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>ログイン</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label for="username_field">メールアドレス</label>
+            <input type="text" name="username" id="username_field" required>
+        </div>
+        <div>         
+            <label for="password_field">パスワード</label>
+            <input type="password" name="password" id="password_field" required>
+        </div>
+
+        <div class="button-parent">
+            <button type="submit">ログイン</button>
+        </div>
+    </form>
+    <p>アカウントをお持ちでない場合は<a href="{% url 'users:signup_request' %}">こちら</a>から登録してください。</p>
+    <p>パスワードを忘れた場合は<a href="{% url 'users:password_reset' %}">こちら</a>からリセットしてください。</p>
+</div>
+{% endblock %}
