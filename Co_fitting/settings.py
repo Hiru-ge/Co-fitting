@@ -31,9 +31,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["35.78.6.153", "Co-fitting.com"]
+ALLOWED_HOSTS = ["35.78.6.153", "co-fitting.com"]
 
 
 # Application definition
