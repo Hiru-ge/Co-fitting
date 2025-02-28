@@ -2,7 +2,9 @@ from django.test import TestCase
 from django.core import mail
 from django.urls import reverse
 from users.models import User
-from bs4 import BeautifulSoup
+from django.utils import timezone
+from datetime import timedelta
+from django.core.management import call_command
 
 
 class SignUpTestCase(TestCase):
@@ -18,10 +20,10 @@ class SignUpTestCase(TestCase):
             'password2': 'securepassword123'
         })
         self.assertEqual(response.status_code, 302)
-
-        # メール本文をHTMLとして解析し、リンクを抽出
-        soup = BeautifulSoup(mail.outbox[0].body, 'html.parser')
-        confirmation_url = soup.find('a')['href']
+        
+        # メール本文をプレーンテキストとして解析し、確認URLを抽出
+        email_body = mail.outbox[0].body
+        confirmation_url = next(line for line in email_body.split("\n") if "http" in line).strip()
         self.assertTrue(User.objects.filter(username='testuser').exists())
 
         response = self.client.get(confirmation_url)
@@ -173,9 +175,9 @@ class EmailChangeTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)
         self.assertIn('メールアドレス変更確認', mail.outbox[0].subject)
 
-        # メール内の確認URLを取得・変更を確認
-        soup = BeautifulSoup(mail.outbox[0].body, 'html.parser')
-        confirmation_url = soup.find('a')['href']
+        # メール本文をプレーンテキストとして解析し、確認URLを抽出
+        email_body = mail.outbox[0].body
+        confirmation_url = next(line for line in email_body.split("\n") if "http" in line).strip()
         response = self.client.get(confirmation_url)
 
         self.assertEqual(response.status_code, 302)  # 成功時のリダイレクト確認
@@ -276,9 +278,9 @@ class PasswordResetTestCase(TestCase):
         })
         self.assertRedirects(response, reverse('users:password_reset_done'))
 
-        # メール本文をHTMLとして解析し、リンクを抽出
-        soup = BeautifulSoup(mail.outbox[0].body, 'html.parser')
-        confirmation_url = soup.find('a')['href']
+        # メール本文をプレーンテキストとして解析し、確認URLを抽出
+        email_body = mail.outbox[0].body
+        confirmation_url = next(line for line in email_body.split("\n") if "http" in line).strip()
         response = self.client.get(confirmation_url)
         password_enter_url = response.url   # リダイレクト先であるパスワード入力ページのURLを取得
 
@@ -336,3 +338,16 @@ class AccountDeleteTestCase(TestCase):
         self.client.post(self.delete_account_url)
         self.user.refresh_from_db()
         self.assertFalse(self.user.is_active)
+
+    def test_inactive_user_deletion(self):
+        """一定期間(30日)を過ぎた非アクティブユーザーが削除されることをテスト"""
+        self.user.is_active = False
+        self.user.deactivated_at = timezone.now() - timedelta(days=31)
+        self.user.save()
+
+        # コマンドを実行して非アクティブユーザーを削除
+        call_command('delete_inactive_users')
+
+        # ユーザーが削除されていることを確認
+        with self.assertRaises(User.DoesNotExist):
+            User.objects.get(username='testuser')

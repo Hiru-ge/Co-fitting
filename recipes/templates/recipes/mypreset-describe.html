@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/describe.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="container-item">
+        <h2>マイプリセット機能について</h2>
+        <h3>1. マイプリセットとは？</h3>
+        <p>マイプリセット機能は、ユーザーが自分専用のコーヒーレシピを登録・管理できる機能です。登録したプリセットは、いつでも編集・削除が可能です。</p>
+        
+        <h3>2. マイプリセットの利用方法</h3>
+        <ol>
+            <li><a href="{% url 'users:signup_request' %}">ユーザー登録</a>を行い、マイページから「プリセット新規登録」ボタンを押す</li>
+            <img class="how-to-image" src="{% static 'images/mypreset-description/mypage.png' %}" alt="マイページ">
+            <li>必要な情報（豆の量、湯量、注湯ステップなど）を入力</li>
+            <li>「保存」ボタンを押すとマイプリセットに登録される</li>
+            <img class="how-to-image" src="{% static 'images/mypreset-description/preset-create.png' %}" alt="マイプリセット作成">
+            <li>ログイン状態で変換ページに移動すると、「プリセットレシピ呼び出し」にマイプリセットが表示されるので、どんどん呼び出して使ってください</li>
+            <img class="how-to-image" src="{% static 'images/mypreset-description/mypreset-activate.png' %}" alt="マイプリセット呼び出し">
+        </ol>
+        
+        <h3>3. プリセットの編集・削除</h3>
+        <p>作成済みのプリセットは以下の方法で編集・削除が可能です。</p>
+        <img class="how-to-image" src="{% static 'images/mypreset-description/mypreset-edit.png' %}" alt="マイプリセット編集">
+        <ol>
+            <li>レシピ一覧ページから編集したいレシピを選択し、「編集」ボタンを押す</li>
+            <li>内容を変更し「保存」ボタンを押すと更新される</li>
+            <li>削除したい場合は、「削除」ボタンを押して確認ダイアログで承認すると削除される</li>
+        </ol>
+        
+        <h3>4. マイプリセット枠について</h3>
+        <p>マイプリセットの作成には枠の上限があります。ユーザー登録時点で、皆さんにはプリセット枠を1枠プレゼントしていますが、上限を超えてさらにマイプリセットを登録したい場合、プリセット枠の追加購入が必要です。</p>
+        <p>利用可能なプリセット枠は各々のマイページより確認可能です。</p>
+        
+        <h3>5. よくある質問</h3>
+        <h4>Q. プリセットの上限を増やしたい場合は？</h4>
+        <p>A. プリセット枠の購入ページから追加購入が可能です。</p>
+        
+        <h4>Q. 削除したプリセットを復元できますか？</h4>
+        <p>A. 申し訳ありませんが、一度削除したプリセットは復元できません。</p>
+        
+        <p>詳細(不具合・不明点等)については、<a href="https://forms.gle/CfEUf7v42RYg8JhU7">Google Forms</a>よりご連絡ください。</p>
+    </div>
+</div>
+{% endblock %}

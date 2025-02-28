@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>退会確認</h2>
+    <p>本当に退会しますか？この操作は元に戻せません。</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="button-parent">
+            <button type="submit">退会する</button>
+        </div>
+    </form>
+    
+    <a href="{% url 'mypage' %}">キャンセル</a>
+</div>
+{% endblock %}

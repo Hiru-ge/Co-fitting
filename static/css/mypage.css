@@ -1,0 +1,53 @@
+/*機能に関する部分*/
+/*Flexbox*/
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 5rem;
+    margin-bottom: 3rem;
+}
+
+/*装飾･見栄えに関する部分*/
+.item {
+    text-align: center;
+    color: #fff;
+    background-color: #474747;
+    margin: 0.5rem 1rem;
+    padding: 1rem;
+    width: 28rem;
+    max-width: 95%; /* 画面幅に収まるようにする */
+    border-radius: 1rem;
+}
+
+h3 {
+    margin-top: 2rem;
+}
+
+
+/*ボタン部分*/
+div.button-parent {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+    margin-top: 0.2rem;
+}
+
+div.button-parent button {
+    display: inline;
+    background-color: #ffffff;
+    color: #000;
+    border: none;
+    width: 6rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 0.5rem 2rem;
+    margin: 0 0.5rem;
+    cursor: pointer;
+}
+
+div.button-parent button.long-button{
+    background-color: #000;
+    color: #fff;
+    width: 13rem;
+}

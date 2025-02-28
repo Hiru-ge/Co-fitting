@@ -1,0 +1,191 @@
+/*機能に関する部分*/
+/*Flexbox*/
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 3rem;
+}
+
+.timer-items {
+    display: flex;
+}
+
+.ice-check-container {
+    display: flex;
+    justify-content: center;
+}
+
+.preset-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/*装飾･見栄えに関する部分*/
+div.introduce {
+    margin-top: 3.5rem;   /* <header>で隠れないようにmargin-topを設定 */
+    padding: 0.75rem;
+    font-size: 1.125rem;
+    text-align: center;
+}
+
+.item {
+    color: #fff;
+    background-color: #474747;
+    margin: 0.5rem 1rem;
+    padding: 1rem;
+    width: 28rem;
+    max-width: 95%; /* 画面幅に収まるようにする */
+    border-radius: 1rem;
+}
+
+/* 出力欄テーブルの整形 */
+.recipe-output td {
+    padding: 0 0.5em;
+}
+
+/*ストップウォッチ部分*/
+#time {
+    font-size: 2rem;
+    margin: 0.5rem;
+}
+
+.timer-button {
+    background-color: #ffffff;
+    color: #000000;
+    font-size: 1.125rem;
+    border-radius: 0.5rem;
+    margin: 0.5rem 0.2rem;
+    padding: 0.5rem 1.3rem;
+}
+
+.accordion-toggle {
+    margin-right: 0.5rem;
+}
+
+/*ストップウォッチのトグル回転機能*/
+.accordion-head {
+    display: flex;
+}
+
+.rotate-90 {
+    transform: rotate(90deg);
+}
+
+/*フォーム部分*/
+form div {
+    margin-bottom: 14px;
+}
+
+label {
+    font-size: 1.125rem;
+    margin-bottom: 10px;
+}
+
+/*入力欄部分*/
+input[type="text"],
+input[type="number"],
+textarea {
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid #fff;
+    border-radius: 5px;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 10%;
+    max-width: 100px;
+}
+
+input[type="text"].wide-input,
+input[type="number"].wide-input {
+    width: 15%;
+    max-width: 100px;
+}
+
+input[type="text"].super-wide-input {
+    width: 70%;
+    max-width: 250px;
+}
+
+textarea {
+    width: 80%;
+    max-width: 300px;
+}
+
+.error {
+    color: #f00;
+    margin: 0.5rem 2rem;
+    font-weight: 700;
+}
+
+/*ボタン部分*/
+.preset-button {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    font-weight: 700;
+    background-color: #ffffff;
+    color: #000;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    width: 15rem;
+    padding: 0.5rem 2rem;
+    margin: 0.5rem 1rem;
+}
+
+.convert-buttons {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    font-weight: 700;
+    text-align: center;
+    display: flex;
+    justify-content: space-around;
+}
+
+div.convert-button-parent,
+div.clear-button-parent {
+    margin-bottom: 0;   /* 外せば分かると思うが、margin-bottomがあると余白が過剰になる */
+}
+
+.convert-button-parent button{
+    display: inline;
+    background-color: #ffffff;
+    color: #000;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem 2rem;
+    cursor: pointer;
+}
+
+/* チェックボックス部分 */
+.ice-check-item {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    font-weight: 700;
+    background-color: #474747;
+    text-align: center;
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin: 0rem 1rem;
+    width: 20rem;
+    cursor: pointer;
+}
+
+/* 氷量出力欄の表示・非表示切り換え */
+.ice-mode-show {
+    display: none;  /* 初期状態は非表示 */
+}
+
+/* アイスモード時の見た目変更 */
+html.ice-mode {
+    background-color: #a2a9af;
+}
+
+header.ice-mode, footer.ice-mode {
+    background-color: #396fa8;
+}
+
+.selected-button {  /* 選択中のボタンは暗くして、選択中であることを示す */
+    background-color: gray;
+}

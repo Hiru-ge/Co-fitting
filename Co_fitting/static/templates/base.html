@@ -74,8 +74,10 @@
         <ul class="slide-menu">
             <li><a href="{% url 'index' %}">変換ページへ</a></li>
             <li><a href="{% url 'how-to-use' %}">変換器の使い方</a></li>
+            <li><a href="{% url 'mypreset-describe' %}">マイプリセット機能に関するご説明</a></li>
             <li><a href="{% url 'introduce-preset' %}">プリセットレシピ引用元</a></li>
             <li><a href="{% url 'coffee-theory' %}">変換器を成り立たせるコーヒー理論</a></li>
+            <li><a href="{% url 'privacy-policy' %}">プライバシーポリシー</a></li>
         </ul>
     </header>
 
@@ -98,6 +100,8 @@
     </div>
 
     <footer>
+        <button><a href="{% url 'how-to-use' %}">変換器の使い方</a></button>
+        <button><a href="{% url 'mypreset-describe' %}">マイプリセット機能について</a></button>
         <button><a href="https://forms.gle/gJyF6PwvNZD2rr1C7" target="_blank">お問い合わせ</a></button>
     </footer>
 
