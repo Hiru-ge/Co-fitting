@@ -4,8 +4,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 5rem;
-    margin-bottom: 3rem;
+    margin: 5rem 0rem;
 }
 
 /*装飾･見栄えに関する部分*/
@@ -15,7 +14,7 @@
     background-color: #474747;
     margin: 0.5rem 1rem;
     padding: 1rem;
-    width: 28rem;
+    width: 20rem;
     max-width: 95%; /* 画面幅に収まるようにする */
     border-radius: 1rem;
 }

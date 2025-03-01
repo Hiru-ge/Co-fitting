@@ -53,7 +53,7 @@
 
     <header>
         <div class="header-area">
-            <div class="header-right-area">
+            <div class="header-left-area">
                 <h1><a href="{% url 'index' %}">Co-fitting</a></h1>
                 <div>
                 {% if user.is_authenticated %}
@@ -101,7 +101,6 @@
 
     <footer>
         <button><a href="{% url 'how-to-use' %}">変換器の使い方</a></button>
-        <button><a href="{% url 'mypreset-describe' %}">マイプリセット機能について</a></button>
         <button><a href="https://forms.gle/gJyF6PwvNZD2rr1C7" target="_blank">お問い合わせ</a></button>
     </footer>
 

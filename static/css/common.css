@@ -5,11 +5,12 @@ body{
 }
 
 .header-area,
-.header-right-area {
+.header-left-area {
     display: flex;
     justify-content: space-between;
     height: 2.5rem;
     align-items: center;
+    font-size: 0.8rem;
 }
 
 .hamburger {

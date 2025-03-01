@@ -9,11 +9,11 @@
     <div class="introduce">
         <h2>マイプリセットの編集</h2>
     </div>
-    <div class="container">
+    <div>
         {% if error_message %}
             <p class="error">{{ error_message }}</p>
         {% endif %}
-        <form id="preset-edit-form" method="post" action="">
+        <form id="preset-edit-form" class="container" method="post" action="">
             {% csrf_token %}
 
             <div class="ice-check-container">

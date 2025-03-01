@@ -95,19 +95,19 @@ textarea {
 
 input[type="text"],
 input[type="number"] {
-    width: 10%;
+    width: 15%;
     max-width: 100px;
 }
 
 input[type="text"].wide-input,
 input[type="number"].wide-input {
-    width: 15%;
+    width: 20%;
     max-width: 100px;
 }
 
 input[type="text"].super-wide-input {
     width: 70%;
-    max-width: 250px;
+    max-width: 200px;
 }
 
 textarea {
