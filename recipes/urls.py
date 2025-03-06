@@ -10,6 +10,7 @@ urlpatterns = [
     path('introduce-preset', views.introduce_preset, name='introduce-preset'),
     path('coffee-theory', views.coffee_theory, name='coffee-theory'),
     path('privacy-policy', views.privacy_policy, name='privacy-policy'),
+    path('commerce-law', views.commerce_law, name='commerce-law'),
     path('mypreset-describe', views.mypreset_describe, name='mypreset-describe'),
     path('preset_create', views.preset_create, name='preset_create'),
     path('preset_edit/<recipe_id>', views.preset_edit, name='preset_edit'),

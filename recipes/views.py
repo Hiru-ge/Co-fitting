@@ -53,6 +53,10 @@ def privacy_policy(request):
     return render(request, 'recipes/privacy-policy.html')
 
 
+def commerce_law(request):
+    return render(request, 'recipes/commerce-law.html')
+
+
 def mypreset_describe(request):
     return render(request, 'recipes/mypreset-describe.html')
 
