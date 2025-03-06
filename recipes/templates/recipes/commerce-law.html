@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/describe.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="container-item">
+            <h2>特定商取引法に基づく表記</h2>
+            <h3>販売事業者氏名</h3>
+            <p>沖田 綾平</p>
+
+            <h3>運営統括責任者</h3>
+            <p>沖田 綾平</p>
+
+            <h3>所在地</h3>
+            <p>個人事業主であるためここでの記載は行いませんが、請求があったら遅滞なく開示します。</p>
+
+            <h3>お問い合わせ</h3>
+            <p>Email: cofitting.service@gmail.com</p>
+            <p>電話番号: 個人事業主であるためここでの記載は行いませんが、請求があったら遅滞なく開示します。</p>
+
+            <h3>販売価格</h3>
+            <p>プリセット枠(買い切り): 1枠500円</p>
+
+            <h3>商品代金以外の必要料金</h3>
+            <p>消費税</p>
+            
+            <h3>お支払い方法</h3>
+            <p>クレジットカード決済</p>
+            
+            <h3>商品引渡し時期</h3>
+            <p>注文後すぐにご利用いただけます。</p>
+            
+            <h3>返品・交換について</h3>
+            <p>デジタル商品につき返品は基本的に対応しかねます。</p>
+            <p>しかし商品に不備がある場合、例えば、購入したプリセット枠が解放されず利用できない場合等は、cofitting.service@gmail.comに件名を「Co-fittingプリセット枠の購入不具合に関する問い合わせ」としてお問い合わせいただければ、こちらで対応させていただきます。</p>
+        </div>
+    </div>
+{% endblock %}
