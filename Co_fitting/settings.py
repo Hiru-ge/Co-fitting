@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_extensions',
+    # 'django_extensions',
     'recipes',
     'users',
 ]
@@ -161,9 +161,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # ログ取得用の設定
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
 
 LOGGING = {
     "version": 1,
@@ -172,7 +169,7 @@ LOGGING = {
         "file": {
             "level": "ERROR",
             "class": "logging.FileHandler",
-            "filename": os.path.join(LOG_DIR, "error.log"),
+            "filename": env('LOG_FILE'),
         },
     },
     "loggers": {
