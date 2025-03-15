@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 import stripe
 import environ
 from django.http import JsonResponse
+from django.http import HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 import json
 from users.models import User
@@ -25,12 +26,12 @@ def create_checkout_session(request):
                 },
             ],
             mode="payment",
-            success_url=reverse("purchase:checkout_success"),
-            cancel_url=reverse("purchase:checkout_cancel"),
+            success_url= request.build_absolute_uri(reverse("purchase:checkout_success")),
+            cancel_url= request.build_absolute_uri(reverse("purchase:checkout_cancel")),
             metadata={"user_id": request.user.id},  # ユーザーIDを保存
         )
     except Exception as e:
-        return str(e)
+        return HttpResponseServerError(f"Error: {e}")
 
     return redirect(session.url)
 
