@@ -37,9 +37,8 @@ $(document).ready(function() {
                 let processInput = `
                     <div class="pour-step${i + 1}">
                         <label>${i + 1}投目</label>
-                        <input type="number" class="minutes" name="step${i + 1}_minute" min="0" max="59" required>:
-                        <input type="number" class="seconds" name="step${i + 1}_second" min="0" max="59" required>
-                        <input type="number" class="pour-ml wide-input" name="step${i + 1}_water" min="1" required> ml
+                        <input type="number" class="minutes" name="step${i + 1}_minute" min="0" max="59"   maxlength="1" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step${i + 1}_second" min="0" max="59" maxlength="2" onkeyup="nextField(this)" required>
+                        <input type="number" class="pour-ml wide-input" name="step${i + 1}_water" min="1"  maxlength="3" onkeyup="nextField(this)" required> ml
                     </div>`
                     ;
                 $('.origin-process').append(processInput);
@@ -67,9 +66,9 @@ $(document).ready(function() {
         $('#bean-input').val(recipe.bean_g);
 
         recipe.steps.forEach(step => {
-            $(`.pour-step${step.step_number} .minutes`).val(step.minute);
-            $(`.pour-step${step.step_number} .seconds`).val(step.seconds);
-            $(`.pour-step${step.step_number} .pour-ml`).val(step.total_water_ml_this_step);
+            $(`.pour-step${step.step_number} .minutes`).val(String(step.minute));
+            $(`.pour-step${step.step_number} .seconds`).val(String(step.seconds).padStart(2, '0'));
+            $(`.pour-step${step.step_number} .pour-ml`).val(String(step.total_water_ml_this_step).padStart(2, '0'));
         });
 
         let selectedRecipeSumWater;
