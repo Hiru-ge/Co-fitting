@@ -34,7 +34,7 @@
                 {% if users_preset_recipes %}
                     {% for users_preset_recipe in users_preset_recipes %}
                         <div class="accordion-item">
-                            <button id="{{users_preset_recipe.id}}" class="preset-button">{{users_preset_recipe.name}}</button>
+                            <button id="{{users_preset_recipe.id}}" class="preset-button users-preset-button">{{users_preset_recipe.name}}</button>
                         </div>
                     {% endfor %}
                 {% endif %}

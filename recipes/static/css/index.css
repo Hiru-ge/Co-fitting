@@ -134,6 +134,11 @@ textarea {
     margin: 0.5rem 1rem;
 }
 
+/* マイプリセットはプレミア感を出したい */
+.users-preset-button {
+    background-color:rgb(255, 245, 186)
+}
+
 .convert-buttons {
     font-family: "M PLUS Rounded 1c", sans-serif;
     font-weight: 700;
