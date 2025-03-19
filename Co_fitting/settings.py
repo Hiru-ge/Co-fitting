@@ -44,11 +44,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    env('IS_DJANGO_EXTENSION'),
     'recipes',
     'users',
     'purchase',
 ]
+
+# 環境変数から `USE_DJANGO_EXTENSIONS` を取得（デフォルトは False）
+USE_DJANGO_EXTENSIONS = os.getenv("USE_DJANGO_EXTENSIONS", "False").lower() in ("true", "1")
+
+if USE_DJANGO_EXTENSIONS:
+    INSTALLED_APPS.append("django_extensions")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -144,7 +149,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = env('STATIC_ROOT')
+STATIC_ROOT = "/var/www/html/Co_fitting/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
