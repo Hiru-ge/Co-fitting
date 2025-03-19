@@ -1,0 +1,33 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main  # mainブランチへのプッシュをトリガー
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest  # GitHub Actionsのランナー環境
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2  # リポジトリのコードを取得
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_DOMAIN }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to EC2
+      run: |
+        ssh ubuntu@${{ secrets.EC2_DOMAIN }} << 'EOF'
+        cd /home/ubuntu/your-project/
+        git pull origin main
+        source /home/ubuntu/venv/bin/activate
+        pip install -r requirements.txt
+        python manage.py migrate
+        python manage.py collectstatic --noinput
+        sudo systemctl restart apache2
+        EOF
