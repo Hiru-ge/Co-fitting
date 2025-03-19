@@ -44,7 +44,7 @@ def signup_request(request):
             )
             send_mail(mail_subject, message, "no-reply@example.com", [user.email])
 
-            messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。")
+            messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。メールが届かない場合は、迷惑メールフォルダを確認してみてください。")
             return redirect("mypage")
     else:
         form = SignUpForm()
