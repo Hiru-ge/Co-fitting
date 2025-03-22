@@ -10,20 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # リポジトリのコードを取得
-      - name: Checkout repository
-        uses: actions/checkout@v2
 
       # デプロイする
       - name: Deploy
-        run:
+        run: |
           echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key
           chmod 400 private_key
-          ssh ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_IP_ADDRESS }} -i private_key
-          cd /var/www/html/Co_fitting
-          git pull origin master
-          source /var/www/html/Co_fitting/venv/bin/activate
-          pip install -r requirements.txt
-          python manage.py migrate
-          python manage.py collectstatic --noinput
-          sudo systemctl restart apache2
+          ssh -oStrictHostKeyChecking=no  ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_IP_ADDRESS }} -i private_key "cd /var/www/html/Co_fitting && git pull origin master && source /var/www/html/Co_fitting/venv/bin/activate && pip install -r requirements.txt && python3 manage.py migrate && python3 manage.py collectstatic --noinput && sudo systemctl restart apache2"
