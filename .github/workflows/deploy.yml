@@ -7,27 +7,23 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # GitHub Actionsのランナー環境
+    runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2  # リポジトリのコードを取得
+      # リポジトリのコードを取得
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.EC2_DOMAIN }} >> ~/.ssh/known_hosts
-
-    - name: Deploy to EC2
-      run: |
-        ssh ubuntu@${{ secrets.EC2_DOMAIN }} << 'EOF'
-        cd /home/ubuntu/your-project/
-        git pull origin main
-        source /home/ubuntu/venv/bin/activate
-        pip install -r requirements.txt
-        python manage.py migrate
-        python manage.py collectstatic --noinput
-        sudo systemctl restart apache2
-        EOF
+      # デプロイする
+      - name: Deploy
+        run:
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key
+          chmod 400 private_key
+          ssh ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_IP_ADDRESS }} -i private_key
+          cd /var/www/html/Co_fitting
+          git pull origin master
+          source /var/www/html/Co_fitting/venv/bin/activate
+          pip install -r requirements.txt
+          python manage.py migrate
+          python manage.py collectstatic --noinput
+          sudo systemctl restart apache2
