@@ -21,7 +21,15 @@ def purchase_describe(request):
 
 
 @login_required
+def already_subscribed(request):
+    return render(request, 'purchase/already_subscribed.html')
+
+
+@login_required
 def create_checkout_session(request):
+    if request.user.is_subscribed:
+        return render(request, 'purchase/already_subscribed.html')
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
