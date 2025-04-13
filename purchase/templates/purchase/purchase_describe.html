@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/mypage.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>プリセット枠の購入</h2>
+        <p>月額100円でプリセット枠を3つ増枠できます。</p>
+        <p>現在あなたが所有しているプリセット枠： <b id="preset_limit">{{ preset_limit }}</b></p>
+        <p>※購入後も所有プリセット枠が増えていない場合、一度ページ再読み込みを行ってみてください。</p>
+        
+        <div class="button-parent">
+            <button class="long-button"  onclick="location.href='./create_checkout_session'">新規サブスク契約</button>
+        </div>
+        <div class="button-parent">
+            <button class="long-button" id="checkout-and-portal-button" onclick="location.href='./create_portal_session'">サブスク状況確認・解約</button>
+        </div>
+    </div>
+{% endblock %}

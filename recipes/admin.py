@@ -6,7 +6,7 @@ from recipes.models import Recipe, RecipeStep
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'is_staff', 'preset_limit')
+    list_display = ('username', 'is_subscribed', 'email', 'is_staff', 'preset_limit')
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),

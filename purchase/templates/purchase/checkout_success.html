@@ -17,5 +17,10 @@
         <div class="button-parent">
             <button onclick="location.href='{% url 'mypage' %}'"  class="long-button">マイページへ</button>
         </div>
+        
+        <p>サブスクリプション状況の確認・変更は以下のボタンから行えます。</p>
+        <div class="button-parent">
+            <button class="long-button" id="checkout-and-portal-button" onclick="location.href='./create_portal_session'">サブスクリプションポータル</button>
+        </div>
     </div>
 {% endblock %}
