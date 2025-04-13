@@ -25,6 +25,7 @@
             <button class="long-button" onclick="location.href='./purchase/purchase_describe'">サブスク契約・解約<br>契約状況確認</button>
         </div>
         <h3>マイプリセット</h3>
+        <p><a href="{% url 'mypreset-describe' %}">マイプリセット機能とは</a></p>
         <div>
             {% if recipes %}
                 {% for recipe in recipes %}
