@@ -12,6 +12,7 @@
         <p>ユーザー名: {{ user.username }}</p>
         <p>メールアドレス: {{ user.email }}</p>
         <p>所有プリセット枠: <b>{{user.preset_limit}}</b><p>
+        <p>サブスクリプション契約状況: <b>{{subscription_status}}</b></p>
         <div class="button-parent">
             <button class="long-button" onclick="location.href='./users/email_change'">メールアドレス変更</button>
         </div>
@@ -19,7 +20,7 @@
             <button class="long-button" onclick="location.href='./users/password_change'">パスワード変更</button>
         </div>
         
-        <h3>プリセット枠購入</h3>
+        <h3>プリセット枠契約</h3>
         <p>月額100円でプリセット枠を3つ増枠できます。</p>
         <div class="button-parent">
             <button class="long-button" onclick="location.href='./purchase/purchase_describe'">サブスク契約・解約<br>契約状況確認</button>

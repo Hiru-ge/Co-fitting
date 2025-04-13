@@ -66,9 +66,15 @@ def mypage(request):
     user = request.user
     recipes = Recipe.objects.filter(create_user=user.id)
 
+    if user.is_subscribed:
+        subscription_status = "契約中"
+    else:
+        subscription_status = "未契約"
+
     params = {
         'user': user,
         'recipes': recipes,
+        'subscription_status': subscription_status,
     }
 
     return render(request, 'recipes/mypage.html', params)
