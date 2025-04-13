@@ -59,7 +59,7 @@ def get_preset_limit(request):
 
 @csrf_exempt
 def webhook(request):
-    """StripeのWebhookを受け取り、プリセット枠を1つ増やすエンドポイント"""
+    """StripeのWebhookを受け取り、プリセット枠を3つ増やすエンドポイント"""
     payload = request.body
     event = None
 
@@ -82,7 +82,7 @@ def webhook(request):
             try:
                 user = User.objects.get(id=user_id)
                 user.stripe_customer_id = session.customer
-                user.preset_limit = 3  # プリセット枠を増やす(1 → 3)
+                user.preset_limit = 4  # プリセット枠を増やす(1 → 4)
                 user.is_subscribed = True  # サブスクリプション状態を更新
                 user.save()
             except User.DoesNotExist:

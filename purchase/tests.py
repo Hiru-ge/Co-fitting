@@ -58,7 +58,7 @@ class StripePaymentTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 3)
+        self.assertEqual(self.user.preset_limit, 4)
         self.assertTrue(self.user.is_subscribed)
 
     def test_invalid_webhook_event(self):
