@@ -31,10 +31,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ["35.78.6.153", "co-fitting.com"]
-
+ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS').split(',')
 
 # Application definition
 
@@ -47,7 +46,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'recipes',
     'users',
+    'purchase',
 ]
+
+# 環境変数から `USE_DJANGO_EXTENSIONS` を取得（デフォルトは False）
+USE_DJANGO_EXTENSIONS = os.getenv("USE_DJANGO_EXTENSIONS", "False").lower() in ("true", "1")
+
+if USE_DJANGO_EXTENSIONS:
+    INSTALLED_APPS.append("django_extensions")
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -161,6 +167,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 # ログ取得用の設定
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -168,7 +175,7 @@ LOGGING = {
         "file": {
             "level": "ERROR",
             "class": "logging.FileHandler",
-            "filename": "/var/log/django/error.log",
+            "filename": env('LOG_FILE'),
         },
     },
     "loggers": {
@@ -192,4 +199,3 @@ SECURE_HSTS_PRELOAD = True
 # こうしないとリダイレクト関係のテストが通らない
 if 'test' in sys.argv:
     SECURE_SSL_REDIRECT = False
-

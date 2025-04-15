@@ -7,3 +7,5 @@ venv
 .env
 cron.sh
 Co-fitting-KeyPair.pem
+cert.pem
+key.pem

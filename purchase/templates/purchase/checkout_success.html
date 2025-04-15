@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/mypage.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>購入完了</h2>
+        <p>購入が完了しました。ありがとうございます。</p>
+        <p>現在あなたが所有しているプリセット枠： <b id="preset_limit">{{ preset_limit }}</b></p>
+        <p>購入いただいたプリセット枠は、マイページの新規プリセット作成時にご利用いただけます。</p>
+        <!--TODO: 定期的に所有プリセット枠を再読み込みし、再読み込みしなくてもいいようにする-->
+        <p>※購入後も所有プリセット枠が増えていない場合、一度ページ再読み込みを行ってみてください。</p>
+
+        <div class="button-parent">
+            <button onclick="location.href='{% url 'mypage' %}'"  class="long-button">マイページへ</button>
+        </div>
+        
+        <p>サブスクリプション状況の確認・変更は以下のボタンから行えます。</p>
+        <div class="button-parent">
+            <button class="long-button" id="checkout-and-portal-button" onclick="location.href='./create_portal_session'">サブスクリプションポータル</button>
+        </div>
+    </div>
+{% endblock %}

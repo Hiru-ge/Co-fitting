@@ -7,11 +7,12 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
-from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
 from django.urls import reverse, reverse_lazy
 from .models import User
 from django.utils import timezone
+import threading
+from django.conf import settings
 
 
 def signup_request(request):
@@ -43,7 +44,7 @@ def signup_request(request):
             )
             send_mail(mail_subject, message, "no-reply@example.com", [user.email])
 
-            messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。")
+            messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。メールが届かない場合は、迷惑メールフォルダを確認してみてください。")
             return redirect("mypage")
     else:
         form = SignUpForm()
@@ -76,6 +77,40 @@ class CustomLoginView(LoginView):
     def form_invalid(self, form):
         messages.error(self.request, "メールアドレスまたはパスワードが正しくありません。")
         return super().form_invalid(form)
+
+    def form_valid(self, form):
+        """認証成功時にメール通知を送信"""
+        response = super().form_valid(form)  # 既存の処理を実行
+        user = self.request.user  # 認証されたユーザー
+
+        # IPアドレスを取得
+        ip_address = self.get_client_ip()
+
+        # メール送信（非同期で実行）
+        threading.Thread(target=self.send_login_email, args=(user, ip_address)).start()
+
+        return response
+
+    def get_client_ip(self):
+        """リクエストのIPアドレスを取得"""
+        x_forwarded_for = self.request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0]
+        else:
+            ip = self.request.META.get("REMOTE_ADDR")
+        return ip
+
+    def send_login_email(self, user, ip_address):
+        """ログイン通知メールを送信"""
+        subject = "ログイン通知"
+        message = (
+            f"{user.username} さん\n\n"
+            "Co-fittingにて、あなたのアカウントでログインがありました。\n"
+            f"日時: {timezone.localtime()}\n"
+            f"IPアドレス: {ip_address}\n\n"
+            "もしこのログインに心当たりがない場合は、至急パスワードを変更してください。"
+        )
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
 
 @login_required

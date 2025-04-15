@@ -20,7 +20,7 @@ class SignUpTestCase(TestCase):
             'password2': 'securepassword123'
         })
         self.assertEqual(response.status_code, 302)
-        
+
         # メール本文をプレーンテキストとして解析し、確認URLを抽出
         email_body = mail.outbox[0].body
         confirmation_url = next(line for line in email_body.split("\n") if "http" in line).strip()
@@ -110,6 +110,14 @@ class LoginTestCase(TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
+
+    def test_login_notification_mail_send(self):
+        """ログイン時にメール通知が行われることを確認"""
+        self.client.post(self.login_url, {
+            'username': 'test@example.com',
+            'password': 'securepassword123'
+        })
+        self.assertEqual(len(mail.outbox), 1)  # メールが送信されていることを確認
 
 
 class LogoutTestCase(TestCase):

@@ -9,8 +9,8 @@
     <div class="introduce">
         <h2>マイプリセットの新規登録</h2>
     </div>
-    <div class="container">
-        <form id="preset-create-form" method="post" action="preset_create">
+    <div>
+        <form id="preset-create-form" class="container" method="post" action="preset_create">
             {% csrf_token %}
             
             <div class="ice-check-container">
@@ -48,8 +48,8 @@
                     </div>                    
                     <div class="pour-step2">
                         <label>2投目</label>
-                        <input type="number" class="minutes" name="step2_minute" min="0" max="59" maxlength="1" value="0" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step2_second" min="0" max="59"  maxlength="2" value="00" onkeyup="nextField(this)" required>
-                        <input type="number" class="pour-ml wide-input" name="step2_water" min="1" maxlength="3" value="30" onkeyup="nextField(this)" required> ml
+                        <input type="number" class="minutes" name="step2_minute" min="0" max="59" maxlength="1" value="0" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step2_second" min="0" max="59"  maxlength="2" value="30" onkeyup="nextField(this)" required>
+                        <input type="number" class="pour-ml wide-input" name="step2_water" min="1" maxlength="3" onkeyup="nextField(this)" required> ml
                     </div>
                 </div>                    
                 <div>

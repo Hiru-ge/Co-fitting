@@ -53,6 +53,10 @@ def privacy_policy(request):
     return render(request, 'recipes/privacy-policy.html')
 
 
+def commerce_law(request):
+    return render(request, 'recipes/commerce-law.html')
+
+
 def mypreset_describe(request):
     return render(request, 'recipes/mypreset-describe.html')
 
@@ -62,9 +66,15 @@ def mypage(request):
     user = request.user
     recipes = Recipe.objects.filter(create_user=user.id)
 
+    if user.is_subscribed:
+        subscription_status = "契約中"
+    else:
+        subscription_status = "未契約"
+
     params = {
         'user': user,
         'recipes': recipes,
+        'subscription_status': subscription_status,
     }
 
     return render(request, 'recipes/mypage.html', params)

@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <title>コーヒーレシピ変換器</title>
     <!-- CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/ress/dist/ress.min.css"> <!-- リセットCSS -->
+    <link rel="stylesheet" href="{% static 'css/reset.css' %}"> <!-- リセットCSS -->
     <link rel="stylesheet" href="{% static 'css/common.css' %}">
     {% block extra_css %}
     {% endblock %}
@@ -34,6 +34,16 @@
     <meta name="description" content="コーヒーの味を保ちながら量を変えるための変換器">
 </head>
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X313WR7C44"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-X313WR7C44');
+</script>
+
 <body>
 
     <!-- 規定文字数入力されたら次のフォームにフォーカスを移すユーザー補助(本当はJavaScriptファイルに書きたいけど、事前に宣言しておく必要があるので一旦ここに置く) -->
@@ -53,7 +63,7 @@
 
     <header>
         <div class="header-area">
-            <div class="header-right-area">
+            <div class="header-left-area">
                 <h1><a href="{% url 'index' %}">Co-fitting</a></h1>
                 <div>
                 {% if user.is_authenticated %}
@@ -78,6 +88,7 @@
             <li><a href="{% url 'introduce-preset' %}">プリセットレシピ引用元</a></li>
             <li><a href="{% url 'coffee-theory' %}">変換器を成り立たせるコーヒー理論</a></li>
             <li><a href="{% url 'privacy-policy' %}">プライバシーポリシー</a></li>
+            <li><a href="{% url 'commerce-law' %}">特定商取引法に基づく表記</a></li>
         </ul>
     </header>
 
@@ -101,8 +112,7 @@
 
     <footer>
         <button><a href="{% url 'how-to-use' %}">変換器の使い方</a></button>
-        <button><a href="{% url 'mypreset-describe' %}">マイプリセット機能について</a></button>
-        <button><a href="https://forms.gle/gJyF6PwvNZD2rr1C7" target="_blank">お問い合わせ</a></button>
+        <button><a href="https://forms.gle/PwoV72WpYZjta4fa9" target="_blank">お問い合わせ</a></button>
     </footer>
 
     <!-- JavaScript -->

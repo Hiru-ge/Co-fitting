@@ -1,0 +1,50 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - master  # masterブランチへのプッシュをトリガー
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # IP取得ライブラリをインストール
+      - name: Public IP Install
+        id: ip
+        uses: haythem/public-ip@v1.3
+
+      # BranchをCheckout
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # AWS CLIをインストールする
+      - name: AWS CLI install
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install --update
+          aws --version
+
+      # AWS CLIにキーを設定をする
+      - name: AWS set Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+
+      # デプロイする
+      - name: Deploy
+        run: |
+        
+          # SSHのセキュリティグループを開放する
+          aws ec2 authorize-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
+
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key
+          chmod 400 private_key
+          ssh -oStrictHostKeyChecking=no  ${{ secrets.EC2_USER_NAME }}@${{ secrets.EC2_IP_ADDRESS }} -i private_key "cd /var/www/html/Co_fitting && git pull origin master && source /var/www/html/Co_fitting/venv/bin/activate && pip install -r requirements.txt && python3 manage.py migrate && python3 manage.py collectstatic --noinput && sudo systemctl restart apache2"
+
+          # SSHのセキュリティグループを閉じる
+          aws ec2 revoke-security-group-ingress --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} --protocol tcp --port 22 --cidr ${{ steps.ip.outputs.ipv4 }}/32
