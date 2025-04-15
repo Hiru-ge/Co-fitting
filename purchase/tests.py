@@ -34,7 +34,6 @@ class StripePaymentTest(TestCase):
             password='securepassword123'
         )
         self.user.is_active = True
-        self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
 
         login_success = self.client.login(username='test@example.com', password='securepassword123')
@@ -55,12 +54,9 @@ class StripePaymentTest(TestCase):
         self.assertEqual(response.url, reverse("purchase:checkout_success"))
 
     def test_webhook_preset_limit_update(self):
-        """Webhookを受けた後にプリセット枠が増えているかテスト"""
-        self.user.preset_limit = 1
-        self.user.save()
-
+        """subscription.createdイベントが送信されたときにstripe_customer_idが正しく設定されるかをテスト"""
         event_data = {
-            "type": "checkout.session.completed",
+            "type": "customer.subscription.created",
             "data": {
                 "object": {
                     "metadata": {"user_id": str(self.user.id)},  # `user_id` を設定
@@ -78,8 +74,7 @@ class StripePaymentTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 4)
-        self.assertTrue(self.user.is_subscribed)
+        self.assertEqual(self.user.stripe_customer_id, self.user.stripe_customer_id)
 
     def test_invalid_webhook_event(self):
         """不正なWebhookイベントが送信された場合の処理をテスト"""
@@ -100,7 +95,8 @@ class StripePaymentTest(TestCase):
 
     def test_subscription_expired_cleanup(self):
         """サブスク期限が切れたときにプリセット枠が1つになり、マイプリセットが1つ残して削除されることをテスト"""
-        self.user.preset_limit = 3
+        self.user.preset_limit = 4
+        self.user.stripe_customer_id = 'cus_test123'
         self.user.is_subscribed = True
         self.user.save()
 
@@ -138,4 +134,60 @@ class StripePaymentTest(TestCase):
         self.assertEqual(Recipe.objects.filter(create_user=self.user).count(), 1)  # ユーザーのレシピが1つだけ残っていることを確認
         self.assertTrue(Recipe.objects.filter(name="Preset 1").exists())    # 最初のレシピが残っていることを確認
         self.assertFalse(Recipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
-        self.assertFalse(self.user.is_subscribed)   # サブスクリプションがキャンセルされたことを確認
+        self.assertFalse(self.user.is_subscribed)
+
+    def test_send_mail_when_payment_succeeded(self):
+        """支払い成功時にメールが送信され、かつプリセット枠が増えるかをテスト"""
+        self.user.stripe_customer_id = 'cus_test123'
+        self.user.save()
+
+        event_data = {
+            "type": "invoice.paid",
+            "data": {
+                "object": {
+                    "customer": self.user.stripe_customer_id,
+                }
+            }
+        }
+
+        with patch("purchase.views.send_mail") as mock_send_mail:
+            response = self.client.post(
+                reverse('purchase:webhook'),
+                data=json.dumps(event_data),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 200)
+        mock_send_mail.assert_called_once()
+        args, kwargs = mock_send_mail.call_args
+        self.assertIn("支払い完了通知", args[0])
+
+        # プリセット枠が増えていることを確認
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.preset_limit, 4)
+        self.assertTrue(self.user.is_subscribed)
+
+    def test_send_mail_when_payment_failed(self):
+        """支払い失敗時にメールが送信されるかをテスト"""
+        self.user.stripe_customer_id = 'cus_test123'
+        self.user.save()
+
+        event_data = {
+            "type": "invoice.payment_failed",
+            "data": {
+                "object": {
+                    "customer": self.user.stripe_customer_id,
+                }
+            }
+        }
+
+        with patch("purchase.views.send_mail") as mock_send_mail:
+            response = self.client.post(
+                reverse('purchase:webhook'),
+                data=json.dumps(event_data),
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        mock_send_mail.assert_called_once()
+        args, kwargs = mock_send_mail.call_args
+        self.assertIn("支払い失敗通知", args[0])

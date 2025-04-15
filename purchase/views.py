@@ -9,6 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from users.models import User
 from recipes.models import Recipe
+from django.conf import settings
+from django.core.mail import send_mail
 # 環境変数の読み込み
 env = environ.Env()
 env.read_env('../.env')
@@ -39,7 +41,7 @@ def create_checkout_session(request):
             payment_method_types=["card"],
             line_items=[
                 {
-                    "price": "price_1RDOpACGxMrLuNw2jqBXCqUN",  # 作成した` price.id`
+                    "price": "price_1RBWxYCGxMrLuNw2065MdFDH",  # 作成した` price.id`
                     "quantity": 1,
                 },
             ],
@@ -85,35 +87,44 @@ def webhook(request):
         return JsonResponse({"error": "Invalid signature"}, status=400)
 
     # 決済成功のイベントを処理
-    if event.type == 'checkout.session.completed':
+    can_accept_event = [
+        'checkout.session.completed',
+        'customer.subscription.created',
+        'customer.subscription.updated',
+        'customer.subscription.deleted',
+        'invoice.paid',
+        'invoice.payment_failed'
+    ]
+    if event.type not in can_accept_event:
+        return JsonResponse({"error": "Unhandled event type"}, status=400)
+    elif event.type == 'checkout.session.completed':
+        """ Checkoutセッションが完了したときは、stripeのcustomer_idを取得して、ユーザーに紐付けるだけ
+            実際のサブスクリプション有効化処理はinvoice.paidイベントで行う
+        """
+
         session = event.data.object
+        customer_id = session.customer
 
         # ユーザーの特定（カスタムフィールドにユーザーIDを保存している場合）
         user_id = session.get("metadata", {}).get("user_id")
-        if user_id:
-            try:
-                user = User.objects.get(id=user_id)
-                user.stripe_customer_id = session.customer
-                user.preset_limit = 4  # プリセット枠を増やす(1 → 4)
-                user.is_subscribed = True  # サブスクリプション状態を更新
-                user.save()
-            except User.DoesNotExist:
-                return JsonResponse({"error": "User not found"}, status=404)
-
-        return JsonResponse({"status": "success"})
-    elif event.type in ['customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']:
-        session = event.data.object
-        customer_id = session.customer
-        status = session.status
         try:
-            user = User.objects.get(stripe_customer_id=customer_id)
-            if status == 'active':
-                user.is_subscribed = True
-            elif status in ['canceled', 'unpaid', 'incomplete_expired', 'past_due']:
-                user.is_subscribed = False
-                user.preset_limit = 1
+            user = User.objects.get(id=user_id)
+            user.stripe_customer_id = customer_id
+            return JsonResponse({"status": "success"})
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=404)
 
-            if not user.is_subscribed:
+    elif event.type in ['customer.subscription.created', 'customer.subscription.updated', 'customer.subscription.deleted']:
+        """ サブスクリプションの状態が変化したときに呼ばれる
+            ここでは特に、契約解除の際や支払いが行われなかった際に着目し、サブスクリプション権限の削除を行う
+        """
+        session = event.data.object
+        status = session.status
+
+        try:
+            user = User.objects.get(stripe_customer_id=session.customer)
+            if status in ['canceled', 'unpaid', 'incomplete_expired', 'past_due']:
+                user.is_subscribed = False
                 user.preset_limit = 1   # サブスクリプションがキャンセルされた場合、プリセット枠を1に戻す
                 users_recipes = Recipe.objects.filter(create_user=user)
                 if users_recipes.exists():
@@ -124,9 +135,52 @@ def webhook(request):
             return JsonResponse({"status": "success"})
         except User.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
+    elif event.type == 'invoice.paid':
+        # 支払いが成功したタイミングで、サブスクリプションを有効化する
+        session = event.data.object
+        customer_id = session.customer
+
+        # ユーザーの特定（カスタムフィールドにユーザーIDを保存している場合）
+        user_id = session.get("metadata", {}).get("user_id")
+        try:
+            user = User.objects.get(stripe_customer_id=customer_id)
+            user.preset_limit = 4  # プリセット枠を3つ増やして4にする
+            user.is_subscribed = True
+            user.save()
+
+            subject = "支払い完了通知"
+            message = (
+                f"{user.username} さん\n\n"
+                "Co-fittingのご利用ありがとうございます。\n\n"
+                "申請いただいたサブスクリプションの支払いが完了しました。\n\n"
+                "これからもCo-fittingをよろしくお願いいたします。\n\n"
+            )
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+            return JsonResponse({"status": "success"})
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=404)
+    elif event.type == 'invoice.payment_failed':
+        # 支払い失敗時はメール通知を行う(ここではまだサブスクリプションは無効化しない)
+        session = event.data.object
+        customer_id = session.customer
+
+        try:
+            user = User.objects.get(stripe_customer_id=customer_id)
+            subject = "支払い失敗通知"
+            message = (
+                f"{user.username} さん\n\n"
+                "Co-fittingのご利用ありがとうございます。\n\n"
+                "申請いただいたサブスクリプションの支払いが失敗しました。\n\n"
+                "カード情報等をご確認の上、再度お試しください。\n\n"
+                "以下のリンクから、再度サブスクリプションをお申し込みいただけます。\n\n"
+                f"{request.build_absolute_uri(reverse('purchase:create_checkout_session'))}\n\n"
+            )
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
+            return JsonResponse({"status": "success"})
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=404)
     else:
-        # 不明なイベントタイプの場合、400エラーを返す
-        return JsonResponse({"error": "Unhandled event type"}, status=400)
+        return JsonResponse({"error": "UnExpected Error"}, status=500)
 
 
 @login_required
