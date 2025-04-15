@@ -4,6 +4,26 @@ from users.models import User
 from recipes.models import Recipe, RecipeStep
 
 
+def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
+    Recipe.objects.create(
+        name=name,
+        create_user=user,
+        is_ice=is_ice,
+        len_steps=len_steps,
+        bean_g=bean_g,
+        water_ml=water_ml,
+        memo=memo
+    )
+    for i in range(len_steps):
+        RecipeStep.objects.create(
+            recipe_id=Recipe.objects.last(),
+            step_number=i + 1,
+            minute=i,
+            seconds=0,
+            total_water_ml_this_step=water_ml / len_steps,
+        )
+
+
 class RecipeCreateTestCase(TestCase):
     def setUp(self):
         """テストユーザーの作成とログイン"""
@@ -98,28 +118,14 @@ class RecipeEditTestCase(TestCase):
         self.assertTrue(login_success)
 
         # テスト用のレシピを作成
-        self.recipe = Recipe.objects.create(
-            name="編集前レシピ",
-            create_user=self.user,
+        self.recipe = create_mock_recipe(
+            user=self.user,
+            name="テストレシピ",
             is_ice=False,
             len_steps=2,
             bean_g=20,
             water_ml=200,
-            memo="編集前のメモ"
-        )
-        RecipeStep.objects.create(
-            recipe_id=self.recipe,
-            step_number=1,
-            minute=0,
-            seconds=0,
-            total_water_ml_this_step=30,
-        )
-        RecipeStep.objects.create(
-            recipe_id=self.recipe,
-            step_number=2,
-            minute=1,
-            seconds=20,
-            total_water_ml_this_step=150,
+            memo="テスト用メモ"
         )
         self.edit_url = reverse('preset_edit', kwargs={'recipe_id': self.recipe.id})  # レシピ編集URL
 
@@ -210,21 +216,14 @@ class RecipeDeleteTestCase(TestCase):
         self.other_user.is_active = True
         self.other_user.save()
 
-        self.recipe = Recipe.objects.create(
+        self.recipe = create_mock_recipe(
+            user=self.user,
             name="削除対象レシピ",
-            create_user=self.user,
             is_ice=False,
-            len_steps=1,
+            len_steps=2,
             bean_g=20,
             water_ml=200,
-            memo="削除対象のメモ"
-        )
-        RecipeStep.objects.create(
-            recipe_id=self.recipe,
-            step_number=1,
-            minute=0,
-            seconds=0,
-            total_water_ml_this_step=200,
+            memo="削除用メモ"
         )
         self.delete_url = reverse('preset_delete', kwargs={'pk': self.recipe.id})  # 削除URL
 
@@ -263,21 +262,14 @@ class RecipeActivationTestCase(TestCase):
         )
         self.default_preset_user.is_active = True
         self.default_preset_user.save()
-        self.default_preset_recipe = Recipe.objects.create(
+        self.default_preset_recipe = create_mock_recipe(
+            user=self.default_preset_user,
             name="デフォルトプリセットレシピ",
-            create_user=self.default_preset_user,
             is_ice=False,
             len_steps=1,
             bean_g=20,
-            water_ml=100,
+            water_ml=200,
             memo="デフォルトプリセットメモ"
-        )
-        RecipeStep.objects.create(
-            recipe_id=self.default_preset_recipe,
-            step_number=1,
-            minute=0,
-            seconds=0,
-            total_water_ml_this_step=100,
         )
 
         self.user = User.objects.create_user(
@@ -290,21 +282,14 @@ class RecipeActivationTestCase(TestCase):
         login_success = self.client.login(username='test@example.com', password='securepassword123')
         self.assertTrue(login_success)
 
-        self.recipe = Recipe.objects.create(
+        self.recipe = create_mock_recipe(
+            user=self.user,
             name="ユーザープリセットレシピ",
-            create_user=self.user,
             is_ice=False,
-            len_steps=1,
+            len_steps=2,
             bean_g=20,
             water_ml=200,
             memo="ユーザープリセットメモ"
-        )
-        RecipeStep.objects.create(
-            recipe_id=self.recipe,
-            step_number=1,
-            minute=0,
-            seconds=0,
-            total_water_ml_this_step=200,
         )
         self.index_url = reverse('index')  # 呼び出しを行うページのURL
 

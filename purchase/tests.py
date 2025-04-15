@@ -6,6 +6,26 @@ from recipes.models import Recipe, RecipeStep
 import json
 
 
+def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
+    Recipe.objects.create(
+        name=name,
+        create_user=user,
+        is_ice=is_ice,
+        len_steps=len_steps,
+        bean_g=bean_g,
+        water_ml=water_ml,
+        memo=memo
+    )
+    for i in range(len_steps):
+        RecipeStep.objects.create(
+            recipe_id=Recipe.objects.last(),
+            step_number=i + 1,
+            minute=i,
+            seconds=0,
+            total_water_ml_this_step=water_ml / len_steps,
+        )
+
+
 class StripePaymentTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
@@ -86,28 +106,14 @@ class StripePaymentTest(TestCase):
 
         # MyPresetを3つ作成
         for i in range(3):
-            self.recipe = Recipe.objects.create(
-                name=f"Preset {i+1}",
-                create_user=self.user,
+            create_mock_recipe(
+                user=self.user,
+                name=f"Preset {i + 1}",
                 is_ice=False,
-                len_steps=2,
-                bean_g=20,
-                water_ml=200,
-                memo="編集前のメモ"
-            )
-            RecipeStep.objects.create(
-                recipe_id=self.recipe,
-                step_number=1,
-                minute=0,
-                seconds=0,
-                total_water_ml_this_step=30,
-            )
-            RecipeStep.objects.create(
-                recipe_id=self.recipe,
-                step_number=2,
-                minute=1,
-                seconds=20,
-                total_water_ml_this_step=150,
+                len_steps=1,
+                bean_g=10,
+                water_ml=100,
+                memo="Test recipe"
             )
 
         # サブスクリプションの状態を更新(Webhookにcustomer.subscription.deletedのmockを送信)
