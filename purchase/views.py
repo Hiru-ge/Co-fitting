@@ -186,6 +186,9 @@ def webhook(request):
 @login_required
 def create_portal_session(request):
     """顧客ポータルのURLを取得するエンドポイント"""
+    if not request.user.stripe_customer_id:
+        return render(request, 'purchase/not_subscribed.html')
+
     customer_id = request.user.stripe_customer_id
 
     return_url = request.build_absolute_uri(reverse("mypage"))
@@ -195,3 +198,8 @@ def create_portal_session(request):
         return_url=return_url,
     )
     return redirect(portalSession.url)
+
+
+@login_required
+def not_subscribed(request):
+    return render(request, 'purchase/not_subscribed.html')

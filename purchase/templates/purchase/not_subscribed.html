@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/mypage.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2>サブスクリプション未契約</h2>
+        <p>あなたは現在サブスクリプションを契約していません。</p>
+        <p>月額100円でプリセット枠を3つ増枠できます。</p>
+        
+        <div class="button-parent">
+            <button class="long-button" onclick="location.href='./create_checkout_session'">新規サブスク契約</button>
+        </div>
+    </div>
+{% endblock %} 
