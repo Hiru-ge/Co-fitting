@@ -15,7 +15,7 @@
 ## 目次
 
 1. [作成の経緯](#作成の経緯)
-2. [基本原理と背景知識](#基本原理と背景知識)
+2. [主な機能と背景知識](#主な機能と背景知識)
 3. [使用方法](#使用方法)
 4. [既知の問題](#既知の問題)
 5. [不具合等](#不具合等)
@@ -23,10 +23,86 @@
 ## 作成の経緯
 
 「美味しいいれ方はあるんだけど、200mlじゃなくて300ml作りたいんだよな...」ということがしばしばあり、手軽に量の変換ができるツールがあれば便利だと思ったので作りました。
+最終的なツールは[Webアプリ](https://co-fitting.com)として公開しています。
 
-## 基本原理と背景知識
+## 使用方法
 
-この変換器が行っている変換処理の根幹は、「変換前と変換後の最終量から倍率を求め、各注湯プロセスに倍率をかける」という単純な比率変換です。
+基本原理や使用技術について述べる前に、使用方法について説明をしておきます。
+[使い方ページ](https://co-fitting.com/how-to-use)にも同様の以下の説明と同様の内容が書いてあります。
+本リポジトリのコードを基とするWebアプリは、([Co-fitting](https://co-fitting.com))で公開しています。
+
+### デモ映像
+
+https://github.com/user-attachments/assets/82e14817-657c-4947-9a74-a3a9b8c26b60
+
+1. **プリセットレシピ呼び出しボタン**：登録されているプリセットレシピを呼び出します。
+
+   <img src="recipes/static/images/how-to-description/presetRecipe.png" width="40%">
+
+  利用したいものがあれば、登録されているプリセットレシピを呼び出します。
+  プリセットレシピは、後述する「変換前レシピ入力欄」に自動的に入力されます。
+  3つの「デフォルトプリセットレシピ」はユーザー登録無しで使えますが、ユーザー登録して自分だけのプリセットレシピを登録すると、それらも呼び出すことができます！
+
+2. **変換前レシピ入力欄**：変換する前のレシピの情報を入力します。
+
+   <img src="recipes/static/images/how-to-description/originRecipeForm.png" width="40%">
+
+   投数、豆の量、そして各投入段階の経過時間と注湯量を記入します。<br>
+      ※ 投数を入力すると、その分だけレシピ入力欄が生成されます。<br>
+   アイスコーヒーを入れたい場合は、アイスモードをONにし、氷量を入力します。
+
+   <img src="recipes/static/images/how-to-description/originRecipeForm[ice-mode].png" width="40%">
+
+3. **変換目標入力欄**：変換後のレシピの情報を入力します。
+
+   <img src="recipes/static/images/how-to-description/targetParameterForm[bean,water].png" width="40%">
+
+   目標とする豆の量、総湯量、そして豆と湯の比率を指定します。
+
+   **倍率変換**
+
+     変換目標の入力が手間かと思い、倍率を入力するだけで変換できる機能を実装しました
+
+      <img src="recipes/static/images/how-to-description/targetParameterForm[convertRate].png" width="40%">
+
+   **入力補助**
+
+     豆量と総湯量の両方が入力されると自動的に比率が計算・入力されます。<br>
+     また、豆量あるいは総湯量のいずれかが入力された状態で比率が入力されると、もう一方が更新されます。<br>
+     クリアボタンを押すと、変換目標入力欄の値が全てクリアされます。
+
+      ※ 入力補助機能がある都合上、豆量・総湯量・比率が全て入力されていると目標値の変更が難しくなる問題を確認したため本機能を実装しました。
+
+   **蒸らし固定ボタン**
+
+      蒸らし固定は基本的にONをオススメします。<br>
+      経験則ですが、蒸らし湯量の変化が味に与える影響は大きいものと見られます。<br>
+      (大幅な最終量変化がある場合は固定OFFでも良いかも知れません)
+
+4. **変換後レシピの出力**：変換されたレシピが表形式で表示されます。
+
+   <img src="recipes/static/images/how-to-description/convertedRecipe.png" width="40%">   
+
+5. **ストップウォッチ機能**：抽出時の経過時間を計測する機能です。
+
+   <img src="recipes/static/images/how-to-description/stopWatch.png" width="40%">
+
+   スタートボタンを押すと計測が始まり、ストップボタンを押すと計測が終了します。
+
+</details>
+
+## 主な機能と背景知識
+
+このCo-fittingの主な機能は3つです
+- 量の変換機能
+- マイプリセットの登録機能
+- 課金によるプリセット枠増枠
+
+### 量の変換機能
+これは「コーヒーの味を維持しながら出来上がり量を変化させる」という処理を行う、本ツールのメイン部分です。ちなみに、この変換器が行っている変換処理の根幹は、「変換前と変換後の最終量から倍率を求め、各注湯プロセスに倍率をかける」という単純な比率変換です。
+そのため変換には複雑な処理を必要とせず、HTML･CSSとJavaScript(jQuery)のみで実現されています。
+
+#### Tips:単純な比率変換が味のキープに結び付く理由
 
 ここでは、「この比率変換がなぜ味のキープにつながるのか」という点について述べます(コーヒー自体の理論に興味がない方は本節を読み飛ばしても大丈夫です)。
 
@@ -48,7 +124,7 @@
 これは本変換器を利用しない場合にも有効な基本原理なので、ぜひ自分でコーヒーを淹れる際にも意識し、湯温や粉の粒度などを調整してみてください。
 
 <div align="center">
-  <img src="images/how-to-description/extraction-graph.png" width="80%">
+  <img src="recipes/static/images/how-to-description/extraction-graph.png" width="80%">
 </div>
 
 ※ 上図は[Kenken Coffeeさんの動画](https://youtu.be/lg7bafltXsk?si=rhBRmGLMRcgXcitu&t=848)に登場したものを参考に作成
@@ -72,70 +148,22 @@
 
 </details>
 
-## 使用方法
+### マイプリセットの登録機能
+「マイプリセットの登録機能」は、変換元レシピを各々が登録しておき、簡単に呼び出せるようにするための機能です。ユーザー登録をしていただき、マイプリセット登録することで、変換元レシピ入力時と同様のUIからマイプリセットを呼び出せます。
+これは<b>変換を行う際</b>にも、<b>普段のコーヒーレシピのメモ</b>にも便利かと思います。
+この部分はバックエンド処理も必要だったので、Djangoを使っています。
 
-本リポジトリのコードを基とするWebアプリは、([Co-fitting](https://co-fitting.com))で公開しています。
+![image.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/3482722/894ec3bb-993b-4e36-b1de-184d4cf8dd6d.png)
 
-<details>
-<summary>より詳細な変換器の使用方法</summary>
+![image.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/3482722/348a51b5-64e2-4c7c-9ddb-2f02149a4cb5.png)
 
-[使い方ページ](https://co-fitting.com/how-to-use)にも同様の以下の説明と同様の内容が書いてあります。
 
-1. **プリセットレシピ呼び出しボタン**：登録されているプリセットレシピを呼び出します。
+### 課金によるプリセット枠増枠
+最後に、3つ目の「課金によるプリセット枠増枠」について説明します。まず本サービスの仕様として、ユーザーが新規登録をすると、<b>マイプリセット枠</b>というものが1つ配布されます。ユーザーはこのマイプリセット枠の上限を超えてプリセット登録を行うことはできません。
+そして「もっとプリセットを登録したい」という場合には、月額100円でプリセット枠を3枠増枠(つまり合計4枠に)することができます。
+この課金機能の実装には、Stripeが使われています。
 
-   <img src="images/how-to-description/presetRecipe.png" width="40%">
-
-   プリセットレシピは、変換前レシピ入力欄に自動的に入力されます。<br>
-   つの「デフォルトプリセットレシピ」はユーザー登録無しで使えますが、ユーザー登録して自分だけのプリセットレシピを登録すると、それらも呼び出すことができます！<br>
-   現在利用できるデフォルトプリセットレシピは、こちらで紹介しています。
-
-2. **変換前レシピ入力欄**：変換する前のレシピの情報を入力します。
-
-   <img src="images/how-to-description/originRecipeForm.png" width="40%">
-
-   投数、豆の量、そして各投入段階の経過時間と注湯量を記入します。<br>
-      ※ 投数を入力すると、その分だけレシピ入力欄が生成されます。<br>
-   アイスコーヒーを入れたい場合は、アイスモードをONにし、氷量を入力します。
-
-   <img src="images/how-to-description/originRecipeForm[ice-mode].png" width="40%">
-
-3. **変換目標入力欄**：変換後のレシピの情報を入力します。
-
-   <img src="images/how-to-description/targetParameterForm[bean,water].png" width="40%">
-
-   目標とする豆の量、総湯量、そして豆と湯の比率を指定します。
-
-   **倍率変換**
-
-     変換目標の入力が手間かと思い、倍率を入力するだけで変換できる機能を実装しました
-
-      <img src="images/how-to-description/targetParameterForm[convertRate].png" width="40%">
-
-   **入力補助**
-
-     豆量と総湯量の両方が入力されると自動的に比率が計算・入力されます。<br>
-     また、豆量あるいは総湯量のいずれかが入力された状態で比率が入力されると、もう一方が更新されます。<br>
-     クリアボタンを押すと、変換目標入力欄の値が全てクリアされます。
-
-      ※ 入力補助機能がある都合上、豆量・総湯量・比率が全て入力されていると目標値の変更が難しくなる問題を確認したため本機能を実装しました。
-
-   **蒸らし固定ボタン**
-
-      蒸らし固定は基本的にONをオススメします。<br>
-      経験則ですが、蒸らし湯量の変化が味に与える影響は大きいものと見られます。<br>
-      (大幅な最終量変化がある場合は固定OFFでも良いかも知れません)
-
-4. **変換後レシピの出力**：変換されたレシピが表形式で表示されます。
-
-   <img src="images/how-to-description/convertedRecipe.png" width="40%">   
-
-5. **ストップウォッチ機能**：抽出時の経過時間を計測する機能です。
-
-   <img src="images/how-to-description/stopWatch.png" width="40%">
-
-   スタートボタンを押すと計測が始まり、ストップボタンを押すと計測が終了します。
-
-</details>
+![image.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/3482722/83aeb494-785b-4238-8798-0abef6a33b06.png)
 
 ## 既知の問題
 
@@ -154,4 +182,4 @@
   
 ## 不具合等
 
-バグ修正等はGitHubの[issue](https://github.com/Hiru-ge/Co-fitting/issues)まで連絡ください。
+バグ修正等は[Googleフォーム](https://docs.google.com/forms/d/e/1FAIpQLSfV0YJ6VBoIUsFkAkiktcJMfc2jZRZ9aRZmbi-_JdEmUK2uIA/viewform)か、GitHubの[issue](https://github.com/Hiru-ge/Co-fitting/issues)まで連絡をお願いします！
