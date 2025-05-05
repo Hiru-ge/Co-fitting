@@ -51,11 +51,11 @@ https://github.com/user-attachments/assets/82e14817-657c-4947-9a74-a3a9b8c26b60
       ※ 投数を入力すると、その分だけレシピ入力欄が生成されます。<br>
    アイスコーヒーを入れたい場合は、アイスモードをONにし、氷量を入力します。
 
-   <img src="recipes/static/images/how-to-description/originRecipeForm[ice-mode].png" width="40%">
+   <img src="recipes/static/images/how-to-description/originRecipeForm%5Bice-mode%5D.png" width="40%">
 
-3. **変換目標入力欄**：変換後のレシピの情報を入力します。
+4. **変換目標入力欄**：変換後のレシピの情報を入力します。
 
-   <img src="recipes/static/images/how-to-description/targetParameterForm[bean,water].png" width="40%">
+   <img src="recipes/static/images/how-to-description/targetParameterForm%5Bbean%2Cwater%5D.png" width="40%">
 
    目標とする豆の量、総湯量、そして豆と湯の比率を指定します。
 
@@ -63,7 +63,7 @@ https://github.com/user-attachments/assets/82e14817-657c-4947-9a74-a3a9b8c26b60
 
      変換目標の入力が手間かと思い、倍率を入力するだけで変換できる機能を実装しました
 
-      <img src="recipes/static/images/how-to-description/targetParameterForm[convertRate].png" width="40%">
+      <img src="recipes/static/images/how-to-description/targetParameterForm%5BconvertRate%5D.png" width="40%">
 
    **入力補助**
 
@@ -79,11 +79,11 @@ https://github.com/user-attachments/assets/82e14817-657c-4947-9a74-a3a9b8c26b60
       経験則ですが、蒸らし湯量の変化が味に与える影響は大きいものと見られます。<br>
       (大幅な最終量変化がある場合は固定OFFでも良いかも知れません)
 
-4. **変換後レシピの出力**：変換されたレシピが表形式で表示されます。
+5. **変換後レシピの出力**：変換されたレシピが表形式で表示されます。
 
    <img src="recipes/static/images/how-to-description/convertedRecipe.png" width="40%">   
 
-5. **ストップウォッチ機能**：抽出時の経過時間を計測する機能です。
+6. **ストップウォッチ機能**：抽出時の経過時間を計測する機能です。
 
    <img src="recipes/static/images/how-to-description/stopWatch.png" width="40%">
 
