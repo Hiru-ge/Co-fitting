@@ -5,7 +5,7 @@ from recipes.models import Recipe, RecipeStep
 
 
 def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
-    Recipe.objects.create(
+    recipe = Recipe.objects.create(
         name=name,
         create_user=user,
         is_ice=is_ice,
@@ -16,12 +16,13 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
     )
     for i in range(len_steps):
         RecipeStep.objects.create(
-            recipe_id=Recipe.objects.last(),
+            recipe_id=recipe,
             step_number=i + 1,
             minute=i,
             seconds=0,
             total_water_ml_this_step=water_ml / len_steps,
         )
+    return recipe
 
 
 class RecipeCreateTestCase(TestCase):
