@@ -20,7 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 環境変数の読み込み
 env = environ.Env(
-    DEBUG=(bool, False)
+    DEBUG=(bool, False),
+    STATIC_URL=(str, "/static/"),
+    STATIC_ROOT=(str, "/var/www/html/Co_fitting/static/")
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -149,7 +151,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = "/var/www/html/Co_fitting/static/"
+
+if DEBUG:
+    # 開発環境: 各アプリケーションのstaticディレクトリを使用
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'recipes', 'static'),
+        os.path.join(BASE_DIR, 'users', 'static'),
+        os.path.join(BASE_DIR, 'purchase', 'static'),
+    ]
+else:
+    # 本番環境: collectstaticで集約されたファイルを使用
+    STATIC_ROOT = env('STATIC_ROOT', default="/var/www/html/Co_fitting/static/")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
