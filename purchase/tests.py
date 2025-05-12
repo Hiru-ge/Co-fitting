@@ -53,15 +53,19 @@ class StripePaymentTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("purchase:checkout_success"))
 
-    def test_webhook_preset_limit_update(self):
-        """subscription.createdイベントが送信されたときにstripe_customer_idが正しく設定されるかをテスト"""
+    def test_checkout_session_completed_sets_customer_id(self):
+        """checkout.session.completed イベントでユーザーにstripe_customer_idが保存されるかをテスト"""
+        customer_id = 'cus_test_checkout123'
         event_data = {
-            "type": "customer.subscription.created",
+            "type": "checkout.session.completed",
             "data": {
                 "object": {
-                    "metadata": {"user_id": str(self.user.id)},  # `user_id` を設定
-                    "customer": self.user.stripe_customer_id,
-                    "status": "active",
+                    "id": "cs_test_456",
+                    "object": "checkout.session",
+                    "customer": customer_id,
+                    "metadata": {
+                        "user_id": str(self.user.id)
+                    }
                 }
             }
         }
@@ -69,29 +73,43 @@ class StripePaymentTest(TestCase):
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
-            content_type="application/json"
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.stripe_customer_id, self.user.stripe_customer_id)
-
-    def test_invalid_webhook_event(self):
-        """不正なWebhookイベントが送信された場合の処理をテスト"""
-        invalid_event_data = {
-            "type": "invalid.event",  # 不明なイベントタイプで送信させる
-            "data": {
-                "object": {}
-            }
-        }
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(invalid_event_data),
             content_type="application/json",
         )
 
-        self.assertEqual(response.status_code, 400)  # 400 Bad Request
-        self.assertJSONEqual(response.content.decode('utf-8'), {"error": "Unhandled event type"})
+        self.assertEqual(response.status_code, 200)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.stripe_customer_id, customer_id)
+
+    def test_send_mail_when_payment_succeeded(self):
+        """支払い成功時にメールが送信され、かつプリセット枠が増えるかをテスト"""
+        self.user.stripe_customer_id = 'cus_test123'
+        self.user.save()
+
+        event_data = {
+            "type": "invoice.paid",
+            "data": {
+                "object": {
+                    "customer": self.user.stripe_customer_id,
+                }
+            }
+        }
+
+        with patch("purchase.views.send_mail") as mock_send_mail:
+            response = self.client.post(
+                reverse('purchase:webhook'),
+                data=json.dumps(event_data),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 200)
+        mock_send_mail.assert_called_once()
+        args, kwargs = mock_send_mail.call_args
+        self.assertIn("支払い完了通知", args[0])
+
+        # プリセット枠が増えていることを確認
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.preset_limit, 4)
+        self.assertTrue(self.user.is_subscribed)
 
     def test_subscription_expired_cleanup(self):
         """サブスク期限が切れたときにプリセット枠が1つになり、マイプリセットが1つ残して削除されることをテスト"""
@@ -136,35 +154,22 @@ class StripePaymentTest(TestCase):
         self.assertFalse(Recipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
         self.assertFalse(self.user.is_subscribed)
 
-    def test_send_mail_when_payment_succeeded(self):
-        """支払い成功時にメールが送信され、かつプリセット枠が増えるかをテスト"""
-        self.user.stripe_customer_id = 'cus_test123'
-        self.user.save()
-
-        event_data = {
-            "type": "invoice.paid",
+    def test_invalid_webhook_event(self):
+        """不正なWebhookイベントが送信された場合の処理をテスト"""
+        invalid_event_data = {
+            "type": "invalid.event",  # 不明なイベントタイプで送信させる
             "data": {
-                "object": {
-                    "customer": self.user.stripe_customer_id,
-                }
+                "object": {}
             }
         }
+        response = self.client.post(
+            reverse('purchase:webhook'),
+            data=json.dumps(invalid_event_data),
+            content_type="application/json",
+        )
 
-        with patch("purchase.views.send_mail") as mock_send_mail:
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type="application/json",
-            )
-        self.assertEqual(response.status_code, 200)
-        mock_send_mail.assert_called_once()
-        args, kwargs = mock_send_mail.call_args
-        self.assertIn("支払い完了通知", args[0])
-
-        # プリセット枠が増えていることを確認
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 4)
-        self.assertTrue(self.user.is_subscribed)
+        self.assertEqual(response.status_code, 400)  # 400 Bad Request
+        self.assertJSONEqual(response.content.decode('utf-8'), {"error": "Unhandled event type"})
 
     def test_send_mail_when_payment_failed(self):
         """支払い失敗時にメールが送信されるかをテスト"""

@@ -110,6 +110,7 @@ def webhook(request):
         try:
             user = User.objects.get(id=user_id)
             user.stripe_customer_id = customer_id
+            user.save()
             return JsonResponse({"status": "success"})
         except User.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
