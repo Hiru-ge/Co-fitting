@@ -218,7 +218,7 @@ $(document).ready(function() {
         }
 
         for (let i = 1; i <= pourTimes; i++) {
-            let percentage = ((totalWater_mls[i]/totalWater_mls[pourTimes])*100);
+            let percentage = ((totalWater_mls[i]/totalWater_mls[pourTimes])*100).toFixed(1);
             Output += `
                 <tr>
                     <td>${minutes[i]}:${seconds[i]}</td>
