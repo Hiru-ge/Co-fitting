@@ -199,12 +199,12 @@ $(document).ready(function() {
                 <th>経過時間</th>
                 <th>注湯量</th>
                 <th>総注湯量</th>
+                <th>%</th>
             </tr>
         `;
         let Output = DefaultOutput;
         let totalWater_mls=[0], minutes=["0"], seconds=["00"], input_pour_mls=[0],convertedPour_mls=[0];
-        for (let i = 1; i <= pourTimes; i++) {
-            // todo:算出とフォーマットが並行して行われてしまっているので、まず算出し、フォーマット用の関数に渡して整形するようにしたい
+        for(let i = 1; i <= pourTimes; i++){
             minutes.push(String($(`.pour-step${i}`).children('.minutes').val()).padStart(2, '0'));
             seconds.push(String($(`.pour-step${i}`).children('.seconds').val()).padStart(2, '0'));
             input_pour_mls.push($(`.pour-step${i}`).children('.pour-ml').val());
@@ -216,11 +216,16 @@ $(document).ready(function() {
 
             // 各投での注湯量を計算(総湯量 - ひとつ前の総湯量)
             convertedPour_mls.push(Math.trunc(totalWater_mls[i] - totalWater_mls[i-1]));
+        }
+
+        for (let i = 1; i <= pourTimes; i++) {
+            let percentage = ((totalWater_mls[i]/totalWater_mls[pourTimes])*100);
             Output += `
                 <tr>
                     <td>${minutes[i]}:${seconds[i]}</td>
                     <td>${convertedPour_mls[i]} ml</td>
                     <td>${totalWater_mls[i]} ml</td>
+                    <td>${percentage} %</td>
                 </tr>
             `;
         }
