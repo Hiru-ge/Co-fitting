@@ -85,7 +85,6 @@ $(document).ready(function() {
         const DefaultPresetRecipesJSON = JSON.parse($('#default_preset_recipes').text());
         const UsersPresetRecipesJSON = JSON.parse($('#users_preset_recipes').text());
         const PresetRecipesJSON = DefaultPresetRecipesJSON.concat(UsersPresetRecipesJSON);
-        console.log(PresetRecipesJSON)
         for (var i = 0; i < PresetRecipesJSON.length; i++) {
             if (PresetRecipesJSON[i].id == presetId) {
                 return PresetRecipesJSON[i];
