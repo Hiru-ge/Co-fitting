@@ -37,30 +37,6 @@ def index(request):
     return render(request, 'recipes/index.html', context)
 
 
-def how_to_use(request):
-    return render(request, 'recipes/how-to-use.html')
-
-
-def introduce_preset(request):
-    return render(request, 'recipes/introduce-preset.html')
-
-
-def coffee_theory(request):
-    return render(request, 'recipes/coffee-theory.html')
-
-
-def privacy_policy(request):
-    return render(request, 'recipes/privacy-policy.html')
-
-
-def commerce_law(request):
-    return render(request, 'recipes/commerce-law.html')
-
-
-def mypreset_describe(request):
-    return render(request, 'recipes/mypreset-describe.html')
-
-
 @login_required
 def mypage(request):
     user = request.user
