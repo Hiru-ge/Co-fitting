@@ -73,11 +73,6 @@ https://github.com/user-attachments/assets/82e14817-657c-4947-9a74-a3a9b8c26b60
 
       ※ 入力補助機能がある都合上、豆量・総湯量・比率が全て入力されていると目標値の変更が難しくなる問題を確認したため本機能を実装しました。
 
-   **蒸らし固定ボタン**
-
-      蒸らし湯量を固定した状態での変換が可能です。<br>
-      基本的にはOFFで良いと思いますが、大幅な最終量変化がある場合は固定OFFでも良いかも知れません
-
 5. **変換後レシピの出力**：変換されたレシピが表形式で表示されます。
 
    <img src="recipes/static/images/how-to-description/convertedRecipe.png" width="40%">   

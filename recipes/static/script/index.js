@@ -208,10 +208,6 @@ $(document).ready(function() {
             seconds.push(String($(`.pour-step${i}`).children('.seconds').val()).padStart(2, '0'));
             input_pour_mls.push($(`.pour-step${i}`).children('.pour-ml').val());
             totalWater_mls.push(Math.trunc(input_pour_mls[i] * convertRate));
-            // 蒸らし固定ONの場合、1投目の総湯量は固定(元レシピの1投目の総湯量と同じ)
-            if (i === 1 && $('#steep-keep-check').prop('checked')) {
-                totalWater_mls[1] = $(`.pour-step1`).children('.pour-ml').val();
-            }
 
             // 各投での注湯量を計算(総湯量 - ひとつ前の総湯量)
             convertedPour_mls.push(Math.trunc(totalWater_mls[i] - totalWater_mls[i-1]));
