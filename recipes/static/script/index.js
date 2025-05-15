@@ -192,13 +192,13 @@ $(document).ready(function() {
         }
     }
 
-    function recipeConverter(pourTimes, convertRate) {
+    function recipeConverter(pourTimes, convertRate, isShowPercentage = false) {
         const DefaultOutput = `
             <tr>
                 <th>経過時間</th>
                 <th>注湯量</th>
                 <th>総注湯量</th>
-                <th>%</th>
+                ${isShowPercentage ? '<th>%</th>' : ''}
             </tr>
         `;
         let Output = DefaultOutput;
@@ -224,7 +224,7 @@ $(document).ready(function() {
                     <td>${minutes[i]}:${seconds[i]}</td>
                     <td>${convertedPour_mls[i]} ml</td>
                     <td>${totalWater_mls[i]} ml</td>
-                    <td>${percentage} %</td>
+                    ${isShowPercentage ? `<td>${percentage} %</td>` : ''}
                 </tr>
             `;
         }
@@ -277,7 +277,8 @@ $(document).ready(function() {
         }
 
         // 変換後のレシピを算出・出力
-        const ConvertedRecipe = recipeConverter(pourTimes, convertRate);
+        const isShowPercentage = $('#percentage-check').prop('checked');
+        const ConvertedRecipe = recipeConverter(pourTimes, convertRate, isShowPercentage);
         $('.recipe-output').html(ConvertedRecipe);
 
     });
