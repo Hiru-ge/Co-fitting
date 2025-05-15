@@ -43,6 +43,7 @@ div.introduce {
 /* 出力欄テーブルの整形 */
 .recipe-output td {
     padding: 0 0.5em;
+    text-align: right;
 }
 
 /*ストップウォッチ部分*/
