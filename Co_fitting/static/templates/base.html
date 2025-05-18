@@ -5,6 +5,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Co-fitting</title>
+    <!-- PWA設定 -->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Co-fitting">
     <!-- CSS -->
     <link rel="stylesheet" href="https://unpkg.com/ress/dist/ress.min.css"> <!-- リセットCSS -->
     <link rel="stylesheet" href="{% static 'css/common.css' %}">
@@ -26,8 +31,6 @@
     <meta property="og:description" content="コーヒーの味を保ちながら量を変えるための変換器">
     <!-- iOS用のPWA設定 -->
     <link rel="apple-touch-icon" href="{% static 'images/square-icon.jpg' %}">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <!-- SEO -->
     <meta name="description" content="コーヒーレシピ変換器">
     <meta name="description" content="Coffee-fitting">

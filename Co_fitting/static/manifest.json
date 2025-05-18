@@ -1,0 +1,18 @@
+{
+  "name": "Co-fitting",
+  "short_name": "Co-fitting",
+  "description": "コーヒーの味を保ちながら量を変えるための変換器",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#876b36",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/images/square-icon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+} 
