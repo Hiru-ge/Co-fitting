@@ -41,7 +41,7 @@ def create_checkout_session(request):
             payment_method_types=["card"],
             line_items=[
                 {
-                    "price": "price_1RDOpACGxMrLuNw2jqBXCqUN",  # 作成した` price.id`
+                    "price": env('STRIPE_PRICE_ID'),
                     "quantity": 1,
                 },
             ],
