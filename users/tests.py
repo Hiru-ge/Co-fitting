@@ -155,8 +155,8 @@ class LogoutTestCase(TestCase):
     def test_access_protected_page_after_logout(self):
         """ログアウト後に保護されたページへアクセスできないことをテスト"""
         self.client.post(self.logout_url)  # まずログアウト
-        response = self.client.get(reverse('mypage'))  # マイページなど保護ページにアクセス
-        self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('mypage')}")
+        response = self.client.get(reverse('recipes:mypage'))  # マイページなど保護ページにアクセス
+        self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('recipes:mypage')}")
 
 
 class EmailChangeTestCase(TestCase):

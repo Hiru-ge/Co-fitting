@@ -94,7 +94,7 @@ def preset_create(request):
                 recipe.water_ml = total_water_ml
                 recipe.save()
 
-                return redirect('mypage')
+                return redirect('recipes:mypage')
     else:
         recipe_form = RecipeForm()
 
@@ -133,7 +133,7 @@ def preset_edit(request, recipe_id):
             updated_recipe.water_ml = total_water_ml
             updated_recipe.save()
 
-            return redirect('mypage')
+            return redirect('recipes:mypage')
 
     else:
         recipe_form = RecipeForm(instance=recipe)
@@ -148,7 +148,7 @@ def preset_edit(request, recipe_id):
 class PresetDeleteView(LoginRequiredMixin, DeleteView):
     model = Recipe
     template_name = 'recipes/preset_delete_confirm.html'
-    success_url = reverse_lazy('mypage')
+    success_url = reverse_lazy('recipes:mypage')
 
     def get_queryset(self):
         """

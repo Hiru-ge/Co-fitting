@@ -45,7 +45,7 @@ def signup_request(request):
             send_mail(mail_subject, message, "no-reply@example.com", [user.email])
 
             messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。メールが届かない場合は、迷惑メールフォルダを確認してみてください。")
-            return redirect("mypage")
+            return redirect("recipes:mypage")
     else:
         form = SignUpForm()
 
@@ -65,7 +65,7 @@ def signup_confirm(request, uidb64, token, email):
         user.save()
         login(request, user)
         messages.success(request, "ユーザー登録が完了しました。")
-        return redirect("mypage")
+        return redirect("recipes:mypage")
     else:
         messages.error(request, "無効なリンクです。")
         return redirect("users:signup_request")
@@ -142,7 +142,7 @@ def email_change_request(request):
             send_mail(mail_subject, message, "no-reply@example.com", [new_email])
 
             messages.success(request, "確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。")
-            return redirect("mypage")
+            return redirect("recipes:mypage")
     else:
         form = EmailChangeForm()
 
@@ -164,7 +164,7 @@ def email_change_confirm(request, uidb64, token, email):
         user.email = decoded_email
         user.save()
         messages.success(request, "メールアドレスを変更しました。")
-        return redirect("mypage")
+        return redirect("recipes:mypage")
     else:
         messages.error(request, "無効なリンクです。")
         return redirect("users:email_change_request")

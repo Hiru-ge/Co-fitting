@@ -192,7 +192,7 @@ def create_portal_session(request):
 
     customer_id = request.user.stripe_customer_id
 
-    return_url = request.build_absolute_uri(reverse("mypage"))
+    return_url = request.build_absolute_uri(reverse("recipes:mypage"))
 
     portalSession = stripe.billing_portal.Session.create(
         customer=customer_id,
