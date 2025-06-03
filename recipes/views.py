@@ -1,11 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Recipe, RecipeStep, User
+from .models import Recipe, RecipeStep, User, SharedRecipe, SharedRecipeStep
 from .forms import RecipeForm
 from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.utils import timezone
+import json
 
 
 def index(request):
@@ -155,3 +159,109 @@ class PresetDeleteView(LoginRequiredMixin, DeleteView):
         ログインユーザーが作成したレシピのみ削除可能にする。
         """
         return Recipe.objects.filter(create_user=self.request.user)
+
+
+@require_http_methods(["POST"])
+def share_recipe(request):
+    """レシピを共有するためのURLを生成する"""
+    try:
+        data = json.loads(request.body)
+
+        # 共有レシピを作成
+        shared_recipe = SharedRecipe.objects.create(
+            name=data['name'],
+            shared_by_user=request.user if request.user.is_authenticated else None,
+            is_ice=data['is_ice'],
+            ice_g=data['ice_g'] if data['is_ice'] else None,
+            bean_g=data['bean_g'],
+            water_ml=data['water_ml'],
+            len_steps=len(data['steps'])
+        )
+
+        # ステップを作成
+        for step_data in data['steps']:
+            SharedRecipeStep.objects.create(
+                shared_recipe=shared_recipe,
+                step_number=step_data['step_number'],
+                minute=step_data['minute'],
+                seconds=step_data['seconds'],
+                total_water_ml_this_step=step_data['total_water_ml_this_step']
+            )
+
+        return JsonResponse({
+            'access_token': shared_recipe.access_token
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'error': str(e)
+        }, status=400)
+
+
+def shared_recipe(request, access_token):
+    """共有されたレシピを表示する"""
+    try:
+        shared_recipe = SharedRecipe.objects.get(access_token=access_token)
+
+        # 有効期限チェック
+        if shared_recipe.expires_at and shared_recipe.expires_at < timezone.now():
+            return render(request, 'recipes/shared_recipe.html', {
+                'error': 'この共有リンクは期限切れです。共有レシピは30日で期限切れになります。'
+            })
+
+        return render(request, 'recipes/shared_recipe.html', {
+            'shared_recipe': shared_recipe
+        })
+    except SharedRecipe.DoesNotExist:
+        return render(request, 'recipes/shared_recipe.html', {
+            'error': 'この共有リンクは無効か、期限切れです。共有レシピは30日で期限切れになります。'
+        })
+
+
+@login_required
+@require_http_methods(["POST"])
+def add_shared_recipe(request, access_token):
+    """共有されたレシピをマイプリセットに追加する"""
+    try:
+        shared_recipe = SharedRecipe.objects.get(access_token=access_token)
+
+        # 有効期限チェック
+        if shared_recipe.expires_at and shared_recipe.expires_at < timezone.now():
+            return render(request, 'recipes/shared_recipe.html', {
+                'error': 'この共有リンクは期限切れです。共有レシピは30日で期限切れになります。'
+            })
+
+        # プリセット枠のチェック
+        user_presets = Recipe.objects.filter(create_user=request.user).count()
+        if user_presets >= request.user.preset_limit:
+            return render(request, 'recipes/shared_recipe.html', {
+                'shared_recipe': shared_recipe,
+                'error': 'プリセット枠の上限に達しています。'
+            })
+
+        # 新しいレシピを作成
+        recipe = Recipe.objects.create(
+            name=shared_recipe.name,
+            create_user=request.user,
+            is_ice=shared_recipe.is_ice,
+            ice_g=shared_recipe.ice_g,
+            bean_g=shared_recipe.bean_g,
+            water_ml=shared_recipe.water_ml,
+            len_steps=shared_recipe.len_steps
+        )
+
+        # ステップを作成
+        for shared_step in shared_recipe.sharedrecipestep_set.all():
+            RecipeStep.objects.create(
+                recipe=recipe,
+                step_number=shared_step.step_number,
+                minute=shared_step.minute,
+                seconds=shared_step.seconds,
+                total_water_ml_this_step=shared_step.total_water_ml_this_step
+            )
+
+        return redirect('recipes:mypage')
+    except SharedRecipe.DoesNotExist:
+        return render(request, 'recipes/shared_recipe.html', {
+            'error': 'この共有リンクは無効か、期限切れです。共有レシピは30日で期限切れになります。'
+        })

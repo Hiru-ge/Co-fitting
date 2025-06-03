@@ -195,3 +195,33 @@ header.ice-mode, footer.ice-mode {
 .selected-button {  /* 選択中のボタンは暗くして、選択中であることを示す */
     background-color: gray;
 }
+
+/* 共有ボタンのコンテナスタイル */
+.share-button-container {
+    font-family: "M PLUS Rounded 1c", sans-serif;
+    font-weight: 700;
+    margin-top: 1rem;
+    text-align: right;
+}
+
+/* トースト通知のスタイル */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.toast {
+    background-color: #333;
+    color: white;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.toast.show {
+    opacity: 1;
+}

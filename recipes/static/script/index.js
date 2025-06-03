@@ -345,4 +345,98 @@ $(document).ready(function() {
         $(this).children('.accordion-toggle').toggleClass('rotate-90');
         $(this).next().children('.accordion-item').slideToggle(300);
     });
+
+    // レシピ共有機能
+    $('#share-recipe').on('click', function() {
+        // 現在のレシピデータを取得
+        const recipeData = {
+            name: '共有レシピ', // デフォルト名
+            is_ice: $('#ice-check').prop('checked'),
+            ice_g: $('.ice-output').text(),
+            bean_g: $('.bean-output').text(),
+            water_ml: $('.water-output').text(),
+            steps: []
+        };
+
+        // ステップデータを取得
+        $('.recipe-output tr').each(function(index) {
+            if (index === 0) return; // ヘッダー行をスキップ
+            const $row = $(this);
+            const timeText = $row.find('td:first').text();
+            const waterText = $row.find('td:eq(1)').text();
+            const [minutes, seconds] = timeText.split(':');
+            
+            recipeData.steps.push({
+                step_number: index,
+                minute: parseInt(minutes),
+                seconds: parseInt(seconds),
+                total_water_ml_this_step: parseFloat(waterText)
+            });
+        });
+
+        // レシピデータを送信
+        $.ajax({
+            url: '/recipes/share/',
+            method: 'POST',
+            data: JSON.stringify(recipeData),
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                const shareUrl = `${window.location.origin}/recipes/shared/${data.access_token}/`;
+                
+                // クリップボードにコピー
+                navigator.clipboard.writeText(shareUrl).then(function() {
+                    showToast('共有URLをクリップボードにコピーしました！');
+                }).catch(function() {
+                    showToast('クリップボードへのコピーに失敗しました。');
+                });
+            },
+            error: function() {
+                showToast('レシピの共有に失敗しました。');
+            }
+        });
+    });
+
+    // トースト通知を表示する関数
+    function showToast(message) {
+        let $toastContainer = $('.toast-container');
+        if ($toastContainer.length === 0) {
+            $toastContainer = $('<div class="toast-container"></div>').appendTo('body');
+        }
+
+        const $toast = $('<div class="toast"></div>')
+            .text(message)
+            .appendTo($toastContainer);
+
+        // トーストを表示
+        setTimeout(function() {
+            $toast.addClass('show');
+        }, 100);
+
+        // 3秒後にトーストを非表示にして削除
+        setTimeout(function() {
+            $toast.removeClass('show');
+            setTimeout(function() {
+                $toast.remove();
+            }, 300);
+        }, 3000);
+    }
+
+    // CSRFトークンを取得する関数
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 });
