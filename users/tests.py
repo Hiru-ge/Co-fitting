@@ -1,23 +1,31 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.core import mail
 from django.urls import reverse
 from users.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django.core.management import call_command
+from unittest.mock import patch
+from django_recaptcha.client import RecaptchaResponse
 
 
+@override_settings(RECAPTCHA_TESTING=True)
 class SignUpTestCase(TestCase):
     def setUp(self):
         self.signup_request_url = reverse('users:signup_request')
 
-    def test_user_can_signup(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_user_can_signup(self, mocked_submit):
         """正常にサインアップできるか"""
+        # reCAPTCHAのモックを設定
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         response = self.client.post(self.signup_request_url, {
             'username': 'testuser',
             'email': 'test@example.com',
             'password1': 'securepassword123',
-            'password2': 'securepassword123'
+            'password2': 'securepassword123',
+            'g-recaptcha-response': 'test'  # reCAPTCHAのレスポンスフィールド
         })
         self.assertEqual(response.status_code, 302)
 
@@ -331,7 +339,7 @@ class AccountDeleteTestCase(TestCase):
     def test_user_cannot_login_after_deletion(self):
         """退会処理後、非アクティブになりログインできなくなることをテスト"""
         response = self.client.post(self.delete_account_url)
-        self.assertRedirects(response, reverse('index'))  # 退会後のリダイレクト先は変換ページ
+        self.assertRedirects(response, reverse('recipes:index'))  # 退会後のリダイレクト先は変換ページ
 
         # ユーザーが非アクティブになっているか確認
         self.user.refresh_from_db()
