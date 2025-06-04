@@ -38,7 +38,7 @@ class RecipeCreateTestCase(TestCase):
 
         login_success = self.client.login(username='test@example.com', password='securepassword123')
         self.assertTrue(login_success)
-        self.create_url = reverse('preset_create')  # レシピ作成URL
+        self.create_url = reverse('recipes:preset_create')  # レシピ作成URL
 
     def test_create_recipe_success(self):
         """プリセットレシピ作成が正常にできるか"""
@@ -128,7 +128,7 @@ class RecipeEditTestCase(TestCase):
             water_ml=200,
             memo="テスト用メモ"
         )
-        self.edit_url = reverse('preset_edit', kwargs={'recipe_id': self.recipe.id})  # レシピ編集URL
+        self.edit_url = reverse('recipes:preset_edit', kwargs={'recipe_id': self.recipe.id})  # レシピ編集URL
 
     def test_edit_recipe_success(self):
         """プリセットレシピ編集が正常にできるか"""
@@ -226,7 +226,7 @@ class RecipeDeleteTestCase(TestCase):
             water_ml=200,
             memo="削除用メモ"
         )
-        self.delete_url = reverse('preset_delete', kwargs={'pk': self.recipe.id})  # 削除URL
+        self.delete_url = reverse('recipes:preset_delete', kwargs={'pk': self.recipe.id})  # 削除URL
 
     def test_delete_recipe_success(self):
         """プリセットレシピ削除が正常にできるか"""
@@ -292,7 +292,7 @@ class RecipeActivationTestCase(TestCase):
             water_ml=200,
             memo="ユーザープリセットメモ"
         )
-        self.index_url = reverse('index')  # 呼び出しを行うページのURL
+        self.index_url = reverse('recipes:index')  # 呼び出しを行うページのURL
 
     def test_preset_recipes_displayed_on_conversion_page(self):
         """変換ページにプリセットレシピが表示されていることを確認"""
