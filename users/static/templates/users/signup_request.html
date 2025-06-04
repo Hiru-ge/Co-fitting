@@ -38,6 +38,12 @@
                 <div class="error">{{ form.password2.errors }}</div>
             {% endif %}
         </div>
+
+        {{ form.captcha }}
+        {% if form.captcha.errors %}
+            <p style="color: red;">{{ form.captcha.errors }}</p>
+        {% endif %}
+
         <div class="button-parent">
             <button type="submit">サインアップ</button>
         </div>

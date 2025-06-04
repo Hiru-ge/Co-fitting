@@ -69,3 +69,15 @@ div.button-parent button {
     padding: 0.5rem 2rem;
     cursor: pointer;
 }
+
+/* reCAPTCHAのスタイル */
+.recaptcha-container {
+    margin: 1rem 0;
+    display: flex;
+    justify-content: center;
+}
+
+.g-recaptcha {
+    transform: scale(0.9);
+    transform-origin: 0 0;
+}
