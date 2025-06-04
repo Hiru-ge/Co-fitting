@@ -19,7 +19,7 @@ form {
 }
 
 form div {
-    margin: 0.5rem 0;
+    margin: 0.2rem 0;
 }
 
 ul.caption li{
@@ -38,9 +38,25 @@ ul.caption li{
 }
 
 /*入力欄部分*/
+.form-row {
+    display: flex;
+    align-items: center;
+    margin: 0.1rem 0;
+}
+.form-row label {
+    width: 8rem;
+    min-width: 8rem;
+    margin-right: 1rem;
+    text-align: right;
+    font-weight: bold;
+}
+
 input[type="text"],
 input[type="password"],
 input[type="email"] {
+    width: 100%;
+    min-width: 10rem;
+    max-width: 16rem;
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid #fff;
     border-radius: 5px;
@@ -72,7 +88,6 @@ div.button-parent button {
 
 /* reCAPTCHAのスタイル */
 .recaptcha-container {
-    margin: 1rem 0;
     display: flex;
     justify-content: center;
 }
