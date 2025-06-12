@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'recipes',
     'users',
     'purchase',
+    'django_recaptcha',
 ]
 
 # 環境変数から `USE_DJANGO_EXTENSIONS` を取得（デフォルトは False）
@@ -212,3 +213,10 @@ SECURE_HSTS_PRELOAD = True
 # こうしないとリダイレクト関係のテストが通らない
 if 'test' in sys.argv:
     SECURE_SSL_REDIRECT = False
+
+# reCAPTCHA設定
+RECAPTCHA_PUBLIC_KEY = env('RECAPTCHA_PUBLIC_KEY')
+RECAPTCHA_PRIVATE_KEY = env('RECAPTCHA_PRIVATE_KEY')
+RECAPTCHA_DEFAULT_ACTION = 'generic'
+RECAPTCHA_SCORE_THRESHOLD = 0.5
+RECAPTCHA_USE_SSL = True

@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from .models import User
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Checkbox
 
 
 class LoginForm(AuthenticationForm):
@@ -12,10 +14,15 @@ class LoginForm(AuthenticationForm):
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(required=True)
+    captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox(
+         attrs={
+             'data-theme': 'dark',
+         }
+     ))
 
     class Meta:
         model = User
-        fields = ("username", "email", "password1", "password2")
+        fields = ("username", "email", "password1", "password2", "captcha")
 
     # 自動で埋めたいカラムの処理
     def save(self, commit=True):

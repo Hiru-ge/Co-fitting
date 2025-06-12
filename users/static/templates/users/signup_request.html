@@ -10,34 +10,42 @@
     <h2>サインアップ</h2>
     <form method="post">
         {% csrf_token %}
-        <div>
+        <div class="form-row">
             <label for="username">ユーザー名</label>
-            {{ form.username }}
+            <div class="input-col">{{ form.username }}</div>
             {% if form.username.errors %}
                 <div class="error">{{ form.username.errors }}</div>
             {% endif %}
         </div>
-        <div>
+        <div class="form-row">
             <label for="email">メールアドレス</label>
-            {{ form.email }}
+            <div class="input-col">{{ form.email }}</div>
             {% if form.email.errors %}
                 <div class="error">{{ form.email.errors }}</div>
             {% endif %}
         </div>
-        <div>
+        <div class="form-row">
             <label for="password1">パスワード</label>
-            {{ form.password1 }}
+            <div class="input-col">{{ form.password1 }}</div>
             {% if form.password1.errors %}
                 <div class="error">{{ form.password1.errors }}</div>
             {% endif %}
         </div>
-        <div>
+        <div class="form-row">
             <label for="password2">パスワード(確認)</label>
-            {{ form.password2 }}
+            <div class="input-col">{{ form.password2 }}</div>
             {% if form.password2.errors %}
                 <div class="error">{{ form.password2.errors }}</div>
             {% endif %}
         </div>
+
+        <div class="recaptcha-container">
+            {{ form.captcha }}
+            {% if form.captcha.errors %}
+                <p style="color: red;">{{ form.captcha.errors }}</p>
+            {% endif %}
+        </div>
+
         <div class="button-parent">
             <button type="submit">サインアップ</button>
         </div>

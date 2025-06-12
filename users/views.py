@@ -66,6 +66,9 @@ def signup_confirm(request, uidb64, token, email):
         login(request, user)
         messages.success(request, "ユーザー登録が完了しました。")
         return redirect("recipes:mypage")
+    elif user and user.is_active:
+        messages.info(request, "アカウントは既に有効化されています。Outlook等から直接URLを踏んだ際にこのメッセージが表示される場合がありますが、基本的に問題ありません。通常通りログインいただけるはずです。")
+        return redirect("recipes:mypage")
     else:
         messages.error(request, "無効なリンクです。")
         return redirect("users:signup_request")
@@ -179,7 +182,7 @@ def account_delete(request):
         user.save()
         logout(request)
 
-        return redirect(reverse_lazy('index'))  # 退会後トップページへリダイレクト
+        return redirect(reverse_lazy('recipes:index'))  # 退会後トップページへリダイレクト
     else:
 
         return render(request, "users/account_delete.html")

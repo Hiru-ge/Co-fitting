@@ -10,9 +10,9 @@
     <h2>メールアドレス変更</h2>
     <form method="post">
         {% csrf_token %}
-        <div>
+        <div class="form-row">
             <label for="email">新メールアドレス</label>
-            {{ form.email }}
+            <div class="input-col">{{ form.email }}</div>
             {% if form.email.errors %}
                 <div class="error">{{ form.email.errors }}</div>
             {% endif %}
