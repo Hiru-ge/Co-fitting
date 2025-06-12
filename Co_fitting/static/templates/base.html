@@ -73,7 +73,10 @@
             if (str.value.length >= str.maxLength) {
                 for (var i = 0, elm = str.form.elements; i < elm.length; i++) {
                     if (elm[i] == str) {
-                        (elm[i + 1] || elm[0]).focus();
+                        // 50msの遅延を加えてフォーカスを移動
+                        setTimeout(function() {
+                            (elm[i + 1] || elm[0]).focus();
+                        }, 50);
                         break;
                     }
                 }
