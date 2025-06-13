@@ -76,6 +76,10 @@
                         <input type="number" class="pour-ml wide-input" name="step1_water" min="1" maxlength="3" onkeyup="nextField(this)" required> ml
                     </div>
                 </div>
+                <!-- 出来上がり量表示欄 -->
+                <div class="origin-total-output-div ice-mode-show">
+                    <p>出来上がり量: <span class="origin-total-output"></span> ml</p>
+                </div>
             </form>
         </div> <!--/変換前レシピの入力欄-->
 
@@ -124,6 +128,7 @@
             <p class="ice-mode-show">氷量: <span class="ice-output wide-input"></span> g</p>
             <table class="recipe-output">
             </table>
+            <p class="converted-total-output-div ice-mode-show">出来上がり量: <span class="converted-total-output"></span> ml</p>
         </div> <!-- /item:変換後レシピの出力欄 -->
 
         <!--ストップウォッチ-->
