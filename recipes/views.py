@@ -595,3 +595,34 @@ def shared_recipe_ogp(request, token):
         'image_url': request.build_absolute_uri(image_url),
     }
     return render(request, 'recipes/shared_recipe_ogp.html', context)
+
+
+@csrf_exempt
+@require_POST
+@login_required
+def delete_all_shared_recipes(request):
+    """ユーザーの全共有レシピを一括削除"""
+    try:
+        # ユーザーの全共有レシピを取得
+        shared_recipes = SharedRecipe.objects.filter(shared_by_user=request.user)
+        
+        # 関連する画像ファイルを削除
+        for shared_recipe in shared_recipes:
+            image_path = f"recipes/static/images/shared_recipes/{shared_recipe.access_token}.png"
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        # データベースから削除
+        deleted_count = shared_recipes.count()
+        shared_recipes.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{deleted_count}個の共有レシピを削除しました。',
+            'deleted_count': deleted_count
+        })
+    except Exception as e:
+        return JsonResponse({
+            'error': 'delete_failed',
+            'message': '共有レシピの削除に失敗しました。しばらく時間をおいてから再度お試しください。'
+        }, status=500)

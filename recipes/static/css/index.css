@@ -296,6 +296,20 @@ header.ice-mode, footer.ice-mode {
     cursor: not-allowed;
 }
 
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-danger:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+}
+
 .shared-recipe-details h3 {
     margin-top: 0;
     color: #876b36;

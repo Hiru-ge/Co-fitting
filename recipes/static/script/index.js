@@ -277,18 +277,20 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 let errorMessage = '共有URLの生成に失敗しました。';
+                let showDeleteButton = false;
                 
                 if (xhr.status === 401) {
                     errorMessage = 'ログインが必要です。';
                 } else if (xhr.status === 429) {
                     const data = xhr.responseJSON;
                     errorMessage = data.message || '1週間に共有できるレシピは10個までです。';
+                    showDeleteButton = true;
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
                     errorMessage = data.message || '入力データに問題があります。';
                 }
                 
-                alert(errorMessage);
+                showErrorModal(errorMessage, showDeleteButton);
             },
             complete: function() {
                 $('#share-recipe-btn').prop('disabled', false);
@@ -612,11 +614,50 @@ $(document).ready(function() {
         window.location.href = '/users/login';
     });
 
+    // 全共有レシピ削除ボタンのクリックイベント
+    $('#delete-all-shared-btn').on('click', function() {
+        deleteAllSharedRecipes();
+    });
+
+    // 全共有レシピ削除関数
+    function deleteAllSharedRecipes() {
+        $('#delete-all-shared-btn').prop('disabled', true).text('削除中...');
+        
+        $.ajax({
+            url: '/api/shared-recipes/delete-all',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                $('#error-modal').hide();
+                showSuccessModal(response.message);
+            },
+            error: function(xhr) {
+                let errorMessage = '共有レシピの削除に失敗しました。';
+                
+                if (xhr.status === 401) {
+                    errorMessage = 'ログインが必要です。';
+                } else if (xhr.status === 500) {
+                    const data = xhr.responseJSON;
+                    errorMessage = data.message || 'サーバーエラーが発生しました。';
+                }
+                
+                showErrorModal(errorMessage);
+            },
+            complete: function() {
+                $('#delete-all-shared-btn').prop('disabled', false).text('現在有効な共有レシピを削除');
+            }
+        });
+    }
+
     $('#close-shared-modal, #close-success-modal, #close-error-modal').on('click', function() {
         $(this).closest('.modal').hide();
-        // エラーモーダルを閉じる際にログインボタンを非表示にする
+        // エラーモーダルを閉じる際にボタンを非表示にする
         if ($(this).attr('id') === 'close-error-modal') {
             $('#error-actions').hide();
+            $('#login-redirect-btn').hide();
+            $('#delete-all-shared-btn').hide();
         }
     });
 
@@ -624,9 +665,11 @@ $(document).ready(function() {
     $('.modal').on('click', function(e) {
         if (e.target === this) {
             $(this).hide();
-            // エラーモーダルを閉じる際にログインボタンを非表示にする
+            // エラーモーダルを閉じる際にボタンを非表示にする
             if ($(this).attr('id') === 'error-modal') {
                 $('#error-actions').hide();
+                $('#login-redirect-btn').hide();
+                $('#delete-all-shared-btn').hide();
             }
         }
     });
@@ -638,8 +681,22 @@ $(document).ready(function() {
     }
 
     // エラーモーダル表示
-    function showErrorModal(message) {
+    function showErrorModal(message, showDeleteButton = false) {
         $('#error-message').text(message);
+        
+        // ログインボタンと削除ボタンの表示制御
+        if (message.includes('ログインが必要です')) {
+            $('#login-redirect-btn').show();
+            $('#delete-all-shared-btn').hide();
+            $('#error-actions').show();
+        } else if (showDeleteButton) {
+            $('#login-redirect-btn').hide();
+            $('#delete-all-shared-btn').show();
+            $('#error-actions').show();
+        } else {
+            $('#error-actions').hide();
+        }
+        
         $('#error-modal').show();
     }
 

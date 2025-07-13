@@ -29,6 +29,11 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
 
 
 def create_mock_shared_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
+    # ユニークなアクセストークンを生成（他のテストと同様の形式）
+    import uuid
+    unique_id = str(uuid.uuid4()).replace('-', '')[:8]
+    access_token = f'test_token_{unique_id}_12345678901234567890123456789012'[:32]
+    
     shared_recipe = SharedRecipe.objects.create(
         name=name,
         shared_by_user=user,
@@ -38,7 +43,7 @@ def create_mock_shared_recipe(user, name, is_ice, len_steps, bean_g, water_ml, m
         water_ml=water_ml,
         memo=memo,
         expires_at=timezone.now() + timedelta(days=7),
-        access_token='test_token_12345678901234567890123456789012'[:32]
+        access_token=access_token
     )
     for i in range(len_steps):
         SharedRecipeStep.objects.create(
@@ -718,3 +723,138 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         self.assertIn('message', response_data)
         self.assertEqual(response_data['error'], 'authentication_required')
         self.assertTrue(len(response_data['message']) > 0)
+
+
+class DeleteAllSharedRecipesTestCase(TestCase):
+    def setUp(self):
+        """テストユーザーと共有レシピの作成"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)
+
+        # 複数の共有レシピを作成
+        self.shared_recipe1 = create_mock_shared_recipe(
+            user=self.user,
+            name="共有レシピ1",
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo="テスト用メモ1"
+        )
+        
+        self.shared_recipe2 = create_mock_shared_recipe(
+            user=self.user,
+            name="共有レシピ2",
+            is_ice=True,
+            len_steps=3,
+            bean_g=25.0,
+            water_ml=250.0,
+            memo="テスト用メモ2"
+        )
+
+    def test_delete_all_shared_recipes_success(self):
+        """全共有レシピの一括削除が正常に動作するか"""
+        # 削除前の共有レシピ数を確認
+        initial_count = SharedRecipe.objects.filter(shared_by_user=self.user).count()
+        self.assertEqual(initial_count, 2)
+
+        delete_url = reverse('recipes:delete_all_shared_recipes')
+        response = self.client.post(delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
+        self.assertEqual(response_data['deleted_count'], 2)
+        self.assertIn('2個の共有レシピを削除しました', response_data['message'])
+
+        # 削除後の共有レシピ数を確認
+        final_count = SharedRecipe.objects.filter(shared_by_user=self.user).count()
+        self.assertEqual(final_count, 0)
+
+    def test_delete_all_shared_recipes_no_recipes(self):
+        """共有レシピが存在しない場合の処理"""
+        # 既存の共有レシピを削除
+        SharedRecipe.objects.filter(shared_by_user=self.user).delete()
+
+        delete_url = reverse('recipes:delete_all_shared_recipes')
+        response = self.client.post(delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
+        self.assertEqual(response_data['deleted_count'], 0)
+        self.assertIn('0個の共有レシピを削除しました', response_data['message'])
+
+    def test_delete_all_shared_recipes_not_logged_in(self):
+        """未ログインユーザーが削除を試みた場合のエラーハンドリング"""
+        self.client.logout()
+
+        delete_url = reverse('recipes:delete_all_shared_recipes')
+        response = self.client.post(delete_url)
+
+        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト
+
+    def test_delete_all_shared_recipes_only_user_recipes(self):
+        """他のユーザーの共有レシピは削除されないことを確認"""
+        # 別のユーザーを作成
+        other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='securepassword123'
+        )
+        
+        # 別のユーザーの共有レシピを作成
+        other_shared_recipe = create_mock_shared_recipe(
+            user=other_user,
+            name="他のユーザーのレシピ",
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=150.0,
+            memo="他のユーザーのメモ"
+        )
+
+        # 現在のユーザーの共有レシピ数を確認
+        initial_count = SharedRecipe.objects.filter(shared_by_user=self.user).count()
+        self.assertEqual(initial_count, 2)
+
+        # 全共有レシピを削除
+        delete_url = reverse('recipes:delete_all_shared_recipes')
+        response = self.client.post(delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
+        self.assertEqual(response_data['deleted_count'], 2)
+
+        # 現在のユーザーの共有レシピが削除されたことを確認
+        final_count = SharedRecipe.objects.filter(shared_by_user=self.user).count()
+        self.assertEqual(final_count, 0)
+
+        # 他のユーザーの共有レシピは残っていることを確認
+        other_user_count = SharedRecipe.objects.filter(shared_by_user=other_user).count()
+        self.assertEqual(other_user_count, 1)
+
+    def test_delete_all_shared_recipes_response_format(self):
+        """削除成功時のレスポンス形式の確認"""
+        delete_url = reverse('recipes:delete_all_shared_recipes')
+        response = self.client.post(delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        
+        # レスポンス形式の確認
+        self.assertIn('success', response_data)
+        self.assertIn('message', response_data)
+        self.assertIn('deleted_count', response_data)
+        self.assertTrue(response_data['success'])
+        self.assertTrue(len(response_data['message']) > 0)
+        self.assertIsInstance(response_data['deleted_count'], int)
