@@ -300,7 +300,7 @@ $(document).ready(function() {
     async function shareToSocialMedia(shareUrl, recipeData) {
         const shareData = {
             title: 'Co-fitting レシピ',
-            text: `${recipeData.name} - 豆${recipeData.bean_g}g、湯${recipeData.water_ml}mlのレシピ`,
+            text: `Co-fittingからレシピを共有しました! #Cofitting`,
             url: shareUrl
         };
 
