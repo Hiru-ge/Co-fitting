@@ -554,8 +554,14 @@ def duplicate_shared_recipe_as_preset(shared_recipe, user):
 
 @csrf_exempt
 @require_POST
-@login_required
 def add_shared_recipe_to_preset(request, token):
+    # ログイン状態を明示的にチェック
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'error': 'authentication_required',
+            'message': 'ログインが必要です。マイプリセットに追加するにはログインしてください。'
+        }, status=401)
+
     shared_recipe, error_response = get_shared_recipe_or_error(token)
     if error_response:
         return error_response

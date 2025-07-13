@@ -505,7 +505,7 @@ class SharedRecipeTestCase(TestCase):
             content_type='application/json'
         )
 
-        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト
+        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト（@login_requiredデコレータの動作）
 
 
 class SharedRecipeRetrieveTestCase(TestCase):
@@ -698,4 +698,23 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
         response = self.client.post(add_url)
 
-        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト
+        self.assertEqual(response.status_code, 401)  # 認証エラー
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'authentication_required')
+        self.assertIn('ログインが必要です', response_data['message'])
+
+    def test_add_shared_recipe_to_preset_authentication_error_response_format(self):
+        """非ログイン状態でのエラーレスポンス形式の確認"""
+        self.client.logout()
+
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 401)
+        response_data = json.loads(response.content)
+        
+        # レスポンス形式の確認
+        self.assertIn('error', response_data)
+        self.assertIn('message', response_data)
+        self.assertEqual(response_data['error'], 'authentication_required')
+        self.assertTrue(len(response_data['message']) > 0)

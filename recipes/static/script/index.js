@@ -565,7 +565,16 @@ $(document).ready(function() {
             error: function(xhr) {
                 let errorMessage = 'レシピの追加に失敗しました。';
                 
-                if (xhr.status === 400) {
+                if (xhr.status === 401) {
+                    const data = xhr.responseJSON;
+                    if (data && data.error === 'authentication_required') {
+                        errorMessage = data.message;
+                    } else {
+                        errorMessage = 'ログインが必要です。マイプリセットに追加するにはログインしてください。';
+                    }
+                    // ログインボタンを表示
+                    $('#error-actions').show();
+                } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
                     if (data.error === 'preset_limit_exceeded') {
                         errorMessage = 'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。';
@@ -598,14 +607,27 @@ $(document).ready(function() {
         $('#shared-recipe-modal').hide();
     });
 
+    // ログインボタンのクリックイベント
+    $('#login-redirect-btn').on('click', function() {
+        window.location.href = '/users/login';
+    });
+
     $('#close-shared-modal, #close-success-modal, #close-error-modal').on('click', function() {
         $(this).closest('.modal').hide();
+        // エラーモーダルを閉じる際にログインボタンを非表示にする
+        if ($(this).attr('id') === 'close-error-modal') {
+            $('#error-actions').hide();
+        }
     });
 
     // モーダル外クリックで閉じる
     $('.modal').on('click', function(e) {
         if (e.target === this) {
             $(this).hide();
+            // エラーモーダルを閉じる際にログインボタンを非表示にする
+            if ($(this).attr('id') === 'error-modal') {
+                $('#error-actions').hide();
+            }
         }
     });
 
