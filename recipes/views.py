@@ -197,8 +197,15 @@ class RecipeImageGenerator:
             y2 = self._draw_table(draw, font_small, y)
 
             total_water = sum(step['pour_ml'] for step in self.steps_data)
+            # アイスモードの場合は氷量も加算
+            if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
+                try:
+                    ice_g = float(self.recipe_data['ice_g'])
+                except (ValueError, TypeError):
+                    ice_g = 0
+                total_water += ice_g
             draw.text((ShareConstants.CARD_MARGIN+40, y2),
-                     f"出来上がり量: {total_water} ml",
+                     f"出来上がり量: {int(total_water)} ml",
                      font=font_small, fill=self.text_color)
 
             pb_text = "Powered by Co-fitting"
