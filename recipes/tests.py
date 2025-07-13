@@ -1,7 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from users.models import User
-from recipes.models import Recipe, RecipeStep
+from recipes.models import Recipe, RecipeStep, SharedRecipe, SharedRecipeStep
+from django.utils import timezone
+from datetime import timedelta
+import json
 
 
 def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
@@ -23,6 +26,29 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
             total_water_ml_this_step=water_ml / len_steps,
         )
     return recipe
+
+
+def create_mock_shared_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
+    shared_recipe = SharedRecipe.objects.create(
+        name=name,
+        shared_by_user=user,
+        is_ice=is_ice,
+        len_steps=len_steps,
+        bean_g=bean_g,
+        water_ml=water_ml,
+        memo=memo,
+        expires_at=timezone.now() + timedelta(days=7),
+        access_token='test_token_12345678901234567890123456789012'[:32]
+    )
+    for i in range(len_steps):
+        SharedRecipeStep.objects.create(
+            shared_recipe=shared_recipe,
+            step_number=i + 1,
+            minute=i,
+            seconds=0,
+            total_water_ml_this_step=water_ml / len_steps,
+        )
+    return shared_recipe
 
 
 class RecipeCreateTestCase(TestCase):
@@ -300,3 +326,376 @@ class RecipeActivationTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "デフォルトプリセットレシピ")
         self.assertContains(response, "ユーザープリセットレシピ")
+
+
+class SharedRecipeTestCase(TestCase):
+    def setUp(self):
+        """テストユーザーの作成とログイン"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)
+        
+        self.create_url = reverse('recipes:create_shared_recipe')
+
+    def test_create_shared_recipe_success(self):
+        """共有レシピ作成が正常にできるか"""
+        recipe_data = {
+            "name": "テスト共有レシピ",
+            "bean_g": 20.0,
+            "water_ml": 200.0,
+            "is_ice": False,
+            "len_steps": 2,
+            "steps": [
+                {
+                    "step_number": 1,
+                    "minute": 0,
+                    "seconds": 0,
+                    "total_water_ml_this_step": 100.0
+                },
+                {
+                    "step_number": 2,
+                    "minute": 1,
+                    "seconds": 0,
+                    "total_water_ml_this_step": 100.0
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.create_url,
+            data=json.dumps(recipe_data),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertIn('access_token', response_data)
+        self.assertIn('url', response_data)
+        self.assertTrue(SharedRecipe.objects.filter(name="テスト共有レシピ", shared_by_user=self.user).exists())
+
+    def test_create_shared_recipe_missing_required_fields(self):
+        """必須項目が欠落している場合のエラーハンドリング"""
+        recipe_data = {
+            "name": "テスト共有レシピ",
+            # bean_gが欠落
+            "water_ml": 200.0,
+            "is_ice": False,
+            "len_steps": 2,
+            "steps": []
+        }
+
+        response = self.client.post(
+            self.create_url,
+            data=json.dumps(recipe_data),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'invalid_data')
+
+    def test_create_shared_recipe_invalid_steps(self):
+        """ステップ数が不正な場合のエラーハンドリング"""
+        recipe_data = {
+            "name": "テスト共有レシピ",
+            "bean_g": 20.0,
+            "water_ml": 200.0,
+            "is_ice": False,
+            "len_steps": 3,  # ステップ数と実際のステップ数が不一致
+            "steps": [
+                {
+                    "step_number": 1,
+                    "minute": 0,
+                    "seconds": 0,
+                    "total_water_ml_this_step": 100.0
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.create_url,
+            data=json.dumps(recipe_data),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 400)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'invalid_data')
+
+    def test_create_shared_recipe_rate_limit_exceeded(self):
+        """レートリミット超過時のエラーハンドリング"""
+        # 1週間以内に10個の共有レシピを作成
+        for i in range(10):
+            # 各レシピで異なるaccess_tokenを使用
+            shared_recipe = SharedRecipe.objects.create(
+                name=f"レートリミットテスト{i+1}",
+                shared_by_user=self.user,
+                is_ice=False,
+                len_steps=1,
+                bean_g=20.0,
+                water_ml=200.0,
+                memo="レートリミットテスト",
+                expires_at=timezone.now() + timedelta(days=7),
+                access_token=f'test_token_{i:02d}_12345678901234567890123456789012'[:32]
+            )
+            SharedRecipeStep.objects.create(
+                shared_recipe=shared_recipe,
+                step_number=1,
+                minute=0,
+                seconds=0,
+                total_water_ml_this_step=200.0,
+            )
+
+        recipe_data = {
+            "name": "11個目の共有レシピ",
+            "bean_g": 20.0,
+            "water_ml": 200.0,
+            "is_ice": False,
+            "len_steps": 1,
+            "steps": [
+                {
+                    "step_number": 1,
+                    "minute": 0,
+                    "seconds": 0,
+                    "total_water_ml_this_step": 200.0
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.create_url,
+            data=json.dumps(recipe_data),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 429)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'share_limit_exceeded')
+
+    def test_create_shared_recipe_not_logged_in(self):
+        """未ログインユーザーが共有レシピ作成を試みた場合のエラーハンドリング"""
+        self.client.logout()
+
+        recipe_data = {
+            "name": "未ログインテスト",
+            "bean_g": 20.0,
+            "water_ml": 200.0,
+            "is_ice": False,
+            "len_steps": 1,
+            "steps": [
+                {
+                    "step_number": 1,
+                    "minute": 0,
+                    "seconds": 0,
+                    "total_water_ml_this_step": 200.0
+                }
+            ]
+        }
+
+        response = self.client.post(
+            self.create_url,
+            data=json.dumps(recipe_data),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト
+
+
+class SharedRecipeRetrieveTestCase(TestCase):
+    def setUp(self):
+        """テストユーザーと共有レシピの作成"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        self.shared_recipe = create_mock_shared_recipe(
+            user=self.user,
+            name="テスト共有レシピ",
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo="テスト用メモ"
+        )
+
+    def test_retrieve_shared_recipe_success(self):
+        """有効なトークンで共有レシピが取得できるか"""
+        retrieve_url = reverse('recipes:retrieve_shared_recipe', kwargs={'token': self.shared_recipe.access_token})
+        response = self.client.get(retrieve_url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['name'], "テスト共有レシピ")
+        self.assertEqual(response_data['bean_g'], 20.0)
+        self.assertEqual(response_data['water_ml'], 200.0)
+        self.assertEqual(len(response_data['steps']), 2)
+
+    def test_retrieve_shared_recipe_not_found(self):
+        """存在しないトークンでのエラーハンドリング"""
+        retrieve_url = reverse('recipes:retrieve_shared_recipe', kwargs={'token': 'invalid_token'})
+        response = self.client.get(retrieve_url)
+
+        self.assertEqual(response.status_code, 404)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'not_found')
+
+    def test_retrieve_shared_recipe_expired(self):
+        """期限切れトークンでのエラーハンドリング"""
+        # 期限切れの共有レシピを作成
+        expired_recipe = SharedRecipe.objects.create(
+            name="期限切れレシピ",
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo="期限切れテスト",
+            expires_at=timezone.now() - timedelta(days=1),  # 1日前に期限切れ
+            access_token='expired_token_12345678901234567890123456789012'[:32]
+        )
+
+        retrieve_url = reverse('recipes:retrieve_shared_recipe', kwargs={'token': expired_recipe.access_token})
+        response = self.client.get(retrieve_url)
+
+        self.assertEqual(response.status_code, 410)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'expired')
+
+
+class SharedRecipeAddToPresetTestCase(TestCase):
+    def setUp(self):
+        """テストユーザーと共有レシピの作成"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+
+        login_success = self.client.login(username='test@example.com', password='securepassword123')
+        self.assertTrue(login_success)
+
+        self.shared_recipe = create_mock_shared_recipe(
+            user=self.user,
+            name="テスト共有レシピ",
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo="テスト用メモ"
+        )
+
+    def test_add_shared_recipe_to_preset_success(self):
+        """プリセットに共有レシピが正常に追加できるか"""
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 200)
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
+        self.assertIn('recipe_id', response_data)
+        
+        # プリセットに追加されたことを確認
+        self.assertTrue(Recipe.objects.filter(name="テスト共有レシピ", create_user=self.user).exists())
+        added_recipe = Recipe.objects.get(name="テスト共有レシピ", create_user=self.user)
+        self.assertEqual(added_recipe.bean_g, 20.0)
+        self.assertEqual(added_recipe.water_ml, 200.0)
+        self.assertEqual(added_recipe.len_steps, 2)
+
+    def test_add_shared_recipe_to_preset_limit_exceeded_free_user(self):
+        """無料ユーザーのプリセット枠上限時のエラーハンドリング"""
+        # プリセット枠を上限まで埋める
+        for i in range(self.user.preset_limit):
+            create_mock_recipe(
+                user=self.user,
+                name=f"プリセット{i+1}",
+                is_ice=False,
+                len_steps=1,
+                bean_g=20.0,
+                water_ml=200.0,
+                memo="プリセット上限テスト"
+            )
+
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 400)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'preset_limit_exceeded')
+
+    def test_add_shared_recipe_to_preset_limit_exceeded_premium_user(self):
+        """有料ユーザーのプリセット枠上限時のエラーハンドリング"""
+        # ユーザーを有料ユーザーに設定
+        self.user.is_subscribed = True
+        self.user.save()
+
+        # プリセット枠を上限まで埋める
+        for i in range(self.user.preset_limit):
+            create_mock_recipe(
+                user=self.user,
+                name=f"プリセット{i+1}",
+                is_ice=False,
+                len_steps=1,
+                bean_g=20.0,
+                water_ml=200.0,
+                memo="プリセット上限テスト"
+            )
+
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 400)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'preset_limit_exceeded_premium')
+
+    def test_add_shared_recipe_to_preset_not_found(self):
+        """存在しないトークンでのエラーハンドリング"""
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': 'invalid_token'})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 404)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'not_found')
+
+    def test_add_shared_recipe_to_preset_expired(self):
+        """期限切れトークンでのエラーハンドリング"""
+        # 期限切れの共有レシピを作成
+        expired_recipe = SharedRecipe.objects.create(
+            name="期限切れレシピ",
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo="期限切れテスト",
+            expires_at=timezone.now() - timedelta(days=1),
+            access_token='expired_token_12345678901234567890123456789012'[:32]
+        )
+
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': expired_recipe.access_token})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 410)
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'expired')
+
+    def test_add_shared_recipe_to_preset_not_logged_in(self):
+        """未ログインユーザーがプリセット追加を試みた場合のエラーハンドリング"""
+        self.client.logout()
+
+        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
+        response = self.client.post(add_url)
+
+        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト

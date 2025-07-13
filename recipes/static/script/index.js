@@ -194,6 +194,138 @@ $(document).ready(function() {
         $('#bean-target, #water-target, #ratio-target').val('');
     });
 
+    // 共有ボタンの機能
+    $('#share-recipe-btn').on('click', function() {
+        const isLoggedIn = window.isLoggedIn;
+        if (!isLoggedIn) {
+            showLoginPrompt();
+            return;
+        }
+
+        // 変換後レシピが存在するかチェック
+        const hasConvertedRecipe = $('.bean-output').text().trim() !== '';
+        if (!hasConvertedRecipe) {
+            alert('変換後レシピがありません。先にレシピを変換してください。');
+            return;
+        }
+
+        // 共有URL生成
+        shareRecipe();
+    });
+
+    function showLoginPrompt() {
+        const message = '共有機能はログインユーザー限定機能です！\n新規登録・ログインしていきませんか？';
+        if (confirm(message)) {
+            window.location.href = '/users/login';  // ログインページにリダイレクト
+        }
+    }
+
+    // CSRFトークンを取得する関数
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function shareRecipe() {
+        $('#share-recipe-btn').prop('disabled', true);
+        
+        // 変換後レシピのデータを収集
+        const recipeData = {
+            name: '共有レシピ', // 後でユーザーが入力できるようにする
+            bean_g: parseFloat($('.bean-output').text()),
+            water_ml: parseFloat($('.water-output').text()),
+            is_ice: $('html').hasClass('ice-mode'),
+            ice_g: parseFloat($('.ice-output').text()) || 0,
+            len_steps: parseInt($('#pour-times-input').val()),
+            steps: []
+        };
+
+        // ステップ情報を収集
+        for (let i = 1; i <= recipeData.len_steps; i++) {
+            const step = {
+                step_number: i,
+                minute: parseInt($(`.pour-step${i} .minutes`).val()),
+                seconds: parseInt($(`.pour-step${i} .seconds`).val()),
+                total_water_ml_this_step: parseFloat($(`.pour-step${i} .pour-ml`).val())
+            };
+            recipeData.steps.push(step);
+        }
+
+        // バックエンドAPIに送信
+        $.ajax({
+            url: '/api/shared-recipes',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            data: JSON.stringify(recipeData),
+            success: function(response) {
+                // SNSシェア用URLを /share/<token>/ 形式に変換
+                const shareUrl = `/share/${response.access_token}/`;
+                shareToSocialMedia(shareUrl, recipeData);
+            },
+            error: function(xhr) {
+                let errorMessage = '共有URLの生成に失敗しました。';
+                
+                if (xhr.status === 401) {
+                    errorMessage = 'ログインが必要です。';
+                } else if (xhr.status === 429) {
+                    const data = xhr.responseJSON;
+                    errorMessage = data.message || '1週間に共有できるレシピは10個までです。';
+                } else if (xhr.status === 400) {
+                    const data = xhr.responseJSON;
+                    errorMessage = data.message || '入力データに問題があります。';
+                }
+                
+                alert(errorMessage);
+            },
+            complete: function() {
+                $('#share-recipe-btn').prop('disabled', false);
+            }
+        });
+    }
+
+    // Web Share APIを使用してSNS投稿
+    async function shareToSocialMedia(shareUrl, recipeData) {
+        const shareData = {
+            title: 'Co-fitting レシピ',
+            text: `${recipeData.name} - 豆${recipeData.bean_g}g、湯${recipeData.water_ml}mlのレシピ`,
+            url: shareUrl
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (err) {
+                // ユーザーがキャンセルした場合やエラーの場合
+                fallbackToClipboard(shareUrl);
+            }
+        } else {
+            // Web Share API非対応ブラウザ
+            fallbackToClipboard(shareUrl);
+        }
+    }
+
+    // フォールバック: クリップボードにコピー
+    function fallbackToClipboard(shareUrl) {
+        navigator.clipboard.writeText(shareUrl).then(function() {
+            alert('共有URLがクリップボードにコピーされました！\n\n' + shareUrl);
+        }).catch(function(err) {
+            alert('共有URLのコピーに失敗しました。\n\n' + shareUrl);
+        });
+    }
+
 
     function inputError_Detector([pourTimes, originSumWater, targetBean, targetWater]) {
         let defaultMessage = '【入力不備】\n'; // エラーメッセージの初期値(エラーが検知されるとこれに追加されていく)
@@ -366,10 +498,136 @@ $(document).ready(function() {
         stopTime = 0;
     });
 
+    // 共有レシピの処理
+    function handleSharedRecipe() {
+        let sharedRecipeData = null;
+        const sharedRecipeScript = document.getElementById('shared_recipe_data');
+        if (sharedRecipeScript) {
+            try {
+                sharedRecipeData = JSON.parse(sharedRecipeScript.textContent);
+            } catch (e) {
+                console.error('共有レシピデータのパースに失敗:', e);
+            }
+        }
+        console.log('handleSharedRecipe:', sharedRecipeData);
+        
+        if (sharedRecipeData) {
+            if (sharedRecipeData.error) {
+                // エラーの場合
+                showErrorModal(sharedRecipeData.message);
+            } else {
+                // 正常な共有レシピの場合
+                showSharedRecipeModal(sharedRecipeData);
+            }
+        } else {
+            console.log('共有レシピデータが存在しません。');
+        }
+    }
+
+    // 共有レシピモーダル表示
+    function showSharedRecipeModal(recipeData) {
+        const modal = $('#shared-recipe-modal');
+        const infoDiv = $('#shared-recipe-info');
+        // レシピ情報を表示
+        let html = `
+            <div class="shared-recipe-details">
+                <h3>${recipeData.name}</h3>
+                <p><strong>豆量:</strong> ${recipeData.bean_g}g</p>
+                <p><strong>総湯量:</strong> ${recipeData.water_ml}ml</p>
+                ${recipeData.is_ice ? `<p><strong>氷量:</strong> ${recipeData.ice_g}g</p>` : ''}
+                <p><strong>ステップ数:</strong> ${recipeData.len_steps}</p>
+                ${recipeData.memo ? `<p><strong>メモ:</strong> ${recipeData.memo}</p>` : ''}
+            </div>
+        `;
+        infoDiv.html(html);
+        modal.show();
+    }
+
+    // プリセット追加処理
+    function addSharedRecipeToPreset(token) {
+        $('#add-to-preset-btn').prop('disabled', true).text('追加中...');
+        
+        $.ajax({
+            url: `/api/shared-recipes/${token}/add-to-preset`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                $('#shared-recipe-modal').hide();
+                showSuccessModal(response.message);
+                
+                // プリセット情報を更新するため、変換ページにリダイレクト
+                setTimeout(function() {
+                    window.location.href = '/';
+                }, 1500);
+            },
+            error: function(xhr) {
+                let errorMessage = 'レシピの追加に失敗しました。';
+                
+                if (xhr.status === 400) {
+                    const data = xhr.responseJSON;
+                    if (data.error === 'preset_limit_exceeded') {
+                        errorMessage = 'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。';
+                    } else if (data.error === 'preset_limit_exceeded_premium') {
+                        errorMessage = 'プリセットの保存上限に達しました。既存のプリセットを整理してください。';
+                    }
+                } else if (xhr.status === 404) {
+                    errorMessage = 'この共有リンクは存在しません。';
+                } else if (xhr.status === 410) {
+                    errorMessage = 'この共有リンクは期限切れです。';
+                }
+                
+                showErrorModal(errorMessage);
+            },
+            complete: function() {
+                $('#add-to-preset-btn').prop('disabled', false).html('追加');
+            }
+        });
+    }
+
+    // モーダル関連のイベント
+    $('#add-to-preset-btn').on('click', function() {
+        const sharedRecipeData = JSON.parse(document.getElementById('shared_recipe_data')?.textContent || 'null');
+        if (sharedRecipeData && !sharedRecipeData.error) {
+            addSharedRecipeToPreset(sharedRecipeData.access_token);
+        }
+    });
+
+    $('#cancel-shared-btn').on('click', function() {
+        $('#shared-recipe-modal').hide();
+    });
+
+    $('#close-shared-modal, #close-success-modal, #close-error-modal').on('click', function() {
+        $(this).closest('.modal').hide();
+    });
+
+    // モーダル外クリックで閉じる
+    $('.modal').on('click', function(e) {
+        if (e.target === this) {
+            $(this).hide();
+        }
+    });
+
+    // 成功モーダル表示
+    function showSuccessModal(message) {
+        $('#success-message').text(message);
+        $('#success-modal').show();
+    }
+
+    // エラーモーダル表示
+    function showErrorModal(message) {
+        $('#error-message').text(message);
+        $('#error-modal').show();
+    }
+
     // トグル機能
     $('.accordion-item').hide();
     $('.accordion-head').on('click', function() {
         $(this).children('.accordion-toggle').toggleClass('rotate-90');
         $(this).next().children('.accordion-item').slideToggle(300);
     });
+
+    // 共有レシピの処理を実行
+    handleSharedRecipe();
 });

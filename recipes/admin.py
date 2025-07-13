@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from users.models import User
-from recipes.models import Recipe, RecipeStep
+from recipes.models import Recipe, RecipeStep, SharedRecipe, SharedRecipeStep
 
 
 @admin.register(User)
@@ -40,3 +40,17 @@ class RecipeAdmin(admin.ModelAdmin):
 
     # Recipeの詳細ページにRecipeStepをインラインで表示
     inlines = [RecipeStepInline]
+
+
+class SharedRecipeStepInline(admin.TabularInline):
+    model = SharedRecipeStep
+    extra = 1
+    fields = ('step_number', 'total_water_ml_this_step', 'minute', 'seconds')
+
+
+@admin.register(SharedRecipe)
+class SharedRecipeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'id', 'shared_by_user', 'is_ice', 'len_steps', 'bean_g', 'water_ml', 'expires_at', 'access_token')
+    list_filter = ('is_ice',)
+    search_fields = ('name', 'access_token')
+    inlines = [SharedRecipeStepInline]

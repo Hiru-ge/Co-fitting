@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ shared_recipe.name }} | Co-fitting</title>
+  <meta property="og:title" content="{{ shared_recipe.name }} | Co-fitting">
+  <meta property="og:description" content="コーヒーレシピをシェアしました！">
+  <meta property="og:image" content="{{ image_url }}">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- 共有画面へのリダイレクト -->
+  <script>window.location.href = "/index?shared={{ shared_recipe.access_token }}";</script>
+</head>
+<body>
+  <h1>{{ shared_recipe.name }}</h1>
+  <img src="{{ image_url }}" alt="レシピ画像">
+  <p>このページはSNSシェア用のOGP表示ページです。</p>
+</body>
+</html> 

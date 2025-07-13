@@ -129,6 +129,11 @@
             <table class="recipe-output">
             </table>
             <p class="converted-total-output-div ice-mode-show">出来上がり量: <span class="converted-total-output"></span> ml</p>
+            
+            <!-- 共有ボタン -->
+            <div class="share-button-container">
+                <button id="share-recipe-btn" class="share-button"><img src="{% static 'images/share-icon.png' %}" /></button>
+            </div>
         </div> <!-- /item:変換後レシピの出力欄 -->
 
         <!--ストップウォッチ-->
@@ -156,6 +161,63 @@
     <span id="users_preset_recipes">
     {{ users_preset_recipes|json_script:"users_preset_recipes" }}
     </span>
+    
+    <!-- 共有レシピデータをスクリプトタグに埋め込む -->
+    {% if shared_recipe_data %}
+    <span id="shared_recipe_data">
+    {{ shared_recipe_data|json_script:"shared_recipe_data" }}
+    </span>
+    {% endif %}
+    
+    <!-- ログイン状態をスクリプトタグに埋め込む -->
+    <script>
+        window.isLoggedIn = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    </script>
+
+    <!-- 共有レシピ追加確認ポップアップ -->
+    <div id="shared-recipe-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>マイプリセットに追加しますか？</h3>
+                <span class="close" id="close-shared-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="shared-recipe-info">
+                    <!-- 共有レシピ情報がここに表示される -->
+                </div>
+                <div class="modal-actions">
+                    <button id="add-to-preset-btn" class="btn btn-primary">追加</button>
+                    <button id="cancel-shared-btn" class="btn btn-secondary">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功メッセージポップアップ -->
+    <div id="success-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>成功</h3>
+                <span class="close" id="close-success-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="success-message">レシピをマイプリセットに追加しました。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- エラーメッセージポップアップ -->
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>エラー</h3>
+                <span class="close" id="close-error-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="error-message">エラーが発生しました。</p>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
