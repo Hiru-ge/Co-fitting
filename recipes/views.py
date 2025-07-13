@@ -209,13 +209,15 @@ class RecipeImageGenerator:
                       self.img_height-ShareConstants.CARD_MARGIN-pb_h-40),
                      pb_text, font=font_small, fill=self.accent_color)
 
-            img_dir = os.path.join(settings.BASE_DIR, 'recipes', 'static', 'images', 'shared_recipes')
+            # img_dir = os.path.join(settings.BASE_DIR, 'recipes', 'static', 'images', 'shared_recipes')
+            img_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
             os.makedirs(img_dir, exist_ok=True)
             img_filename = f"{access_token}.png"
             img_path = os.path.join(img_dir, img_filename)
             img.save(img_path)
 
-            return f"/static/images/shared_recipes/{img_filename}"
+            # return f"/static/images/shared_recipes/{img_filename}"
+            return f"{settings.MEDIA_URL}shared_recipes/{img_filename}"
 
         except Exception as e:
             print('image generation error:', e)
@@ -555,7 +557,6 @@ def duplicate_shared_recipe_as_preset(shared_recipe, user):
 @csrf_exempt
 @require_POST
 def add_shared_recipe_to_preset(request, token):
-    # ログイン状態を明示的にチェック
     if not request.user.is_authenticated:
         return JsonResponse({
             'error': 'authentication_required',
@@ -587,12 +588,11 @@ def add_shared_recipe_to_preset(request, token):
 
 
 def shared_recipe_ogp(request, token):
-    from django.shortcuts import get_object_or_404
     shared_recipe = get_object_or_404(SharedRecipe, access_token=token)
-    image_url = f"/static/images/shared_recipes/{shared_recipe.access_token}.png"
+    image_url = request.build_absolute_uri(f"{settings.MEDIA_URL}shared_recipes/{shared_recipe.access_token}.png")
     context = {
         'shared_recipe': shared_recipe,
-        'image_url': request.build_absolute_uri(image_url),
+        'image_url': image_url,
     }
     return render(request, 'recipes/shared_recipe_ogp.html', context)
 
@@ -608,7 +608,7 @@ def delete_all_shared_recipes(request):
         
         # 関連する画像ファイルを削除
         for shared_recipe in shared_recipes:
-            image_path = f"recipes/static/images/shared_recipes/{shared_recipe.access_token}.png"
+            image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
             if os.path.exists(image_path):
                 os.remove(image_path)
         

@@ -12,7 +12,7 @@ class Command(BaseCommand):
         count = expired_recipes.count()
         for recipe in expired_recipes:
             # 画像ファイルの削除
-            img_path = os.path.join(settings.BASE_DIR, 'recipes', 'static', 'images', 'shared_recipes', f'{recipe.access_token}.png')
+            img_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{recipe.access_token}.png')
             if os.path.exists(img_path):
                 os.remove(img_path)
         expired_recipes.delete()
