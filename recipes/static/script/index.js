@@ -250,16 +250,29 @@ $(document).ready(function() {
             steps: []
         };
 
-        // ステップ情報を収集
-        for (let i = 1; i <= recipeData.len_steps; i++) {
-            const step = {
-                step_number: i,
-                minute: parseInt($(`.pour-step${i} .minutes`).val()),
-                seconds: parseInt($(`.pour-step${i} .seconds`).val()),
-                total_water_ml_this_step: parseFloat($(`.pour-step${i} .pour-ml`).val())
-            };
-            recipeData.steps.push(step);
-        }
+        // 変換後レシピ欄（.recipe-outputテーブル）からステップ情報を取得
+        // テーブルのtr（1行目はヘッダーなので除外）
+        const $rows = $('.recipe-output tr').not(':first');
+        let cumulative = 0;
+        $rows.each(function(index) {
+            const $cols = $(this).find('td');
+            if ($cols.length < 3) return; // 安全対策
+            // 時間
+            const timeParts = $cols.eq(0).text().split(':');
+            const minute = parseInt(timeParts[0], 10);
+            const seconds = parseInt(timeParts[1], 10);
+            // 注湯量
+            const pour_ml = parseFloat($cols.eq(1).text());
+            // 総注湯量
+            const cumulative_water_ml = parseFloat($cols.eq(2).text());
+            recipeData.steps.push({
+                step_number: index + 1,
+                minute: minute,
+                seconds: seconds,
+                total_water_ml_this_step: pour_ml,
+                cumulative_water_ml: cumulative_water_ml
+            });
+        });
 
         // バックエンドAPIに送信
         $.ajax({
