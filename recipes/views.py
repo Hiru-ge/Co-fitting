@@ -214,7 +214,7 @@ class RecipeImageGenerator:
             pb_h = pb_bbox[3] - pb_bbox[1]
             draw.text((self.img_width-ShareConstants.CARD_MARGIN-pb_w-20,
                       self.img_height-ShareConstants.CARD_MARGIN-pb_h-40),
-                     pb_text, font=font_small, fill=self.accent_color)
+                     pb_text, font=font_small, fill=self.bg_color)
 
             # img_dir = os.path.join(settings.BASE_DIR, 'recipes', 'static', 'images', 'shared_recipes')
             img_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
