@@ -512,6 +512,35 @@ class SharedRecipeTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト（@login_requiredデコレータの動作）
 
+    def test_shared_recipe_step_cumulative_water(self):
+        """共有レシピDBの各ステップに累積湯量が正しく格納されるか"""
+        recipe_data = {
+            "name": "累積湯量テスト",
+            "bean_g": 16.0,
+            "water_ml": 120.0,
+            "is_ice": False,
+            "len_steps": 5,
+            "steps": [
+                {"step_number": 1, "minute": 0, "seconds": 0, "total_water_ml_this_step": 24.0},
+                {"step_number": 2, "minute": 0, "seconds": 40, "total_water_ml_this_step": 24.0},
+                {"step_number": 3, "minute": 1, "seconds": 10, "total_water_ml_this_step": 24.0},
+                {"step_number": 4, "minute": 1, "seconds": 40, "total_water_ml_this_step": 24.0},
+                {"step_number": 5, "minute": 2, "seconds": 10, "total_water_ml_this_step": 24.0},
+            ]
+        }
+        response = self.client.post(
+            self.create_url,
+            data=json.dumps(recipe_data),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        # 作成された共有レシピを取得
+        shared_recipe = SharedRecipe.objects.get(name="累積湯量テスト")
+        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        cumulative_expected = [24.0, 48.0, 72.0, 96.0, 120.0]
+        for step, expected in zip(steps, cumulative_expected):
+            self.assertEqual(step.total_water_ml_this_step, expected)
+
 
 class SharedRecipeRetrieveTestCase(TestCase):
     def setUp(self):

@@ -78,26 +78,25 @@ def check_share_rate_limit(user):
 
 def create_shared_recipe_steps_and_image_data(shared_recipe, steps_data):
     steps_for_image = []
-    prev_cumulative = 0
+    cumulative = 0
 
     for i, step in enumerate(steps_data):
+        pour_ml = step['total_water_ml_this_step']
+        cumulative += pour_ml
         SharedRecipeStep.objects.create(
             shared_recipe=shared_recipe,
             step_number=step.get('step_number', i+1),
             minute=step['minute'],
             seconds=step['seconds'],
-            total_water_ml_this_step=step['total_water_ml_this_step']
+            total_water_ml_this_step=cumulative
         )
-    
-        cumulative = step.get('cumulative_water_ml', step['total_water_ml_this_step'])
-        pour_ml = cumulative - prev_cumulative
+
         steps_for_image.append({
             'minute': step['minute'],
             'seconds': step['seconds'],
             'pour_ml': pour_ml,
             'cumulative_water_ml': cumulative
         })
-        prev_cumulative = cumulative
 
     return steps_for_image
 
