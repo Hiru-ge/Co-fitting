@@ -79,6 +79,7 @@ $(document).ready(function() {
         }
         const OriginRatio = brewParameterCompleter([recipe.bean_g, selectedRecipeSumWater, '']);
         $('#origin-ratio').html(OriginRatio);
+        $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
         updateTotalOutput();
     }
 
@@ -139,6 +140,7 @@ $(document).ready(function() {
         if (OriginBean && OriginSumWater) {
             const OriginRatio = brewParameterCompleter([/*豆量=*/OriginBean, /*総湯量=*/OriginSumWater, /*比率=*/'']);
             $('#origin-ratio').html(OriginRatio);
+            $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
         }
     });
 
