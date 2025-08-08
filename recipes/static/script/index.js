@@ -127,8 +127,8 @@ $(document).ready(function() {
         }
     }
 
-    // 元レシピの比率計算(変換後レシピと元レシピの比率を揃える用にこれがあると便利かも)
-    $('.origin-process, #ice_g, #bean-input').on('change', function(){
+    // 元レシピの比率計算とターゲット比率の自動転記を行う関数
+    function updateOriginRatio() {
         updateTotalOutput();
         const PourTimes = $('#pour-times-input').val();
         const OriginSumWater = $(`.pour-step${PourTimes}`).children('.pour-ml').val();
@@ -142,7 +142,11 @@ $(document).ready(function() {
             $('#origin-ratio').html(OriginRatio);
             $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
         }
-    });
+    }
+
+    // 元レシピ内のinputは動的に生成されるため、イベント委譲で動的にバインドする必要がある
+    $('.origin-process').on('change', 'input', updateOriginRatio);
+    $('#ice_g, #bean-input').on('change', updateOriginRatio);
 
     function updateTotalOutput() {
         const PourTimes = $('#pour-times-input').val();
