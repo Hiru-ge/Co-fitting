@@ -5,6 +5,9 @@ from recipes.models import Recipe, RecipeStep, SharedRecipe, SharedRecipeStep
 from django.utils import timezone
 from datetime import timedelta
 import json
+import os
+from django.conf import settings
+from django.core.management import call_command
 
 
 def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
@@ -887,3 +890,156 @@ class DeleteAllSharedRecipesTestCase(TestCase):
         self.assertTrue(response_data['success'])
         self.assertTrue(len(response_data['message']) > 0)
         self.assertIsInstance(response_data['deleted_count'], int)
+
+
+class DeleteExpiredSharedRecipesCommandTestCase(TestCase):
+    """期限切れ共有レシピ削除コマンドのテスト"""
+    
+    def setUp(self):
+        """テストユーザーの作成とテスト環境の準備"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='securepassword123'
+        )
+        self.user.is_active = True
+        self.user.save()
+        
+        # テスト用の画像ディレクトリを作成
+        self.media_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
+        os.makedirs(self.media_dir, exist_ok=True)
+    
+    def tearDown(self):
+        """テスト後のクリーンアップ"""
+        if os.path.exists(self.media_dir):
+            for filename in os.listdir(self.media_dir):
+                if filename.endswith('.png'):
+                    file_path = os.path.join(self.media_dir, filename)
+                    os.remove(file_path)
+            os.rmdir(self.media_dir)
+    
+    def create_test_image_file(self, filename, content="test content"):
+        """テスト用の画像ファイルを作成"""
+        file_path = os.path.join(self.media_dir, filename)
+        with open(file_path, 'w') as file:
+            file.write(content)
+        return file_path
+    
+    def test_delete_expired_shared_recipes_success(self):
+        """期限切れレシピの正常な削除"""
+        # テストデータの準備
+        access_token = 'expired_token_12345678901234567890123456789012'[:32]
+        expired_time = timezone.now() - timedelta(days=1)
+        SharedRecipe.objects.create(
+            name='期限切れレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=250.0,
+            memo='期限切れのテストレシピ',
+            expires_at=expired_time,
+            access_token=access_token
+        )
+        self.create_test_image_file(f'{access_token}.png')
+        
+        # 削除前の状態確認
+        self.assertEqual(SharedRecipe.objects.count(), 1)
+        image_path = os.path.join(self.media_dir, f'{access_token}.png')
+        self.assertTrue(os.path.exists(image_path))
+        
+        # コマンドの実行（ログ出力抑制）
+        call_command('delete_expired_shared_recipes', quiet=True)
+        
+        # 削除後の状態確認
+        self.assertEqual(SharedRecipe.objects.count(), 0)
+        self.assertFalse(os.path.exists(image_path))
+    
+    def test_delete_expired_shared_recipes_with_orphaned_images(self):
+        """孤立した画像ファイルも含めて削除"""
+        # テストデータの準備
+        access_token = 'expired_token_12345678901234567890123456789012'[:32]
+        expired_time = timezone.now() - timedelta(days=1)
+        SharedRecipe.objects.create(
+            name='期限切れレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=250.0,
+            memo='期限切れのテストレシピ',
+            expires_at=expired_time,
+            access_token=access_token
+        )
+        self.create_test_image_file(f'{access_token}.png')
+        self.create_test_image_file('orphaned_image_12345678901234567890123456789012.png')
+        
+        # 削除前の状態確認
+        self.assertEqual(SharedRecipe.objects.count(), 1)
+        self.assertEqual(len([f for f in os.listdir(self.media_dir) if f.endswith('.png')]), 2)
+        
+        # コマンドの実行（ログ出力抑制）
+        call_command('delete_expired_shared_recipes', quiet=True)
+        
+        # 削除後の状態確認
+        self.assertEqual(SharedRecipe.objects.count(), 0)
+        self.assertEqual(len([f for f in os.listdir(self.media_dir) if f.endswith('.png')]), 0)
+    
+    def test_delete_expired_shared_recipes_no_expired_recipes(self):
+        """期限切れレシピが存在しない場合"""
+        # テストデータの準備
+        access_token = 'valid_token_12345678901234567890123456789012'[:32]
+        valid_time = timezone.now() + timedelta(days=7)
+        SharedRecipe.objects.create(
+            name='有効なレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=250.0,
+            memo='有効なテストレシピ',
+            expires_at=valid_time,
+            access_token=access_token
+        )
+        
+        # 削除前の状態確認
+        initial_count = SharedRecipe.objects.count()
+        self.assertEqual(initial_count, 1)
+        
+        # コマンドの実行（ログ出力抑制）
+        call_command('delete_expired_shared_recipes', quiet=True)
+        
+        # 有効なレシピは削除されていないことを確認
+        self.assertEqual(SharedRecipe.objects.count(), 1)
+    
+    def test_delete_expired_shared_recipes_image_deletion_failure(self):
+        """画像ファイル削除の処理確認"""
+        # テストデータの準備
+        access_token = 'expired_token_12345678901234567890123456789012'[:32]
+        expired_time = timezone.now() - timedelta(days=1)
+        SharedRecipe.objects.create(
+            name='期限切れレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=250.0,
+            memo='期限切れのテストレシピ',
+            expires_at=expired_time,
+            access_token=access_token
+        )
+        image_path = self.create_test_image_file(f'{access_token}.png')
+        
+        # 削除前の状態確認
+        self.assertEqual(SharedRecipe.objects.count(), 1)
+        self.assertTrue(os.path.exists(image_path))
+        
+        # コマンドの実行（ログ出力抑制）
+        call_command('delete_expired_shared_recipes', quiet=True)
+        
+        # レシピと画像ファイルの両方が削除されることを確認
+        self.assertEqual(SharedRecipe.objects.count(), 0)
+        self.assertFalse(os.path.exists(image_path))
+        
+        # 孤立した画像ファイルも削除されることを確認
+        self.assertEqual(len([f for f in os.listdir(self.media_dir) if f.endswith('.png')]), 0)
