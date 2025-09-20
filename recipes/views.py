@@ -37,6 +37,7 @@ def index(request):
             'bean_g': recipe.bean_g,
             'water_ml': recipe.water_ml,
             'ice_g': recipe.ice_g,
+            'memo': recipe.memo,
             'steps': steps_data
         }
 

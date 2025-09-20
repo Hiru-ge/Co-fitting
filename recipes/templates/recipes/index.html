@@ -81,6 +81,19 @@
                     <p>出来上がり量: <span class="origin-total-output"></span> ml</p>
                 </div>
             </form>
+            
+            <!-- 元レシピメモ欄 -->
+            <div class="memo-section">
+                <h4 class="accordion-head">
+                    <div class="accordion-toggle">></div>
+                    <p>メモ</p>
+                </h4>
+                <div class="memo-content">
+                    <div class="accordion-item">
+                        <div class="memo-text" id="origin-memo-text"></div>
+                    </div>
+                </div>
+            </div>
         </div> <!--/変換前レシピの入力欄-->
 
         <!--変換目標入力欄-->
@@ -133,6 +146,19 @@
             <!-- 共有ボタン -->
             <div class="share-button-container">
                 <button id="share-recipe-btn" class="share-button"><img src="{% static 'images/share-icon.png' %}" /></button>
+            </div>
+            
+            <!-- 変換後レシピメモ欄 -->
+            <div class="memo-section">
+                <h4 class="accordion-head">
+                    <div class="accordion-toggle">></div>
+                    <p>メモ</p>
+                </h4>
+                <div class="memo-content">
+                    <div class="accordion-item">
+                        <div class="memo-text" id="converted-memo-text"></div>
+                    </div>
+                </div>
             </div>
         </div> <!-- /item:変換後レシピの出力欄 -->
 
