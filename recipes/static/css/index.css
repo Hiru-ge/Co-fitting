@@ -318,3 +318,32 @@ header.ice-mode, footer.ice-mode {
 .shared-recipe-details p {
     margin: 0.5rem 0;
 }
+
+/* メモ欄のスタイル */
+.memo-section {
+    margin-top: 1rem;
+}
+
+.memo-section h4 {
+    margin: 0;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.memo-content {
+    margin-top: 0.5rem;
+}
+
+.memo-content .accordion-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+}
+
+.memo-text {
+    color: #fff;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}

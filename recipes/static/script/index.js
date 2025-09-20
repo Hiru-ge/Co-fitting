@@ -81,6 +81,9 @@ $(document).ready(function() {
         $('#origin-ratio').html(OriginRatio);
         $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
         updateTotalOutput();
+        
+        // メモを表示
+        displayMemo(recipe.memo);
     }
 
     function getPresetRecipeData(presetId) {
@@ -93,6 +96,19 @@ $(document).ready(function() {
             }
         }
         return null;
+    }
+
+    // メモ表示関数
+    function displayMemo(memo) {
+        if (memo && memo.trim() !== '') {
+            $('#origin-memo-text').text(memo);
+            $('#converted-memo-text').text(memo);
+            $('.memo-section').show();
+        } else {
+            $('#origin-memo-text').text('');
+            $('#converted-memo-text').text('');
+            $('.memo-section').hide();
+        }
     }
 
     $('.preset-button').on('click', function() {
@@ -457,6 +473,16 @@ $(document).ready(function() {
         const isShowPercentage = $('#percentage-check').prop('checked');
         const ConvertedRecipe = recipeConverter(pourTimes, convertRate, isShowPercentage);
         $('.recipe-output').html(ConvertedRecipe);
+        
+        // 変換後レシピのメモも表示（元レシピのメモと同じ内容）
+        const originMemo = $('#origin-memo-text').text();
+        if (originMemo && originMemo.trim() !== '') {
+            $('#converted-memo-text').text(originMemo);
+            $('.memo-section').show();
+        } else {
+            $('#converted-memo-text').text('');
+            $('.memo-section').hide();
+        }
 
     });
 
@@ -725,6 +751,9 @@ $(document).ready(function() {
         $(this).children('.accordion-toggle').toggleClass('rotate-90');
         $(this).next().children('.accordion-item').slideToggle(300);
     });
+    
+    // メモ欄を初期状態で非表示にする
+    $('.memo-section').hide();
 
     // 共有レシピの処理を実行
     handleSharedRecipe();
