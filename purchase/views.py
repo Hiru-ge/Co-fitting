@@ -173,8 +173,8 @@ def webhook(request):
                 "Co-fittingのご利用ありがとうございます。\n\n"
                 "申請いただいたサブスクリプションの支払いが失敗しました。\n\n"
                 "カード情報等をご確認の上、再度お試しください。\n\n"
-                "以下のリンクから、再度サブスクリプションをお申し込みいただけます。\n\n"
-                f"{request.build_absolute_uri(reverse('purchase:create_checkout_session'))}\n\n"
+                "以下のリンクからマイページにアクセスし、登録されているカード情報の更新をお申し込みいただけます。\n\n"
+                f"{request.build_absolute_uri(reverse('recipes:mypage'))}\n\n"
             )
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
             return JsonResponse({"status": "success"})
