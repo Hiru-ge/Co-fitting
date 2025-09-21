@@ -273,8 +273,8 @@ $(document).ready(function() {
                         <span class="close" id="close-recipe-name-modal">&times;</span>
                     </div>
                     <div class="modal-body">
-                        <p>共有するレシピの名前を入力してください。</p>
-                        <input type="text" id="recipe-name-input" class="wide-input" placeholder="レシピ名を入力" maxlength="30" value="共有レシピ">
+                        <p>共有するレシピの名前を入力してください</p>
+                        <input type="text" id="recipe-name-input" class="super-wide-input" placeholder="レシピ名を入力" maxlength="30" value="共有レシピ">
                         <div class="modal-actions">
                             <button id="confirm-share-btn" class="btn btn-primary">共有する</button>
                             <button id="cancel-share-btn" class="btn btn-secondary">キャンセル</button>
@@ -411,9 +411,8 @@ $(document).ready(function() {
         if (!isPremium) {
             modalContent += `
                 <div class="modal-actions">
-                    <button id="subscribe-btn" class="btn btn-primary">サブスクリプション契約</button>
+                    <button id="subscribe-btn" class="btn btn-primary">サブスク契約</button>
                     <button id="manage-shares-btn" class="btn btn-secondary">共有レシピ管理</button>
-                    <button id="close-share-limit-btn" class="btn btn-secondary">閉じる</button>
                 </div>
             `;
         } else {

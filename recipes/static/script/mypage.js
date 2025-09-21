@@ -423,9 +423,8 @@ $(document).ready(function() {
         if (!isPremium) {
             modalContent += `
                 <div class="modal-actions">
-                    <button id="subscribe-btn" class="btn btn-primary">サブスクリプション契約</button>
+                    <button id="subscribe-btn" class="btn btn-primary">サブスク契約</button>
                     <button id="manage-shares-btn" class="btn btn-secondary">共有レシピ管理</button>
-                    <button id="close-share-limit-btn" class="btn btn-secondary">閉じる</button>
                 </div>
             `;
         } else {
