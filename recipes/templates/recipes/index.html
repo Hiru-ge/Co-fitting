@@ -204,7 +204,9 @@
     <div id="shared-recipe-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>マイプリセットに追加しますか？</h3>
+                <div class="modal-title">
+                    <h3>マイプリセットに追加しますか？</h3>
+                </div>
                 <span class="close" id="close-shared-modal">&times;</span>
             </div>
             <div class="modal-body">
@@ -223,11 +225,16 @@
     <div id="success-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>成功</h3>
+                <div class="modal-title">
+                    <h3>成功</h3>
+                </div>
                 <span class="close" id="close-success-modal">&times;</span>
             </div>
             <div class="modal-body">
                 <p id="success-message">レシピをマイプリセットに追加しました。</p>
+                <div class="modal-actions">
+                    <button id="close-success-btn" class="btn btn-primary">閉じる</button>
+                </div>
             </div>
         </div>
     </div>
@@ -236,7 +243,10 @@
     <div id="error-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>エラー</h3>
+                <div class="modal-title">
+                    <span class="modal-icon">❌</span>
+                    <h3>エラー</h3>
+                </div>
                 <span class="close" id="close-error-modal">&times;</span>
             </div>
             <div class="modal-body">
@@ -244,6 +254,9 @@
                 <div id="error-actions" class="modal-actions" style="display: none;">
                     <button id="login-redirect-btn" class="btn btn-primary">ログインページへ</button>
                     <button id="delete-all-shared-btn" class="btn btn-danger">現在有効な共有レシピを削除</button>
+                </div>
+                <div class="modal-actions">
+                    <button id="close-error-btn" class="btn btn-secondary">閉じる</button>
                 </div>
             </div>
         </div>

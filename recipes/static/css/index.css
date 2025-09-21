@@ -243,6 +243,12 @@ header.ice-mode, footer.ice-mode {
     align-items: center;
 }
 
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 .close {
     color: #aaa;
     font-weight: bold;
@@ -310,13 +316,38 @@ header.ice-mode, footer.ice-mode {
     cursor: not-allowed;
 }
 
+.shared-recipe-details {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
 .shared-recipe-details h3 {
     margin-top: 0;
+    margin-bottom: 0.75rem;
     color: #876b36;
+    font-size: 1.1rem;
+    border-bottom: 1px solid rgba(135, 107, 54, 0.3);
+    padding-bottom: 0.5rem;
 }
 
 .shared-recipe-details p {
     margin: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shared-recipe-details strong {
+    color: #fff;
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.shared-recipe-details span {
+    color: #ccc;
+    text-align: right;
 }
 
 /* メモ欄のスタイル */

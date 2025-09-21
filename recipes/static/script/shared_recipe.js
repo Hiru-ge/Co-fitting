@@ -7,7 +7,7 @@ $(document).ready(function() {
     });
 
     // モーダル閉じるボタンのイベント
-    $('#close-success-modal, #close-error-modal').on('click', function() {
+    $('#close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
         closeModal($(this).closest('.modal'));
     });
 
