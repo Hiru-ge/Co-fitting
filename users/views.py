@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import SignUpForm, EmailChangeForm
@@ -146,10 +147,12 @@ def email_change_request(request):
 
             messages.success(request, "確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。")
             return redirect("recipes:mypage")
+        else:
+            # フォームが無効な場合、エラーメッセージを返す
+            return JsonResponse({'error': 'このメールアドレスは既に使用されています'}, status=400)
     else:
-        form = EmailChangeForm()
-
-    return render(request, "users/email_change_request.html", {"form": form})
+        # GETリクエストの場合はマイページにリダイレクト
+        return redirect("recipes:mypage")
 
 
 @login_required
@@ -170,7 +173,46 @@ def email_change_confirm(request, uidb64, token, email):
         return redirect("recipes:mypage")
     else:
         messages.error(request, "無効なリンクです。")
-        return redirect("users:email_change_request")
+        return redirect("recipes:mypage")
+
+
+@login_required
+def password_change_api(request):
+    """パスワード変更API（モーダル用）"""
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+        
+        # バリデーション
+        if not old_password or not new_password1 or not new_password2:
+            return JsonResponse({'error': 'すべてのフィールドを入力してください。'}, status=400)
+        
+        if new_password1 != new_password2:
+            return JsonResponse({'error': '新しいパスワードが一致しません。'}, status=400)
+        
+        # 現在のパスワードをチェック
+        user = request.user
+        if not user.check_password(old_password):
+            return JsonResponse({'error': '現在のパスワードが正しくありません。'}, status=400)
+        
+        # パスワードを変更
+        user.set_password(new_password1)
+        user.save()
+        
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'error': '無効なリクエストです。'}, status=400)
+
+
+def password_reset_done_redirect(request):
+    """パスワードリセット送信完了時にマイページにリダイレクトしてモーダル表示"""
+    return redirect(reverse('recipes:mypage') + '?password_reset_sent=true')
+
+
+def password_reset_complete_redirect(request):
+    """パスワードリセット完了時にマイページにリダイレクトしてモーダル表示"""
+    return redirect(reverse('recipes:mypage') + '?password_reset_success=true')
 
 
 @login_required
@@ -184,5 +226,4 @@ def account_delete(request):
 
         return redirect(reverse_lazy('recipes:index'))  # 退会後トップページへリダイレクト
     else:
-
-        return render(request, "users/account_delete.html")
+        return JsonResponse({'error': '無効なリクエストです。'}, status=400)

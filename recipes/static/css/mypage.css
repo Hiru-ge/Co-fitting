@@ -50,3 +50,129 @@ div.button-parent button.long-button{
     color: #fff;
     width: 13rem;
 }
+
+/* モーダル関連のスタイル */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #474747;
+    color: #fff;
+    margin: 15% auto;
+    padding: 0;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.close {
+    color: #aaa;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 700;
+    flex: 1;
+}
+
+.btn-primary {
+    background-color: #876b36;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #6b5b47;
+}
+
+.btn-secondary {
+    background-color: #666;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #555;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* フォーム関連のスタイル */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #666;
+    border-radius: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus {
+    outline: none;
+    border-color: #876b36;
+    background-color: rgba(255, 255, 255, 0.2);
+}

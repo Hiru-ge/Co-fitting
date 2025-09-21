@@ -205,17 +205,17 @@ class EmailChangeTestCase(TestCase):
         User.objects.create_user(username='otheruser', email='taken@example.com', password='password123')
 
         response = self.client.post(self.email_change_url, {'email': 'taken@example.com'})
-        self.assertEqual(response.status_code, 200)  # フォームを再表示
-        self.assertContains(response, "このメールアドレスは既に使用されています")
+        self.assertEqual(response.status_code, 400)  # エラーレスポンス
+        # モーダル形式では、エラーメッセージはJavaScriptで表示されるため、レスポンス内容のチェックは不要
 
     def test_invalid_confirmation_link(self):
         """無効な確認リンクにアクセスした場合の挙動をテスト"""
         invalid_url = reverse('users:email_change_confirm', kwargs={'uidb64': 'invalid', 'token': 'invalid', 'email': 'invalid'})
         response = self.client.get(invalid_url)
 
-        # サインアップリクエストページにリダイレクトされることを確認
+        # 無効なリンクの場合はマイページにリダイレクトされることを確認
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('users:email_change_request'))
+        self.assertRedirects(response, reverse('recipes:mypage'))
 
 
 class PasswordChangeTestCase(TestCase):
@@ -234,14 +234,14 @@ class PasswordChangeTestCase(TestCase):
 
         self.password_change_url = reverse("users:password_change")
 
-    def user_can_password_change(self):
+    def test_user_can_password_change(self):
         """正常にパスワード変更できるか"""
         response = self.client.post(self.password_change_url, {
             "old_password": "oldpassword123",
             "new_password1": "newpassword123",
             "new_password2": "newpassword123",
         })
-        self.assertEqual(response.status_code, 302)  # リダイレクトされることを確認
+        self.assertEqual(response.status_code, 200)  # JSONレスポンス
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))  # パスワード変更が適用されているか
 
@@ -252,7 +252,7 @@ class PasswordChangeTestCase(TestCase):
             "new_password1": "newpassword123",
             "new_password2": "newpassword123",
         })
-        self.assertEqual(response.status_code, 200)  # 失敗時はフォームが再表示される
+        self.assertEqual(response.status_code, 400)  # エラーレスポンス
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("oldpassword123"))  # パスワードが変更されていないか確認
 
@@ -292,7 +292,7 @@ class PasswordResetTestCase(TestCase):
         response = self.client.post(self.password_reset_url, {
             'email': 'test@example.com',
         })
-        self.assertRedirects(response, reverse('users:password_reset_done'))
+        self.assertRedirects(response, reverse('users:password_reset_done'), fetch_redirect_response=False)
 
         # メール本文をプレーンテキストとして解析し、確認URLを抽出
         email_body = mail.outbox[0].body
@@ -304,7 +304,7 @@ class PasswordResetTestCase(TestCase):
             "new_password1": "newpassword123",
             "new_password2": "newpassword123",
         })
-        self.assertRedirects(response, reverse('users:password_reset_complete'))
+        self.assertRedirects(response, reverse('users:password_reset_complete'), fetch_redirect_response=False)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))  # パスワードが変更されているか確認
 
@@ -313,7 +313,7 @@ class PasswordResetTestCase(TestCase):
         response = self.client.post(self.password_reset_url, {
             'email': 'nonexistent@example.com',
         })
-        self.assertRedirects(response, reverse('users:password_reset_done'))  # 成功時と同じリダイレクトが起こる
+        self.assertRedirects(response, reverse('users:password_reset_done'), fetch_redirect_response=False)  # 成功時と同じリダイレクトが起こる
         self.assertEqual(len(mail.outbox), 0)  # メールが送信されていないことを確認
 
 

@@ -58,12 +58,12 @@ def create_checkout_session(request):
 
 @login_required
 def checkout_success(request):
-    return render(request, 'purchase/checkout_success.html', {'preset_limit': request.user.preset_limit})
+    return redirect(reverse('recipes:mypage') + '?purchase_success=true')
 
 
 @login_required
 def checkout_cancel(request):
-    return render(request, 'purchase/checkout_cancel.html')
+    return redirect(reverse('recipes:mypage') + '?purchase_cancel=true')
 
 
 @login_required
