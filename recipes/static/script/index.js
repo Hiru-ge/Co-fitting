@@ -726,7 +726,7 @@ $(document).ready(function() {
         $('#add-to-preset-btn').prop('disabled', true).text('追加中...');
         
         $.ajax({
-            url: `/api/shared-recipes/${token}/add-to-preset`,
+            url: `/api/shared-recipes/${token}/add-to-preset/`,
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')

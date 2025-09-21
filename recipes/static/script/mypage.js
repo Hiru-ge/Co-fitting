@@ -321,13 +321,13 @@ $(document).ready(function() {
     $(document).on('click', '.edit-share-name-btn', function() {
         const token = $(this).data('token');
         // 共有レシピ編集ページに遷移
-        window.location.href = `/shared-recipe-edit/${token}`;
+        window.location.href = `/shared-recipe-edit/${token}/`;
     });
 
     // プリセット編集ボタン
     $(document).on('click', '.edit-preset-btn', function() {
         const recipeId = $(this).data('recipe-id');
-        window.location.href = `/preset_edit/${recipeId}`;
+        window.location.href = `/preset_edit/${recipeId}/`;
     });
 
     // プリセット削除ボタン
