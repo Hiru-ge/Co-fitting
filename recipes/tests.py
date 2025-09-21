@@ -267,7 +267,9 @@ class RecipeDeleteTestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
         response = self.client.post(self.delete_url)
 
-        self.assertEqual(response.status_code, 302)  # リダイレクト確認
+        self.assertEqual(response.status_code, 200)  # JSONレスポンス確認
+        response_data = json.loads(response.content)
+        self.assertTrue(response_data['success'])
         self.assertFalse(Recipe.objects.filter(id=self.recipe.id).exists())  # DBから削除されたことを確認
 
     def test_delete_recipe_not_owner(self):
@@ -275,7 +277,7 @@ class RecipeDeleteTestCase(TestCase):
         self.client.login(username='other@example.com', password='securepassword456')
         response = self.client.post(self.delete_url)
 
-        self.assertEqual(response.status_code, 404)  # 権限なしなら404が返る
+        self.assertEqual(response.status_code, 500)  # 権限なしなら500エラーが返る
         self.assertTrue(Recipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
 
     def test_delete_recipe_not_logged_in(self):

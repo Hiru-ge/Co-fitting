@@ -15,7 +15,7 @@ $(document).ready(function() {
     });
 
     // モーダル閉じるボタンのイベント
-    $('.close, #cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn, #close-not-subscribed-modal, #close-not-subscribed-btn').on('click', function() {
+    $('.close, #cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn, #close-not-subscribed-modal, #close-not-subscribed-btn, #cancel-delete-btn, #close-delete-confirm-modal').on('click', function() {
         $(this).closest('.modal').hide();
     });
 
@@ -324,14 +324,65 @@ $(document).ready(function() {
         window.location.href = `/shared-recipe-edit/${token}`;
     });
 
+    // プリセット編集ボタン
+    $(document).on('click', '.edit-preset-btn', function() {
+        const recipeId = $(this).data('recipe-id');
+        window.location.href = `/preset_edit/${recipeId}`;
+    });
+
+    // プリセット削除ボタン
+    $(document).on('click', '.delete-preset-btn', function() {
+        const recipeId = $(this).data('recipe-id');
+        const recipeName = $(this).data('recipe-name');
+        showDeleteConfirmModal('preset', recipeId, recipeName);
+    });
+
     // 共有レシピ削除ボタン
     $(document).on('click', '.delete-shared-recipe-btn', function() {
         const token = $(this).data('token');
-        if (confirm('この共有レシピを削除しますか？')) {
-            deleteSharedRecipe(token);
-        }
+        const recipeName = $(this).closest('.shared-recipe-item').find('.recipe-name').text();
+        showDeleteConfirmModal('shared', token, recipeName);
     });
 
+
+    // 削除確認モーダル表示
+    function showDeleteConfirmModal(type, id, name) {
+        const message = `「${name}」を削除しますか？この操作は取り消せません。`;
+        $('#delete-confirm-message').text(message);
+        
+        // 削除ボタンのイベントを設定
+        $('#confirm-delete-btn').off('click').on('click', function() {
+            $('#delete-confirm-modal').hide();
+            if (type === 'preset') {
+                deletePreset(id);
+            } else if (type === 'shared') {
+                deleteSharedRecipe(id);
+            }
+        });
+        
+        $('#delete-confirm-modal').show();
+    }
+
+    // プリセット削除
+    function deletePreset(recipeId) {
+        $.ajax({
+            url: `/preset_delete/${recipeId}/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                showSuccessModal('プリセットを削除しました。');
+                // ページをリロードして一覧を更新
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            },
+            error: function(xhr) {
+                showErrorModal('プリセットの削除に失敗しました。');
+            }
+        });
+    }
 
     // 共有レシピ削除
     function deleteSharedRecipe(token) {

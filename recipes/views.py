@@ -197,11 +197,18 @@ def preset_edit(request, recipe_id):
 
 class PresetDeleteView(LoginRequiredMixin, DeleteView):
     model = Recipe
-    template_name = 'recipes/preset_delete_confirm.html'
-    success_url = reverse_lazy('recipes:mypage')
 
     def get_queryset(self):
         return Recipe.objects.filter(create_user=self.request.user)
+    
+    def post(self, request, *args, **kwargs):
+        """AJAX削除用のPOSTメソッド"""
+        try:
+            self.object = self.get_object()
+            self.object.delete()
+            return JsonResponse({'success': True, 'message': 'プリセットを削除しました。'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': 'プリセットの削除に失敗しました。'}, status=500)
 
 
 class ShareConstants:

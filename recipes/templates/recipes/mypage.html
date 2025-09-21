@@ -38,8 +38,8 @@
                         <span class="recipe-name">{{ recipe.name }}</span>
                     </div>
                     <div class="button-parent">
-                        <button onclick="location.href='{% url 'recipes:preset_edit' recipe.id %}'">編集</button>
-                        <button onclick="location.href='{% url 'recipes:preset_delete' recipe.id %}'">削除</button>
+                        <button class="edit-preset-btn" data-recipe-id="{{ recipe.id }}">編集</button>
+                        <button class="delete-preset-btn" data-recipe-id="{{ recipe.id }}" data-recipe-name="{{ recipe.name }}">削除</button>
                         <button class="share-preset-btn" data-recipe-id="{{ recipe.id }}" data-recipe-name="{{ recipe.name }}">
                             <img src="{% static 'images/share-icon.png' %}" alt="共有" />
                         </button>
@@ -231,6 +231,25 @@
                 <div class="modal-actions">
                     <button type="button" class="btn btn-primary" id="subscribe-from-modal-btn">サブスク新規契約</button>
                     <button type="button" class="btn btn-secondary" id="close-not-subscribed-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 削除確認モーダル -->
+    <div id="delete-confirm-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>削除確認</h3>
+                </div>
+                <span class="close" id="close-delete-confirm-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="delete-confirm-message">本当に削除しますか？</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" id="confirm-delete-btn">削除</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-delete-btn">キャンセル</button>
                 </div>
             </div>
         </div>
