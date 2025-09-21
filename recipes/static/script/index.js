@@ -231,8 +231,8 @@ $(document).ready(function() {
             return;
         }
 
-        // 共有URL生成
-        shareRecipe();
+        // レシピ名入力モーダルを表示
+        showRecipeNameModal();
     });
 
     function showLoginPrompt() {
@@ -258,12 +258,73 @@ $(document).ready(function() {
         return cookieValue;
     }
 
-    function shareRecipe() {
+    // レシピ名入力モーダル表示
+    function showRecipeNameModal() {
+        // モーダルが既に存在する場合は削除
+        $('#recipe-name-modal').remove();
+        
+        const modalHtml = `
+            <div id="recipe-name-modal" class="modal" style="display: block;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <div class="modal-title">
+                            <h3>レシピ名を入力</h3>
+                        </div>
+                        <span class="close" id="close-recipe-name-modal">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <p>共有するレシピの名前を入力してください。</p>
+                        <input type="text" id="recipe-name-input" class="wide-input" placeholder="レシピ名を入力" maxlength="30" value="共有レシピ">
+                        <div class="modal-actions">
+                            <button id="confirm-share-btn" class="btn btn-primary">共有する</button>
+                            <button id="cancel-share-btn" class="btn btn-secondary">キャンセル</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modalHtml);
+        
+        // イベント設定
+        $('#close-recipe-name-modal, #cancel-share-btn').on('click', function() {
+            $('#recipe-name-modal').remove();
+        });
+        
+        $('#confirm-share-btn').on('click', function() {
+            const recipeName = $('#recipe-name-input').val().trim();
+            if (!recipeName) {
+                alert('レシピ名を入力してください。');
+                return;
+            }
+            $('#recipe-name-modal').remove();
+            shareRecipe(recipeName);
+        });
+        
+        // モーダル外クリックで閉じる
+        $('#recipe-name-modal').on('click', function(e) {
+            if (e.target === this) {
+                $(this).remove();
+            }
+        });
+        
+        // エンターキーで確定
+        $('#recipe-name-input').on('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                $('#confirm-share-btn').click();
+            }
+        });
+        
+        // フォーカス
+        $('#recipe-name-input').focus().select();
+    }
+
+    function shareRecipe(recipeName) {
         $('#share-recipe-btn').prop('disabled', true);
         
         // 変換後レシピのデータを収集
         const recipeData = {
-            name: '共有レシピ', // 後でユーザーが入力できるようにする
+            name: recipeName,
             bean_g: parseFloat($('.bean-output').text()),
             water_ml: parseFloat($('.water-output').text()),
             is_ice: $('html').hasClass('ice-mode'),
@@ -311,24 +372,95 @@ $(document).ready(function() {
                 shareToSocialMedia(shareUrl, recipeData);
             },
             error: function(xhr) {
-                let errorMessage = '共有URLの生成に失敗しました。';
-                let showDeleteButton = false;
-                
                 if (xhr.status === 401) {
-                    errorMessage = 'ログインが必要です。';
+                    showErrorModal('ログインが必要です。');
                 } else if (xhr.status === 429) {
                     const data = xhr.responseJSON;
-                    errorMessage = data.message || '1週間に共有できるレシピは10個までです。';
-                    showDeleteButton = true;
+                    showShareLimitModal(data);
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
-                    errorMessage = data.message || '入力データに問題があります。';
+                    showErrorModal(data.message || '入力データに問題があります。');
+                } else {
+                    showErrorModal('共有URLの生成に失敗しました。');
                 }
-                
-                showErrorModal(errorMessage, showDeleteButton);
             },
             complete: function() {
                 $('#share-recipe-btn').prop('disabled', false);
+            }
+        });
+    }
+
+    // 共有制限オーバー時のモーダル表示
+    function showShareLimitModal(data) {
+        const isPremium = data.is_premium || false;
+        const currentCount = data.current_count || 0;
+        const limit = data.limit || 1;
+        
+        let modalContent = `
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>共有制限に達しました</h3>
+                </div>
+                <span class="close" id="close-share-limit-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>${data.message}</p>
+                <p>現在の共有レシピ数: ${currentCount}/${limit}</p>
+        `;
+        
+        if (!isPremium) {
+            modalContent += `
+                <div class="modal-actions">
+                    <button id="subscribe-btn" class="btn btn-primary">サブスクリプション契約</button>
+                    <button id="manage-shares-btn" class="btn btn-secondary">共有レシピ管理</button>
+                    <button id="close-share-limit-btn" class="btn btn-secondary">閉じる</button>
+                </div>
+            `;
+        } else {
+            modalContent += `
+                <div class="modal-actions">
+                    <button id="manage-shares-btn" class="btn btn-primary">共有レシピ管理</button>
+                    <button id="close-share-limit-btn" class="btn btn-secondary">閉じる</button>
+                </div>
+            `;
+        }
+        
+        modalContent += `
+            </div>
+        `;
+        
+        // モーダルが既に存在する場合は削除
+        $('#share-limit-modal').remove();
+        
+        const modalHtml = `
+            <div id="share-limit-modal" class="modal" style="display: block;">
+                <div class="modal-content">
+                    ${modalContent}
+                </div>
+            </div>
+        `;
+        
+        $('body').append(modalHtml);
+        
+        // イベント設定
+        $('#close-share-limit-modal, #close-share-limit-btn').on('click', function() {
+            $('#share-limit-modal').remove();
+        });
+        
+        $('#subscribe-btn').on('click', function() {
+            $('#share-limit-modal').remove();
+            window.location.href = '/purchase/create_checkout_session';
+        });
+        
+        $('#manage-shares-btn').on('click', function() {
+            $('#share-limit-modal').remove();
+            window.location.href = '/mypage#shared-recipes';
+        });
+        
+        // モーダル外クリックで閉じる
+        $('#share-limit-modal').on('click', function(e) {
+            if (e.target === this) {
+                $(this).remove();
             }
         });
     }

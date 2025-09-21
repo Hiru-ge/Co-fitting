@@ -176,3 +176,106 @@ div.button-parent button.long-button{
     border-color: #876b36;
     background-color: rgba(255, 255, 255, 0.2);
 }
+
+/* レシピ情報表示 */
+.recipe-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.recipe-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.recipe-date {
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+/* 共有ボタン（変換ページと同じデザイン） */
+.share-preset-btn {
+    width: 5vh !important;
+    height: 5vh !important;
+    padding: 0.3rem !important;
+    margin: 0 0.5rem !important;
+    background-color: #e0e0e0 !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.share-preset-btn img {
+    width: 100%;
+    height: 100%;
+    filter: none; /* 元の色を保持 */
+}
+
+.share-preset-btn:hover {
+    background-color: #d0d0d0 !important;
+}
+
+/* 共有レシピ一覧の共有ボタンも同じスタイルを適用 */
+.shared-recipe-item .share-preset-btn {
+    width: 5vh !important;
+    height: 5vh !important;
+    padding: 0.3rem !important;
+    margin: 0 0.5rem !important;
+    background-color: #e0e0e0 !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.shared-recipe-item .share-preset-btn img {
+    width: 100%;
+    height: 100%;
+    filter: none;
+}
+
+.shared-recipe-item .share-preset-btn:hover {
+    background-color: #d0d0d0 !important;
+}
+
+/* 共有レシピ一覧 */
+.shared-recipe-item {
+    margin-bottom: 1rem;
+}
+
+.shared-recipe-item .recipe-info {
+    margin-bottom: 0.5rem;
+}
+
+/* 入力フィールド */
+.wide-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #666;
+    border-radius: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+}
+
+.wide-input:focus {
+    outline: none;
+    border-color: #876b36;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.wide-input::placeholder {
+    color: #ccc;
+}

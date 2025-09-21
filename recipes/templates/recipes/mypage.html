@@ -34,11 +34,15 @@
             {% if recipes %}
                 {% for recipe in recipes %}
                 <div class="item">
-                    {{ recipe.name }}
-
+                    <div class="recipe-info">
+                        <span class="recipe-name">{{ recipe.name }}</span>
+                    </div>
                     <div class="button-parent">
                         <button onclick="location.href='{% url 'recipes:preset_edit' recipe.id %}'">編集</button>
                         <button onclick="location.href='{% url 'recipes:preset_delete' recipe.id %}'">削除</button>
+                        <button class="share-preset-btn" data-recipe-id="{{ recipe.id }}" data-recipe-name="{{ recipe.name }}">
+                            <img src="{% static 'images/share-icon.png' %}" alt="共有" />
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
@@ -48,6 +52,10 @@
             <button class="long-button"  onclick="location.href='./preset_create'">プリセット新規登録</button>
         </div>
 
+        <h3 id="shared-recipes">現在共有しているレシピ一覧</h3>
+        <div id="shared-recipes-list">
+            <!-- 共有レシピ一覧はJavaScriptで動的に読み込まれます -->
+        </div>
         
         <div class="button-parent">
             <button class="long-button" id="account-delete-btn">退会</button>
