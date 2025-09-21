@@ -45,7 +45,7 @@
                     {% for step in steps %}
                         <div class="pour-step{{ step.step_number }}">
                             <label>{{ step.step_number }}投目</label>
-                            <input type="number" class="minutes" name="step{{ step.step_number }}_minute" min="0" max="59" value="{{ step.minute }}" required>:<input type="number" class="seconds" name="step{{ step.step_number }}_second" min="0" max="59" value="{{ step.seconds }}" required>
+                            <input type="number" class="minutes" name="step{{ step.step_number }}_minute" min="0" max="59" value="{{ step.minute }}" required>:<input type="number" class="seconds" name="step{{ step.step_number }}_second" min="0" max="59" value="{{ step.seconds|stringformat:'02d' }}" required>
                             <input type="number" class="pour-ml wide-input" name="step{{ step.step_number }}_water" min="1" value="{{ step.total_water_ml_this_step }}" required> ml
                         </div>
                     {% endfor %}
@@ -71,5 +71,30 @@
     <script>
         // Djangoから渡された値をJavaScriptに渡す
         var ice_gFromDB = "{{ recipe.ice_g|default_if_none:'' }}";
+        
+        // ページ読み込み時に豆量と湯量を整数値表示に調整、秒数を2桁表示に調整
+        $(document).ready(function() {
+            // 豆量を整数値表示
+            var beanValue = $('#bean-input').val();
+            if (beanValue) {
+                $('#bean-input').val(Math.round(parseFloat(beanValue)));
+            }
+            
+            // 湯量を整数値表示
+            $('.pour-ml').each(function() {
+                var waterValue = $(this).val();
+                if (waterValue) {
+                    $(this).val(Math.round(parseFloat(waterValue)));
+                }
+            });
+            
+            // 秒数を2桁表示
+            $('.seconds').each(function() {
+                var currentValue = $(this).val();
+                if (currentValue && currentValue.length === 1) {
+                    $(this).val(currentValue.padStart(2, '0'));
+                }
+            });
+        });
     </script>
 {% endblock %}
