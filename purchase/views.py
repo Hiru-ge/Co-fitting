@@ -18,15 +18,6 @@ stripe.api_key = env('STRIPE_API_KEY')
 
 
 @login_required
-def purchase_describe(request):
-    if request.user.is_subscribed:
-        status = '契約中'
-    else:
-        status = '未契約'
-    return render(request, 'purchase/purchase_describe.html', {'preset_limit': request.user.preset_limit, 'status': status})
-
-
-@login_required
 def already_subscribed(request):
     return render(request, 'purchase/already_subscribed.html')
 

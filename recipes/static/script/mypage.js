@@ -15,7 +15,7 @@ $(document).ready(function() {
     });
 
     // モーダル閉じるボタンのイベント
-    $('.close, #cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn').on('click', function() {
+    $('.close, #cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn, #close-not-subscribed-modal, #close-not-subscribed-btn').on('click', function() {
         $(this).closest('.modal').hide();
     });
 
@@ -113,6 +113,25 @@ $(document).ready(function() {
     // サブスクリプションポータルボタン
     $('#portal-session-btn').on('click', function() {
         window.location.href = '/purchase/create_portal_session';
+    });
+
+    // サブスク状況確認・解約ボタン
+    $('#subscription-status-btn').on('click', function() {
+        // 契約状況をチェック
+        const subscriptionStatus = $(this).data('subscription-status');
+        if (subscriptionStatus === '未契約') {
+            // 未契約の場合はモーダルを表示
+            $('#not-subscribed-modal').show();
+        } else {
+            // 契約済みの場合はカスタマーポータルに遷移
+            window.location.href = '/purchase/create_portal_session';
+        }
+    });
+
+    // モーダル内のサブスク新規契約ボタン
+    $('#subscribe-from-modal-btn').on('click', function() {
+        $('#not-subscribed-modal').hide();
+        window.location.href = '/purchase/create_checkout_session';
     });
 
     // 成功モーダル表示

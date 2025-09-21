@@ -23,7 +23,10 @@
         <h3>プリセット枠契約</h3>
         <p>月額100円でプリセット枠を3枠増やせます</p>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='./purchase/purchase_describe'">サブスク契約・解約<br>契約状況確認</button>
+            <button class="long-button" onclick="location.href='./purchase/create_checkout_session'">サブスク新規契約</button>
+        </div>
+        <div class="button-parent">
+            <button class="long-button" id="subscription-status-btn" data-subscription-status="{{ subscription_status }}">契約状況確認・解約</button>
         </div>
         <h3>マイプリセット</h3>
         <p><a href="{% url 'articles:mypreset-describe' %}">マイプリセット機能とは</a></p>
@@ -200,6 +203,26 @@
                 <p>新しいパスワードでログインしてください。</p>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-primary" id="close-password-reset-success-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- サブスク未契約モーダル -->
+    <div id="not-subscribed-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>サブスクリプション未契約</h3>
+                </div>
+                <span class="close" id="close-not-subscribed-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>あなたは現在サブスクリプションを契約していません。</p>
+                <p>月額100円でプリセット枠を3枠増やせます。</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="subscribe-from-modal-btn">サブスク新規契約</button>
+                    <button type="button" class="btn btn-secondary" id="close-not-subscribed-btn">閉じる</button>
                 </div>
             </div>
         </div>
