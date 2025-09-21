@@ -14,10 +14,10 @@
         <p>所有プリセット枠: <b>{{user.preset_limit}}</b><p>
         <p>サブスクリプション契約状況: <b>{{subscription_status}}</b></p>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='./users/email_change'">メールアドレス変更</button>
+            <button class="long-button" id="email-change-btn">メールアドレス変更</button>
         </div>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='./users/password_change'">パスワード変更</button>
+            <button class="long-button" id="password-change-btn">パスワード変更</button>
         </div>
         
         <h3>プリセット枠契約</h3>
@@ -47,7 +47,165 @@
 
         
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='./users/account_delete'">退会</button>
+            <button class="long-button" id="account-delete-btn">退会</button>
         </div>
     </div>
+
+    <!-- メールアドレス変更モーダル -->
+    <div id="email-change-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>メールアドレス変更</h3>
+                </div>
+                <span class="close" id="close-email-change-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="email-change-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="new-email">新しいメールアドレス:</label>
+                        <input type="email" id="new-email" name="email" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">確認メール送信</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-email-change">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- パスワード変更モーダル -->
+    <div id="password-change-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>パスワード変更</h3>
+                </div>
+                <span class="close" id="close-password-change-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="password-change-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="old-password">現在のパスワード:</label>
+                        <input type="password" id="old-password" name="old_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password1">新しいパスワード:</label>
+                        <input type="password" id="new-password1" name="new_password1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password2">新しいパスワード（確認）:</label>
+                        <input type="password" id="new-password2" name="new_password2" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-primary">パスワード変更</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-password-change">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退会確認モーダル -->
+    <div id="account-delete-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>退会確認</h3>
+                </div>
+                <span class="close" id="close-account-delete-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>本当に退会しますか？この操作は元に戻せません。</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-danger" id="confirm-account-delete">退会する</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-account-delete">キャンセル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 購入キャンセルモーダル -->
+    <div id="purchase-cancel-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>購入キャンセル</h3>
+                </div>
+                <span class="close" id="close-purchase-cancel-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>購入がキャンセルされました。</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="close-purchase-cancel-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 購入成功モーダル -->
+    <div id="purchase-success-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>購入完了</h3>
+                </div>
+                <span class="close" id="close-purchase-success-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>購入が完了しました。ありがとうございます。</p>
+                <p>現在あなたが所有しているプリセット枠： <b id="modal-preset-limit">{{ user.preset_limit }}</b></p>
+                <p>購入いただいたプリセット枠は、マイページの新規プリセット作成時にご利用いただけます。</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="close-purchase-success-btn">閉じる</button>
+                    <button type="button" class="btn btn-secondary" id="portal-session-btn">サブスクリプションポータル</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- パスワードリセット送信完了モーダル -->
+    <div id="password-reset-sent-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>パスワードリセットメール送信完了</h3>
+                </div>
+                <span class="close" id="close-password-reset-sent-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>パスワードリセット用のメールを送信しました。</p>
+                <p>メールに記載されたリンクから新しいパスワードを設定してください。</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="close-password-reset-sent-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- パスワードリセット成功モーダル -->
+    <div id="password-reset-success-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h3>パスワードリセット完了</h3>
+                </div>
+                <span class="close" id="close-password-reset-success-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>パスワードのリセットが完了しました。</p>
+                <p>新しいパスワードでログインしてください。</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" id="close-password-reset-success-btn">閉じる</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'script/mypage.js' %}"></script>
 {% endblock %}

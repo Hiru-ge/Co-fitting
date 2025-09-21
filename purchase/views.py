@@ -58,12 +58,12 @@ def create_checkout_session(request):
 
 @login_required
 def checkout_success(request):
-    return render(request, 'purchase/checkout_success.html', {'preset_limit': request.user.preset_limit})
+    return redirect(reverse('recipes:mypage') + '?purchase_success=true')
 
 
 @login_required
 def checkout_cancel(request):
-    return render(request, 'purchase/checkout_cancel.html')
+    return redirect(reverse('recipes:mypage') + '?purchase_cancel=true')
 
 
 @login_required
@@ -173,8 +173,8 @@ def webhook(request):
                 "Co-fittingのご利用ありがとうございます。\n\n"
                 "申請いただいたサブスクリプションの支払いが失敗しました。\n\n"
                 "カード情報等をご確認の上、再度お試しください。\n\n"
-                "以下のリンクから、再度サブスクリプションをお申し込みいただけます。\n\n"
-                f"{request.build_absolute_uri(reverse('purchase:create_checkout_session'))}\n\n"
+                "以下のリンクからマイページにアクセスし、登録されているカード情報の更新をお申し込みいただけます。\n\n"
+                f"{request.build_absolute_uri(reverse('recipes:mypage'))}\n\n"
             )
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
             return JsonResponse({"status": "success"})

@@ -579,11 +579,11 @@ $(document).ready(function() {
         let html = `
             <div class="shared-recipe-details">
                 <h3>${recipeData.name}</h3>
-                <p><strong>豆量:</strong> ${recipeData.bean_g}g</p>
-                <p><strong>総湯量:</strong> ${recipeData.water_ml}ml</p>
-                ${recipeData.is_ice ? `<p><strong>氷量:</strong> ${recipeData.ice_g}g</p>` : ''}
-                <p><strong>ステップ数:</strong> ${recipeData.len_steps}</p>
-                ${recipeData.memo ? `<p><strong>メモ:</strong> ${recipeData.memo}</p>` : ''}
+                <p><strong>豆量:</strong> <span>${recipeData.bean_g}g</span></p>
+                <p><strong>総湯量:</strong> <span>${recipeData.water_ml}ml</span></p>
+                ${recipeData.is_ice ? `<p><strong>氷量:</strong> <span>${recipeData.ice_g}g</span></p>` : ''}
+                <p><strong>ステップ数:</strong> <span>${recipeData.len_steps}ステップ</span></p>
+                ${recipeData.memo ? `<p><strong>メモ:</strong> <span>${recipeData.memo}</span></p>` : ''}
             </div>
         `;
         infoDiv.html(html);
@@ -696,10 +696,10 @@ $(document).ready(function() {
         });
     }
 
-    $('#close-shared-modal, #close-success-modal, #close-error-modal').on('click', function() {
+    $('#close-shared-modal, #close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
         $(this).closest('.modal').hide();
         // エラーモーダルを閉じる際にボタンを非表示にする
-        if ($(this).attr('id') === 'close-error-modal') {
+        if ($(this).attr('id') === 'close-error-modal' || $(this).attr('id') === 'close-error-btn') {
             $('#error-actions').hide();
             $('#login-redirect-btn').hide();
             $('#delete-all-shared-btn').hide();
