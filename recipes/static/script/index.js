@@ -359,7 +359,7 @@ $(document).ready(function() {
 
         // バックエンドAPIに送信
         $.ajax({
-            url: '/api/shared-recipes',
+            url: '/api/shared-recipes/create/',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

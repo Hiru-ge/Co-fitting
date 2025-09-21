@@ -389,11 +389,9 @@ class RecipeImageGenerator:
 def create_shared_recipe(request):
     user = request.user
 
-    # 共有リンク数制限チェック
     current_count = SharedRecipe.objects.filter(shared_by_user=user).count()
-    
-    # サブスクリプション状況に応じて制限を決定
     subscription_status = getattr(user, 'subscription_status', '未契約')
+    
     if subscription_status == '契約中':
         limit = ShareConstants.SHARE_LIMIT_PREMIUM
         limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
@@ -410,13 +408,11 @@ def create_shared_recipe(request):
             'is_premium': subscription_status == '契約中'
         }, status=429)
 
-    # JSONデータ解析
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'invalid_json', 'message': 'JSONデータの形式が正しくありません。'}, status=400)
 
-    # データ検証
     required_fields = ['name', 'bean_g', 'water_ml', 'is_ice', 'len_steps', 'steps']
     for field in required_fields:
         if field not in data:
@@ -425,10 +421,9 @@ def create_shared_recipe(request):
     if not isinstance(data['steps'], list) or len(data['steps']) != data['len_steps']:
         return JsonResponse({'error': 'invalid_data', 'message': 'ステップ数が不正です'}, status=400)
 
-    # 共有レシピ作成（永続有効化）
     access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
-    # 永続有効化のため、expires_atを非常に遠い未来に設定
-    expires_at = timezone.now() + timedelta(days=365*100)  # 100年後
+    # 永続有効化のため、expires_atを非常に遠い未来(100年後)に設定
+    expires_at = timezone.now() + timedelta(days=365*100)
     
     shared_recipe = SharedRecipe.objects.create(
         name=data['name'],
@@ -444,7 +439,6 @@ def create_shared_recipe(request):
         access_token=access_token
     )
 
-    # ステップデータ作成（累積化）
     steps_for_image = []
     cumulative = 0
     for i, step in enumerate(data['steps']):
@@ -464,11 +458,9 @@ def create_shared_recipe(request):
             'cumulative_water_ml': cumulative
         })
 
-    # 画像生成
     image_generator = RecipeImageGenerator(data, steps_for_image)
     image_url = image_generator.generate_image(access_token)
 
-    # レスポンス作成
     share_url = request.build_absolute_uri(f'/?shared={shared_recipe.access_token}')
     return JsonResponse({
         'url': share_url, 
@@ -543,41 +535,9 @@ def shared_recipe_ogp(request, token):
     return render(request, 'recipes/shared_recipe_ogp.html', context)
 
 
-@csrf_exempt
-@require_POST
-@login_required
-def delete_all_shared_recipes(request):
-    """対象ユーザーの全共有レシピを一括削除"""
-    try:
-        # ユーザーの全共有レシピを取得
-        shared_recipes = SharedRecipe.objects.filter(shared_by_user=request.user)
-        
-        # 関連する画像ファイルを削除
-        for shared_recipe in shared_recipes:
-            image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        
-        # データベースから削除
-        deleted_count = shared_recipes.count()
-        shared_recipes.delete()
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'{deleted_count}個の共有レシピを削除しました。',
-            'deleted_count': deleted_count
-        })
-    except Exception as e:
-        return JsonResponse({
-            'error': 'delete_failed',
-            'message': '共有レシピの削除に失敗しました。しばらく時間をおいてから再度お試しください。'
-        }, status=500)
-
-
 @require_GET
 @login_required
 def get_user_shared_recipes(request):
-    """ユーザーの共有レシピ一覧を取得"""
     try:
         shared_recipes = SharedRecipe.objects.filter(shared_by_user=request.user).order_by('-created_at')
         recipes_data = []
@@ -595,9 +555,7 @@ def get_user_shared_recipes(request):
                 'memo': recipe.memo
             })
         
-        return JsonResponse({
-            'shared_recipes': recipes_data
-        })
+        return JsonResponse({'shared_recipes': recipes_data})
     except Exception as e:
         return JsonResponse({
             'error': 'fetch_failed',
@@ -609,16 +567,12 @@ def get_user_shared_recipes(request):
 @require_POST
 @login_required
 def share_preset_recipe(request, recipe_id):
-    """プリセットレシピを共有"""
     try:
-        # プリセットレシピを取得
         recipe = get_object_or_404(Recipe, id=recipe_id, create_user=request.user)
         
-        # 共有リンク数制限チェック
         current_count = SharedRecipe.objects.filter(shared_by_user=request.user).count()
-        
-        # サブスクリプション状況に応じて制限を決定
         subscription_status = getattr(request.user, 'subscription_status', '未契約')
+        
         if subscription_status == '契約中':
             limit = ShareConstants.SHARE_LIMIT_PREMIUM
             limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
@@ -653,7 +607,6 @@ def share_preset_recipe(request, recipe_id):
             access_token=access_token
         )
         
-        # ステップデータ作成
         recipe_steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
         for step in recipe_steps:
             SharedRecipeStep.objects.create(
@@ -664,7 +617,6 @@ def share_preset_recipe(request, recipe_id):
                 total_water_ml_this_step=step.total_water_ml_this_step
             )
         
-        # 画像生成
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in recipe_steps]
         recipe_data = {
             'name': recipe.name,
@@ -692,102 +644,16 @@ def share_preset_recipe(request, recipe_id):
 
 
 @csrf_exempt
-@require_GET
-@login_required
-def get_shared_recipe_detail(request, token):
-    """共有レシピの詳細を取得"""
-    try:
-        shared_recipe = get_object_or_404(SharedRecipe, access_token=token, shared_by_user=request.user)
-        
-        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
-        steps_data = [
-            {
-                'step_number': step.step_number,
-                'minute': step.minute,
-                'seconds': step.seconds,
-                'total_water_ml_this_step': step.total_water_ml_this_step
-            }
-            for step in steps
-        ]
-        
-        recipe_data = {
-            'access_token': shared_recipe.access_token,
-            'name': shared_recipe.name,
-            'created_at': shared_recipe.created_at.isoformat(),
-            'is_ice': shared_recipe.is_ice,
-            'ice_g': shared_recipe.ice_g,
-            'len_steps': shared_recipe.len_steps,
-            'bean_g': shared_recipe.bean_g,
-            'water_ml': shared_recipe.water_ml,
-            'memo': shared_recipe.memo,
-            'steps': steps_data
-        }
-        
-        return JsonResponse(recipe_data)
-    except Exception as e:
-        return JsonResponse({
-            'error': 'fetch_failed',
-            'message': '共有レシピの取得に失敗しました。'
-        }, status=500)
-
-
-@csrf_exempt
-@require_http_methods(["PATCH"])
-@login_required
-def update_shared_recipe(request, token):
-    """共有レシピの名前を更新"""
-    try:
-        shared_recipe = get_object_or_404(SharedRecipe, access_token=token, shared_by_user=request.user)
-        
-        data = json.loads(request.body)
-        new_name = data.get('name', '').strip()
-        
-        if not new_name:
-            return JsonResponse({
-                'error': 'invalid_data',
-                'message': 'レシピ名を入力してください。'
-            }, status=400)
-        
-        if len(new_name) > 30:
-            return JsonResponse({
-                'error': 'invalid_data',
-                'message': 'レシピ名は30文字以内で入力してください。'
-            }, status=400)
-        
-        shared_recipe.name = new_name
-        shared_recipe.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'レシピ名を変更しました。',
-            'name': new_name
-        })
-    except json.JSONDecodeError:
-        return JsonResponse({
-            'error': 'invalid_json',
-            'message': 'JSONデータの形式が正しくありません。'
-        }, status=400)
-    except Exception as e:
-        return JsonResponse({
-            'error': 'update_failed',
-            'message': 'レシピ名の変更に失敗しました。'
-        }, status=500)
-
-
-@csrf_exempt
 @require_http_methods(["DELETE"])
 @login_required
 def delete_shared_recipe(request, token):
-    """共有レシピを削除"""
     try:
         shared_recipe = get_object_or_404(SharedRecipe, access_token=token, shared_by_user=request.user)
         
-        # 関連する画像ファイルを削除
         image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
         if os.path.exists(image_path):
             os.remove(image_path)
         
-        # データベースから削除
         shared_recipe.delete()
         
         return JsonResponse({
@@ -803,12 +669,10 @@ def delete_shared_recipe(request, token):
 
 @login_required
 def shared_recipe_edit(request, token):
-    """共有レシピの編集"""
     shared_recipe = get_object_or_404(SharedRecipe, access_token=token, shared_by_user=request.user)
     steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
 
     if request.method == 'POST':
-        # レシピ基本情報の更新
         shared_recipe.name = request.POST.get('name', shared_recipe.name)
         shared_recipe.len_steps = int(request.POST.get('len_steps', shared_recipe.len_steps))
         shared_recipe.bean_g = float(request.POST.get('bean_g', shared_recipe.bean_g))
@@ -816,7 +680,6 @@ def shared_recipe_edit(request, token):
         shared_recipe.ice_g = float(request.POST.get('ice_g', 0)) if shared_recipe.is_ice else None
         shared_recipe.memo = request.POST.get('memo', shared_recipe.memo)
         
-        # ステップデータの更新
         SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).delete()
         total_water_ml = 0
         
@@ -838,7 +701,6 @@ def shared_recipe_edit(request, token):
         shared_recipe.water_ml = total_water_ml
         shared_recipe.save()
 
-        # 画像を再生成
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')]
         recipe_data = {
             'name': shared_recipe.name,
