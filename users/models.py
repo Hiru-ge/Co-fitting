@@ -201,6 +201,14 @@ class UserManager(BaseUserManager):
             user, request, "users:email_change_confirm", new_email
         )
         EmailService.send_email_change_confirmation_email(user, new_email, confirmation_link)
+    
+    @staticmethod
+    def get_subscription_status(user):
+        """ユーザーのサブスクリプション状態を取得"""
+        if user.is_subscribed:
+            return "契約中"
+        else:
+            return "未契約"
 
 
 class User(AbstractBaseUser, PermissionsMixin):

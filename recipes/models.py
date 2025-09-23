@@ -159,6 +159,129 @@ class SharedRecipeManager(models.Manager):
             return None, ResponseHelper.create_error_response('expired', 'この共有リンクは期限切れです。', 410)
 
         return shared_recipe, None
+    
+    def check_share_limit_or_error(self, user):
+        """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
+        current_count = self.for_user(user).count()
+        is_subscribed = getattr(user, 'is_subscribed', False)
+        
+        if is_subscribed:
+            limit = ShareConstants.SHARE_LIMIT_PREMIUM
+            limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
+        else:
+            limit = ShareConstants.SHARE_LIMIT_FREE
+            limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{ShareConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
+        
+        if current_count >= limit:
+            return JsonResponse({
+                'error': 'share_limit_exceeded', 
+                'message': limit_message,
+                'current_count': current_count,
+                'limit': limit,
+                'is_premium': is_subscribed
+            }, status=429)
+        
+        return None
+    
+    def prepare_image_data(self, data):
+        """画像生成用のステップデータを準備"""
+        steps_for_image = []
+        cumulative = 0
+        for i, step in enumerate(data['steps']):
+            pour_ml = step['total_water_ml_this_step']
+            cumulative += pour_ml
+            steps_for_image.append({
+                'minute': step['minute'],
+                'seconds': step['seconds'],
+                'step_number': step.get('step_number', i+1),
+                'pour_ml': pour_ml,
+                'cumulative_water_ml': cumulative
+            })
+        return steps_for_image
+    
+    def copy_to_preset(self, shared_recipe, user):
+        """共有レシピをプリセットとして複製"""
+        # プリセット上限チェック
+        error_response = Recipe.objects.check_preset_limit_or_error(user)
+        if error_response:
+            return None, error_response
+        
+        try:
+            # 共有レシピをプリセットとして複製
+            new_recipe = Recipe.objects.create(
+                name=shared_recipe.name,
+                create_user=user,
+                is_ice=shared_recipe.is_ice,
+                ice_g=shared_recipe.ice_g,
+                len_steps=shared_recipe.len_steps,
+                bean_g=shared_recipe.bean_g,
+                water_ml=shared_recipe.water_ml,
+                memo=shared_recipe.memo or ''
+            )
+
+            # ステップを複製
+            shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+            for shared_step in shared_steps:
+                RecipeStep.objects.create(
+                    recipe_id=new_recipe,
+                    step_number=shared_step.step_number,
+                    minute=shared_step.minute,
+                    seconds=shared_step.seconds,
+                    total_water_ml_this_step=shared_step.total_water_ml_this_step
+                )
+
+            return new_recipe, None
+        except Exception:
+            return None, ResponseHelper.create_error_response(
+                'database_error',
+                'レシピの保存に失敗しました。しばらく時間をおいてから再度お試しください。',
+                500
+            )
+    
+    def delete_with_image(self, shared_recipe):
+        """共有レシピと画像ファイルを削除"""
+        try:
+            # 画像ファイルを削除
+            image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            
+            # 共有レシピを削除
+            shared_recipe.delete()
+            
+            return ResponseHelper.create_success_response('共有レシピを削除しました。')
+        except Exception as e:
+            return ResponseHelper.create_error_response(
+                'delete_failed',
+                '共有レシピの削除に失敗しました。',
+                500
+            )
+    
+    def get_user_shared_recipes_data(self, user):
+        """ユーザーの共有レシピ一覧データを取得"""
+        try:
+            shared_recipes = self.for_user(user).order_by('-created_at')
+            recipes_data = []
+            
+            for recipe in shared_recipes:
+                recipes_data.append({
+                    'access_token': recipe.access_token,
+                    'name': recipe.name,
+                    'created_at': recipe.created_at.isoformat(),
+                    'is_ice': recipe.is_ice,
+                    'bean_g': recipe.bean_g,
+                    'water_ml': recipe.water_ml,
+                    'ice_g': recipe.ice_g,
+                    'len_steps': recipe.len_steps,
+                    'memo': recipe.memo
+                })
+            
+            return JsonResponse({'shared_recipes': recipes_data})
+        except Exception as e:
+            return JsonResponse({
+                'error': 'fetch_failed',
+                'message': '共有レシピ一覧の取得に失敗しました。'
+            }, status=500)
 
 
 class RecipeImageGenerator:
@@ -347,6 +470,26 @@ class Recipe(models.Model):
         self.ice_g = float(form_data.get('ice_g', 0)) if self.is_ice else None
         self.memo = form_data.get('memo', self.memo)
         return self
+    
+    def create_with_user_and_steps(self, form_data, user):
+        """ユーザーとステップを含めてレシピを作成する"""
+        self.water_ml = 0
+        self.create_user = user
+        self.save()
+        self.create_steps_from_form_data(form_data)
+        return self
+    
+    def update_with_steps(self, form_data):
+        """ステップを含めてレシピを更新する"""
+        self.water_ml = 0
+        self.save()
+        
+        # 既存のステップを削除
+        RecipeStep.objects.filter(recipe_id=self).delete()
+        
+        # 新しいステップを作成
+        self.create_steps_from_form_data(form_data)
+        return self
 
 
 class RecipeStep(models.Model):
@@ -420,6 +563,27 @@ class SharedRecipe(models.Model):
                 seconds=step['seconds'],
                 total_water_ml_this_step=cumulative
             )
+        return self
+    
+    def update_from_form_data(self, form_data):
+        """フォームデータから共有レシピを更新する"""
+        self.name = form_data.get('name', self.name)
+        self.len_steps = int(form_data.get('len_steps', self.len_steps))
+        self.bean_g = float(form_data.get('bean_g', self.bean_g))
+        self.is_ice = form_data.get('is_ice') == 'on'
+        self.ice_g = float(form_data.get('ice_g', 0)) if self.is_ice else None
+        self.memo = form_data.get('memo', self.memo)
+        return self
+    
+    def update_with_steps(self, form_data):
+        """ステップを含めて共有レシピを更新する"""
+        self.update_from_form_data(form_data)
+        
+        # 既存のステップを削除
+        SharedRecipeStep.objects.filter(shared_recipe=self).delete()
+        
+        # 新しいステップを作成
+        self.create_steps_from_form_data(form_data)
         return self
 
 
