@@ -386,7 +386,7 @@ class RecipeImageGenerator:
             return f"{settings.MEDIA_URL}shared_recipes/{img_filename}"
 
         except Exception as e:
-            print('image generation error:', e)
+            # 画像生成エラーは無視
             return None
 
 
@@ -397,9 +397,9 @@ def create_shared_recipe(request):
     user = request.user
 
     current_count = SharedRecipe.objects.filter(shared_by_user=user).count()
-    subscription_status = getattr(user, 'subscription_status', '未契約')
+    is_subscribed = getattr(user, 'is_subscribed', False)
     
-    if subscription_status == '契約中':
+    if is_subscribed:
         limit = ShareConstants.SHARE_LIMIT_PREMIUM
         limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
     else:
@@ -412,7 +412,7 @@ def create_shared_recipe(request):
             'message': limit_message,
             'current_count': current_count,
             'limit': limit,
-            'is_premium': subscription_status == '契約中'
+            'is_premium': is_subscribed
         }, status=429)
 
     try:
@@ -578,9 +578,9 @@ def share_preset_recipe(request, recipe_id):
         recipe = get_object_or_404(Recipe, id=recipe_id, create_user=request.user)
         
         current_count = SharedRecipe.objects.filter(shared_by_user=request.user).count()
-        subscription_status = getattr(request.user, 'subscription_status', '未契約')
+        is_subscribed = getattr(request.user, 'is_subscribed', False)
         
-        if subscription_status == '契約中':
+        if is_subscribed:
             limit = ShareConstants.SHARE_LIMIT_PREMIUM
             limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
         else:
@@ -593,7 +593,7 @@ def share_preset_recipe(request, recipe_id):
                 'message': limit_message,
                 'current_count': current_count,
                 'limit': limit,
-                'is_premium': subscription_status == '契約中'
+                'is_premium': is_subscribed
             }, status=429)
         
         # 共有レシピ作成（永続有効化）
