@@ -19,6 +19,85 @@ from PIL import Image, ImageDraw, ImageFont
 import json
 
 
+# =============================================================================
+# 定数とユーティリティ関数
+# =============================================================================
+
+class ShareConstants:
+    # 共有制限
+    SHARE_LIMIT_FREE = 1  # 無料ユーザーの共有リンク数制限
+    SHARE_LIMIT_PREMIUM = 5  # サブスクユーザーの共有リンク数制限
+    
+    # トークン設定
+    TOKEN_LENGTH = 16
+    
+    # 画像生成設定
+    IMAGE_WIDTH = 1000
+    BASE_HEIGHT = 500
+    ROW_HEIGHT = 42
+    CARD_MARGIN = 50
+    CARD_RADIUS = 40
+    FONT_SIZE_LARGE = 48
+    FONT_SIZE_MEDIUM = 38
+    FONT_SIZE_SMALL = 28
+    
+    # 期限設定
+    DEFAULT_EXPIRY_DAYS = 365 * 100  # 100年後（実質無期限）
+
+
+def create_error_response(error_type, message, status_code=400):
+    """統一されたエラーレスポンスを作成"""
+    return JsonResponse({
+        'error': error_type,
+        'message': message
+    }, status=status_code)
+
+
+def create_success_response(message, data=None, status_code=200):
+    """統一された成功レスポンスを作成"""
+    response_data = {
+        'success': True,
+        'message': message
+    }
+    if data:
+        response_data.update(data)
+    return JsonResponse(response_data, status=status_code)
+
+
+def get_shared_recipe_or_404(token):
+    """共有レシピを取得し、存在・期限チェックを行う"""
+    try:
+        shared_recipe = SharedRecipe.objects.get(access_token=token)
+    except SharedRecipe.DoesNotExist:
+        return None, create_error_response('not_found', 'この共有リンクは存在しません。', 404)
+
+    if shared_recipe.expires_at and shared_recipe.expires_at < timezone.now():
+        return None, create_error_response('expired', 'この共有リンクは期限切れです。', 410)
+
+    return shared_recipe, None
+
+
+def check_preset_limit_or_error(user):
+    """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
+    current_preset_count = Recipe.objects.filter(create_user=user).count()
+    if current_preset_count >= user.preset_limit:
+        if user.is_subscribed:
+            return JsonResponse({
+                'error': 'preset_limit_exceeded_premium', 
+                'message': 'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
+            }, status=400)
+        else:
+            return JsonResponse({
+                'error': 'preset_limit_exceeded', 
+                'message': 'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。'
+            }, status=400)
+    return None
+
+
+# =============================================================================
+# レシピ関連のヘルパー関数
+# =============================================================================
+
 def create_recipe_steps(recipe, request_data, step_model_class):
     """レシピステップを作成する共通関数"""
     total_water_ml = 0
@@ -58,7 +137,7 @@ def update_recipe_from_form(recipe, request_data):
 def create_shared_recipe_from_data(recipe_data, user, expires_at=None):
     """レシピデータから共有レシピを作成する共通関数"""
     if expires_at is None:
-        expires_at = timezone.now() + timedelta(days=365*100)  # 100年後
+        expires_at = timezone.now() + timedelta(days=ShareConstants.DEFAULT_EXPIRY_DAYS)
     
     access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
     
@@ -100,57 +179,191 @@ def generate_recipe_image(recipe_data, steps_data, access_token):
     return image_generator.generate_image(access_token)
 
 
-def index(request):
-    user = request.user
+def _get_preset_recipes(user):
+    """ユーザーのプリセットレシピを取得"""
     user_preset_recipes = Recipe.objects.filter(create_user=user.id)
-
     default_preset_user = User.objects.get(username='DefaultPreset')
     default_preset_recipes = Recipe.objects.filter(create_user=default_preset_user.id)
+    
+    return user_preset_recipes, default_preset_recipes
 
 
-    shared_recipe_data = None
-    shared_token = request.GET.get('shared')
+def _get_shared_recipe_data(shared_token):
+    """共有レシピデータを取得"""
+    if not shared_token:
+        return None
+    
+    try:
+        shared_recipe = SharedRecipe.objects.get(access_token=shared_token)
+        
+        if shared_recipe.expires_at and shared_recipe.expires_at < timezone.now():
+            return {'error': 'expired', 'message': 'この共有リンクは期限切れです。'}
+        
+        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        steps_data = [
+            {
+                'step_number': step.step_number,
+                'minute': step.minute,
+                'seconds': step.seconds,
+                'total_water_ml_this_step': step.total_water_ml_this_step
+            }
+            for step in steps
+        ]
+        
+        return {
+            'name': shared_recipe.name,
+            'shared_by_user': shared_recipe.shared_by_user.username,
+            'is_ice': shared_recipe.is_ice,
+            'ice_g': shared_recipe.ice_g,
+            'len_steps': shared_recipe.len_steps,
+            'bean_g': shared_recipe.bean_g,
+            'water_ml': shared_recipe.water_ml,
+            'memo': shared_recipe.memo,
+            'created_at': shared_recipe.created_at,
+            'expires_at': shared_recipe.expires_at,
+            'steps': steps_data,
+            'access_token': shared_recipe.access_token
+        }
+    except SharedRecipe.DoesNotExist:
+        return {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
 
-    if shared_token:
+
+# =============================================================================
+# 画像生成クラス
+# =============================================================================
+
+class RecipeImageGenerator:
+    def __init__(self, recipe_data, steps_data):
+        self.recipe_data = recipe_data
+        self.steps_data = steps_data
+        self._setup_colors()
+        self._setup_dimensions()
+
+    def _setup_colors(self):
+        if self.recipe_data.get('is_ice'):
+            self.bg_color = (162, 169, 175)  # アイスコーヒー用の青系背景
+        else:
+            self.bg_color = (236, 231, 219)  # 通常コーヒー用の背景
+        self.card_color = (71, 71, 71)
+        self.text_color = (255, 255, 255)
+        self.accent_color = (199, 161, 110)
+
+    def _setup_dimensions(self):
+        n_steps = len(self.steps_data)
+        extra_rows = max(0, n_steps - 5)
+        card_height = ShareConstants.BASE_HEIGHT + ShareConstants.ROW_HEIGHT * extra_rows
+        self.img_height = card_height + ShareConstants.CARD_MARGIN * 2
+        self.img_width = ShareConstants.IMAGE_WIDTH
+
+    def _setup_fonts(self):
         try:
-            shared_recipe = SharedRecipe.objects.get(access_token=shared_token)
+            font_path = "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"
+            font_bold_path = "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc"
+            font = ImageFont.truetype(font_path, ShareConstants.FONT_SIZE_MEDIUM)
+            font_bold = ImageFont.truetype(font_bold_path, ShareConstants.FONT_SIZE_LARGE)
+            font_small = ImageFont.truetype(font_path, ShareConstants.FONT_SIZE_SMALL)
+        except Exception:
+            font = font_bold = font_small = ImageFont.load_default()
 
-            if shared_recipe.expires_at and shared_recipe.expires_at < timezone.now():
-                shared_recipe_data = {'error': 'expired', 'message': 'この共有リンクは期限切れです。'}
-            else:
-                steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
-                steps_data = [
-                    {
-                        'step_number': step.step_number,
-                        'minute': step.minute,
-                        'seconds': step.seconds,
-                        'total_water_ml_this_step': step.total_water_ml_this_step
-                    }
-                    for step in steps
-                ]
-                shared_recipe_data = {
-                    'name': shared_recipe.name,
-                    'shared_by_user': shared_recipe.shared_by_user.username,
-                    'is_ice': shared_recipe.is_ice,
-                    'ice_g': shared_recipe.ice_g,
-                    'len_steps': shared_recipe.len_steps,
-                    'bean_g': shared_recipe.bean_g,
-                    'water_ml': shared_recipe.water_ml,
-                    'memo': shared_recipe.memo,
-                    'created_at': shared_recipe.created_at,
-                    'expires_at': shared_recipe.expires_at,
-                    'steps': steps_data,
-                    'access_token': shared_recipe.access_token
-                }
-        except SharedRecipe.DoesNotExist:
-            shared_recipe_data = {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
+        return font, font_bold, font_small
+
+    def _draw_basic_info(self, draw, font_small, y_position):
+        draw.text((ShareConstants.CARD_MARGIN+40, y_position),
+                 f"レシピ名: {self.recipe_data['name']}", font=font_small, fill=self.text_color)
+        y_position += 40
+        draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
+                 f"豆量: {self.recipe_data['bean_g']}g", font=font_small, fill=self.text_color)
+        y_position += 40
+        if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
+            draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
+                     f"氷量: {self.recipe_data['ice_g']}g", font=font_small, fill=self.text_color)
+            y_position += 40
+        return y_position
+
+    def _draw_table(self, draw, font_small, start_y):
+        table_x = ShareConstants.CARD_MARGIN + 40
+        table_y = start_y
+        row_h = ShareConstants.ROW_HEIGHT
+
+        for i, step in enumerate(self.steps_data):
+            y = table_y + i * row_h
+            draw.text((table_x, y), f"ステップ{step['step_number']}: {step['minute']}分{step['seconds']}秒", 
+                     font=font_small, fill=self.text_color)
+            draw.text((table_x + 400, y), f"{step['pour_ml']}ml", 
+                     font=font_small, fill=self.text_color)
+
+        sy = table_y + len(self.steps_data) * row_h
+        draw.text((table_x, sy), "合計", font=font_small, fill=self.text_color)
+        draw.text((table_x + 400, sy), f"{sum(step['pour_ml'] for step in self.steps_data)}ml", 
+                 font=font_small, fill=self.text_color)
+
+        return sy + row_h + 10
+
+    def generate_image(self, access_token):
+        try:
+            img = Image.new('RGB', (self.img_width, self.img_height), self.bg_color)
+            draw = ImageDraw.Draw(img)
+
+            def rounded_rectangle(draw, xy, radius, fill):
+                draw.rounded_rectangle(xy, radius=radius, fill=fill)
+
+            rounded_rectangle(draw, 
+                            (ShareConstants.CARD_MARGIN, ShareConstants.CARD_MARGIN,
+                             self.img_width-ShareConstants.CARD_MARGIN,
+                             self.img_height-ShareConstants.CARD_MARGIN),
+                            ShareConstants.CARD_RADIUS, self.card_color)
+
+            font, font_bold, font_small = self._setup_fonts()
+            y = self._draw_basic_info(draw, font_small, ShareConstants.CARD_MARGIN+30)
+            y2 = self._draw_table(draw, font_small, y)
+
+            total_water = sum(step['pour_ml'] for step in self.steps_data)
+            # アイスモードの場合は氷量も加算
+            if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
+                try:
+                    ice_g = float(self.recipe_data['ice_g'])
+                except (ValueError, TypeError):
+                    ice_g = 0
+                total_water += ice_g
+            draw.text((ShareConstants.CARD_MARGIN+40, y2),
+                     f"出来上がり量: {int(total_water)} ml",
+                     font=font_small, fill=self.text_color)
+
+            pb_text = "Powered by Co-fitting"
+            pb_bbox = draw.textbbox((0, 0), pb_text, font=font_small)
+            pb_w = pb_bbox[2] - pb_bbox[0]
+            pb_h = pb_bbox[3] - pb_bbox[1]
+            draw.text((self.img_width-ShareConstants.CARD_MARGIN-pb_w-20,
+                      self.img_height-ShareConstants.CARD_MARGIN-pb_h-40),
+                     pb_text, font=font_small, fill=self.bg_color)
+
+            # img_dir = os.path.join(settings.BASE_DIR, 'recipes', 'static', 'images', 'shared_recipes')
+            img_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
+            os.makedirs(img_dir, exist_ok=True)
+            img_path = os.path.join(img_dir, f'{access_token}.png')
+            img.save(img_path)
+            return img_path
+        except Exception as e:
+            return None
+
+
+# =============================================================================
+# ビュー関数
+# =============================================================================
+
+def index(request):
+    """メインページの表示"""
+    user = request.user
+    shared_token = request.GET.get('shared')
+    
+    user_preset_recipes, default_preset_recipes = _get_preset_recipes(user)
+    shared_recipe_data = _get_shared_recipe_data(shared_token)
 
     context = {
         'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
         'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes],
         'shared_recipe_data': shared_recipe_data
     }
-
     return render(request, 'recipes/index.html', context)
 
 
@@ -242,67 +455,74 @@ class PresetDeleteView(LoginRequiredMixin, DeleteView):
         try:
             self.object = self.get_object()
             self.object.delete()
-            return JsonResponse({'success': True, 'message': 'プリセットを削除しました。'})
+            return create_success_response('プリセットを削除しました。')
         except Exception as e:
-            return JsonResponse({'success': False, 'message': 'プリセットの削除に失敗しました。'}, status=500)
+            return create_error_response('delete_failed', 'プリセットの削除に失敗しました。', 500)
 
 
-class ShareConstants:
-    SHARE_LIMIT_FREE = 1  # 無料ユーザーの共有リンク数制限
-    SHARE_LIMIT_PREMIUM = 5  # サブスクユーザーの共有リンク数制限
-    TOKEN_LENGTH = 16
-    IMAGE_WIDTH = 1000
-    BASE_HEIGHT = 500
-    ROW_HEIGHT = 42
-    CARD_MARGIN = 50
-    CARD_RADIUS = 40
-    FONT_SIZE_LARGE = 48
-    FONT_SIZE_MEDIUM = 38
-    FONT_SIZE_SMALL = 28
+@csrf_exempt
+@require_POST
+@login_required
+def create_shared_recipe(request):
+    user = request.user
 
+    current_count = SharedRecipe.objects.filter(shared_by_user=user).count()
+    is_subscribed = getattr(user, 'is_subscribed', False)
+    
+    if is_subscribed:
+        limit = ShareConstants.SHARE_LIMIT_PREMIUM
+        limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
+    else:
+        limit = ShareConstants.SHARE_LIMIT_FREE
+        limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{ShareConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
+    
+    if current_count >= limit:
+        return JsonResponse({
+            'error': 'share_limit_exceeded', 
+            'message': limit_message,
+            'current_count': current_count,
+            'limit': limit,
+            'is_premium': is_subscribed
+        }, status=429)
 
-def get_shared_recipe_or_404(token):
-    """共有レシピを取得し、存在・期限チェックを行う"""
     try:
-        shared_recipe = SharedRecipe.objects.get(access_token=token)
-    except SharedRecipe.DoesNotExist:
-        return None, JsonResponse({
-            'error': 'not_found',
-            'message': 'この共有リンクは存在しません。'
-        }, status=404)
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'invalid_json', 'message': 'JSONデータの形式が正しくありません。'}, status=400)
 
-    if shared_recipe.expires_at and shared_recipe.expires_at < timezone.now():
-        return None, JsonResponse({
-            'error': 'expired',
-            'message': 'この共有リンクは期限切れです。'
-        }, status=410)
+    required_fields = ['name', 'bean_g', 'water_ml', 'is_ice', 'len_steps', 'steps']
+    for field in required_fields:
+        if field not in data:
+            return JsonResponse({'error': 'invalid_data', 'message': f'{field}がありません'}, status=400)
 
-    return shared_recipe, None
+    if not isinstance(data['steps'], list) or len(data['steps']) != data['len_steps']:
+        return JsonResponse({'error': 'invalid_data', 'message': 'ステップ数が不正です'}, status=400)
 
-
-def check_preset_limit_or_error(user):
-    """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
-    current_preset_count = Recipe.objects.filter(create_user=user).count()
-    if current_preset_count >= user.preset_limit:
-        if user.is_subscribed:
-            return JsonResponse({
-                'error': 'preset_limit_exceeded_premium', 
-                'message': 'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
-            }, status=400)
-        else:
-            return JsonResponse({
-                'error': 'preset_limit_exceeded', 
-                'message': 'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。'
-            }, status=400)
-    return None
-
-
-class RecipeImageGenerator:
-    def __init__(self, recipe_data, steps_data):
-        self.recipe_data = recipe_data
-        self.steps_data = steps_data
-        self._setup_colors()
-        self._setup_dimensions()
+    # 共通関数を使用して共有レシピを作成
+    shared_recipe = create_shared_recipe_from_data(data, user)
+    
+    # 画像生成用のステップデータを準備
+    steps_for_image = []
+    cumulative = 0
+    for i, step in enumerate(data['steps']):
+        pour_ml = step['total_water_ml_this_step']
+        cumulative += pour_ml
+        steps_for_image.append({
+            'minute': step['minute'],
+            'seconds': step['seconds'],
+            'step_number': step.get('step_number', i+1),
+            'pour_ml': pour_ml
+        })
+    
+    # 画像を生成
+    image_path = generate_recipe_image(data, steps_for_image, shared_recipe.access_token)
+    
+    return JsonResponse({
+        'success': True,
+        'message': '共有レシピを作成しました。',
+        'access_token': shared_recipe.access_token,
+        'image_path': image_path
+    })
 
     def _setup_colors(self):
         if self.recipe_data.get('is_ice'):
