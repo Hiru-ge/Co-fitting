@@ -1220,6 +1220,122 @@ class RecipeModelTestCase(TestCase):
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
 
+    def test_create_steps_from_form_data(self):
+        """フォームデータからステップを作成するテスト"""
+        recipe = Recipe.objects.create(
+            name='テストレシピ',
+            create_user=self.user,
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=0.0,  # 初期値
+            memo='テストメモ'
+        )
+        
+        form_data = {
+            'step1_minute': '0',
+            'step1_second': '30',
+            'step1_water': '100.0',
+            'step2_minute': '1',
+            'step2_second': '0',
+            'step2_water': '100.0',
+        }
+        
+        recipe.create_steps_from_form_data(form_data)
+        
+        # ステップが正しく作成されたかチェック
+        steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+        self.assertEqual(steps.count(), 2)
+        
+        # 最初のステップ
+        step1 = steps[0]
+        self.assertEqual(step1.step_number, 1)
+        self.assertEqual(step1.minute, 0)
+        self.assertEqual(step1.seconds, 30)
+        self.assertEqual(step1.total_water_ml_this_step, 100.0)
+        
+        # 2番目のステップ
+        step2 = steps[1]
+        self.assertEqual(step2.step_number, 2)
+        self.assertEqual(step2.minute, 1)
+        self.assertEqual(step2.seconds, 0)
+        self.assertEqual(step2.total_water_ml_this_step, 100.0)
+        
+        # 総湯量が更新されたかチェック
+        recipe.refresh_from_db()
+        self.assertEqual(recipe.water_ml, 100.0)  # 最後のステップの湯量
+
+    def test_update_from_form_data(self):
+        """フォームデータからレシピを更新するテスト"""
+        recipe = Recipe.objects.create(
+            name='元のレシピ名',
+            create_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=150.0,
+            memo='元のメモ'
+        )
+        
+        form_data = {
+            'name': '更新されたレシピ名',
+            'len_steps': '3',
+            'bean_g': '25.0',
+            'is_ice': 'on',
+            'ice_g': '50.0',
+            'memo': '更新されたメモ'
+        }
+        
+        recipe.update_from_form_data(form_data)
+        
+        self.assertEqual(recipe.name, '更新されたレシピ名')
+        self.assertEqual(recipe.len_steps, 3)
+        self.assertEqual(recipe.bean_g, 25.0)
+        self.assertTrue(recipe.is_ice)
+        self.assertEqual(recipe.ice_g, 50.0)
+        self.assertEqual(recipe.memo, '更新されたメモ')
+
+    def test_to_dict(self):
+        """to_dictメソッドのテスト"""
+        recipe = Recipe.objects.create(
+            name='テストレシピ',
+            create_user=self.user,
+            is_ice=True,
+            ice_g=50.0,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo='テストメモ'
+        )
+        
+        # ステップを作成
+        RecipeStep.objects.create(
+            recipe_id=recipe,
+            step_number=1,
+            minute=0,
+            seconds=30,
+            total_water_ml_this_step=100.0
+        )
+        RecipeStep.objects.create(
+            recipe_id=recipe,
+            step_number=2,
+            minute=1,
+            seconds=0,
+            total_water_ml_this_step=100.0
+        )
+        
+        recipe_dict = recipe.to_dict()
+        
+        self.assertEqual(recipe_dict['id'], recipe.id)
+        self.assertEqual(recipe_dict['name'], 'テストレシピ')
+        self.assertTrue(recipe_dict['is_ice'])
+        self.assertEqual(recipe_dict['ice_g'], 50.0)
+        self.assertEqual(recipe_dict['len_steps'], 2)
+        self.assertEqual(recipe_dict['bean_g'], 20.0)
+        self.assertEqual(recipe_dict['water_ml'], 200.0)
+        self.assertEqual(recipe_dict['memo'], 'テストメモ')
+        self.assertEqual(len(recipe_dict['steps']), 2)
+
 
 class SharedRecipeModelTestCase(TestCase):
     """共有レシピモデルのテスト"""
@@ -1362,6 +1478,309 @@ class SharedRecipeModelTestCase(TestCase):
         steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe)
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
+
+    def test_is_expired(self):
+        """期限切れ判定のテスト"""
+        # 有効な共有レシピ
+        future_expires = timezone.now() + timedelta(days=30)
+        active_recipe = SharedRecipe.objects.create(
+            name='有効レシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0,
+            expires_at=future_expires,
+            access_token='active_token'
+        )
+        
+        # 期限切れの共有レシピ
+        past_expires = timezone.now() - timedelta(days=1)
+        expired_recipe = SharedRecipe.objects.create(
+            name='期限切れレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0,
+            expires_at=past_expires,
+            access_token='expired_token'
+        )
+        
+        self.assertFalse(active_recipe.is_expired())
+        self.assertTrue(expired_recipe.is_expired())
+
+    def test_create_steps_from_recipe_data(self):
+        """レシピデータからステップを作成するテスト"""
+        expires_at = timezone.now() + timedelta(days=30)
+        shared_recipe = SharedRecipe.objects.create(
+            name='共有テストレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            expires_at=expires_at,
+            access_token='test_token'
+        )
+        
+        recipe_data = {
+            'steps': [
+                {
+                    'step_number': 1,
+                    'minute': 0,
+                    'seconds': 30,
+                    'total_water_ml_this_step': 100.0
+                },
+                {
+                    'step_number': 2,
+                    'minute': 1,
+                    'seconds': 0,
+                    'total_water_ml_this_step': 100.0
+                }
+            ]
+        }
+        
+        shared_recipe.create_steps_from_recipe_data(recipe_data)
+        
+        # ステップが正しく作成されたかチェック
+        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        self.assertEqual(steps.count(), 2)
+        
+        # 最初のステップ（累積湯量: 100ml）
+        step1 = steps[0]
+        self.assertEqual(step1.step_number, 1)
+        self.assertEqual(step1.minute, 0)
+        self.assertEqual(step1.seconds, 30)
+        self.assertEqual(step1.total_water_ml_this_step, 100.0)
+        
+        # 2番目のステップ（累積湯量: 200ml）
+        step2 = steps[1]
+        self.assertEqual(step2.step_number, 2)
+        self.assertEqual(step2.minute, 1)
+        self.assertEqual(step2.seconds, 0)
+        self.assertEqual(step2.total_water_ml_this_step, 200.0)
+
+    def test_to_dict(self):
+        """to_dictメソッドのテスト"""
+        expires_at = timezone.now() + timedelta(days=30)
+        shared_recipe = SharedRecipe.objects.create(
+            name='共有テストレシピ',
+            shared_by_user=self.user,
+            is_ice=True,
+            ice_g=50.0,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo='共有テストメモ',
+            expires_at=expires_at,
+            access_token='test_token_123'
+        )
+        
+        # ステップを作成
+        SharedRecipeStep.objects.create(
+            shared_recipe=shared_recipe,
+            step_number=1,
+            minute=0,
+            seconds=30,
+            total_water_ml_this_step=100.0
+        )
+        SharedRecipeStep.objects.create(
+            shared_recipe=shared_recipe,
+            step_number=2,
+            minute=1,
+            seconds=0,
+            total_water_ml_this_step=100.0
+        )
+        
+        recipe_dict = shared_recipe.to_dict()
+        
+        self.assertEqual(recipe_dict['name'], '共有テストレシピ')
+        self.assertEqual(recipe_dict['shared_by_user'], self.user.username)
+        self.assertTrue(recipe_dict['is_ice'])
+        self.assertEqual(recipe_dict['ice_g'], 50.0)
+        self.assertEqual(recipe_dict['len_steps'], 2)
+        self.assertEqual(recipe_dict['bean_g'], 20.0)
+        self.assertEqual(recipe_dict['water_ml'], 200.0)
+        self.assertEqual(recipe_dict['memo'], '共有テストメモ')
+        self.assertEqual(recipe_dict['access_token'], 'test_token_123')
+        self.assertEqual(len(recipe_dict['steps']), 2)
+
+
+class RecipeManagerTestCase(TestCase):
+    """RecipeManagerのテスト"""
+    
+    def setUp(self):
+        """テスト用ユーザーの作成"""
+        self.user1 = User.objects.create_user(
+            username='user1',
+            email='user1@example.com',
+            password='testpass123'
+        )
+        self.user2 = User.objects.create_user(
+            username='user2',
+            email='user2@example.com',
+            password='testpass123'
+        )
+        self.default_user = User.objects.create_user(
+            username='DefaultPreset',
+            email='default@example.com',
+            password='testpass123'
+        )
+        
+        # テスト用レシピを作成
+        Recipe.objects.create(
+            name='ユーザー1のレシピ',
+            create_user=self.user1,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0
+        )
+        Recipe.objects.create(
+            name='ユーザー2のレシピ',
+            create_user=self.user2,
+            is_ice=False,
+            len_steps=1,
+            bean_g=25.0,
+            water_ml=250.0
+        )
+        Recipe.objects.create(
+            name='デフォルトレシピ',
+            create_user=self.default_user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=15.0,
+            water_ml=150.0
+        )
+    
+    def test_for_user(self):
+        """ユーザー別レシピ取得のテスト"""
+        user1_recipes = Recipe.objects.for_user(self.user1)
+        self.assertEqual(user1_recipes.count(), 1)
+        self.assertEqual(user1_recipes.first().name, 'ユーザー1のレシピ')
+        
+        user2_recipes = Recipe.objects.for_user(self.user2)
+        self.assertEqual(user2_recipes.count(), 1)
+        self.assertEqual(user2_recipes.first().name, 'ユーザー2のレシピ')
+    
+    def test_default_presets(self):
+        """デフォルトプリセット取得のテスト"""
+        default_recipes = Recipe.objects.default_presets()
+        self.assertEqual(default_recipes.count(), 1)
+        self.assertEqual(default_recipes.first().name, 'デフォルトレシピ')
+
+    def test_get_preset_recipes_for_user(self):
+        """ユーザーのプリセットレシピとデフォルトプリセットを取得するテスト"""
+        user1_recipes, default_recipes = Recipe.objects.get_preset_recipes_for_user(self.user1)
+        self.assertEqual(user1_recipes.count(), 1)
+        self.assertEqual(default_recipes.count(), 1)
+        self.assertEqual(user1_recipes.first().name, 'ユーザー1のレシピ')
+        self.assertEqual(default_recipes.first().name, 'デフォルトレシピ')
+
+    def test_check_preset_limit_or_error(self):
+        """プリセット上限チェックのテスト"""
+        # 上限に達した場合（無料ユーザー）
+        self.user1.is_subscribed = False
+        self.user1.preset_limit = 1
+        self.user1.save()
+        
+        error_response = Recipe.objects.check_preset_limit_or_error(self.user1)
+        self.assertIsNotNone(error_response)
+        self.assertEqual(error_response.status_code, 400)
+        
+        # 上限内の場合（プリセット数を減らす）
+        self.user1.preset_limit = 2
+        self.user1.save()
+        
+        error_response = Recipe.objects.check_preset_limit_or_error(self.user1)
+        self.assertIsNone(error_response)
+
+
+class SharedRecipeManagerTestCase(TestCase):
+    """SharedRecipeManagerのテスト"""
+    
+    def setUp(self):
+        """テスト用ユーザーの作成"""
+        self.user = User.objects.create_user(
+            username='testuser',
+            email='test@example.com',
+            password='testpass123'
+        )
+        
+        # 有効な共有レシピ
+        future_expires = timezone.now() + timedelta(days=30)
+        SharedRecipe.objects.create(
+            name='有効レシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0,
+            expires_at=future_expires,
+            access_token='active_token'
+        )
+        
+        # 期限切れの共有レシピ
+        past_expires = timezone.now() - timedelta(days=1)
+        SharedRecipe.objects.create(
+            name='期限切れレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=1,
+            bean_g=20.0,
+            water_ml=200.0,
+            expires_at=past_expires,
+            access_token='expired_token'
+        )
+    
+    def test_for_user(self):
+        """ユーザー別共有レシピ取得のテスト"""
+        user_recipes = SharedRecipe.objects.for_user(self.user)
+        self.assertEqual(user_recipes.count(), 2)
+    
+    def test_active(self):
+        """有効な共有レシピ取得のテスト"""
+        active_recipes = SharedRecipe.objects.active()
+        self.assertEqual(active_recipes.count(), 1)
+        self.assertEqual(active_recipes.first().name, '有効レシピ')
+    
+    def test_expired(self):
+        """期限切れ共有レシピ取得のテスト"""
+        expired_recipes = SharedRecipe.objects.expired()
+        self.assertEqual(expired_recipes.count(), 1)
+        self.assertEqual(expired_recipes.first().name, '期限切れレシピ')
+    
+    def test_by_token(self):
+        """トークンで共有レシピ取得のテスト"""
+        recipe = SharedRecipe.objects.by_token('active_token')
+        self.assertIsNotNone(recipe)
+        self.assertEqual(recipe.name, '有効レシピ')
+        
+        # 存在しないトークン
+        no_recipe = SharedRecipe.objects.by_token('nonexistent_token')
+        self.assertIsNone(no_recipe)
+
+    def test_get_shared_recipe_data(self):
+        """共有レシピデータ取得のテスト"""
+        # 有効なトークン
+        data = SharedRecipe.objects.get_shared_recipe_data('active_token')
+        self.assertIsNotNone(data)
+        self.assertEqual(data['name'], '有効レシピ')
+        
+        # 期限切れトークン
+        data = SharedRecipe.objects.get_shared_recipe_data('expired_token')
+        self.assertIsNotNone(data)
+        self.assertEqual(data['error'], 'expired')
+        
+        # 存在しないトークン
+        data = SharedRecipe.objects.get_shared_recipe_data('nonexistent_token')
+        self.assertIsNotNone(data)
+        self.assertEqual(data['error'], 'not_found')
+        
+        # 空のトークン
+        data = SharedRecipe.objects.get_shared_recipe_data(None)
+        self.assertIsNone(data)
 
 
 class RecipeViewsIntegrationTestCase(TestCase):
