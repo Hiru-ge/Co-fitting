@@ -31,10 +31,10 @@
                     </div>
                 {% endfor %}
                 
-                {% if users_preset_recipes %}
-                    {% for users_preset_recipe in users_preset_recipes %}
+                {% if user_preset_recipes %}
+                    {% for user_preset_recipe in user_preset_recipes %}
                         <div class="accordion-item">
-                            <button id="{{users_preset_recipe.id}}" class="preset-button users-preset-button">{{users_preset_recipe.name}}</button>
+                            <button id="{{user_preset_recipe.id}}" class="preset-button users-preset-button">{{user_preset_recipe.name}}</button>
                         </div>
                     {% endfor %}
                 {% endif %}
@@ -184,8 +184,8 @@
     {{ default_preset_recipes|json_script:"default_preset_recipes" }}
     </span>
     
-    <span id="users_preset_recipes">
-    {{ users_preset_recipes|json_script:"users_preset_recipes" }}
+    <span id="user_preset_recipes">
+    {{ user_preset_recipes|json_script:"user_preset_recipes" }}
     </span>
     
     <!-- 共有レシピデータをスクリプトタグに埋め込む -->

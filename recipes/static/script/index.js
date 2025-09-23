@@ -1,6 +1,6 @@
 'use strict';
 $(document).ready(function() {
-    function iceModeApply(isIce, ice_gFromDB){
+    function apply_ice_mode(isIce, ice_gFromDB){
             // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
             let iceInputDivText= `
             <label for="ice_g">レシピの氷量(g): </label>
@@ -23,15 +23,15 @@ $(document).ready(function() {
 
     // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
     $('#ice-check, #is_ice').on('change', function(){
-        iceModeApply(this.checked, /*ice_gFromDB=*/null)
+        apply_ice_mode(this.checked, /*ice_gFromDB=*/null)
     });
 
     // ページロード時にアイスモードをチェック
     if ($('#is_ice').prop('checked')) {
-        iceModeApply(true, ice_gFromDB)
+        apply_ice_mode(true, ice_gFromDB)
     }
 
-    function originRecipeFormLengthAdjuster(InputPourTimes, CurrentPourTimes){
+    function adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes){
         if (InputPourTimes > CurrentPourTimes) {
             for (let i = CurrentPourTimes; i < InputPourTimes; i++) {                
                 let processInput = `
@@ -50,16 +50,16 @@ $(document).ready(function() {
         }
     }
 
-    function selectedButtonDarkener(LightButtonsClass, DarkButtonId){
+    function darken_selected_button(LightButtonsClass, DarkButtonId){
         $(`.${LightButtonsClass}`).removeClass('selected-button');
         $(`#${DarkButtonId}`).addClass('selected-button');
     }
 
-    function presetActivate(recipe){
+    function activate_preset(recipe){
         $('#pour-times-input').val(recipe.len_steps);
         const InputPourTimes = $('#pour-times-input').val();
         const CurrentPourTimes = $('.origin-process').children().length;
-        originRecipeFormLengthAdjuster(InputPourTimes, CurrentPourTimes);
+        adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
 
         $('#ice-check').prop('checked', recipe.is_ice).change();
         $('#ice_g').val(recipe.ice_g)
@@ -88,8 +88,8 @@ $(document).ready(function() {
 
     function getPresetRecipeData(presetId) {
         const DefaultPresetRecipesJSON = JSON.parse($('#default_preset_recipes').text());
-        const UsersPresetRecipesJSON = JSON.parse($('#users_preset_recipes').text());
-        const PresetRecipesJSON = DefaultPresetRecipesJSON.concat(UsersPresetRecipesJSON);
+        const UserPresetRecipesJSON = JSON.parse($('#user_preset_recipes').text());
+        const PresetRecipesJSON = DefaultPresetRecipesJSON.concat(UserPresetRecipesJSON);
         for (var i = 0; i < PresetRecipesJSON.length; i++) {
             if (PresetRecipesJSON[i].id == presetId) {
                 return PresetRecipesJSON[i];
@@ -114,15 +114,15 @@ $(document).ready(function() {
     $('.preset-button').on('click', function() {
         const presetId = $(this).attr('id');
         const recipe = getPresetRecipeData(presetId);
-        selectedButtonDarkener('preset-button', presetId);
-        presetActivate(recipe);
+        darken_selected_button('preset-button', presetId);
+        activate_preset(recipe);
     });
 
     // レシピ入力欄の出力
     $('#pour-times-input').on('change', function(){
         const InputPourTimes = $('#pour-times-input').val();
         const CurrentPourTimes = $('.origin-process').children().length;
-        originRecipeFormLengthAdjuster(InputPourTimes, CurrentPourTimes);
+        adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
     });
 
     // 変換前レシピの入力補助
@@ -649,7 +649,7 @@ $(document).ready(function() {
         StopButton.disabled = false;
         ResetButton.disabled = true;
         // 選択中のボタンは暗くする
-        selectedButtonDarkener('timer-button', StartButton.id);
+        darken_selected_button('timer-button', StartButton.id);
         
         startTime = Date.now();
         displayTime();
@@ -660,7 +660,7 @@ $(document).ready(function() {
         StartButton.disabled = false;
         StopButton.disabled = true;
         ResetButton.disabled = false;
-        selectedButtonDarkener('timer-button', StopButton.id);
+        darken_selected_button('timer-button', StopButton.id);
 
         clearTimeout(timeoutID);
         stopTime += (Date.now() - startTime);
@@ -671,7 +671,7 @@ $(document).ready(function() {
         StartButton.disabled = false;
         StopButton.disabled = true;
         ResetButton.disabled = true;
-        selectedButtonDarkener('timer-button', ResetButton.id);
+        darken_selected_button('timer-button', ResetButton.id);
         Time.textContent = '00:00';
         stopTime = 0;
     });

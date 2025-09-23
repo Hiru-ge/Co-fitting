@@ -33,7 +33,7 @@ class UserManager(BaseUserManager):
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255)
     email = models.EmailField(max_length=255, unique=True)
-    is_subscribed = models.BooleanField(default=False, null=True)
+    is_subscribed = models.BooleanField(default=False)
     preset_limit = models.IntegerField(default=1)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)

@@ -21,7 +21,7 @@ import json
 
 def index(request):
     user = request.user
-    users_preset_recipes = Recipe.objects.filter(create_user=user.id)
+    user_preset_recipes = Recipe.objects.filter(create_user=user.id)
 
     default_preset_user = User.objects.get(username='DefaultPreset')
     default_preset_recipes = Recipe.objects.filter(create_user=default_preset_user.id)
@@ -79,7 +79,7 @@ def index(request):
             shared_recipe_data = {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
 
     context = {
-        'users_preset_recipes': [recipe_to_dict(recipe) for recipe in users_preset_recipes],
+        'user_preset_recipes': [recipe_to_dict(recipe) for recipe in user_preset_recipes],
         'default_preset_recipes': [recipe_to_dict(recipe) for recipe in default_preset_recipes],
         'shared_recipe_data': shared_recipe_data
     }
@@ -109,10 +109,10 @@ def mypage(request):
 @login_required
 def preset_create(request):
     if request.method == 'POST':
-        len_usersPreset = len(Recipe.objects.filter(create_user=request.user))
-        canCreate = len_usersPreset < request.user.preset_limit
+        user_preset_count = len(Recipe.objects.filter(create_user=request.user))
+        can_create = user_preset_count < request.user.preset_limit
 
-        if not canCreate:
+        if not can_create:
             messages.success(request, "エラー：プリセットレシピ上限を超過しています")
             recipe_form = RecipeForm()
             return render(request, 'recipes/preset_create.html', {'recipe_form': recipe_form})
