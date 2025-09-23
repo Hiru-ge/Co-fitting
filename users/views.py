@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import SignUpForm, EmailChangeForm
+from .forms import SignUpForm, EmailChangeForm, PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
@@ -74,8 +74,11 @@ def email_change_request(request):
             messages.success(request, "確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。")
             return redirect("recipes:mypage")
         else:
-            # フォームが無効な場合、エラーメッセージを返す
-            return JsonResponse({'error': 'このメールアドレスは既に使用されています'}, status=400)
+            # フォームエラーを返す
+            errors = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors[0] if field_errors else ''
+            return JsonResponse({'error': errors}, status=400)
     else:
         # GETリクエストの場合はマイページにリダイレクト
         return redirect("recipes:mypage")
@@ -101,16 +104,17 @@ def email_change_confirm(request, uidb64, token, email):
 def password_change_api(request):
     """パスワード変更API（モーダル用）"""
     if request.method == 'POST':
-        old_password = request.POST.get('old_password')
-        new_password1 = request.POST.get('new_password1')
-        new_password2 = request.POST.get('new_password2')
-        
-        result = User.objects.change_password(request.user, old_password, new_password1, new_password2)
-        
-        if 'error' in result:
-            return JsonResponse(result, status=400)
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data['new_password1']
+            User.objects.change_user_password(request.user, new_password)
+            return JsonResponse({'success': True, 'message': 'パスワードを変更しました。'})
         else:
-            return JsonResponse(result)
+            # フォームエラーを返す
+            errors = {}
+            for field, field_errors in form.errors.items():
+                errors[field] = field_errors[0] if field_errors else ''
+            return JsonResponse({'error': errors}, status=400)
     
     return JsonResponse({'error': '無効なリクエストです。'}, status=400)
 
@@ -128,10 +132,10 @@ def password_reset_complete_redirect(request):
 @login_required
 def account_delete(request):
     if request.method == 'POST':
+        # 元の挙動を維持：POSTリクエストのみでアカウント削除
         user = request.user
         User.objects.deactivate_user(user)
         logout(request)
-
         return redirect(reverse_lazy('recipes:index'))  # 退会後トップページへリダイレクト
     else:
         return JsonResponse({'error': '無効なリクエストです。'}, status=400)

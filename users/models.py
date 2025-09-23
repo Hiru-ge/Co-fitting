@@ -160,26 +160,6 @@ class UserManager(BaseUserManager):
         return user
     
     @staticmethod
-    def change_password(user, old_password, new_password1, new_password2):
-        """パスワード変更処理"""
-        # バリデーション
-        if not old_password or not new_password1 or not new_password2:
-            return {'error': 'すべてのフィールドを入力してください。'}
-        
-        if new_password1 != new_password2:
-            return {'error': '新しいパスワードが一致しません。'}
-        
-        # 現在のパスワードをチェック
-        if not user.check_password(old_password):
-            return {'error': '現在のパスワードが正しくありません。'}
-        
-        # パスワードを変更
-        user.set_password(new_password1)
-        user.save()
-        
-        return {'success': True}
-    
-    @staticmethod
     def create_inactive_user_with_confirmation(form, request):
         """非アクティブユーザーを作成して確認メールを送信"""
         user = form.save(commit=False)
@@ -209,6 +189,13 @@ class UserManager(BaseUserManager):
             return "契約中"
         else:
             return "未契約"
+    
+    @staticmethod
+    def change_user_password(user, new_password):
+        """ユーザーのパスワードを変更"""
+        user.set_password(new_password)
+        user.save()
+        return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):
