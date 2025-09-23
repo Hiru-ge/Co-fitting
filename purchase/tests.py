@@ -39,7 +39,7 @@ class StripePaymentTest(TestCase):
         login_success = self.client.login(username='test@example.com', password='securepassword123')
         self.assertTrue(login_success)
 
-    @patch("purchase.views.stripe.checkout.Session.create")
+    @patch("purchase.models.StripeService.create_checkout_session")
     def test_create_checkout_session(self, mock_stripe_session):
         """StripeのCheckoutセッションが正しく作成されるかをテスト"""
         # mockを作成
@@ -95,7 +95,7 @@ class StripePaymentTest(TestCase):
             }
         }
 
-        with patch("purchase.views.send_mail") as mock_send_mail:
+        with patch("purchase.models.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -103,8 +103,12 @@ class StripePaymentTest(TestCase):
             )
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
+        
+        # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
-        self.assertIn("支払い完了通知", args[0])
+        subject, message, from_email, recipient_list = args
+        self.assertEqual(subject, "支払い完了通知")
+        self.assertEqual(recipient_list, [self.user.email])
 
         # プリセット枠が増えていることを確認
         self.user.refresh_from_db()
@@ -185,7 +189,7 @@ class StripePaymentTest(TestCase):
             }
         }
 
-        with patch("purchase.views.send_mail") as mock_send_mail:
+        with patch("purchase.models.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -194,8 +198,12 @@ class StripePaymentTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
+        
+        # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
-        self.assertIn("支払い失敗通知", args[0])
+        subject, message, from_email, recipient_list = args
+        self.assertEqual(subject, "支払い失敗通知")
+        self.assertEqual(recipient_list, [self.user.email])
 
 
 class PurchaseViewsTestCase(TestCase):
@@ -243,7 +251,7 @@ class PurchaseViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('users:login')))
 
-    @patch("purchase.views.stripe.billing_portal.Session.create")
+    @patch("purchase.models.StripeService.create_portal_session")
     def test_create_portal_session_success(self, mock_portal_session):
         """ポータルセッション作成が正常に動作することをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
@@ -370,7 +378,7 @@ class PurchaseWebhookTestCase(TestCase):
         self.user.save()
         
         event_data = {
-            "type": "invoice.payment_succeeded",
+            "type": "invoice.paid",
             "data": {
                 "object": {
                     "customer": self.user.stripe_customer_id
@@ -378,7 +386,7 @@ class PurchaseWebhookTestCase(TestCase):
             }
         }
         
-        with patch("purchase.views.send_mail") as mock_send_mail:
+        with patch("purchase.models.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -386,7 +394,14 @@ class PurchaseWebhookTestCase(TestCase):
             )
         
         # イベントが処理されることを確認
-        self.assertIn(response.status_code, [200, 400])
+        self.assertEqual(response.status_code, 200)
+        mock_send_mail.assert_called_once()
+        
+        # 件名と受信者をチェック
+        args, kwargs = mock_send_mail.call_args
+        subject, message, from_email, recipient_list = args
+        self.assertEqual(subject, "支払い完了通知")
+        self.assertEqual(recipient_list, [self.user.email])
 
     def test_webhook_invoice_payment_failed(self):
         """請求書支払い失敗イベントのテスト"""
@@ -402,7 +417,7 @@ class PurchaseWebhookTestCase(TestCase):
             }
         }
         
-        with patch("purchase.views.send_mail") as mock_send_mail:
+        with patch("purchase.models.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -411,6 +426,12 @@ class PurchaseWebhookTestCase(TestCase):
         
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
+        
+        # 件名と受信者をチェック
+        args, kwargs = mock_send_mail.call_args
+        subject, message, from_email, recipient_list = args
+        self.assertEqual(subject, "支払い失敗通知")
+        self.assertEqual(recipient_list, [self.user.email])
 
 
 class PurchaseIntegrationTestCase(TestCase):
@@ -431,7 +452,7 @@ class PurchaseIntegrationTestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
         
         # 1. チェックアウトセッション作成
-        with patch("purchase.views.stripe.checkout.Session.create") as mock_stripe_session:
+        with patch("purchase.models.StripeService.create_checkout_session") as mock_stripe_session:
             mock_session = MagicMock()
             mock_session.url = reverse("purchase:checkout_success")
             mock_stripe_session.return_value = mock_session
@@ -477,7 +498,7 @@ class PurchaseIntegrationTestCase(TestCase):
             }
         }
         
-        with patch("purchase.views.send_mail") as mock_send_mail:
+        with patch("purchase.models.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -485,6 +506,13 @@ class PurchaseIntegrationTestCase(TestCase):
             )
         
         self.assertEqual(response.status_code, 200)
+        mock_send_mail.assert_called_once()
+        
+        # 件名と受信者をチェック
+        args, kwargs = mock_send_mail.call_args
+        subject, message, from_email, recipient_list = args
+        self.assertEqual(subject, "支払い完了通知")
+        self.assertEqual(recipient_list, [self.user.email])
         
         # 5. ユーザーのサブスクリプション状態が更新されることを確認
         self.user.refresh_from_db()
