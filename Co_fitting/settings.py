@@ -198,6 +198,11 @@ LOGGING = {
             "level": "ERROR",
             "propagate": True,
         },
+        "django_recaptcha": {
+            "handlers": [],
+            "level": "CRITICAL",
+            "propagate": False,
+        },
     },
 }
 
