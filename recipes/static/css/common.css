@@ -1,4 +1,9 @@
 /* 機能に関する部分 */
+/* モーダルの非表示クラス */
+.modal-hidden {
+    display: none !important;
+}
+
 /* ハンバーガーメニュー */
 body{
   overflow-x: hidden;   /* 横スクロールの停止(横にはみ出た分は非表示) */

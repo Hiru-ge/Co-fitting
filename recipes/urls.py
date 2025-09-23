@@ -20,4 +20,5 @@ urlpatterns = [
     path('api/shared-recipes/<str:token>/add-to-preset/', views.add_shared_recipe_to_preset, name='add_shared_recipe_to_preset'),
     
     path('api/preset-share/<int:recipe_id>/', views.share_preset_recipe, name='share_preset_recipe'),
+    path('api/preset-recipes/', views.get_preset_recipes, name='get_preset_recipes'),
 ]

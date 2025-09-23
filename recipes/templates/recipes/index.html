@@ -47,12 +47,12 @@
                 <!--変換前レシピの投数入力欄-->
                 <div>
                     <label for="pour-times-input">レシピの投数: </label>
-                    <input type="text" id="pour-times-input" maxlength="1" onkeyup="nextField(this)"> 投
+                    <input type="text" id="pour-times-input" maxlength="1"> 投
                 </div>
                 <!--変換前レシピの豆量入力欄-->
                 <div>
                     <label for="bean-input">レシピの豆量(g): </label>
-                    <input type="text" id="bean-input" maxlength="2" onkeyup="nextField(this)"> g
+                    <input type="text" id="bean-input" maxlength="2"> g
                 </div>
                 <!-- 変換前レシピの比率表示欄 -->
                 <div>
@@ -67,13 +67,13 @@
                     <!-- 1･2投目は確実に使うだろうから最初から表示しておく -->
                     <div class="pour-step1">
                         <label>1投目</label>
-                        <input type="number" class="minutes" name="step1_minute" min="0" max="59" maxlength="1" value="0" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step1_second" min="0" max="59"  maxlength="2" value="00" onkeyup="nextField(this)" required>
-                        <input type="number" class="pour-ml wide-input" name="step1_water" min="1" maxlength="3" value="30" onkeyup="nextField(this)" required> ml
+                        <input type="number" class="minutes" name="step1_minute" min="0" max="59" maxlength="1" value="0" required>:<input type="number" class="seconds" name="step1_second" min="0" max="59"  maxlength="2" value="00" required>
+                        <input type="number" class="pour-ml wide-input" name="step1_water" min="1" maxlength="3" value="30" required> ml
                     </div>                    
                     <div class="pour-step2">
                         <label>2投目</label>
-                        <input type="number" class="minutes" value="0" name="step2_minute" min="0" max="59" maxlength="1" onkeyup="nextField(this)" required>:<input type="number" class="seconds" value="30" name="step2_second" min="0" max="59"  maxlength="2" onkeyup="nextField(this)" required>
-                        <input type="number" class="pour-ml wide-input" name="step1_water" min="1" maxlength="3" onkeyup="nextField(this)" required> ml
+                        <input type="number" class="minutes" value="0" name="step2_minute" min="0" max="59" maxlength="1" required>:<input type="number" class="seconds" value="30" name="step2_second" min="0" max="59"  maxlength="2" required>
+                        <input type="number" class="pour-ml wide-input" name="step1_water" min="1" maxlength="3" required> ml
                     </div>
                 </div>
                 <!-- 出来上がり量表示欄 -->
@@ -179,15 +179,6 @@
         </div> <!--/item:ストップウォッチ-->
     </div> <!--/container-->
 
-    <!-- JSONデータをスクリプトタグに埋め込む -->
-    <span id="default_preset_recipes">
-    {{ default_preset_recipes|json_script:"default_preset_recipes" }}
-    </span>
-    
-    <span id="user_preset_recipes">
-    {{ user_preset_recipes|json_script:"user_preset_recipes" }}
-    </span>
-    
     <!-- 共有レシピデータをスクリプトタグに埋め込む -->
     {% if shared_recipe_data %}
     <span id="shared_recipe_data">
@@ -201,7 +192,7 @@
     </script>
 
     <!-- 共有レシピ追加確認ポップアップ -->
-    <div id="shared-recipe-modal" class="modal" style="display: none;">
+    <div id="shared-recipe-modal" class="modal modal-hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">
@@ -222,7 +213,7 @@
     </div>
 
     <!-- 成功メッセージポップアップ -->
-    <div id="success-modal" class="modal" style="display: none;">
+    <div id="success-modal" class="modal modal-hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">
@@ -240,7 +231,7 @@
     </div>
 
     <!-- エラーメッセージポップアップ -->
-    <div id="error-modal" class="modal" style="display: none;">
+    <div id="error-modal" class="modal modal-hidden">
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">
@@ -250,7 +241,7 @@
             </div>
             <div class="modal-body">
                 <p id="error-message">エラーが発生しました。</p>
-                <div id="error-actions" class="modal-actions" style="display: none;">
+                <div id="error-actions" class="modal-actions modal-hidden">
                     <button id="login-redirect-btn" class="btn btn-primary">ログインページへ</button>
                     <button id="delete-all-shared-btn" class="btn btn-danger">現在有効な共有レシピを削除</button>
                 </div>

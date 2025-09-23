@@ -67,23 +67,6 @@
 
 <body>
 
-    <!-- 規定文字数入力されたら次のフォームにフォーカスを移すユーザー補助(本当はJavaScriptファイルに書きたいけど、事前に宣言しておく必要があるので一旦ここに置く) -->
-    <script>
-        function nextField(str) {
-            if (str.value.length >= str.maxLength) {
-                for (var i = 0, elm = str.form.elements; i < elm.length; i++) {
-                    if (elm[i] == str) {
-                        // 50msの遅延を加えてフォーカスを移動
-                        setTimeout(function() {
-                            (elm[i + 1] || elm[0]).focus();
-                        }, 50);
-                        break;
-                    }
-                }
-            }
-            return (str);
-        }
-    </script>
 
     <header>
         <div class="header-area">

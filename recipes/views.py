@@ -765,3 +765,39 @@ def retrieve_shared_recipe(request, token):
     }
     
     return JsonResponse(recipe_data)
+
+
+@require_GET
+def get_preset_recipes(request):
+    """プリセットレシピデータを取得するAPIエンドポイント"""
+    try:
+        user = request.user
+        user_preset_recipes = Recipe.objects.filter(create_user=user.id)
+        
+        default_preset_user = User.objects.get(username='DefaultPreset')
+        default_preset_recipes = Recipe.objects.filter(create_user=default_preset_user.id)
+        
+        def recipe_to_dict(recipe):
+            steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+            steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
+            return {
+                'id': recipe.id,
+                'name': recipe.name,
+                'is_ice': recipe.is_ice,
+                'len_steps': recipe.len_steps,
+                'bean_g': recipe.bean_g,
+                'water_ml': recipe.water_ml,
+                'ice_g': recipe.ice_g,
+                'memo': recipe.memo,
+                'steps': steps_data
+            }
+        
+        return JsonResponse({
+            'user_preset_recipes': [recipe_to_dict(recipe) for recipe in user_preset_recipes],
+            'default_preset_recipes': [recipe_to_dict(recipe) for recipe in default_preset_recipes]
+        })
+    except Exception as e:
+        return JsonResponse({
+            'error': 'fetch_failed',
+            'message': 'プリセットレシピの取得に失敗しました。'
+        }, status=500)

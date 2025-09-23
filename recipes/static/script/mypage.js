@@ -140,7 +140,7 @@ $(document).ready(function() {
         let modal = $('#success-modal');
         if (modal.length === 0) {
             $('body').append(`
-                <div id="success-modal" class="modal" style="display: none;">
+                <div id="success-modal" class="modal modal-hidden">
                     <div class="modal-content">
                         <div class="modal-header">
                             <div class="modal-title">
@@ -175,7 +175,7 @@ $(document).ready(function() {
         let modal = $('#error-modal');
         if (modal.length === 0) {
             $('body').append(`
-                <div id="error-modal" class="modal" style="display: none;">
+                <div id="error-modal" class="modal modal-hidden">
                     <div class="modal-content">
                         <div class="modal-header">
                             <div class="modal-title">

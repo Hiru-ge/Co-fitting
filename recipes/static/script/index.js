@@ -4,7 +4,7 @@ $(document).ready(function() {
             // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
             let iceInputDivText= `
             <label for="ice_g">レシピの氷量(g): </label>
-            <input type="number" id="ice_g" class="wide-input" name="ice_g" maxlength="3" onkeyup="nextField(this)"> g
+            <input type="number" id="ice_g" class="wide-input" name="ice_g" maxlength="3"> g
         `;
         if(isIce==true){
             $('.ice_g-div').html(iceInputDivText);
@@ -37,8 +37,8 @@ $(document).ready(function() {
                 let processInput = `
                     <div class="pour-step${i + 1}">
                         <label>${i + 1}投目</label>
-                        <input type="number" class="minutes" name="step${i + 1}_minute" min="0" max="59"   maxlength="1" onkeyup="nextField(this)" required>:<input type="number" class="seconds" name="step${i + 1}_second" min="0" max="59" maxlength="2" onkeyup="nextField(this)" required>
-                        <input type="number" class="pour-ml wide-input" name="step${i + 1}_water" min="1"  maxlength="3" onkeyup="nextField(this)" required> ml
+                        <input type="number" class="minutes" name="step${i + 1}_minute" min="0" max="59"   maxlength="1" required>:<input type="number" class="seconds" name="step${i + 1}_second" min="0" max="59" maxlength="2" required>
+                        <input type="number" class="pour-ml wide-input" name="step${i + 1}_water" min="1"  maxlength="3" required> ml
                     </div>`
                     ;
                 $('.origin-process').append(processInput);
@@ -86,10 +86,30 @@ $(document).ready(function() {
         displayMemo(recipe.memo);
     }
 
-    function getPresetRecipeData(presetId) {
-        const DefaultPresetRecipesJSON = JSON.parse($('#default_preset_recipes').text());
-        const UserPresetRecipesJSON = JSON.parse($('#user_preset_recipes').text());
-        const PresetRecipesJSON = DefaultPresetRecipesJSON.concat(UserPresetRecipesJSON);
+    // プリセットレシピデータをキャッシュ
+    let presetRecipesCache = null;
+
+    async function loadPresetRecipes() {
+        if (presetRecipesCache) {
+            return presetRecipesCache;
+        }
+        
+        try {
+            const response = await fetch('/api/preset-recipes/');
+            if (!response.ok) {
+                throw new Error('プリセットレシピの取得に失敗しました');
+            }
+            presetRecipesCache = await response.json();
+            return presetRecipesCache;
+        } catch (error) {
+            console.error('プリセットレシピの読み込みエラー:', error);
+            return { user_preset_recipes: [], default_preset_recipes: [] };
+        }
+    }
+
+    async function getPresetRecipeData(presetId) {
+        const data = await loadPresetRecipes();
+        const PresetRecipesJSON = data.default_preset_recipes.concat(data.user_preset_recipes);
         for (var i = 0; i < PresetRecipesJSON.length; i++) {
             if (PresetRecipesJSON[i].id == presetId) {
                 return PresetRecipesJSON[i];
@@ -111,11 +131,13 @@ $(document).ready(function() {
         }
     }
 
-    $('.preset-button').on('click', function() {
+    $('.preset-button').on('click', async function() {
         const presetId = $(this).attr('id');
-        const recipe = getPresetRecipeData(presetId);
-        darken_selected_button('preset-button', presetId);
-        activate_preset(recipe);
+        const recipe = await getPresetRecipeData(presetId);
+        if (recipe) {
+            darken_selected_button('preset-button', presetId);
+            activate_preset(recipe);
+        }
     });
 
     // レシピ入力欄の出力
