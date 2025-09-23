@@ -3,28 +3,24 @@
 $(document).ready(function() {
     // モーダル表示ボタンのイベント
     $('#email-change-btn').on('click', function() {
-        $('#email-change-modal').show();
+        ModalWindow.show('email-change-modal');
     });
 
     $('#password-change-btn').on('click', function() {
-        $('#password-change-modal').show();
+        ModalWindow.show('password-change-modal');
     });
 
     $('#account-delete-btn').on('click', function() {
-        $('#account-delete-modal').show();
+        ModalWindow.show('account-delete-modal');
     });
 
-    // モーダル閉じるボタンのイベント
-    $('.close, #cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn, #close-not-subscribed-modal, #close-not-subscribed-btn, #cancel-delete-btn, #close-delete-confirm-modal').on('click', function() {
-        $(this).closest('.modal').hide();
+    // モーダル閉じるボタンのイベント（ModalManagerが自動処理するため、個別のキャンセルボタンのみ）
+    $('#cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn, #close-not-subscribed-modal, #close-not-subscribed-btn, #cancel-delete-btn, #close-delete-confirm-modal').on('click', function() {
+        const modalId = $(this).closest('.modal').attr('id');
+        ModalWindow.hide(modalId);
     });
 
-    // モーダル外クリックで閉じる
-    $('.modal').on('click', function(e) {
-        if (e.target === this) {
-            $(this).hide();
-        }
-    });
+    // モーダル外クリックで閉じる（ModalManagerが自動処理）
 
     // メールアドレス変更フォーム送信
     $('#email-change-form').on('submit', function(e) {
@@ -32,7 +28,7 @@ $(document).ready(function() {
         
         const formData = {
             email: $('#new-email').val(),
-            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            csrfmiddlewaretoken: getCSRFToken()
         };
 
         $.ajax({
@@ -40,15 +36,15 @@ $(document).ready(function() {
             method: 'POST',
             data: formData,
             success: function(response) {
-                $('#email-change-modal').hide();
-                showSuccessModal('確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。');
+                ModalWindow.hide('email-change-modal');
+                ModalWindow.showSuccess('確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。');
             },
             error: function(xhr) {
                 let errorMessage = 'メールアドレス変更に失敗しました。';
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMessage = xhr.responseJSON.error;
                 }
-                showErrorModal(errorMessage);
+                ModalWindow.showError(errorMessage);
             }
         });
     });
@@ -61,7 +57,7 @@ $(document).ready(function() {
         const newPassword2 = $('#new-password2').val();
         
         if (newPassword1 !== newPassword2) {
-            showErrorModal('新しいパスワードが一致しません。');
+            ModalWindow.showError('新しいパスワードが一致しません。');
             return;
         }
 
@@ -69,7 +65,7 @@ $(document).ready(function() {
             old_password: $('#old-password').val(),
             new_password1: newPassword1,
             new_password2: newPassword2,
-            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+            csrfmiddlewaretoken: getCSRFToken()
         };
 
         $.ajax({
@@ -77,8 +73,8 @@ $(document).ready(function() {
             method: 'POST',
             data: formData,
             success: function(response) {
-                $('#password-change-modal').hide();
-                showSuccessModal('パスワードを変更しました。');
+                ModalWindow.hide('password-change-modal');
+                ModalWindow.showSuccess('パスワードを変更しました。');
                 // フォームをリセット
                 $('#password-change-form')[0].reset();
             },
@@ -87,7 +83,7 @@ $(document).ready(function() {
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMessage = xhr.responseJSON.error;
                 }
-                showErrorModal(errorMessage);
+                ModalWindow.showError(errorMessage);
             }
         });
     });
@@ -98,14 +94,14 @@ $(document).ready(function() {
             url: '/users/account_delete/',
             method: 'POST',
             data: {
-                csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+                csrfmiddlewaretoken: getCSRFToken()
             },
             success: function(response) {
                 // 退会成功時はログアウトしてトップページへリダイレクト
                 window.location.href = '/';
             },
             error: function(xhr) {
-                showErrorModal('退会処理に失敗しました。');
+                ModalWindow.showError('退会処理に失敗しました。');
             }
         });
     });
@@ -121,7 +117,7 @@ $(document).ready(function() {
         const subscriptionStatus = $(this).data('subscription-status');
         if (subscriptionStatus === '未契約') {
             // 未契約の場合はモーダルを表示
-            $('#not-subscribed-modal').show();
+            ModalWindow.show('not-subscribed-modal');
         } else {
             // 契約済みの場合はカスタマーポータルに遷移
             window.location.href = '/purchase/create_portal_session';
@@ -130,79 +126,11 @@ $(document).ready(function() {
 
     // モーダル内のサブスク新規契約ボタン
     $('#subscribe-from-modal-btn').on('click', function() {
-        $('#not-subscribed-modal').hide();
+        ModalWindow.hide('not-subscribed-modal');
         window.location.href = '/purchase/create_checkout_session';
     });
 
-    // 成功モーダル表示
-    function showSuccessModal(message) {
-        // 既存の成功モーダルがある場合はそれを使用、なければ新しく作成
-        let modal = $('#success-modal');
-        if (modal.length === 0) {
-            $('body').append(`
-                <div id="success-modal" class="modal modal-hidden">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <div class="modal-title">
-                                <h3>成功</h3>
-                            </div>
-                            <span class="close" id="close-success-modal">&times;</span>
-                        </div>
-                        <div class="modal-body">
-                            <p id="success-message">${message}</p>
-                            <div class="modal-actions">
-                                <button id="close-success-btn" class="btn btn-primary">閉じる</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            modal = $('#success-modal');
-            
-            // 新しく作成したモーダルのイベントを設定
-            $('#close-success-modal, #close-success-btn').on('click', function() {
-                modal.hide();
-            });
-        } else {
-            $('#success-message').text(message);
-        }
-        modal.show();
-    }
-
-    // エラーモーダル表示
-    function showErrorModal(message) {
-        // 既存のエラーモーダルがある場合はそれを使用、なければ新しく作成
-        let modal = $('#error-modal');
-        if (modal.length === 0) {
-            $('body').append(`
-                <div id="error-modal" class="modal modal-hidden">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <div class="modal-title">
-                                <h3>エラー</h3>
-                            </div>
-                            <span class="close" id="close-error-modal">&times;</span>
-                        </div>
-                        <div class="modal-body">
-                            <p id="error-message">${message}</p>
-                            <div class="modal-actions">
-                                <button id="close-error-btn" class="btn btn-secondary">閉じる</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `);
-            modal = $('#error-modal');
-            
-            // 新しく作成したモーダルのイベントを設定
-            $('#close-error-modal, #close-error-btn').on('click', function() {
-                modal.hide();
-            });
-        } else {
-            $('#error-message').text(message);
-        }
-        modal.show();
-    }
+    // 成功・エラーモーダルはModalWindowのメソッドを直接使用
 
     // プリセット共有ボタンのイベント（マイプリセットセクション）
     $(document).on('click', '.item:not(.shared-recipe-item) .share-preset-btn', function() {
@@ -217,19 +145,19 @@ $(document).ready(function() {
     // URLパラメータからモーダル表示を判定
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('purchase_cancel') === 'true') {
-        $('#purchase-cancel-modal').show();
+        ModalWindow.show('purchase-cancel-modal');
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('purchase_success') === 'true') {
-        $('#purchase-success-modal').show();
+        ModalWindow.show('purchase-success-modal');
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('password_reset_sent') === 'true') {
-        $('#password-reset-sent-modal').show();
+        ModalWindow.show('password-reset-sent-modal');
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('password_reset_success') === 'true') {
-        $('#password-reset-success-modal').show();
+        ModalWindow.show('password-reset-success-modal');
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -240,7 +168,7 @@ $(document).ready(function() {
             url: `/api/preset-share/${recipeId}/`,
             method: 'POST',
             headers: {
-                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
                 const shareUrl = `/share/${response.access_token}/`;
@@ -249,15 +177,15 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 if (xhr.status === 401) {
-                    showErrorModal('ログインが必要です。');
+                    ModalWindow.showError('ログインが必要です。');
                 } else if (xhr.status === 429) {
                     const data = xhr.responseJSON;
                     showShareLimitModal(data);
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
-                    showErrorModal(data.message || '入力データに問題があります。');
+                    ModalWindow.showError(data.message || '入力データに問題があります。');
                 } else {
-                    showErrorModal('共有URLの生成に失敗しました。');
+                    ModalWindow.showError('共有URLの生成に失敗しました。');
                 }
             }
         });
@@ -311,9 +239,9 @@ $(document).ready(function() {
     $(document).on('click', '.shared-recipe-item .share-preset-btn', function() {
         const url = window.location.origin + $(this).data('url');
         navigator.clipboard.writeText(url).then(function() {
-            showSuccessModal('共有URLをクリップボードにコピーしました。');
+            ModalWindow.showSuccess('共有URLをクリップボードにコピーしました。');
         }).catch(function() {
-            showErrorModal('URLのコピーに失敗しました。');
+            ModalWindow.showError('URLのコピーに失敗しました。');
         });
     });
 
@@ -352,7 +280,7 @@ $(document).ready(function() {
         
         // 削除ボタンのイベントを設定
         $('#confirm-delete-btn').off('click').on('click', function() {
-            $('#delete-confirm-modal').hide();
+            ModalWindow.hide('delete-confirm-modal');
             if (type === 'preset') {
                 deletePreset(id);
             } else if (type === 'shared') {
@@ -360,7 +288,7 @@ $(document).ready(function() {
             }
         });
         
-        $('#delete-confirm-modal').show();
+        ModalWindow.show('delete-confirm-modal');
     }
 
     // プリセット削除
@@ -369,17 +297,17 @@ $(document).ready(function() {
             url: `/preset_delete/${recipeId}/`,
             method: 'POST',
             headers: {
-                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
-                showSuccessModal('プリセットを削除しました。');
+                ModalWindow.showSuccess('プリセットを削除しました。');
                 // ページをリロードして一覧を更新
                 setTimeout(() => {
                     window.location.reload();
                 }, 1500);
             },
             error: function(xhr) {
-                showErrorModal('プリセットの削除に失敗しました。');
+                ModalWindow.showError('プリセットの削除に失敗しました。');
             }
         });
     }
@@ -390,93 +318,28 @@ $(document).ready(function() {
             url: `/api/shared-recipes/${token}/delete/`,
             method: 'DELETE',
             headers: {
-                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
-                showSuccessModal('共有レシピを削除しました。');
+                ModalWindow.showSuccess('共有レシピを削除しました。');
                 loadSharedRecipes(); // 一覧を更新
             },
             error: function(xhr) {
-                showErrorModal('共有レシピの削除に失敗しました。');
+                ModalWindow.showError('共有レシピの削除に失敗しました。');
             }
         });
     }
 
-    // 共有制限オーバー時のモーダル表示（index.jsと同じ機能）
+    // 共有制限オーバー時のモーダル表示（ModalWindowで統一）
     function showShareLimitModal(data) {
-        const isPremium = data.is_premium || false;
-        const currentCount = data.current_count || 0;
-        const limit = data.limit || 1;
-        
-        let modalContent = `
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>共有制限に達しました</h3>
-                </div>
-                <span class="close" id="close-share-limit-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>${data.message}</p>
-                <p>現在の共有レシピ数: ${currentCount}/${limit}</p>
-        `;
-        
-        if (!isPremium) {
-            modalContent += `
-                <div class="modal-actions">
-                    <button id="subscribe-btn" class="btn btn-primary">サブスク契約</button>
-                    <button id="manage-shares-btn" class="btn btn-secondary">共有レシピ管理</button>
-                </div>
-            `;
-        } else {
-            modalContent += `
-                <div class="modal-actions">
-                    <button id="manage-shares-btn" class="btn btn-primary">共有レシピ管理</button>
-                    <button id="close-share-limit-btn" class="btn btn-secondary">閉じる</button>
-                </div>
-            `;
-        }
-        
-        modalContent += `
-            </div>
-        `;
-        
-        // モーダルが既に存在する場合は削除
-        $('#share-limit-modal').remove();
-        
-        const modalHtml = `
-            <div id="share-limit-modal" class="modal" style="display: block;">
-                <div class="modal-content">
-                    ${modalContent}
-                </div>
-            </div>
-        `;
-        
-        $('body').append(modalHtml);
-        
-        // イベント設定
-        $('#close-share-limit-modal, #close-share-limit-btn').on('click', function() {
-            $('#share-limit-modal').remove();
-        });
-        
-        $('#subscribe-btn').on('click', function() {
-            $('#share-limit-modal').remove();
-            window.location.href = '/purchase/create_checkout_session';
-        });
-        
-        $('#manage-shares-btn').on('click', function() {
-            $('#share-limit-modal').remove();
-            // 既にマイページにいるので、共有レシピ一覧にスクロール
+        // マイページでは共有レシピ一覧にスクロールするカスタム動作
+        const onManageShares = () => {
             $('html, body').animate({
                 scrollTop: $('#shared-recipes').offset().top
             }, 500);
-        });
+        };
         
-        // モーダル外クリックで閉じる
-        $('#share-limit-modal').on('click', function(e) {
-            if (e.target === this) {
-                $(this).remove();
-            }
-        });
+        ModalWindow.showShareLimit(data, onManageShares);
     }
 
     // Web Share APIを使用してSNS投稿
@@ -490,7 +353,7 @@ $(document).ready(function() {
         if (navigator.share) {
             try {
                 await navigator.share(shareData);
-                showSuccessModal('レシピを共有しました！');
+                ModalWindow.showSuccess('レシピを共有しました！');
             } catch (error) {
                 if (error.name !== 'AbortError') {
                     // 共有がキャンセルされた場合は何もしない
@@ -506,9 +369,9 @@ $(document).ready(function() {
     // クリップボードにコピー
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(function() {
-            showSuccessModal('共有URLをクリップボードにコピーしました。');
+            ModalWindow.showSuccess('共有URLをクリップボードにコピーしました。');
         }).catch(function() {
-            showErrorModal('URLのコピーに失敗しました。');
+            ModalWindow.showError('URLのコピーに失敗しました。');
         });
     }
 });

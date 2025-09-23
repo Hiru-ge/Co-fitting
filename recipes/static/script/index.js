@@ -264,81 +264,13 @@ $(document).ready(function() {
         }
     }
 
-    // CSRFトークンを取得する関数
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+    // CSRFトークン取得はcommon.jsのgetCSRFToken()を使用
 
-    // レシピ名入力モーダル表示
+    // レシピ名入力モーダル表示（ModalWindowで統一）
     function showRecipeNameModal() {
-        // モーダルが既に存在する場合は削除
-        $('#recipe-name-modal').remove();
-        
-        const modalHtml = `
-            <div id="recipe-name-modal" class="modal" style="display: block;">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <div class="modal-title">
-                            <h3>レシピ名を入力</h3>
-                        </div>
-                        <span class="close" id="close-recipe-name-modal">&times;</span>
-                    </div>
-                    <div class="modal-body">
-                        <p>共有するレシピの名前を入力してください</p>
-                        <input type="text" id="recipe-name-input" class="super-wide-input" placeholder="レシピ名を入力" maxlength="30" value="共有レシピ">
-                        <div class="modal-actions">
-                            <button id="confirm-share-btn" class="btn btn-primary">共有する</button>
-                            <button id="cancel-share-btn" class="btn btn-secondary">キャンセル</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        $('body').append(modalHtml);
-        
-        // イベント設定
-        $('#close-recipe-name-modal, #cancel-share-btn').on('click', function() {
-            $('#recipe-name-modal').remove();
-        });
-        
-        $('#confirm-share-btn').on('click', function() {
-            const recipeName = $('#recipe-name-input').val().trim();
-            if (!recipeName) {
-                alert('レシピ名を入力してください。');
-                return;
-            }
-            $('#recipe-name-modal').remove();
+        ModalWindow.showRecipeNameInput((recipeName) => {
             shareRecipe(recipeName);
         });
-        
-        // モーダル外クリックで閉じる
-        $('#recipe-name-modal').on('click', function(e) {
-            if (e.target === this) {
-                $(this).remove();
-            }
-        });
-        
-        // エンターキーで確定
-        $('#recipe-name-input').on('keypress', function(e) {
-            if (e.which === 13) { // Enter key
-                $('#confirm-share-btn').click();
-            }
-        });
-        
-        // フォーカス
-        $('#recipe-name-input').focus().select();
     }
 
     function shareRecipe(recipeName) {
@@ -385,7 +317,7 @@ $(document).ready(function() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': getCSRFToken()
             },
             data: JSON.stringify(recipeData),
             success: function(response) {
@@ -395,15 +327,15 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 if (xhr.status === 401) {
-                    showErrorModal('ログインが必要です。');
+                    ModalWindow.showError('ログインが必要です。');
                 } else if (xhr.status === 429) {
                     const data = xhr.responseJSON;
                     showShareLimitModal(data);
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
-                    showErrorModal(data.message || '入力データに問題があります。');
+                    ModalWindow.showError(data.message || '入力データに問題があります。');
                 } else {
-                    showErrorModal('共有URLの生成に失敗しました。');
+                    ModalWindow.showError('共有URLの生成に失敗しました。');
                 }
             },
             complete: function() {
@@ -412,78 +344,9 @@ $(document).ready(function() {
         });
     }
 
-    // 共有制限オーバー時のモーダル表示
+    // 共有制限オーバー時のモーダル表示（ModalWindowで統一）
     function showShareLimitModal(data) {
-        const isPremium = data.is_premium || false;
-        const currentCount = data.current_count || 0;
-        const limit = data.limit || 1;
-        
-        let modalContent = `
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>共有制限に達しました</h3>
-                </div>
-                <span class="close" id="close-share-limit-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>${data.message}</p>
-                <p>現在の共有レシピ数: ${currentCount}/${limit}</p>
-        `;
-        
-        if (!isPremium) {
-            modalContent += `
-                <div class="modal-actions">
-                    <button id="subscribe-btn" class="btn btn-primary">サブスク契約</button>
-                    <button id="manage-shares-btn" class="btn btn-secondary">共有レシピ管理</button>
-                </div>
-            `;
-        } else {
-            modalContent += `
-                <div class="modal-actions">
-                    <button id="manage-shares-btn" class="btn btn-primary">共有レシピ管理</button>
-                    <button id="close-share-limit-btn" class="btn btn-secondary">閉じる</button>
-                </div>
-            `;
-        }
-        
-        modalContent += `
-            </div>
-        `;
-        
-        // モーダルが既に存在する場合は削除
-        $('#share-limit-modal').remove();
-        
-        const modalHtml = `
-            <div id="share-limit-modal" class="modal" style="display: block;">
-                <div class="modal-content">
-                    ${modalContent}
-                </div>
-            </div>
-        `;
-        
-        $('body').append(modalHtml);
-        
-        // イベント設定
-        $('#close-share-limit-modal, #close-share-limit-btn').on('click', function() {
-            $('#share-limit-modal').remove();
-        });
-        
-        $('#subscribe-btn').on('click', function() {
-            $('#share-limit-modal').remove();
-            window.location.href = '/purchase/create_checkout_session';
-        });
-        
-        $('#manage-shares-btn').on('click', function() {
-            $('#share-limit-modal').remove();
-            window.location.href = '/mypage#shared-recipes';
-        });
-        
-        // モーダル外クリックで閉じる
-        $('#share-limit-modal').on('click', function(e) {
-            if (e.target === this) {
-                $(this).remove();
-            }
-        });
+        ModalWindow.showShareLimit(data);
     }
 
     // Web Share APIを使用してSNS投稿
@@ -714,7 +577,7 @@ $(document).ready(function() {
         if (sharedRecipeData) {
             if (sharedRecipeData.error) {
                 // エラーの場合
-                showErrorModal(sharedRecipeData.message);
+                ModalWindow.showError(sharedRecipeData.message);
             } else {
                 // 正常な共有レシピの場合
                 showSharedRecipeModal(sharedRecipeData);
@@ -726,10 +589,7 @@ $(document).ready(function() {
 
     // 共有レシピモーダル表示
     function showSharedRecipeModal(recipeData) {
-        const modal = $('#shared-recipe-modal');
-        const infoDiv = $('#shared-recipe-info');
-        // レシピ情報を表示
-        let html = `
+        const content = `
             <div class="shared-recipe-details">
                 <h3>${recipeData.name}</h3>
                 <p><strong>豆量:</strong> <span>${recipeData.bean_g}g</span></p>
@@ -738,9 +598,13 @@ $(document).ready(function() {
                 <p><strong>ステップ数:</strong> <span>${recipeData.len_steps}ステップ</span></p>
                 ${recipeData.memo ? `<p><strong>メモ:</strong> <span>${recipeData.memo}</span></p>` : ''}
             </div>
+            <div class="modal-actions">
+                <button id="add-to-preset-btn" class="btn btn-primary">追加</button>
+                <button id="cancel-shared-btn" class="btn btn-secondary">キャンセル</button>
+            </div>
         `;
-        infoDiv.html(html);
-        modal.show();
+        
+        ModalWindow.createAndShow('shared-recipe-modal', 'マイプリセットに追加しますか？', content);
     }
 
     // プリセット追加処理
@@ -751,11 +615,11 @@ $(document).ready(function() {
             url: `/api/shared-recipes/${token}/add-to-preset/`,
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
-                $('#shared-recipe-modal').hide();
-                showSuccessModal(response.message);
+                ModalWindow.hide('shared-recipe-modal');
+                ModalWindow.showSuccess(response.message);
                 
                 // プリセット情報を更新するため、変換ページにリダイレクト
                 setTimeout(function() {
@@ -787,7 +651,7 @@ $(document).ready(function() {
                     errorMessage = 'この共有リンクは期限切れです。';
                 }
                 
-                showErrorModal(errorMessage);
+                ModalWindow.showError(errorMessage);
             },
             complete: function() {
                 $('#add-to-preset-btn').prop('disabled', false).html('追加');
@@ -804,7 +668,7 @@ $(document).ready(function() {
     });
 
     $('#cancel-shared-btn').on('click', function() {
-        $('#shared-recipe-modal').hide();
+        ModalWindow.hide('shared-recipe-modal');
     });
 
     // ログインボタンのクリックイベント
@@ -825,11 +689,11 @@ $(document).ready(function() {
             url: '/api/shared-recipes/delete-all',
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
-                $('#error-modal').hide();
-                showSuccessModal(response.message);
+                ModalWindow.hide('error-modal');
+                ModalWindow.showSuccess(response.message);
             },
             error: function(xhr) {
                 let errorMessage = '共有レシピの削除に失敗しました。';
@@ -841,7 +705,7 @@ $(document).ready(function() {
                     errorMessage = data.message || 'サーバーエラーが発生しました。';
                 }
                 
-                showErrorModal(errorMessage);
+                ModalWindow.showError(errorMessage);
             },
             complete: function() {
                 $('#delete-all-shared-btn').prop('disabled', false).text('現在有効な共有レシピを削除');
@@ -850,7 +714,8 @@ $(document).ready(function() {
     }
 
     $('#close-shared-modal, #close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
-        $(this).closest('.modal').hide();
+        const modalId = $(this).closest('.modal').attr('id');
+        ModalWindow.hide(modalId);
         // エラーモーダルを閉じる際にボタンを非表示にする
         if ($(this).attr('id') === 'close-error-modal' || $(this).attr('id') === 'close-error-btn') {
             $('#error-actions').hide();
@@ -859,44 +724,10 @@ $(document).ready(function() {
         }
     });
 
-    // モーダル外クリックで閉じる
-    $('.modal').on('click', function(e) {
-        if (e.target === this) {
-            $(this).hide();
-            // エラーモーダルを閉じる際にボタンを非表示にする
-            if ($(this).attr('id') === 'error-modal') {
-                $('#error-actions').hide();
-                $('#login-redirect-btn').hide();
-                $('#delete-all-shared-btn').hide();
-            }
-        }
-    });
+    // モーダル外クリックで閉じる（グローバルイベントハンドラーで処理）
 
-    // 成功モーダル表示
-    function showSuccessModal(message) {
-        $('#success-message').text(message);
-        $('#success-modal').show();
-    }
-
-    // エラーモーダル表示
-    function showErrorModal(message, showDeleteButton = false) {
-        $('#error-message').text(message);
-        
-        // ログインボタンと削除ボタンの表示制御
-        if (message.includes('ログインが必要です')) {
-            $('#login-redirect-btn').show();
-            $('#delete-all-shared-btn').hide();
-            $('#error-actions').show();
-        } else if (showDeleteButton) {
-            $('#login-redirect-btn').hide();
-            $('#delete-all-shared-btn').show();
-            $('#error-actions').show();
-        } else {
-            $('#error-actions').hide();
-        }
-        
-        $('#error-modal').show();
-    }
+    // 成功・エラーモーダルはModalWindowのメソッドを直接使用
+    // 特別なエラーモーダルが必要な場合は個別に実装
 
     // トグル機能
     $('.accordion-item').hide();

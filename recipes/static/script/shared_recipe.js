@@ -8,15 +8,10 @@ $(document).ready(function() {
 
     // モーダル閉じるボタンのイベント
     $('#close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
-        closeModal($(this).closest('.modal'));
+        ModalWindow.hide($(this).closest('.modal').attr('id'));
     });
 
-    // モーダル外クリックで閉じる
-    $('.modal').on('click', function(e) {
-        if (e.target === this) {
-            closeModal($(this));
-        }
-    });
+    // モーダル外クリックで閉じる（グローバルイベントハンドラーで処理）
 
     // プリセット追加処理
     function addToPreset() {
@@ -31,10 +26,10 @@ $(document).ready(function() {
             url: `/api/shared-recipes/${token}/add-to-preset/`,
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
-                showSuccessModal();
+                ModalWindow.showSuccess();
             },
             error: function(xhr) {
                 let errorMessage = 'レシピの追加に失敗しました。';
@@ -52,7 +47,7 @@ $(document).ready(function() {
                     errorMessage = 'この共有リンクは期限切れです。';
                 }
                 
-                showErrorModal(errorMessage);
+                ModalWindow.showError(errorMessage);
             },
             complete: function() {
                 // ボタンを再有効化
@@ -61,43 +56,17 @@ $(document).ready(function() {
         });
     }
 
-    // 成功モーダル表示
-    function showSuccessModal() {
-        $('#success-modal').show();
-    }
+    // 成功・エラーモーダルはModalWindowのメソッドを直接使用
 
-    // エラーモーダル表示
-    function showErrorModal(message) {
-        $('#error-message').text(message);
-        $('#error-modal').show();
-    }
+    // モーダル閉じる（ModalWindow.hideを直接使用）
 
-    // モーダル閉じる
-    function closeModal(modal) {
-        modal.hide();
-    }
-
-    // CSRFトークンを取得する関数
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+    // CSRFトークン取得はcommon.jsのgetCSRFToken()を使用
 
     // ページ読み込み時の初期化
     function initializePage() {
         // レシピ画像の読み込みエラーハンドリング
         $('.recipe-preview-image').on('error', function() {
-            $(this).hide();
+            ModalWindow.hide($(this).attr('id'));
             $(this).parent().append('<p class="image-error">画像の読み込みに失敗しました</p>');
         });
     }

@@ -19,6 +19,87 @@ from PIL import Image, ImageDraw, ImageFont
 import json
 
 
+def create_recipe_steps(recipe, request_data, step_model_class):
+    """レシピステップを作成する共通関数"""
+    total_water_ml = 0
+    for step_number in range(1, recipe.len_steps + 1):
+        total_water_ml_this_step = request_data.get(f'step{step_number}_water')
+        minute = request_data.get(f'step{step_number}_minute')
+        second = request_data.get(f'step{step_number}_second')
+        
+        if total_water_ml_this_step and minute and second:
+            step_model_class.objects.create(
+                **{
+                    'recipe_id' if step_model_class == RecipeStep else 'shared_recipe': recipe,
+                    'step_number': step_number,
+                    'minute': int(minute),
+                    'seconds': int(second),
+                    'total_water_ml_this_step': float(total_water_ml_this_step),
+                }
+            )
+            total_water_ml = float(total_water_ml_this_step)
+    
+    recipe.water_ml = total_water_ml
+    recipe.save()
+    return recipe
+
+
+def update_recipe_from_form(recipe, request_data):
+    """フォームデータからレシピを更新する共通関数"""
+    recipe.name = request_data.get('name', recipe.name)
+    recipe.len_steps = int(request_data.get('len_steps', recipe.len_steps))
+    recipe.bean_g = float(request_data.get('bean_g', recipe.bean_g))
+    recipe.is_ice = 'is_ice' in request_data
+    recipe.ice_g = float(request_data.get('ice_g', 0)) if recipe.is_ice else None
+    recipe.memo = request_data.get('memo', recipe.memo)
+    return recipe
+
+
+def create_shared_recipe_from_data(recipe_data, user, expires_at=None):
+    """レシピデータから共有レシピを作成する共通関数"""
+    if expires_at is None:
+        expires_at = timezone.now() + timedelta(days=365*100)  # 100年後
+    
+    access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
+    
+    shared_recipe = SharedRecipe.objects.create(
+        name=recipe_data['name'],
+        shared_by_user=user,
+        is_ice=recipe_data['is_ice'],
+        ice_g=recipe_data.get('ice_g'),
+        len_steps=recipe_data['len_steps'],
+        bean_g=recipe_data['bean_g'],
+        water_ml=recipe_data['water_ml'],
+        memo=recipe_data.get('memo', ''),
+        created_at=timezone.now(),
+        expires_at=expires_at,
+        access_token=access_token
+    )
+    
+    # ステップを作成（累積湯量を計算）
+    cumulative = 0
+    for i, step in enumerate(recipe_data['steps']):
+        # 各ステップの注湯量を累積湯量に加算
+        pour_ml = step['total_water_ml_this_step']
+        cumulative += pour_ml
+        
+        SharedRecipeStep.objects.create(
+            shared_recipe=shared_recipe,
+            step_number=step.get('step_number', i+1),
+            minute=step['minute'],
+            seconds=step['seconds'],
+            total_water_ml_this_step=cumulative
+        )
+    
+    return shared_recipe
+
+
+def generate_recipe_image(recipe_data, steps_data, access_token):
+    """レシピ画像を生成する共通関数"""
+    image_generator = RecipeImageGenerator(recipe_data, steps_data)
+    return image_generator.generate_image(access_token)
+
+
 def index(request):
     user = request.user
     user_preset_recipes = Recipe.objects.filter(create_user=user.id)
@@ -26,20 +107,6 @@ def index(request):
     default_preset_user = User.objects.get(username='DefaultPreset')
     default_preset_recipes = Recipe.objects.filter(create_user=default_preset_user.id)
 
-    def recipe_to_dict(recipe):
-        steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
-        steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
-        return {
-            'id': recipe.id,
-            'name': recipe.name,
-            'is_ice': recipe.is_ice,
-            'len_steps': recipe.len_steps,
-            'bean_g': recipe.bean_g,
-            'water_ml': recipe.water_ml,
-            'ice_g': recipe.ice_g,
-            'memo': recipe.memo,
-            'steps': steps_data
-        }
 
     shared_recipe_data = None
     shared_token = request.GET.get('shared')
@@ -79,8 +146,8 @@ def index(request):
             shared_recipe_data = {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
 
     context = {
-        'user_preset_recipes': [recipe_to_dict(recipe) for recipe in user_preset_recipes],
-        'default_preset_recipes': [recipe_to_dict(recipe) for recipe in default_preset_recipes],
+        'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
+        'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes],
         'shared_recipe_data': shared_recipe_data
     }
 
@@ -124,25 +191,8 @@ def preset_create(request):
                 recipe.create_user = request.user
                 recipe.save()
 
-                # RecipeStepフォームの動的データを受け取る
-                len_steps = recipe.len_steps
-                total_water_ml = 0
-                for step_number in range(1, len_steps + 1):
-                    total_water_ml_this_step = request.POST.get(f'step{step_number}_water')
-                    minute = request.POST.get(f'step{step_number}_minute')
-                    second = request.POST.get(f'step{step_number}_second')
-                    if total_water_ml_this_step and minute and second:
-                        RecipeStep.objects.create(
-                            recipe_id=recipe,
-                            step_number=step_number,
-                            minute=int(minute),
-                            seconds=int(second),
-                            total_water_ml_this_step=float(total_water_ml_this_step),
-                        )
-                        total_water_ml = float(total_water_ml_this_step)
-
-                recipe.water_ml = total_water_ml
-                recipe.save()
+                # 共通関数を使用してステップを作成
+                create_recipe_steps(recipe, request.POST, RecipeStep)
 
                 return redirect('recipes:mypage')
     else:
@@ -163,25 +213,11 @@ def preset_edit(request, recipe_id):
             updated_recipe.water_ml = 0
             updated_recipe.save()
 
+            # 既存のステップを削除
             RecipeStep.objects.filter(recipe_id=recipe).delete()
-            total_water_ml = 0
-            for step_number in range(1, updated_recipe.len_steps + 1):
-                total_water_ml_this_step = request.POST.get(f'step{step_number}_water')
-                minute = request.POST.get(f'step{step_number}_minute')
-                second = request.POST.get(f'step{step_number}_second')
-
-                if total_water_ml_this_step and minute and second:
-                    RecipeStep.objects.create(
-                        recipe_id=updated_recipe,
-                        step_number=step_number,
-                        minute=int(minute),
-                        seconds=int(second),
-                        total_water_ml_this_step=float(total_water_ml_this_step),
-                    )
-                    total_water_ml = float(total_water_ml_this_step)
-
-            updated_recipe.water_ml = total_water_ml
-            updated_recipe.save()
+            
+            # 共通関数を使用してステップを作成
+            create_recipe_steps(updated_recipe, request.POST, RecipeStep)
 
             return redirect('recipes:mypage')
 
@@ -428,36 +464,15 @@ def create_shared_recipe(request):
     if not isinstance(data['steps'], list) or len(data['steps']) != data['len_steps']:
         return JsonResponse({'error': 'invalid_data', 'message': 'ステップ数が不正です'}, status=400)
 
-    access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
-    # 永続有効化のため、expires_atを非常に遠い未来(100年後)に設定
-    expires_at = timezone.now() + timedelta(days=365*100)
+    # 共通関数を使用して共有レシピを作成
+    shared_recipe = create_shared_recipe_from_data(data, user)
     
-    shared_recipe = SharedRecipe.objects.create(
-        name=data['name'],
-        shared_by_user=user,
-        is_ice=data['is_ice'],
-        ice_g=data.get('ice_g'),
-        len_steps=data['len_steps'],
-        bean_g=data['bean_g'],
-        water_ml=data['water_ml'],
-        memo=data.get('memo', ''),
-        created_at=timezone.now(),
-        expires_at=expires_at,
-        access_token=access_token
-    )
-
+    # 画像生成用のステップデータを準備
     steps_for_image = []
     cumulative = 0
     for i, step in enumerate(data['steps']):
         pour_ml = step['total_water_ml_this_step']
         cumulative += pour_ml
-        SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
-            step_number=step.get('step_number', i+1),
-            minute=step['minute'],
-            seconds=step['seconds'],
-            total_water_ml_this_step=cumulative
-        )
         steps_for_image.append({
             'minute': step['minute'],
             'seconds': step['seconds'],
@@ -465,8 +480,8 @@ def create_shared_recipe(request):
             'cumulative_water_ml': cumulative
         })
 
-    image_generator = RecipeImageGenerator(data, steps_for_image)
-    image_url = image_generator.generate_image(access_token)
+    # 共通関数を使用して画像を生成
+    image_url = generate_recipe_image(data, steps_for_image, shared_recipe.access_token)
 
     share_url = request.build_absolute_uri(f'/?shared={shared_recipe.access_token}')
     return JsonResponse({
@@ -596,34 +611,8 @@ def share_preset_recipe(request, recipe_id):
                 'is_premium': is_subscribed
             }, status=429)
         
-        # 共有レシピ作成（永続有効化）
-        access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
-        expires_at = timezone.now() + timedelta(days=365*100)  # 100年後
-        
-        shared_recipe = SharedRecipe.objects.create(
-            name=recipe.name,
-            shared_by_user=request.user,
-            is_ice=recipe.is_ice,
-            ice_g=recipe.ice_g,
-            len_steps=recipe.len_steps,
-            bean_g=recipe.bean_g,
-            water_ml=recipe.water_ml,
-            memo=recipe.memo or '',
-            created_at=timezone.now(),
-            expires_at=expires_at,
-            access_token=access_token
-        )
-        
+        # レシピデータを準備
         recipe_steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
-        for step in recipe_steps:
-            SharedRecipeStep.objects.create(
-                shared_recipe=shared_recipe,
-                step_number=step.step_number,
-                minute=step.minute,
-                seconds=step.seconds,
-                total_water_ml_this_step=step.total_water_ml_this_step
-            )
-        
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in recipe_steps]
         recipe_data = {
             'name': recipe.name,
@@ -636,8 +625,11 @@ def share_preset_recipe(request, recipe_id):
             'memo': recipe.memo or ''
         }
         
-        image_generator = RecipeImageGenerator(recipe_data, steps_data)
-        image_url = image_generator.generate_image(access_token)
+        # 共通関数を使用して共有レシピを作成
+        shared_recipe = create_shared_recipe_from_data(recipe_data, request.user)
+        
+        # 共通関数を使用して画像を生成
+        image_url = generate_recipe_image(recipe_data, steps_data, shared_recipe.access_token)
         
         return JsonResponse({
             'access_token': shared_recipe.access_token,
@@ -680,33 +672,14 @@ def shared_recipe_edit(request, token):
     steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
 
     if request.method == 'POST':
-        shared_recipe.name = request.POST.get('name', shared_recipe.name)
-        shared_recipe.len_steps = int(request.POST.get('len_steps', shared_recipe.len_steps))
-        shared_recipe.bean_g = float(request.POST.get('bean_g', shared_recipe.bean_g))
-        shared_recipe.is_ice = 'is_ice' in request.POST
-        shared_recipe.ice_g = float(request.POST.get('ice_g', 0)) if shared_recipe.is_ice else None
-        shared_recipe.memo = request.POST.get('memo', shared_recipe.memo)
+        # 共通関数を使用してレシピを更新
+        update_recipe_from_form(shared_recipe, request.POST)
         
+        # 既存のステップを削除
         SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).delete()
-        total_water_ml = 0
         
-        for step_number in range(1, shared_recipe.len_steps + 1):
-            total_water_ml_this_step = request.POST.get(f'step{step_number}_water')
-            minute = request.POST.get(f'step{step_number}_minute')
-            second = request.POST.get(f'step{step_number}_second')
-
-            if total_water_ml_this_step and minute and second:
-                SharedRecipeStep.objects.create(
-                    shared_recipe=shared_recipe,
-                    step_number=step_number,
-                    minute=int(minute),
-                    seconds=int(second),
-                    total_water_ml_this_step=float(total_water_ml_this_step),
-                )
-                total_water_ml = float(total_water_ml_this_step)
-
-        shared_recipe.water_ml = total_water_ml
-        shared_recipe.save()
+        # 共通関数を使用してステップを作成
+        create_recipe_steps(shared_recipe, request.POST, SharedRecipeStep)
 
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')]
         recipe_data = {
@@ -738,33 +711,8 @@ def retrieve_shared_recipe(request, token):
     if error_response:
         return error_response
 
-    # レスポンスデータ構築
-    steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
-    steps_data = [
-        {
-            'step_number': step.step_number,
-            'minute': step.minute,
-            'seconds': step.seconds,
-            'total_water_ml_this_step': step.total_water_ml_this_step
-        }
-        for step in steps
-    ]
-
-    recipe_data = {
-        'name': shared_recipe.name,
-        'shared_by_user': shared_recipe.shared_by_user.username,
-        'is_ice': shared_recipe.is_ice,
-        'ice_g': shared_recipe.ice_g,
-        'len_steps': shared_recipe.len_steps,
-        'bean_g': shared_recipe.bean_g,
-        'water_ml': shared_recipe.water_ml,
-        'memo': shared_recipe.memo,
-        'created_at': shared_recipe.created_at,
-        'expires_at': shared_recipe.expires_at,
-        'steps': steps_data
-    }
-    
-    return JsonResponse(recipe_data)
+    # モデルメソッドを使用してレスポンスデータを構築
+    return JsonResponse(shared_recipe.to_dict())
 
 
 @require_GET
@@ -777,24 +725,9 @@ def get_preset_recipes(request):
         default_preset_user = User.objects.get(username='DefaultPreset')
         default_preset_recipes = Recipe.objects.filter(create_user=default_preset_user.id)
         
-        def recipe_to_dict(recipe):
-            steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
-            steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
-            return {
-                'id': recipe.id,
-                'name': recipe.name,
-                'is_ice': recipe.is_ice,
-                'len_steps': recipe.len_steps,
-                'bean_g': recipe.bean_g,
-                'water_ml': recipe.water_ml,
-                'ice_g': recipe.ice_g,
-                'memo': recipe.memo,
-                'steps': steps_data
-            }
-        
         return JsonResponse({
-            'user_preset_recipes': [recipe_to_dict(recipe) for recipe in user_preset_recipes],
-            'default_preset_recipes': [recipe_to_dict(recipe) for recipe in default_preset_recipes]
+            'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
+            'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes]
         })
     except Exception as e:
         return JsonResponse({

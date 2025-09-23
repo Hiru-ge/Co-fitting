@@ -14,6 +14,22 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def to_dict(self):
+        """レシピを辞書形式に変換するメソッド"""
+        steps = RecipeStep.objects.filter(recipe_id=self).order_by('step_number')
+        steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
+        return {
+            'id': self.id,
+            'name': self.name,
+            'is_ice': self.is_ice,
+            'len_steps': self.len_steps,
+            'bean_g': self.bean_g,
+            'water_ml': self.water_ml,
+            'ice_g': self.ice_g,
+            'memo': self.memo,
+            'steps': steps_data
+        }
 
 
 class RecipeStep(models.Model):
@@ -45,6 +61,25 @@ class SharedRecipe(models.Model):
 
     def __str__(self):
         return f"Shared: {self.name} ({self.access_token})"
+    
+    def to_dict(self):
+        """共有レシピを辞書形式に変換するメソッド"""
+        steps = SharedRecipeStep.objects.filter(shared_recipe=self).order_by('step_number')
+        steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
+        return {
+            'name': self.name,
+            'shared_by_user': self.shared_by_user.username,
+            'is_ice': self.is_ice,
+            'ice_g': self.ice_g,
+            'len_steps': self.len_steps,
+            'bean_g': self.bean_g,
+            'water_ml': self.water_ml,
+            'memo': self.memo,
+            'created_at': self.created_at,
+            'expires_at': self.expires_at,
+            'access_token': self.access_token,
+            'steps': steps_data
+        }
 
 
 class SharedRecipeStep(models.Model):

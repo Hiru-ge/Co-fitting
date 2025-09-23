@@ -212,45 +212,7 @@
         </div>
     </div>
 
-    <!-- 成功メッセージポップアップ -->
-    <div id="success-modal" class="modal modal-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>成功</h3>
-                </div>
-                <span class="close" id="close-success-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="success-message">レシピをマイプリセットに追加しました。</p>
-                <div class="modal-actions">
-                    <button id="close-success-btn" class="btn btn-primary">閉じる</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- エラーメッセージポップアップ -->
-    <div id="error-modal" class="modal modal-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>エラー</h3>
-                </div>
-                <span class="close" id="close-error-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p id="error-message">エラーが発生しました。</p>
-                <div id="error-actions" class="modal-actions modal-hidden">
-                    <button id="login-redirect-btn" class="btn btn-primary">ログインページへ</button>
-                    <button id="delete-all-shared-btn" class="btn btn-danger">現在有効な共有レシピを削除</button>
-                </div>
-                <div class="modal-actions">
-                    <button id="close-error-btn" class="btn btn-secondary">閉じる</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- 動的に生成されるモーダル（success-modal, error-modal）はModalManagerが自動生成 -->
 {% endblock %}
 
 {% block extra_js %}
