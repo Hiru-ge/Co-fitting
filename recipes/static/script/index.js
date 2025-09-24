@@ -600,7 +600,7 @@ $(document).ready(function() {
             </div>
             <div class="modal-actions">
                 <button id="add-to-preset-btn" class="btn btn-primary">追加</button>
-                <button id="cancel-shared-btn" class="btn btn-secondary">キャンセル</button>
+                <button id="cancel-shared-btn" class="btn btn-secondary" data-modal-close>キャンセル</button>
             </div>
         `;
         
@@ -659,15 +659,15 @@ $(document).ready(function() {
         });
     }
 
-    // モーダル関連のイベント
-    $('#add-to-preset-btn').on('click', function() {
+    // モーダル関連のイベント（イベントデリゲーションを使用）
+    $(document).on('click', '#add-to-preset-btn', function() {
         const sharedRecipeData = JSON.parse(document.getElementById('shared_recipe_data')?.textContent || 'null');
         if (sharedRecipeData && !sharedRecipeData.error) {
             addSharedRecipeToPreset(sharedRecipeData.access_token);
         }
     });
 
-    $('#cancel-shared-btn').on('click', function() {
+    $(document).on('click', '#cancel-shared-btn', function() {
         ModalWindow.hide('shared-recipe-modal');
     });
 

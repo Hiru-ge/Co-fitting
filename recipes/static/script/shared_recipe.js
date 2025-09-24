@@ -1,10 +1,17 @@
 'use strict';
 
 $(document).ready(function() {
-    // プリセット追加ボタンのクリックイベント
-    $('#add-to-preset-btn').on('click', function() {
-        addToPreset();
-    });
+    // プリセット追加ボタンのクリックイベント（イベントデリゲーションを使用）
+    // 注意: index.jsでも同じイベントハンドラーが設定されているため、重複を避ける
+    // $(document).on('click', '#add-to-preset-btn', function() {
+    //     addToPreset();
+    // });
+
+    // キャンセルボタンのクリックイベント（イベントデリゲーションを使用）
+    // 注意: data-modal-close属性により、common.jsで自動的に処理される
+    // $(document).on('click', '#cancel-shared-btn', function() {
+    //     ModalWindow.hide('shared-recipe-modal');
+    // });
 
     // モーダル閉じるボタンのイベント
     $('#close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
