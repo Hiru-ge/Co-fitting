@@ -120,7 +120,13 @@ class SubscriptionManager:
         try:
             user = User.objects.get(id=user_id)
             user.stripe_customer_id = customer_id
+            # サブスクリプション状態を更新
+            user.is_subscribed = True
+            user.preset_limit = SubscriptionConstants.PREMIUM_PRESET_LIMIT
             user.save()
+            
+            # 成功メールを送信
+            EmailService.send_payment_success_email(user)
             return JsonResponse({"status": "success"})
         except User.DoesNotExist:
             return JsonResponse({"error": "User not found"}, status=404)
@@ -128,11 +134,11 @@ class SubscriptionManager:
     @staticmethod
     def handle_subscription_change(event):
         """サブスクリプション状態変更時の処理"""
-        session = event.data.object
-        status = session.status
+        subscription = event.data.object
+        status = subscription.status
         
         try:
-            user = User.objects.get(stripe_customer_id=session.customer)
+            user = User.objects.get(stripe_customer_id=subscription.customer)
             if status in SubscriptionConstants.INACTIVE_STATUSES:
                 user.is_subscribed = False
                 user.preset_limit = SubscriptionConstants.FREE_PRESET_LIMIT
@@ -140,6 +146,9 @@ class SubscriptionManager:
                 users_recipes = Recipe.objects.filter(create_user=user)
                 if users_recipes.exists():
                     users_recipes.exclude(id=users_recipes.first().id).delete()
+            elif status in SubscriptionConstants.ACTIVE_STATUSES:
+                user.is_subscribed = True
+                user.preset_limit = SubscriptionConstants.PREMIUM_PRESET_LIMIT
             user.save()
             return JsonResponse({"status": "success"})
         except User.DoesNotExist:

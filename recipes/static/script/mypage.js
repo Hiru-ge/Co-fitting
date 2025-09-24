@@ -163,6 +163,29 @@ $(document).ready(function() {
     // 共有レシピ一覧の読み込み
     loadSharedRecipes();
 
+    // サブスクリプション状態を更新する関数
+    function updateSubscriptionStatus() {
+        $.ajax({
+            url: '/purchase/get_preset_limit/',
+            method: 'GET',
+            success: function(response) {
+                // プリセット枠数を更新
+                $('p:contains("所有プリセット枠")').html(`所有プリセット枠: <b>${response.preset_limit}</b>`);
+                
+                // サブスクリプション状態を判定して更新
+                const isSubscribed = response.preset_limit > 1;
+                const statusText = isSubscribed ? '契約中' : '未契約';
+                $('p:contains("サブスクリプション契約状況")').html(`サブスクリプション契約状況: <b>${statusText}</b>`);
+                
+                // ボタンのdata属性も更新
+                $('#subscription-status-btn').data('subscription-status', statusText);
+            },
+            error: function(xhr) {
+                console.error('サブスクリプション状態の取得に失敗しました:', xhr);
+            }
+        });
+    }
+
     // URLパラメータからモーダル表示を判定
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('purchase_cancel') === 'true') {
@@ -170,6 +193,8 @@ $(document).ready(function() {
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('purchase_success') === 'true') {
+        // サブスクリプション状態を更新してからモーダルを表示
+        updateSubscriptionStatus();
         ModalWindow.show('purchase-success-modal');
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
