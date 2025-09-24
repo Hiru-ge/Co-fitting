@@ -242,6 +242,15 @@ class PasswordChangeTestCase(TestCase):
             "new_password2": "newpassword123",
         })
         self.assertEqual(response.status_code, 200)  # JSONレスポンス
+        
+        # レスポンス内容を確認
+        import json
+        response_data = json.loads(response.content.decode('utf-8'))
+        self.assertTrue(response_data['success'])
+        self.assertIn('パスワードを変更しました', response_data['message'])
+        self.assertIn('ログアウトされました', response_data['message'])
+        self.assertEqual(response_data['redirect_url'], '/users/login')
+        
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))  # パスワード変更が適用されているか
 
@@ -269,6 +278,36 @@ class PasswordChangeTestCase(TestCase):
         self.client.logout()
         login_success = self.client.login(username="test@example.com", password="newpassword123")
         self.assertTrue(login_success)  # 新しいパスワードでログインできるか確認
+
+    def test_change_user_password_model_method(self):
+        """Model層のchange_user_passwordメソッドの単体テスト"""
+        from django.test import RequestFactory
+        from django.contrib.sessions.middleware import SessionMiddleware
+        
+        # パスワード変更前の確認
+        self.assertTrue(self.user.check_password("oldpassword123"))
+        
+        # Model層のメソッドを直接テスト（リクエストなし）
+        User.objects.change_user_password(self.user, "newpassword123")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("newpassword123"))
+        
+        # リクエスト付きでテスト（ログアウト処理も含む）
+        factory = RequestFactory()
+        request = factory.post('/test/')
+        
+        # セッションミドルウェアを適用してセッションを有効化
+        middleware = SessionMiddleware(lambda req: None)
+        middleware.process_request(request)
+        request.session.save()
+        
+        # ユーザーをリクエストに設定（ログイン状態をシミュレート）
+        request.user = self.user
+        
+        # リクエスト付きでパスワード変更（ログアウト処理も含む）
+        User.objects.change_user_password(self.user, "anotherpassword123", request)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("anotherpassword123"))
 
 
 class PasswordResetTestCase(TestCase):

@@ -74,9 +74,16 @@ $(document).ready(function() {
             data: formData,
             success: function(response) {
                 ModalWindow.hide('password-change-modal');
-                ModalWindow.showSuccess('パスワードを変更しました。');
+                ModalWindow.showSuccess(response.message);
                 // フォームをリセット
                 $('#password-change-form')[0].reset();
+                
+                // リダイレクトURLが指定されている場合はリダイレクト
+                if (response.redirect_url) {
+                    setTimeout(function() {
+                        window.location.href = response.redirect_url;
+                    }, 2000); // 2秒後にリダイレクト
+                }
             },
             error: function(xhr) {
                 let errorMessage = 'パスワード変更に失敗しました。';

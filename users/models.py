@@ -191,10 +191,16 @@ class UserManager(BaseUserManager):
             return "未契約"
     
     @staticmethod
-    def change_user_password(user, new_password):
-        """ユーザーのパスワードを変更"""
+    def change_user_password(user, new_password, request=None):
+        """ユーザーのパスワードを変更し、必要に応じてログアウト処理を行う"""
         user.set_password(new_password)
         user.save()
+        
+        # リクエストが提供されている場合はログアウト処理を行う
+        if request:
+            from django.contrib.auth import logout
+            logout(request)
+        
         return user
 
 

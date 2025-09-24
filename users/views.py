@@ -6,6 +6,7 @@ from .forms import SignUpForm, EmailChangeForm, PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
+from django.conf import settings
 from .models import User, TokenService
 
 
@@ -107,8 +108,13 @@ def password_change_api(request):
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
             new_password = form.cleaned_data['new_password1']
-            User.objects.change_user_password(request.user, new_password)
-            return JsonResponse({'success': True, 'message': 'パスワードを変更しました。'})
+            # Model層でパスワード変更とログアウト処理を実行
+            User.objects.change_user_password(request.user, new_password, request)
+            return JsonResponse({
+                'success': True, 
+                'message': 'パスワードを変更しました。セキュリティのため、ログアウトされました。新しいパスワードでログインしてください。',
+                'redirect_url': settings.LOGIN_URL
+            })
         else:
             # フォームエラーを返す
             errors = {}
