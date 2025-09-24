@@ -159,7 +159,6 @@ if DEBUG:
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'recipes', 'static'),
         os.path.join(BASE_DIR, 'users', 'static'),
-        os.path.join(BASE_DIR, 'purchase', 'static'),
     ]
 else:
     # 本番環境: collectstaticで集約されたファイルを使用
@@ -228,3 +227,7 @@ RECAPTCHA_USE_SSL = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Stripe設定
+STRIPE_API_KEY = env('STRIPE_API_KEY')
+STRIPE_PRICE_ID = env('STRIPE_PRICE_ID')

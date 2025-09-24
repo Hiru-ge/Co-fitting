@@ -6,7 +6,7 @@ from .forms import SignUpForm, EmailChangeForm, PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
-from .models import User, EmailService, TokenService
+from .models import User, TokenService
 
 
 def signup_request(request):

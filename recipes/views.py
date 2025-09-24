@@ -1,24 +1,17 @@
-from shutil import ExecError
 from django.shortcuts import render, redirect, get_object_or_404
-import secrets
-from datetime import timedelta
-from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import (
     Recipe, RecipeStep, User, SharedRecipe, SharedRecipeStep,
-    ShareConstants, ResponseHelper, generate_recipe_image
+    ResponseHelper, generate_recipe_image
 )
 from .forms import RecipeForm, SharedRecipeDataForm
-from django.urls import reverse_lazy
 from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-import os
 from django.conf import settings
-from PIL import Image, ImageDraw, ImageFont
 import json
 
 

@@ -4,14 +4,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.urls import reverse
 import stripe
-import environ
 from users.models import User
 from recipes.models import Recipe
-
-# 環境変数の読み込み
-env = environ.Env()
-env.read_env('../.env')
-stripe.api_key = env('STRIPE_API_KEY')
 
 
 class SubscriptionConstants:
@@ -25,7 +19,8 @@ class SubscriptionConstants:
     INACTIVE_STATUSES = ['canceled', 'unpaid', 'incomplete_expired', 'past_due']
     
     # Stripe設定
-    STRIPE_PRICE_ID = env('STRIPE_PRICE_ID')
+    STRIPE_API_KEY = settings.STRIPE_API_KEY
+    STRIPE_PRICE_ID = settings.STRIPE_PRICE_ID
 
 
 class StripeService:
@@ -35,6 +30,7 @@ class StripeService:
     def create_checkout_session(user, request):
         """チェックアウトセッションを作成"""
         try:
+            stripe.api_key = SubscriptionConstants.STRIPE_API_KEY
             session = stripe.checkout.Session.create(
                 payment_method_types=["card"],
                 line_items=[
@@ -56,6 +52,7 @@ class StripeService:
     def create_portal_session(customer_id, return_url):
         """顧客ポータルセッションを作成"""
         try:
+            stripe.api_key = SubscriptionConstants.STRIPE_API_KEY
             portal_session = stripe.billing_portal.Session.create(
                 customer=customer_id,
                 return_url=return_url,
@@ -69,6 +66,7 @@ class StripeService:
         """Stripeイベントを構築"""
         try:
             import json
+            stripe.api_key = SubscriptionConstants.STRIPE_API_KEY
             event = stripe.Event.construct_from(
                 json.loads(payload), api_key
             )
