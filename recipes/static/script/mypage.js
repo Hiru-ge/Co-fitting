@@ -81,7 +81,21 @@ $(document).ready(function() {
             error: function(xhr) {
                 let errorMessage = 'パスワード変更に失敗しました。';
                 if (xhr.responseJSON && xhr.responseJSON.error) {
-                    errorMessage = xhr.responseJSON.error;
+                    const error = xhr.responseJSON.error;
+                    if (typeof error === 'string') {
+                        errorMessage = error;
+                    } else if (typeof error === 'object') {
+                        // エラーオブジェクトから最初のエラーメッセージを取得
+                        const errorMessages = [];
+                        for (const field in error) {
+                            if (error[field]) {
+                                errorMessages.push(error[field]);
+                            }
+                        }
+                        if (errorMessages.length > 0) {
+                            errorMessage = errorMessages[0];
+                        }
+                    }
                 }
                 ModalWindow.showError(errorMessage);
             }
