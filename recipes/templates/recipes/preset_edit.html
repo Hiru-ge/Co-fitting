@@ -95,6 +95,11 @@
                     $(this).val(currentValue.padStart(2, '0'));
                 }
             });
+            
+            // アイスコーヒーの総量を表示
+            if (typeof updateTotalOutput === 'function') {
+                updateTotalOutput();
+            }
         });
     </script>
 {% endblock %}

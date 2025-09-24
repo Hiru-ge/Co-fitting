@@ -504,6 +504,36 @@ class RecipeStep(models.Model):
 
     def __str__(self):
         return f"Step {self.step_number} for {self.recipe_id.name}"
+    
+    @property
+    def pour_ml_this_step(self):
+        """このステップでの注湯量を計算する"""
+        if self.step_number == 1:
+            return self.total_water_ml_this_step
+        
+        # 前のステップの累積湯量を取得
+        previous_step = RecipeStep.objects.filter(
+            recipe_id=self.recipe_id,
+            step_number=self.step_number - 1
+        ).first()
+        
+        if previous_step:
+            return self.total_water_ml_this_step - previous_step.total_water_ml_this_step
+        
+        return self.total_water_ml_this_step
+    
+    @property
+    def cumulative_water_ml(self):
+        """このステップまでの累積湯量を計算する"""
+        cumulative = 0
+        for step_number in range(1, self.step_number + 1):
+            step = RecipeStep.objects.filter(
+                recipe_id=self.recipe_id,
+                step_number=step_number
+            ).first()
+            if step:
+                cumulative += step.pour_ml_this_step
+        return cumulative
 
 
 class SharedRecipe(models.Model):
@@ -549,19 +579,15 @@ class SharedRecipe(models.Model):
         return self.expires_at and self.expires_at < timezone.now()
     
     def create_steps_from_recipe_data(self, recipe_data):
-        """レシピデータから共有レシピステップを作成する（累積湯量を計算）"""
-        cumulative = 0
+        """レシピデータから共有レシピステップを作成する（累積湯量をそのまま保存）"""
         for i, step in enumerate(recipe_data['steps']):
-            # 各ステップの注湯量を累積湯量に加算
-            pour_ml = step['total_water_ml_this_step']
-            cumulative += pour_ml
-            
+            # プリセットのtotal_water_ml_this_stepは既に累積湯量なので、そのまま使用
             SharedRecipeStep.objects.create(
                 shared_recipe=self,
                 step_number=step.get('step_number', i+1),
                 minute=step['minute'],
                 seconds=step['seconds'],
-                total_water_ml_this_step=cumulative
+                total_water_ml_this_step=step['total_water_ml_this_step']
             )
         return self
     
@@ -573,6 +599,25 @@ class SharedRecipe(models.Model):
         self.is_ice = form_data.get('is_ice') == 'on'
         self.ice_g = float(form_data.get('ice_g', 0)) if self.is_ice else None
         self.memo = form_data.get('memo', self.memo)
+        self.save()
+        return self
+    
+    def create_steps_from_form_data(self, form_data):
+        """フォームデータから共有レシピステップを作成する（累積湯量をそのまま保存）"""
+        for step_number in range(1, self.len_steps + 1):
+            total_water_ml_this_step = form_data.get(f'step{step_number}_water')
+            minute = form_data.get(f'step{step_number}_minute')
+            second = form_data.get(f'step{step_number}_second')
+            
+            if total_water_ml_this_step and minute and second:
+                # フォームから受け取った累積湯量をそのまま保存
+                SharedRecipeStep.objects.create(
+                    shared_recipe=self,
+                    step_number=step_number,
+                    minute=int(minute),
+                    seconds=int(second),
+                    total_water_ml_this_step=float(total_water_ml_this_step)
+                )
         return self
     
     def update_with_steps(self, form_data):
@@ -599,3 +644,33 @@ class SharedRecipeStep(models.Model):
 
     def __str__(self):
         return f"SharedStep {self.step_number} for {self.shared_recipe.name}"
+    
+    @property
+    def pour_ml_this_step(self):
+        """このステップでの注湯量を計算する"""
+        if self.step_number == 1:
+            return self.total_water_ml_this_step
+        
+        # 前のステップの累積湯量を取得
+        previous_step = SharedRecipeStep.objects.filter(
+            shared_recipe=self.shared_recipe,
+            step_number=self.step_number - 1
+        ).first()
+        
+        if previous_step:
+            return self.total_water_ml_this_step - previous_step.total_water_ml_this_step
+        
+        return self.total_water_ml_this_step
+    
+    @property
+    def cumulative_water_ml(self):
+        """このステップまでの累積湯量を計算する"""
+        cumulative = 0
+        for step_number in range(1, self.step_number + 1):
+            step = SharedRecipeStep.objects.filter(
+                shared_recipe=self.shared_recipe,
+                step_number=step_number
+            ).first()
+            if step:
+                cumulative += step.pour_ml_this_step
+        return cumulative

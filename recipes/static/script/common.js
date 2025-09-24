@@ -39,7 +39,7 @@ $(document).ready(function() {
 const ModalWindow = {
     // 既存モーダルを表示
     show(modalId) {
-        $(`#${modalId}`).removeClass('modal-hidden');
+        $(`#${modalId}`).removeClass('modal-hidden').css('display', 'block');
     },
     
     // モーダルを非表示

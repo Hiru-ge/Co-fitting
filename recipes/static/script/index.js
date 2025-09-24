@@ -19,6 +19,9 @@ $(document).ready(function() {
             $('.ice-mode-show').hide();
             $('html, header, footer').removeClass('ice-mode');  // アイスモード時のスタイル変更用
         }
+        
+        // アイスモード切り替え時に総量を更新
+        updateTotalOutput();
     }
 
     // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
@@ -504,6 +507,11 @@ $(document).ready(function() {
     const StartButton = document.getElementById('start');
     const StopButton = document.getElementById('stop');
     const ResetButton = document.getElementById('reset');
+    
+    // タイマー要素が存在しない場合は処理をスキップ
+    if (!StartButton || !StopButton || !ResetButton || !Time) {
+        return;
+    }
     
     // 開始時間
     let startTime;

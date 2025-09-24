@@ -657,11 +657,11 @@ class SharedRecipeTestCase(TestCase):
             "is_ice": False,
             "len_steps": 5,
             "steps": [
-                {"step_number": 1, "minute": 0, "seconds": 0, "total_water_ml_this_step": 24.0},
-                {"step_number": 2, "minute": 0, "seconds": 40, "total_water_ml_this_step": 24.0},
-                {"step_number": 3, "minute": 1, "seconds": 10, "total_water_ml_this_step": 24.0},
-                {"step_number": 4, "minute": 1, "seconds": 40, "total_water_ml_this_step": 24.0},
-                {"step_number": 5, "minute": 2, "seconds": 10, "total_water_ml_this_step": 24.0},
+                {"step_number": 1, "minute": 0, "seconds": 0, "total_water_ml_this_step": 24.0},  # 1投目の累積湯量
+                {"step_number": 2, "minute": 0, "seconds": 40, "total_water_ml_this_step": 48.0},  # 2投目の累積湯量
+                {"step_number": 3, "minute": 1, "seconds": 10, "total_water_ml_this_step": 72.0},  # 3投目の累積湯量
+                {"step_number": 4, "minute": 1, "seconds": 40, "total_water_ml_this_step": 96.0},  # 4投目の累積湯量
+                {"step_number": 5, "minute": 2, "seconds": 10, "total_water_ml_this_step": 120.0}, # 5投目の累積湯量
             ]
         }
         response = self.client.post(
@@ -1511,7 +1511,7 @@ class SharedRecipeModelTestCase(TestCase):
         self.assertTrue(expired_recipe.is_expired())
 
     def test_create_steps_from_recipe_data(self):
-        """レシピデータからステップを作成するテスト"""
+        """レシピデータからステップを作成するテスト（累積湯量をそのまま保存）"""
         expires_at = timezone.now() + timedelta(days=30)
         shared_recipe = SharedRecipe.objects.create(
             name='共有テストレシピ',
@@ -1524,19 +1524,20 @@ class SharedRecipeModelTestCase(TestCase):
             access_token='test_token'
         )
         
+        # プリセットから共有レシピを作成する場合のデータ（累積湯量）
         recipe_data = {
             'steps': [
                 {
                     'step_number': 1,
                     'minute': 0,
                     'seconds': 30,
-                    'total_water_ml_this_step': 100.0
+                    'total_water_ml_this_step': 100.0  # 1投目の累積湯量
                 },
                 {
                     'step_number': 2,
                     'minute': 1,
                     'seconds': 0,
-                    'total_water_ml_this_step': 100.0
+                    'total_water_ml_this_step': 200.0  # 2投目の累積湯量
                 }
             ]
         }
@@ -1560,6 +1561,238 @@ class SharedRecipeModelTestCase(TestCase):
         self.assertEqual(step2.minute, 1)
         self.assertEqual(step2.seconds, 0)
         self.assertEqual(step2.total_water_ml_this_step, 200.0)
+
+    def test_create_steps_from_form_data(self):
+        """フォームデータから共有レシピステップを作成するテスト（累積湯量をそのまま保存）"""
+        expires_at = timezone.now() + timedelta(days=30)
+        shared_recipe = SharedRecipe.objects.create(
+            name='共有テストレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=3,
+            bean_g=20.0,
+            water_ml=300.0,
+            expires_at=expires_at,
+            access_token='test_token'
+        )
+        
+        # 共有レシピ編集フォームからのデータ（各ステップの累積湯量）
+        form_data = {
+            'step1_minute': '0',
+            'step1_second': '30',
+            'step1_water': '100.0',  # 1投目の累積湯量
+            'step2_minute': '1',
+            'step2_second': '0',
+            'step2_water': '200.0',  # 2投目の累積湯量
+            'step3_minute': '1',
+            'step3_second': '30',
+            'step3_water': '300.0',  # 3投目の累積湯量
+        }
+        
+        shared_recipe.create_steps_from_form_data(form_data)
+        
+        # ステップが正しく作成されたかチェック
+        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        self.assertEqual(steps.count(), 3)
+        
+        # 各ステップの累積湯量が正しく保存されているかチェック
+        step1 = steps[0]
+        self.assertEqual(step1.step_number, 1)
+        self.assertEqual(step1.minute, 0)
+        self.assertEqual(step1.seconds, 30)
+        self.assertEqual(step1.total_water_ml_this_step, 100.0)
+        
+        step2 = steps[1]
+        self.assertEqual(step2.step_number, 2)
+        self.assertEqual(step2.minute, 1)
+        self.assertEqual(step2.seconds, 0)
+        self.assertEqual(step2.total_water_ml_this_step, 200.0)
+        
+        step3 = steps[2]
+        self.assertEqual(step3.step_number, 3)
+        self.assertEqual(step3.minute, 1)
+        self.assertEqual(step3.seconds, 30)
+        self.assertEqual(step3.total_water_ml_this_step, 300.0)
+
+    def test_preset_to_shared_recipe_workflow(self):
+        """プリセットから共有レシピ作成のワークフローテスト"""
+        # プリセットを作成（累積湯量で保存）
+        preset = Recipe.objects.create(
+            name='テストプリセット',
+            create_user=self.user,
+            is_ice=False,
+            len_steps=3,
+            bean_g=20.0,
+            water_ml=300.0,
+            memo='テストメモ'
+        )
+        
+        # プリセットのステップを作成（累積湯量）
+        RecipeStep.objects.create(
+            recipe_id=preset,
+            step_number=1,
+            minute=0,
+            seconds=30,
+            total_water_ml_this_step=100.0  # 1投目の累積湯量
+        )
+        RecipeStep.objects.create(
+            recipe_id=preset,
+            step_number=2,
+            minute=1,
+            seconds=0,
+            total_water_ml_this_step=200.0  # 2投目の累積湯量
+        )
+        RecipeStep.objects.create(
+            recipe_id=preset,
+            step_number=3,
+            minute=1,
+            seconds=30,
+            total_water_ml_this_step=300.0  # 3投目の累積湯量
+        )
+        
+        # プリセットを共有レシピとして作成
+        recipe_data = preset.to_dict()
+        shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(recipe_data, self.user)
+        
+        # 共有レシピのステップが正しく作成されているかチェック
+        shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        self.assertEqual(shared_steps.count(), 3)
+        
+        # 各ステップの累積湯量が正しく保存されているかチェック
+        step1 = shared_steps[0]
+        self.assertEqual(step1.total_water_ml_this_step, 100.0)
+        
+        step2 = shared_steps[1]
+        self.assertEqual(step2.total_water_ml_this_step, 200.0)
+        
+        step3 = shared_steps[2]
+        self.assertEqual(step3.total_water_ml_this_step, 300.0)
+
+    def test_shared_recipe_edit_workflow(self):
+        """共有レシピ編集のワークフローテスト"""
+        # 共有レシピを作成
+        expires_at = timezone.now() + timedelta(days=30)
+        shared_recipe = SharedRecipe.objects.create(
+            name='共有テストレシピ',
+            shared_by_user=self.user,
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            expires_at=expires_at,
+            access_token='test_token'
+        )
+        
+        # 初期ステップを作成（累積湯量）
+        SharedRecipeStep.objects.create(
+            shared_recipe=shared_recipe,
+            step_number=1,
+            minute=0,
+            seconds=30,
+            total_water_ml_this_step=100.0
+        )
+        SharedRecipeStep.objects.create(
+            shared_recipe=shared_recipe,
+            step_number=2,
+            minute=1,
+            seconds=0,
+            total_water_ml_this_step=200.0
+        )
+        
+        # 編集フォームデータ（各ステップの累積湯量）
+        form_data = {
+            'name': '編集されたレシピ',
+            'len_steps': '2',
+            'bean_g': '25.0',
+            'is_ice': 'on',
+            'ice_g': '80.0',
+            'memo': '編集されたメモ',
+            'step1_minute': '0',
+            'step1_second': '45',
+            'step1_water': '150.0',  # 1投目の累積湯量
+            'step2_minute': '1',
+            'step2_second': '15',
+            'step2_water': '300.0',  # 2投目の累積湯量
+        }
+        
+        # 共有レシピを更新
+        shared_recipe.update_with_steps(form_data)
+        
+        # 更新された共有レシピの基本情報をチェック
+        shared_recipe.refresh_from_db()
+        self.assertEqual(shared_recipe.name, '編集されたレシピ')
+        self.assertEqual(shared_recipe.bean_g, 25.0)
+        self.assertTrue(shared_recipe.is_ice)
+        self.assertEqual(shared_recipe.ice_g, 80.0)
+        self.assertEqual(shared_recipe.memo, '編集されたメモ')
+        
+        # 更新されたステップをチェック
+        updated_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        self.assertEqual(updated_steps.count(), 2)
+        
+        step1 = updated_steps[0]
+        self.assertEqual(step1.step_number, 1)
+        self.assertEqual(step1.minute, 0)
+        self.assertEqual(step1.seconds, 45)
+        self.assertEqual(step1.total_water_ml_this_step, 150.0)
+        
+        step2 = updated_steps[1]
+        self.assertEqual(step2.step_number, 2)
+        self.assertEqual(step2.minute, 1)
+        self.assertEqual(step2.seconds, 15)
+        self.assertEqual(step2.total_water_ml_this_step, 300.0)
+
+    def test_water_amount_calculation_regression(self):
+        """注湯量計算の回帰テスト（修正前の実装では失敗する）"""
+        # このテストは修正前の実装（累積計算）では失敗し、修正後の実装では成功する
+        
+        # プリセットから共有レシピを作成する場合
+        preset = Recipe.objects.create(
+            name='テストプリセット',
+            create_user=self.user,
+            is_ice=False,
+            len_steps=2,
+            bean_g=20.0,
+            water_ml=200.0,
+            memo='テストメモ'
+        )
+        
+        # プリセットのステップ（累積湯量）
+        RecipeStep.objects.create(
+            recipe_id=preset,
+            step_number=1,
+            minute=0,
+            seconds=30,
+            total_water_ml_this_step=100.0  # 1投目の累積湯量
+        )
+        RecipeStep.objects.create(
+            recipe_id=preset,
+            step_number=2,
+            minute=1,
+            seconds=0,
+            total_water_ml_this_step=200.0  # 2投目の累積湯量
+        )
+        
+        # プリセットを共有レシピとして作成
+        recipe_data = preset.to_dict()
+        shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(recipe_data, self.user)
+        
+        # 修正前の実装では累積計算により以下の値になる：
+        # 1投目: 100.0 + 0 = 100.0
+        # 2投目: 200.0 + 100.0 = 300.0
+        # 修正後の実装では元の値がそのまま保存される：
+        # 1投目: 100.0
+        # 2投目: 200.0
+        
+        shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        
+        # 修正後の実装では元の値がそのまま保存されることを確認
+        self.assertEqual(shared_steps[0].total_water_ml_this_step, 100.0)
+        self.assertEqual(shared_steps[1].total_water_ml_this_step, 200.0)
+        
+        # 修正前の実装では以下の値になってしまう（これは間違い）
+        # self.assertEqual(shared_steps[0].total_water_ml_this_step, 100.0)  # これは正しい
+        # self.assertEqual(shared_steps[1].total_water_ml_this_step, 300.0)  # これは間違い（200.0であるべき）
 
     def test_to_dict(self):
         """to_dictメソッドのテスト"""
