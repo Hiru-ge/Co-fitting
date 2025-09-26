@@ -24,11 +24,11 @@ def index(request):
     # 匿名ユーザーの場合は空のリストを返す
     if user.is_anonymous:
         user_preset_recipes = []
-        default_preset_recipes = PresetRecipe.objects.default_presets()
+        default_preset_recipes = PresetRecipe.default_presets()
     else:
-        user_preset_recipes, default_preset_recipes = PresetRecipe.objects.get_preset_recipes_for_user(user)
+        user_preset_recipes, default_preset_recipes = PresetRecipe.get_preset_recipes_for_user(user)
     
-    shared_recipe_data = SharedRecipe.objects.get_shared_recipe_data(shared_token)
+    shared_recipe_data = SharedRecipe.get_shared_recipe_data(shared_token)
 
     context = {
         'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
@@ -59,7 +59,7 @@ def mypage(request):
 def preset_create(request):
     if request.method == 'POST':
         # プリセット上限チェック（Model層で実行）
-        error_response = PresetRecipe.objects.check_preset_limit_or_error(request.user)
+        error_response = PresetRecipe.check_preset_limit_or_error(request.user)
         if error_response:
             messages.error(request, "エラー：プリセットレシピ上限を超過しています")
             recipe_form = RecipeForm()
@@ -128,7 +128,7 @@ def create_shared_recipe(request):
     user = request.user
 
     # 共有レシピ上限チェック（Model層で実行）
-    error_response = SharedRecipe.objects.check_share_limit_or_error(user)
+    error_response = SharedRecipe.check_share_limit_or_error(user)
     if error_response:
         return error_response
 
@@ -143,10 +143,10 @@ def create_shared_recipe(request):
         return ResponseHelper.create_validation_error_response(form.errors)
 
     # 共通関数を使用して共有レシピを作成
-    shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(data, user)
+    shared_recipe = SharedRecipe.create_shared_recipe_from_data(data, user)
     
     # 画像生成用のステップデータを準備（Model層で実行）
-    steps_for_image = SharedRecipe.objects.prepare_image_data(data)
+    steps_for_image = SharedRecipe.prepare_image_data(data)
     
     # 画像を生成
     image_path = generate_recipe_image(data, steps_for_image, shared_recipe.access_token)
@@ -172,14 +172,14 @@ def add_shared_recipe_to_preset(request, token):
             'ログインが必要です。マイプリセットに追加するにはログインしてください。'
         )
 
-    shared_recipe, error_response = SharedRecipe.objects.get_shared_recipe_or_404(token)
+    shared_recipe, error_response = SharedRecipe.get_shared_recipe_or_404(token)
     if error_response:
         return error_response
 
     user = request.user
 
     # 共有レシピをプリセットとして複製（Model層で実行）
-    new_recipe, error_response = SharedRecipe.objects.copy_to_preset(shared_recipe, user)
+    new_recipe, error_response = SharedRecipe.copy_to_preset(shared_recipe, user)
     if error_response:
         return error_response
 
@@ -190,7 +190,7 @@ def add_shared_recipe_to_preset(request, token):
 
 
 def shared_recipe_ogp(request, token):
-    shared_recipe = SharedRecipe.objects.by_token(token)
+    shared_recipe = SharedRecipe.by_token(token)
     if not shared_recipe:
         from django.http import Http404
         raise Http404("共有レシピが見つかりません。")
@@ -206,7 +206,7 @@ def shared_recipe_ogp(request, token):
 @login_required
 def get_user_shared_recipes(request):
     # ユーザーの共有レシピ一覧データを取得（Model層で実行）
-    return SharedRecipe.objects.get_user_shared_recipes_data(request.user)
+    return SharedRecipe.get_user_shared_recipes_data(request.user)
 
 
 @csrf_exempt
@@ -217,7 +217,7 @@ def share_preset_recipe(request, recipe_id):
         recipe = get_object_or_404(PresetRecipe, id=recipe_id, created_by=request.user)
         
         # 共有レシピ上限チェック（Model層で実行）
-        error_response = SharedRecipe.objects.check_share_limit_or_error(request.user)
+        error_response = SharedRecipe.check_share_limit_or_error(request.user)
         if error_response:
             return error_response
         
@@ -225,10 +225,10 @@ def share_preset_recipe(request, recipe_id):
         recipe_data = recipe.to_dict()
         
         # 共通関数を使用して共有レシピを作成
-        shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(recipe_data, request.user)
+        shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, request.user)
         
         # 画像生成用のステップデータを準備（Model層で実行）
-        steps_for_image = SharedRecipe.objects.prepare_image_data(recipe_data)
+        steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
         
         # 共通関数を使用して画像を生成
         image_url = generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
@@ -248,12 +248,12 @@ def share_preset_recipe(request, recipe_id):
 @require_http_methods(["DELETE"])
 @login_required
 def delete_shared_recipe(request, token):
-    shared_recipe = SharedRecipe.objects.by_token(token)
+    shared_recipe = SharedRecipe.by_token(token)
     if not shared_recipe or shared_recipe.created_by != request.user:
         return ResponseHelper.create_not_found_error_response('共有レシピが見つかりません。')
     
     # 共有レシピと画像ファイルを削除（Model層で実行）
-    return SharedRecipe.objects.delete_with_image(shared_recipe)
+    return SharedRecipe.delete_with_image(shared_recipe)
 
 
 @login_required
@@ -272,7 +272,7 @@ def shared_recipe_edit(request, token):
             recipe_data = shared_recipe.to_dict()
             
             # 画像生成用のステップデータを準備（Model層で実行）
-            steps_for_image = SharedRecipe.objects.prepare_image_data(recipe_data)
+            steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
             
             # 共通関数を使用して画像を生成
             generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
@@ -292,7 +292,7 @@ def shared_recipe_edit(request, token):
 @require_GET
 @csrf_exempt
 def retrieve_shared_recipe(request, token):
-    shared_recipe, error_response = SharedRecipe.objects.get_shared_recipe_or_404(token)
+    shared_recipe, error_response = SharedRecipe.get_shared_recipe_or_404(token)
     if error_response:
         return error_response
 
@@ -309,9 +309,9 @@ def get_preset_recipes(request):
         # 匿名ユーザーの場合は空のリストを返す
         if user.is_anonymous:
             user_preset_recipes = []
-            default_preset_recipes = PresetRecipe.objects.default_presets()
+            default_preset_recipes = PresetRecipe.default_presets()
         else:
-            user_preset_recipes, default_preset_recipes = PresetRecipe.objects.get_preset_recipes_for_user(user)
+            user_preset_recipes, default_preset_recipes = PresetRecipe.get_preset_recipes_for_user(user)
         
         return ResponseHelper.create_data_response({
             'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],

@@ -1280,7 +1280,7 @@ class SharedRecipeModelTestCase(TestCase):
         
         # プリセットを共有レシピとして作成
         recipe_data = preset.to_dict()
-        shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(recipe_data, self.user)
+        shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, self.user)
         
         # 共有レシピのステップが正しく作成されているかチェック
         shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
@@ -1401,7 +1401,7 @@ class SharedRecipeModelTestCase(TestCase):
         
         # プリセットを共有レシピとして作成
         recipe_data = preset.to_dict()
-        shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(recipe_data, self.user)
+        shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, self.user)
         
         # 修正前の実装では累積計算により以下の値になる：
         # 1投目: 100.0 + 0 = 100.0
@@ -1523,13 +1523,13 @@ class RecipeManagerTestCase(TestCase):
     
     def test_default_presets(self):
         """デフォルトプリセット取得のテスト"""
-        default_recipes = PresetRecipe.objects.default_presets()
+        default_recipes = PresetRecipe.default_presets()
         self.assertEqual(default_recipes.count(), 1)
         self.assertEqual(default_recipes.first().name, 'デフォルトレシピ')
 
     def test_get_preset_recipes_for_user(self):
         """ユーザーのプリセットレシピとデフォルトプリセットを取得するテスト"""
-        user1_recipes, default_recipes = PresetRecipe.objects.get_preset_recipes_for_user(self.user1)
+        user1_recipes, default_recipes = PresetRecipe.get_preset_recipes_for_user(self.user1)
         self.assertEqual(user1_recipes.count(), 1)
         self.assertEqual(default_recipes.count(), 1)
         self.assertEqual(user1_recipes.first().name, 'ユーザー1のレシピ')
@@ -1542,7 +1542,7 @@ class RecipeManagerTestCase(TestCase):
         self.user1.preset_limit = 1
         self.user1.save()
         
-        error_response = PresetRecipe.objects.check_preset_limit_or_error(self.user1)
+        error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNotNone(error_response)
         self.assertEqual(error_response.status_code, 400)
         
@@ -1550,7 +1550,7 @@ class RecipeManagerTestCase(TestCase):
         self.user1.preset_limit = 2
         self.user1.save()
         
-        error_response = PresetRecipe.objects.check_preset_limit_or_error(self.user1)
+        error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNone(error_response)
 
 
@@ -1585,29 +1585,29 @@ class SharedRecipeManagerTestCase(TestCase):
     
     def test_by_token(self):
         """トークンで共有レシピ取得のテスト"""
-        recipe = SharedRecipe.objects.by_token('active_token')
+        recipe = SharedRecipe.by_token('active_token')
         self.assertIsNotNone(recipe)
         self.assertEqual(recipe.name, '有効レシピ')
         
         # 存在しないトークン
-        no_recipe = SharedRecipe.objects.by_token('nonexistent_token')
+        no_recipe = SharedRecipe.by_token('nonexistent_token')
         self.assertIsNone(no_recipe)
 
     def test_get_shared_recipe_data(self):
         """共有レシピデータ取得のテスト"""
         # 有効なトークン
-        data = SharedRecipe.objects.get_shared_recipe_data('active_token')
+        data = SharedRecipe.get_shared_recipe_data('active_token')
         self.assertIsNotNone(data)
         self.assertEqual(data['name'], '有効レシピ')
         
         
         # 存在しないトークン
-        data = SharedRecipe.objects.get_shared_recipe_data('nonexistent_token')
+        data = SharedRecipe.get_shared_recipe_data('nonexistent_token')
         self.assertIsNotNone(data)
         self.assertEqual(data['error'], 'not_found')
         
         # 空のトークン
-        data = SharedRecipe.objects.get_shared_recipe_data(None)
+        data = SharedRecipe.get_shared_recipe_data(None)
         self.assertIsNone(data)
 
 

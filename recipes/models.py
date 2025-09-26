@@ -158,208 +158,6 @@ class BaseRecipeStep(models.Model):
         return cumulative
 
 
-class RecipeManager(models.Manager):
-    """レシピ用のカスタムManager"""
-    
-    def default_presets(self):
-        """デフォルトプリセットを取得"""
-        default_user = User.objects.get(username='DefaultPreset')
-        return self.filter(created_by=default_user)
-    
-    def get_preset_recipes_for_user(self, user):
-        """ユーザーのプリセットレシピとデフォルトプリセットを取得"""
-        user_preset_recipes = self.filter(created_by=user)
-        default_preset_recipes = self.default_presets()
-        return user_preset_recipes, default_preset_recipes
-    
-    def check_preset_limit_or_error(self, user):
-        """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
-        current_preset_count = self.filter(created_by=user).count()
-        if current_preset_count >= user.preset_limit:
-            if user.is_subscribed:
-                return ResponseHelper.create_error_response(
-                    'preset_limit_exceeded_premium', 
-                    'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
-                )
-            else:
-                return ResponseHelper.create_error_response(
-                    'preset_limit_exceeded', 
-                    'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。'
-                )
-        return None
-
-
-class SharedRecipeManager(models.Manager):
-    """共有レシピ用のカスタムManager"""
-    
-    def by_token(self, token):
-        """トークンで共有レシピを取得"""
-        return self.filter(access_token=token).first()
-    
-    def get_shared_recipe_data(self, shared_token):
-        """共有レシピデータを取得（エラーハンドリング付き）"""
-        if not shared_token:
-            return None
-        
-        shared_recipe = self.by_token(shared_token)
-        if not shared_recipe:
-            return {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
-        
-        
-        return shared_recipe.to_dict()
-    
-    def create_shared_recipe_from_data(self, recipe_data, user):
-        """レシピデータから共有レシピを作成する"""
-        access_token = secrets.token_hex(AppConstants.TOKEN_LENGTH)
-        
-        shared_recipe = SharedRecipe.objects.create(
-            name=recipe_data['name'],
-            created_by=user,
-            is_ice=recipe_data['is_ice'],
-            ice_g=recipe_data.get('ice_g'),
-            len_steps=recipe_data['len_steps'],
-            bean_g=recipe_data['bean_g'],
-            water_ml=recipe_data['water_ml'],
-            memo=recipe_data.get('memo', ''),
-            access_token=access_token
-        )
-        
-        # Model層のメソッドを使用してステップを作成
-        shared_recipe.create_steps_from_recipe_data(recipe_data)
-        
-        return shared_recipe
-    
-    def get_shared_recipe_or_404(self, token):
-        """共有レシピを取得し、存在・期限チェックを行う"""
-        shared_recipe = self.by_token(token)
-        if not shared_recipe:
-            return None, ResponseHelper.create_error_response('not_found', 'この共有リンクは存在しません。', 404)
-
-
-        return shared_recipe, None
-    
-    def check_share_limit_or_error(self, user):
-        """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
-        current_count = self.filter(created_by=user).count()
-        is_subscribed = getattr(user, 'is_subscribed', False)
-        
-        if is_subscribed:
-            limit = AppConstants.SHARE_LIMIT_PREMIUM
-            limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
-        else:
-            limit = AppConstants.SHARE_LIMIT_FREE
-            limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{AppConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
-        
-        if current_count >= limit:
-            return ResponseHelper.create_error_response(
-                'share_limit_exceeded', 
-                limit_message,
-                status_code=429,
-                details={
-                    'current_count': current_count,
-                    'limit': limit,
-                    'is_premium': is_subscribed
-                }
-            )
-        
-        return None
-    
-    def prepare_image_data(self, data):
-        """画像生成用のステップデータを準備"""
-        steps_for_image = []
-
-        for i, step in enumerate(data['steps']):
-            cumulative_water_ml = step['total_water_ml_this_step']
-
-            steps_for_image.append({
-                'minute': step['minute'],
-                'seconds': step['seconds'],
-                'step_number': step.get('step_number', i+1),
-                'pour_ml': cumulative_water_ml,
-                'cumulative_water_ml': cumulative_water_ml
-            })
-        return steps_for_image
-    
-    def copy_to_preset(self, shared_recipe, user):
-        """共有レシピをプリセットとして複製"""
-        # プリセット上限チェック
-        error_response = PresetRecipe.objects.check_preset_limit_or_error(user)
-        if error_response:
-            return None, error_response
-        
-        try:
-            # 共有レシピをプリセットとして複製
-            new_recipe = PresetRecipe.objects.create(
-                name=shared_recipe.name,
-                created_by=user,
-                is_ice=shared_recipe.is_ice,
-                ice_g=shared_recipe.ice_g,
-                len_steps=shared_recipe.len_steps,
-                bean_g=shared_recipe.bean_g,
-                water_ml=shared_recipe.water_ml,
-                memo=shared_recipe.memo or ''
-            )
-
-            # ステップを複製
-            shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
-            for shared_step in shared_steps:
-                PresetRecipeStep.objects.create(
-                    recipe=new_recipe,
-                    step_number=shared_step.step_number,
-                    minute=shared_step.minute,
-                    seconds=shared_step.seconds,
-                    total_water_ml_this_step=shared_step.total_water_ml_this_step
-                )
-
-            return new_recipe, None
-        except Exception:
-            return None, ResponseHelper.create_error_response(
-                'database_error',
-                'レシピの保存に失敗しました。しばらく時間をおいてから再度お試しください。',
-                500
-            )
-    
-    def delete_with_image(self, shared_recipe):
-        """共有レシピと画像ファイルを削除"""
-        try:
-            # 画像ファイルを削除
-            image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
-            if os.path.exists(image_path):
-                os.remove(image_path)
-            
-            # 共有レシピを削除
-            shared_recipe.delete()
-            
-            return ResponseHelper.create_success_response('共有レシピを削除しました。')
-        except Exception as e:
-            return ResponseHelper.create_error_response(
-                'delete_failed',
-                '共有レシピの削除に失敗しました。',
-                500
-            )
-    
-    def get_user_shared_recipes_data(self, user):
-        """ユーザーの共有レシピ一覧データを取得"""
-        try:
-            shared_recipes = self.filter(created_by=user).order_by('-created_at')
-            recipes_data = []
-            
-            for recipe in shared_recipes:
-                recipes_data.append({
-                    'access_token': recipe.access_token,
-                    'name': recipe.name,
-                    'created_at': recipe.created_at.isoformat(),
-                    'is_ice': recipe.is_ice,
-                    'bean_g': recipe.bean_g,
-                    'water_ml': recipe.water_ml,
-                    'ice_g': recipe.ice_g,
-                    'len_steps': recipe.len_steps,
-                    'memo': recipe.memo
-                })
-            
-            return ResponseHelper.create_data_response({'shared_recipes': recipes_data})
-        except Exception as e:
-            return ResponseHelper.create_server_error_response('共有レシピ一覧の取得に失敗しました。')
 
 
 class RecipeImageGenerator:
@@ -516,10 +314,38 @@ def generate_recipe_image(recipe_data, steps_data, access_token):
 class PresetRecipe(BaseRecipe):
     """プリセットレシピ"""
     
-    objects = RecipeManager()
-
     def __str__(self):
         return self.name
+    
+    @classmethod
+    def default_presets(cls):
+        """デフォルトプリセットを取得"""
+        default_user = User.objects.get(username='DefaultPreset')
+        return cls.objects.filter(created_by=default_user)
+    
+    @classmethod
+    def get_preset_recipes_for_user(cls, user):
+        """ユーザーのプリセットレシピとデフォルトプリセットを取得"""
+        user_preset_recipes = cls.objects.filter(created_by=user)
+        default_preset_recipes = cls.default_presets()
+        return user_preset_recipes, default_preset_recipes
+    
+    @classmethod
+    def check_preset_limit_or_error(cls, user):
+        """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
+        current_preset_count = cls.objects.filter(created_by=user).count()
+        if current_preset_count >= user.preset_limit:
+            if user.is_subscribed:
+                return ResponseHelper.create_error_response(
+                    'preset_limit_exceeded_premium', 
+                    'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
+                )
+            else:
+                return ResponseHelper.create_error_response(
+                    'preset_limit_exceeded', 
+                    'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。'
+                )
+        return None
     
     def get_steps(self):
         """ステップを取得するメソッド"""
@@ -579,10 +405,184 @@ class SharedRecipe(BaseRecipe):
     created_at = models.DateTimeField(auto_now_add=True)
     access_token = models.CharField(max_length=32, unique=True)
     
-    objects = SharedRecipeManager()
-
     def __str__(self):
         return f"Shared: {self.name} ({self.access_token})"
+    
+    @classmethod
+    def by_token(cls, token):
+        """トークンで共有レシピを取得"""
+        return cls.objects.filter(access_token=token).first()
+    
+    @classmethod
+    def get_shared_recipe_data(cls, shared_token):
+        """共有レシピデータを取得（エラーハンドリング付き）"""
+        if not shared_token:
+            return None
+        
+        shared_recipe = cls.by_token(shared_token)
+        if not shared_recipe:
+            return {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
+        
+        return shared_recipe.to_dict()
+    
+    @classmethod
+    def create_shared_recipe_from_data(cls, recipe_data, user):
+        """レシピデータから共有レシピを作成する"""
+        access_token = secrets.token_hex(AppConstants.TOKEN_LENGTH)
+        
+        shared_recipe = cls.objects.create(
+            name=recipe_data['name'],
+            created_by=user,
+            is_ice=recipe_data['is_ice'],
+            ice_g=recipe_data.get('ice_g'),
+            len_steps=recipe_data['len_steps'],
+            bean_g=recipe_data['bean_g'],
+            water_ml=recipe_data['water_ml'],
+            memo=recipe_data.get('memo', ''),
+            access_token=access_token
+        )
+        
+        # Model層のメソッドを使用してステップを作成
+        shared_recipe.create_steps_from_recipe_data(recipe_data)
+        
+        return shared_recipe
+    
+    @classmethod
+    def get_shared_recipe_or_404(cls, token):
+        """共有レシピを取得し、存在・期限チェックを行う"""
+        shared_recipe = cls.by_token(token)
+        if not shared_recipe:
+            return None, ResponseHelper.create_error_response('not_found', 'この共有リンクは存在しません。', 404)
+
+        return shared_recipe, None
+    
+    @classmethod
+    def check_share_limit_or_error(cls, user):
+        """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
+        current_count = cls.objects.filter(created_by=user).count()
+        is_subscribed = getattr(user, 'is_subscribed', False)
+        
+        if is_subscribed:
+            limit = AppConstants.SHARE_LIMIT_PREMIUM
+            limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
+        else:
+            limit = AppConstants.SHARE_LIMIT_FREE
+            limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{AppConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
+        
+        if current_count >= limit:
+            return ResponseHelper.create_error_response(
+                'share_limit_exceeded', 
+                limit_message,
+                status_code=429,
+                details={
+                    'current_count': current_count,
+                    'limit': limit,
+                    'is_premium': is_subscribed
+                }
+            )
+        
+        return None
+    
+    @classmethod
+    def prepare_image_data(cls, data):
+        """画像生成用のステップデータを準備"""
+        steps_for_image = []
+
+        for i, step in enumerate(data['steps']):
+            cumulative_water_ml = step['total_water_ml_this_step']
+
+            steps_for_image.append({
+                'minute': step['minute'],
+                'seconds': step['seconds'],
+                'step_number': step.get('step_number', i+1),
+                'pour_ml': cumulative_water_ml,
+                'cumulative_water_ml': cumulative_water_ml
+            })
+        return steps_for_image
+    
+    @classmethod
+    def copy_to_preset(cls, shared_recipe, user):
+        """共有レシピをプリセットとして複製"""
+        # プリセット上限チェック
+        error_response = PresetRecipe.check_preset_limit_or_error(user)
+        if error_response:
+            return None, error_response
+        
+        try:
+            # 共有レシピをプリセットとして複製
+            new_recipe = PresetRecipe.objects.create(
+                name=shared_recipe.name,
+                created_by=user,
+                is_ice=shared_recipe.is_ice,
+                ice_g=shared_recipe.ice_g,
+                len_steps=shared_recipe.len_steps,
+                bean_g=shared_recipe.bean_g,
+                water_ml=shared_recipe.water_ml,
+                memo=shared_recipe.memo or ''
+            )
+
+            # ステップを複製
+            shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
+            for shared_step in shared_steps:
+                PresetRecipeStep.objects.create(
+                    recipe=new_recipe,
+                    step_number=shared_step.step_number,
+                    minute=shared_step.minute,
+                    seconds=shared_step.seconds,
+                    total_water_ml_this_step=shared_step.total_water_ml_this_step
+                )
+
+            return new_recipe, None
+        except Exception:
+            return None, ResponseHelper.create_error_response(
+                'database_error',
+                'レシピの保存に失敗しました。しばらく時間をおいてから再度お試しください。',
+                500
+            )
+    
+    @classmethod
+    def delete_with_image(cls, shared_recipe):
+        """共有レシピと画像ファイルを削除"""
+        try:
+            # 画像ファイルを削除
+            image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
+            if os.path.exists(image_path):
+                os.remove(image_path)
+            
+            # 共有レシピを削除
+            shared_recipe.delete()
+            
+            return ResponseHelper.create_success_response('共有レシピを削除しました。')
+        except Exception as e:
+            return ResponseHelper.create_error_response(
+                'delete_failed',
+                '共有レシピの削除に失敗しました。',
+                500
+            )
+    
+    @classmethod
+    def get_user_shared_recipes_data(cls, user):
+        """ユーザーの共有レシピ一覧データを取得"""
+        try:
+            shared_recipes = cls.objects.filter(created_by=user).order_by('-created_at')
+            recipes_data = []
+            
+            for recipe in shared_recipes:
+                recipes_data.append({
+                    'access_token': recipe.access_token,
+                    'name': recipe.name,
+                    'created_at': recipe.created_at.isoformat(),
+                    'is_ice': recipe.is_ice,
+                    'bean_g': recipe.bean_g,
+                    'water_ml': recipe.water_ml,
+                    'ice_g': recipe.ice_g,
+                    'len_steps': recipe.len_steps,
+                    'memo': recipe.memo
+                })
+            
+            return ResponseHelper.create_data_response({'shared_recipes': recipes_data})
+        except Exception as e:
+            return ResponseHelper.create_server_error_response('共有レシピ一覧の取得に失敗しました。')
     
     def get_steps(self):
         """ステップを取得するメソッド"""
