@@ -177,12 +177,15 @@ class ResponseHelper:
     """レスポンス作成のヘルパークラス"""
     
     @staticmethod
-    def create_error_response(error_type, message, status_code=400):
+    def create_error_response(error_type, message, status_code=400, details=None):
         """統一されたエラーレスポンスを作成"""
-        return JsonResponse({
+        response_data = {
             'error': error_type,
             'message': message
-        }, status=status_code)
+        }
+        if details:
+            response_data['details'] = details
+        return JsonResponse(response_data, status=status_code)
     
     @staticmethod
     def create_success_response(message, data=None, status_code=200):
@@ -194,6 +197,52 @@ class ResponseHelper:
         if data:
             response_data.update(data)
         return JsonResponse(response_data, status=status_code)
+    
+    @staticmethod
+    def create_data_response(data, status_code=200):
+        """データのみのレスポンスを作成"""
+        return JsonResponse(data, status=status_code)
+    
+    @staticmethod
+    def create_validation_error_response(form_errors, message="データの検証に失敗しました。"):
+        """フォームバリデーションエラーレスポンスを作成"""
+        return JsonResponse({
+            'error': 'validation_error',
+            'message': message,
+            'errors': form_errors
+        }, status=400)
+    
+    @staticmethod
+    def create_authentication_error_response(message="認証が必要です。"):
+        """認証エラーレスポンスを作成"""
+        return JsonResponse({
+            'error': 'authentication_required',
+            'message': message
+        }, status=401)
+    
+    @staticmethod
+    def create_permission_error_response(message="権限がありません。"):
+        """権限エラーレスポンスを作成"""
+        return JsonResponse({
+            'error': 'permission_denied',
+            'message': message
+        }, status=403)
+    
+    @staticmethod
+    def create_not_found_error_response(message="リソースが見つかりません。"):
+        """404エラーレスポンスを作成"""
+        return JsonResponse({
+            'error': 'not_found',
+            'message': message
+        }, status=404)
+    
+    @staticmethod
+    def create_server_error_response(message="サーバーエラーが発生しました。"):
+        """500エラーレスポンスを作成"""
+        return JsonResponse({
+            'error': 'server_error',
+            'message': message
+        }, status=500)
 
 
 class RecipeManager(models.Manager):
@@ -298,13 +347,16 @@ class SharedRecipeManager(models.Manager):
             limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{ShareConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
         
         if current_count >= limit:
-            return JsonResponse({
-                'error': 'share_limit_exceeded', 
-                'message': limit_message,
-                'current_count': current_count,
-                'limit': limit,
-                'is_premium': is_subscribed
-            }, status=429)
+            return ResponseHelper.create_error_response(
+                'share_limit_exceeded', 
+                limit_message,
+                status_code=429,
+                details={
+                    'current_count': current_count,
+                    'limit': limit,
+                    'is_premium': is_subscribed
+                }
+            )
         
         return None
     
@@ -401,12 +453,9 @@ class SharedRecipeManager(models.Manager):
                     'memo': recipe.memo
                 })
             
-            return JsonResponse({'shared_recipes': recipes_data})
+            return ResponseHelper.create_data_response({'shared_recipes': recipes_data})
         except Exception as e:
-            return JsonResponse({
-                'error': 'fetch_failed',
-                'message': '共有レシピ一覧の取得に失敗しました。'
-            }, status=500)
+            return ResponseHelper.create_server_error_response('共有レシピ一覧の取得に失敗しました。')
 
 
 class RecipeImageGenerator:

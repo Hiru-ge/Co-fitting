@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from .models import User, TokenService
+from recipes.models import ResponseHelper
 
 
 def signup_request(request):
@@ -76,10 +77,7 @@ def email_change_request(request):
             return redirect("recipes:mypage")
         else:
             # フォームエラーを返す
-            errors = {}
-            for field, field_errors in form.errors.items():
-                errors[field] = field_errors[0] if field_errors else ''
-            return JsonResponse({'error': errors}, status=400)
+            return ResponseHelper.create_validation_error_response(form.errors)
     else:
         # GETリクエストの場合はマイページにリダイレクト
         return redirect("recipes:mypage")
@@ -110,19 +108,15 @@ def password_change_api(request):
             new_password = form.cleaned_data['new_password1']
             # Model層でパスワード変更とログアウト処理を実行
             User.objects.change_user_password(request.user, new_password, request)
-            return JsonResponse({
-                'success': True, 
-                'message': 'パスワードを変更しました。セキュリティのため、ログアウトされました。新しいパスワードでログインしてください。',
-                'redirect_url': settings.LOGIN_URL
-            })
+            return ResponseHelper.create_success_response(
+                'パスワードを変更しました。セキュリティのため、ログアウトされました。新しいパスワードでログインしてください。',
+                {'redirect_url': settings.LOGIN_URL}
+            )
         else:
             # フォームエラーを返す
-            errors = {}
-            for field, field_errors in form.errors.items():
-                errors[field] = field_errors[0] if field_errors else ''
-            return JsonResponse({'error': errors}, status=400)
+            return ResponseHelper.create_validation_error_response(form.errors)
     
-    return JsonResponse({'error': '無効なリクエストです。'}, status=400)
+    return ResponseHelper.create_error_response('invalid_request', '無効なリクエストです。')
 
 
 def password_reset_done_redirect(request):
@@ -144,4 +138,4 @@ def account_delete(request):
         logout(request)
         return redirect(reverse_lazy('recipes:index'))  # 退会後トップページへリダイレクト
     else:
-        return JsonResponse({'error': '無効なリクエストです。'}, status=400)
+        return ResponseHelper.create_error_response('invalid_request', '無効なリクエストです。')

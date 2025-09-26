@@ -134,16 +134,12 @@ def create_shared_recipe(request):
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
-        return JsonResponse({'error': 'invalid_json', 'message': 'JSONデータの形式が正しくありません。'}, status=400)
+        return ResponseHelper.create_error_response('invalid_json', 'JSONデータの形式が正しくありません。')
 
     # Form層でデータ検証
     form = SharedRecipeDataForm(data)
     if not form.is_valid():
-        return JsonResponse({
-            'error': 'invalid_data',
-            'message': 'データの検証に失敗しました。',
-            'errors': form.errors
-        }, status=400)
+        return ResponseHelper.create_validation_error_response(form.errors)
 
     # 共通関数を使用して共有レシピを作成
     shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(data, user)
@@ -155,11 +151,14 @@ def create_shared_recipe(request):
     image_path = generate_recipe_image(data, steps_for_image, shared_recipe.access_token)
     
     share_url = request.build_absolute_uri(f'/?shared={shared_recipe.access_token}')
-    return JsonResponse({
-        'url': share_url, 
-        'access_token': shared_recipe.access_token, 
-        'image_url': image_path
-    })
+    return ResponseHelper.create_success_response(
+        '共有レシピを作成しました。',
+        {
+            'url': share_url, 
+            'access_token': shared_recipe.access_token, 
+            'image_url': image_path
+        }
+    )
 
 
 
@@ -168,10 +167,9 @@ def create_shared_recipe(request):
 @require_POST
 def add_shared_recipe_to_preset(request, token):
     if not request.user.is_authenticated:
-        return JsonResponse({
-            'error': 'authentication_required',
-            'message': 'ログインが必要です。マイプリセットに追加するにはログインしてください。'
-        }, status=401)
+        return ResponseHelper.create_authentication_error_response(
+            'ログインが必要です。マイプリセットに追加するにはログインしてください。'
+        )
 
     shared_recipe, error_response = SharedRecipe.objects.get_shared_recipe_or_404(token)
     if error_response:
@@ -184,11 +182,10 @@ def add_shared_recipe_to_preset(request, token):
     if error_response:
         return error_response
 
-    return JsonResponse({
-        'success': True, 
-        'message': 'レシピをマイプリセットに追加しました。', 
-        'recipe_id': new_recipe.id
-    })
+    return ResponseHelper.create_success_response(
+        'レシピをマイプリセットに追加しました。',
+        {'recipe_id': new_recipe.id}
+    )
 
 
 def shared_recipe_ogp(request, token):
@@ -235,15 +232,15 @@ def share_preset_recipe(request, recipe_id):
         # 共通関数を使用して画像を生成
         image_url = generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
         
-        return JsonResponse({
-            'access_token': shared_recipe.access_token,
-            'image_url': image_url
-        })
+        return ResponseHelper.create_success_response(
+            'プリセットを共有しました。',
+            {
+                'access_token': shared_recipe.access_token,
+                'image_url': image_url
+            }
+        )
     except Exception as e:
-        return JsonResponse({
-            'error': 'share_failed',
-            'message': 'プリセットの共有に失敗しました。'
-        }, status=500)
+        return ResponseHelper.create_server_error_response('プリセットの共有に失敗しました。')
 
 
 @csrf_exempt
@@ -252,10 +249,7 @@ def share_preset_recipe(request, recipe_id):
 def delete_shared_recipe(request, token):
     shared_recipe = SharedRecipe.objects.by_token(token)
     if not shared_recipe or shared_recipe.shared_by_user != request.user:
-        return JsonResponse({
-            'error': 'not_found',
-            'message': '共有レシピが見つかりません。'
-        }, status=404)
+        return ResponseHelper.create_not_found_error_response('共有レシピが見つかりません。')
     
     # 共有レシピと画像ファイルを削除（Model層で実行）
     return SharedRecipe.objects.delete_with_image(shared_recipe)
@@ -302,7 +296,7 @@ def retrieve_shared_recipe(request, token):
         return error_response
 
     # モデルメソッドを使用してレスポンスデータを構築
-    return JsonResponse(shared_recipe.to_dict())
+    return ResponseHelper.create_data_response(shared_recipe.to_dict())
 
 
 @require_GET
@@ -318,12 +312,9 @@ def get_preset_recipes(request):
         else:
             user_preset_recipes, default_preset_recipes = PresetRecipe.objects.get_preset_recipes_for_user(user)
         
-        return JsonResponse({
+        return ResponseHelper.create_data_response({
             'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
             'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes]
         })
     except Exception as e:
-        return JsonResponse({
-            'error': 'fetch_failed',
-            'message': 'プリセットレシピの取得に失敗しました。'
-        }, status=500)
+        return ResponseHelper.create_server_error_response('プリセットレシピの取得に失敗しました。')

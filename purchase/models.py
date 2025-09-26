@@ -5,7 +5,7 @@ from django.conf import settings
 from django.urls import reverse
 import stripe
 from users.models import User
-from recipes.models import PresetRecipe
+from recipes.models import PresetRecipe, ResponseHelper
 
 
 class SubscriptionConstants:
@@ -127,9 +127,9 @@ class SubscriptionManager:
             
             # 成功メールを送信
             EmailService.send_payment_success_email(user)
-            return JsonResponse({"status": "success"})
+            return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
+            return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
     
     @staticmethod
     def handle_subscription_change(event):
@@ -150,9 +150,9 @@ class SubscriptionManager:
                 user.is_subscribed = True
                 user.preset_limit = SubscriptionConstants.PREMIUM_PRESET_LIMIT
             user.save()
-            return JsonResponse({"status": "success"})
+            return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
+            return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
     
     @staticmethod
     def handle_invoice_paid(event):
@@ -167,9 +167,9 @@ class SubscriptionManager:
             user.save()
             
             EmailService.send_payment_success_email(user)
-            return JsonResponse({"status": "success"})
+            return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
+            return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
     
     @staticmethod
     def handle_invoice_payment_failed(event, request):
@@ -180,7 +180,7 @@ class SubscriptionManager:
         try:
             user = User.objects.get(stripe_customer_id=customer_id)
             EmailService.send_payment_failed_email(user, request)
-            return JsonResponse({"status": "success"})
+            return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
-            return JsonResponse({"error": "User not found"}, status=404)
+            return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
 

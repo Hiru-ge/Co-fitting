@@ -8,6 +8,7 @@ from .models import (
     StripeService, SubscriptionManager,
     SubscriptionConstants
 )
+from recipes.models import ResponseHelper
 
 
 @login_required
@@ -39,7 +40,7 @@ def checkout_cancel(request):
 
 @login_required
 def get_preset_limit(request):
-    return JsonResponse({"preset_limit": request.user.preset_limit})
+    return ResponseHelper.create_data_response({"preset_limit": request.user.preset_limit})
 
 
 @csrf_exempt
@@ -50,9 +51,9 @@ def webhook(request):
     try:
         event = StripeService.construct_event(payload, stripe.api_key)
     except ValueError:
-        return JsonResponse({"error": "Invalid payload"}, status=400)
+        return ResponseHelper.create_error_response("invalid_payload", "Invalid payload")
     except stripe.error.SignatureVerificationError:
-        return JsonResponse({"error": "Invalid signature"}, status=400)
+        return ResponseHelper.create_error_response("invalid_signature", "Invalid signature")
     
     # イベントタイプに応じて処理を分岐
     if event.type == 'checkout.session.completed':
@@ -64,7 +65,7 @@ def webhook(request):
     elif event.type == 'invoice.payment_failed':
         return SubscriptionManager.handle_invoice_payment_failed(event, request)
     else:
-        return JsonResponse({"error": "Unhandled event type"}, status=400)
+        return ResponseHelper.create_error_response("unhandled_event", "Unhandled event type")
 
 
 @login_required

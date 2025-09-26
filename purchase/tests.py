@@ -149,7 +149,9 @@ class StripePaymentTest(BaseTestCase):
         )
 
         self.assertEqual(response.status_code, 400)  # 400 Bad Request
-        self.assertJSONEqual(response.content.decode('utf-8'), {"error": "Unhandled event type"})
+        response_data = json.loads(response.content)
+        self.assertEqual(response_data['error'], 'unhandled_event')
+        self.assertEqual(response_data['message'], 'Unhandled event type')
 
     def test_send_mail_when_payment_failed(self):
         """支払い失敗時にメールが送信されるかをテスト"""
@@ -553,7 +555,7 @@ class PurchaseSecurityTestCase(BaseTestCase):
         # CSRFエラーではなく、イベントタイプエラーが返されることを確認
         self.assertEqual(response.status_code, 400)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'Unhandled event type')
+        self.assertEqual(response_data['error'], 'unhandled_event')
 
     def test_webhook_method_restriction(self):
         """WebhookエンドポイントがPOSTメソッドのみを受け付けることをテスト"""

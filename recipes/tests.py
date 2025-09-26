@@ -304,7 +304,7 @@ class SharedRecipeTestCase(BaseTestCase):
 
         assert_json_response(self, response, expected_status=400, expected_keys=['error'])
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'invalid_data')
+        self.assertEqual(response_data['error'], 'validation_error')
 
     def test_create_shared_recipe_invalid_steps(self):
         """ステップ数が不正な場合のエラーハンドリング"""
@@ -325,7 +325,7 @@ class SharedRecipeTestCase(BaseTestCase):
 
         assert_json_response(self, response, expected_status=400, expected_keys=['error'])
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'invalid_data')
+        self.assertEqual(response_data['error'], 'validation_error')
 
     def test_create_shared_recipe_free_user_limit(self):
         """無料ユーザーのレシピ共有制限テスト"""
@@ -358,11 +358,11 @@ class SharedRecipeTestCase(BaseTestCase):
             content_type='application/json'
         )
 
-        assert_json_response(self, response, expected_status=429, expected_keys=['error', 'is_premium', 'limit'])
+        assert_json_response(self, response, expected_status=429, expected_keys=['error', 'details'])
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertFalse(response_data['is_premium'])  # 無料ユーザーであることを確認
-        self.assertEqual(response_data['limit'], 1)  # 無料ユーザーの制限値
+        self.assertFalse(response_data['details']['is_premium'])  # 無料ユーザーであることを確認
+        self.assertEqual(response_data['details']['limit'], 1)  # 無料ユーザーの制限値
 
     def test_create_shared_recipe_free_user_success(self):
         """無料ユーザーが1個のレシピを正常に共有できることをテスト"""
@@ -440,8 +440,8 @@ class SharedRecipeTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 429)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertTrue(response_data['is_premium'])  # サブスクリプション契約中であることを確認
-        self.assertEqual(response_data['limit'], 5)  # サブスクリプション契約者の制限値
+        self.assertTrue(response_data['details']['is_premium'])  # サブスクリプション契約中であることを確認
+        self.assertEqual(response_data['details']['limit'], 5)  # サブスクリプション契約者の制限値
 
     def test_create_shared_recipe_subscription_success(self):
         """サブスクリプション契約ユーザーが5個のレシピを正常に共有できることをテスト"""
@@ -1918,8 +1918,8 @@ class RecipeAPITestCase(TestCase):
         self.assertEqual(response.status_code, 429)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertFalse(response_data['is_premium'])  # 無料ユーザーであることを確認
-        self.assertEqual(response_data['limit'], 1)  # 無料ユーザーの制限値
+        self.assertFalse(response_data['details']['is_premium'])  # 無料ユーザーであることを確認
+        self.assertEqual(response_data['details']['limit'], 1)  # 無料ユーザーの制限値
 
     def test_share_preset_recipe_subscription_limit(self):
         """サブスクリプション契約ユーザーのプリセットレシピ共有制限テスト"""
@@ -1968,8 +1968,8 @@ class RecipeAPITestCase(TestCase):
         self.assertEqual(response.status_code, 429)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertTrue(response_data['is_premium'])  # サブスクリプション契約中であることを確認
-        self.assertEqual(response_data['limit'], 5)  # サブスクリプション契約者の制限値
+        self.assertTrue(response_data['details']['is_premium'])  # サブスクリプション契約中であることを確認
+        self.assertEqual(response_data['details']['limit'], 5)  # サブスクリプション契約者の制限値
 
     def test_share_preset_recipe_free_user_success(self):
         """無料ユーザーが1個のプリセットレシピを正常に共有できることをテスト"""
