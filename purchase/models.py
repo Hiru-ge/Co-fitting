@@ -5,22 +5,11 @@ from django.conf import settings
 from django.urls import reverse
 import stripe
 from users.models import User
-from recipes.models import PresetRecipe, ResponseHelper
+from recipes.models import PresetRecipe
+from Co_fitting.utils.response_helper import ResponseHelper
+from Co_fitting.utils.constants import AppConstants
 
 
-class SubscriptionConstants:
-    """サブスクリプション関連の定数"""
-    # プリセット制限
-    FREE_PRESET_LIMIT = 1
-    PREMIUM_PRESET_LIMIT = 4
-    
-    # サブスクリプション状態
-    ACTIVE_STATUSES = ['active', 'trialing']
-    INACTIVE_STATUSES = ['canceled', 'unpaid', 'incomplete_expired', 'past_due']
-    
-    # Stripe設定
-    STRIPE_API_KEY = settings.STRIPE_API_KEY
-    STRIPE_PRICE_ID = settings.STRIPE_PRICE_ID
 
 
 class StripeService:
@@ -30,12 +19,12 @@ class StripeService:
     def create_checkout_session(user, request):
         """チェックアウトセッションを作成"""
         try:
-            stripe.api_key = SubscriptionConstants.STRIPE_API_KEY
+            stripe.api_key = AppConstants.STRIPE_API_KEY
             session = stripe.checkout.Session.create(
                 payment_method_types=["card"],
                 line_items=[
                     {
-                        "price": SubscriptionConstants.STRIPE_PRICE_ID,
+                        "price": AppConstants.STRIPE_PRICE_ID,
                         "quantity": 1,
                     },
                 ],
@@ -52,7 +41,7 @@ class StripeService:
     def create_portal_session(customer_id, return_url):
         """顧客ポータルセッションを作成"""
         try:
-            stripe.api_key = SubscriptionConstants.STRIPE_API_KEY
+            stripe.api_key = AppConstants.STRIPE_API_KEY
             portal_session = stripe.billing_portal.Session.create(
                 customer=customer_id,
                 return_url=return_url,
@@ -66,7 +55,7 @@ class StripeService:
         """Stripeイベントを構築"""
         try:
             import json
-            stripe.api_key = SubscriptionConstants.STRIPE_API_KEY
+            stripe.api_key = AppConstants.STRIPE_API_KEY
             event = stripe.Event.construct_from(
                 json.loads(payload), api_key
             )
@@ -122,7 +111,7 @@ class SubscriptionManager:
             user.stripe_customer_id = customer_id
             # サブスクリプション状態を更新
             user.is_subscribed = True
-            user.preset_limit = SubscriptionConstants.PREMIUM_PRESET_LIMIT
+            user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
             user.save()
             
             # 成功メールを送信
@@ -139,16 +128,16 @@ class SubscriptionManager:
         
         try:
             user = User.objects.get(stripe_customer_id=subscription.customer)
-            if status in SubscriptionConstants.INACTIVE_STATUSES:
+            if status in AppConstants.INACTIVE_STATUSES:
                 user.is_subscribed = False
-                user.preset_limit = SubscriptionConstants.FREE_PRESET_LIMIT
+                user.preset_limit = AppConstants.FREE_PRESET_LIMIT
                 # ユーザーのレシピを1つだけ残して削除
                 users_recipes = PresetRecipe.objects.filter(create_user=user)
                 if users_recipes.exists():
                     users_recipes.exclude(id=users_recipes.first().id).delete()
-            elif status in SubscriptionConstants.ACTIVE_STATUSES:
+            elif status in AppConstants.ACTIVE_STATUSES:
                 user.is_subscribed = True
-                user.preset_limit = SubscriptionConstants.PREMIUM_PRESET_LIMIT
+                user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
             user.save()
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
@@ -162,7 +151,7 @@ class SubscriptionManager:
         
         try:
             user = User.objects.get(stripe_customer_id=customer_id)
-            user.preset_limit = SubscriptionConstants.PREMIUM_PRESET_LIMIT
+            user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
             user.is_subscribed = True
             user.save()
             

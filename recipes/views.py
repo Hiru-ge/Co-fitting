@@ -5,8 +5,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import (
     PresetRecipe, PresetRecipeStep, User, SharedRecipe, SharedRecipeStep,
-    ResponseHelper, generate_recipe_image
+    generate_recipe_image
 )
+from Co_fitting.utils.response_helper import ResponseHelper
 from .forms import RecipeForm, SharedRecipeDataForm
 from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin

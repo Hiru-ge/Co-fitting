@@ -5,10 +5,10 @@ from django.http import JsonResponse, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 import stripe
 from .models import (
-    StripeService, SubscriptionManager,
-    SubscriptionConstants
+    StripeService, SubscriptionManager
 )
-from recipes.models import ResponseHelper
+from Co_fitting.utils.constants import AppConstants
+from Co_fitting.utils.response_helper import ResponseHelper
 
 
 @login_required

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from .models import User, TokenService
-from recipes.models import ResponseHelper
+from Co_fitting.utils.response_helper import ResponseHelper
 
 
 def signup_request(request):

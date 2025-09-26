@@ -7,6 +7,8 @@ import os
 from django.conf import settings
 from PIL import Image, ImageDraw, ImageFont
 from users.models import User
+from Co_fitting.utils.response_helper import ResponseHelper
+from Co_fitting.utils.constants import AppConstants, ImageConstants
 
 
 class BaseRecipe(models.Model):
@@ -149,100 +151,6 @@ class BaseRecipeStep(models.Model):
             if step:
                 cumulative += step.pour_ml_this_step
         return cumulative
-    
-
-
-class ShareConstants:
-    """共有レシピ関連の定数"""
-    # 共有制限
-    SHARE_LIMIT_FREE = 1  # 無料ユーザーの共有リンク数制限
-    SHARE_LIMIT_PREMIUM = 5  # サブスクユーザーの共有リンク数制限
-    
-    # トークン設定
-    TOKEN_LENGTH = 16
-    
-    # 画像生成設定
-    IMAGE_WIDTH = 1000
-    BASE_HEIGHT = 500
-    ROW_HEIGHT = 42
-    CARD_MARGIN = 50
-    CARD_RADIUS = 40
-    FONT_SIZE_LARGE = 48
-    FONT_SIZE_MEDIUM = 38
-    FONT_SIZE_SMALL = 28
-    
-
-
-class ResponseHelper:
-    """レスポンス作成のヘルパークラス"""
-    
-    @staticmethod
-    def create_error_response(error_type, message, status_code=400, details=None):
-        """統一されたエラーレスポンスを作成"""
-        response_data = {
-            'error': error_type,
-            'message': message
-        }
-        if details:
-            response_data['details'] = details
-        return JsonResponse(response_data, status=status_code)
-    
-    @staticmethod
-    def create_success_response(message, data=None, status_code=200):
-        """統一された成功レスポンスを作成"""
-        response_data = {
-            'success': True,
-            'message': message
-        }
-        if data:
-            response_data.update(data)
-        return JsonResponse(response_data, status=status_code)
-    
-    @staticmethod
-    def create_data_response(data, status_code=200):
-        """データのみのレスポンスを作成"""
-        return JsonResponse(data, status=status_code)
-    
-    @staticmethod
-    def create_validation_error_response(form_errors, message="データの検証に失敗しました。"):
-        """フォームバリデーションエラーレスポンスを作成"""
-        return JsonResponse({
-            'error': 'validation_error',
-            'message': message,
-            'errors': form_errors
-        }, status=400)
-    
-    @staticmethod
-    def create_authentication_error_response(message="認証が必要です。"):
-        """認証エラーレスポンスを作成"""
-        return JsonResponse({
-            'error': 'authentication_required',
-            'message': message
-        }, status=401)
-    
-    @staticmethod
-    def create_permission_error_response(message="権限がありません。"):
-        """権限エラーレスポンスを作成"""
-        return JsonResponse({
-            'error': 'permission_denied',
-            'message': message
-        }, status=403)
-    
-    @staticmethod
-    def create_not_found_error_response(message="リソースが見つかりません。"):
-        """404エラーレスポンスを作成"""
-        return JsonResponse({
-            'error': 'not_found',
-            'message': message
-        }, status=404)
-    
-    @staticmethod
-    def create_server_error_response(message="サーバーエラーが発生しました。"):
-        """500エラーレスポンスを作成"""
-        return JsonResponse({
-            'error': 'server_error',
-            'message': message
-        }, status=500)
 
 
 class RecipeManager(models.Manager):
@@ -306,7 +214,7 @@ class SharedRecipeManager(models.Manager):
     
     def create_shared_recipe_from_data(self, recipe_data, user):
         """レシピデータから共有レシピを作成する"""
-        access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
+        access_token = secrets.token_hex(AppConstants.TOKEN_LENGTH)
         
         shared_recipe = SharedRecipe.objects.create(
             name=recipe_data['name'],
@@ -340,11 +248,11 @@ class SharedRecipeManager(models.Manager):
         is_subscribed = getattr(user, 'is_subscribed', False)
         
         if is_subscribed:
-            limit = ShareConstants.SHARE_LIMIT_PREMIUM
+            limit = AppConstants.SHARE_LIMIT_PREMIUM
             limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
         else:
-            limit = ShareConstants.SHARE_LIMIT_FREE
-            limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{ShareConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
+            limit = AppConstants.SHARE_LIMIT_FREE
+            limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{AppConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
         
         if current_count >= limit:
             return ResponseHelper.create_error_response(
@@ -479,36 +387,36 @@ class RecipeImageGenerator:
     def _setup_dimensions(self):
         n_steps = len(self.steps_data)
         extra_rows = max(0, n_steps - 5)
-        card_height = ShareConstants.BASE_HEIGHT + ShareConstants.ROW_HEIGHT * extra_rows
-        self.img_height = card_height + ShareConstants.CARD_MARGIN * 2
-        self.img_width = ShareConstants.IMAGE_WIDTH
+        card_height = ImageConstants.BASE_HEIGHT + ImageConstants.ROW_HEIGHT * extra_rows
+        self.img_height = card_height + ImageConstants.CARD_MARGIN * 2
+        self.img_width = ImageConstants.IMAGE_WIDTH
 
     def _setup_fonts(self):
         try:
             font_path = "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"
             font_bold_path = "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc"
-            font = ImageFont.truetype(font_path, ShareConstants.FONT_SIZE_MEDIUM)
-            font_bold = ImageFont.truetype(font_bold_path, ShareConstants.FONT_SIZE_LARGE)
-            font_small = ImageFont.truetype(font_path, ShareConstants.FONT_SIZE_SMALL)
+            font = ImageFont.truetype(font_path, ImageConstants.FONT_SIZE_MEDIUM)
+            font_bold = ImageFont.truetype(font_bold_path, ImageConstants.FONT_SIZE_LARGE)
+            font_small = ImageFont.truetype(font_path, ImageConstants.FONT_SIZE_SMALL)
         except Exception:
             font = font_bold = font_small = ImageFont.load_default()
 
         return font, font_bold, font_small
 
     def _draw_basic_info(self, draw, font_small, y_position):
-        draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
+        draw.text((ImageConstants.CARD_MARGIN+40, y_position), 
                  f"豆量: {int(self.recipe_data['bean_g'])}g", font=font_small, fill=self.text_color)
         y_position += 40
         if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
-            draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
+            draw.text((ImageConstants.CARD_MARGIN+40, y_position), 
                      f"氷量: {int(self.recipe_data['ice_g'])}g", font=font_small, fill=self.text_color)
             y_position += 40
         return y_position
 
     def _draw_table(self, draw, font_small, start_y):
-        table_x = ShareConstants.CARD_MARGIN + 40
+        table_x = ImageConstants.CARD_MARGIN + 40
         table_y = start_y
-        row_h = ShareConstants.ROW_HEIGHT
+        row_h = ImageConstants.ROW_HEIGHT
         
         # カラム幅の設定
         col1_width = 200  # 時間
@@ -543,12 +451,12 @@ class RecipeImageGenerator:
 
             rounded_rectangle(draw, 
                             (
-                                ShareConstants.CARD_MARGIN, 
-                                ShareConstants.CARD_MARGIN, 
-                                self.img_width - ShareConstants.CARD_MARGIN, 
-                                self.img_height - ShareConstants.CARD_MARGIN
+                                ImageConstants.CARD_MARGIN, 
+                                ImageConstants.CARD_MARGIN, 
+                                self.img_width - ImageConstants.CARD_MARGIN, 
+                                self.img_height - ImageConstants.CARD_MARGIN
                             ), 
-                            radius=ShareConstants.CARD_RADIUS, 
+                            radius=ImageConstants.CARD_RADIUS, 
                             fill=self.card_color)
 
             font, font_bold, font_small = self._setup_fonts()
@@ -558,10 +466,10 @@ class RecipeImageGenerator:
             title_bbox = draw.textbbox((0, 0), title_text, font=font_bold)
             title_width = title_bbox[2] - title_bbox[0]
             title_x = (self.img_width - title_width) // 2
-            draw.text((title_x, ShareConstants.CARD_MARGIN + 30), title_text, font=font_bold, fill=self.text_color)
+            draw.text((title_x, ImageConstants.CARD_MARGIN + 30), title_text, font=font_bold, fill=self.text_color)
 
             # 基本情報
-            y_position = ShareConstants.CARD_MARGIN + 100
+            y_position = ImageConstants.CARD_MARGIN + 100
             y_position = self._draw_basic_info(draw, font_small, y_position)
 
             # テーブル
@@ -577,7 +485,7 @@ class RecipeImageGenerator:
                 except (ValueError, TypeError):
                     ice_g = 0
                 total_water += ice_g
-            draw.text((ShareConstants.CARD_MARGIN + 40, table_end_y),
+            draw.text((ImageConstants.CARD_MARGIN + 40, table_end_y),
                      f"出来上がり量: {int(total_water)} ml",
                      font=font_small, fill=self.text_color)
 
@@ -586,8 +494,8 @@ class RecipeImageGenerator:
             pb_bbox = draw.textbbox((0, 0), pb_text, font=font_small)
             pb_w = pb_bbox[2] - pb_bbox[0]
             pb_h = pb_bbox[3] - pb_bbox[1]
-            draw.text((self.img_width - ShareConstants.CARD_MARGIN - pb_w - 20,
-                      self.img_height - ShareConstants.CARD_MARGIN - pb_h - 40),
+            draw.text((self.img_width - ImageConstants.CARD_MARGIN - pb_w - 20,
+                      self.img_height - ImageConstants.CARD_MARGIN - pb_h - 40),
                      pb_text, font=font_small, fill=self.bg_color)
 
             # 画像保存

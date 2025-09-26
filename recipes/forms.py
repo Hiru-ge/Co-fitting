@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import PresetRecipe, PresetRecipeStep, ShareConstants
+from .models import PresetRecipe, PresetRecipeStep
+from Co_fitting.utils.constants import AppConstants
 
 
 class RecipeForm(forms.ModelForm):
