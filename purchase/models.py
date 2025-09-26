@@ -1,13 +1,11 @@
 from django.db import models
 from django.http import JsonResponse
-from django.core.mail import send_mail
-from django.conf import settings
-from django.urls import reverse
 import stripe
 from users.models import User
 from recipes.models import PresetRecipe
 from Co_fitting.utils.response_helper import ResponseHelper
 from Co_fitting.utils.constants import AppConstants
+from Co_fitting.services.email_service import EmailService
 
 
 
@@ -66,34 +64,6 @@ class StripeService:
             raise stripe.error.SignatureVerificationError("Invalid signature")
 
 
-class EmailService:
-    """メール送信のサービスクラス"""
-    
-    @staticmethod
-    def send_payment_success_email(user):
-        """支払い成功メールを送信"""
-        subject = "支払い完了通知"
-        message = (
-            f"{user.username} さん\n\n"
-            "Co-fittingのご利用ありがとうございます。\n\n"
-            "申請いただいたサブスクリプションの支払いが完了しました。\n\n"
-            "これからもCo-fittingをよろしくお願いいたします。\n\n"
-        )
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
-    
-    @staticmethod
-    def send_payment_failed_email(user, request):
-        """支払い失敗メールを送信"""
-        subject = "支払い失敗通知"
-        message = (
-            f"{user.username} さん\n\n"
-            "Co-fittingのご利用ありがとうございます。\n\n"
-            "申請いただいたサブスクリプションの支払いが失敗しました。\n\n"
-            "カード情報等をご確認の上、再度お試しください。\n\n"
-            "以下のリンクからマイページにアクセスし、登録されているカード情報の更新をお申し込みいただけます。\n\n"
-            f"{request.build_absolute_uri(reverse('recipes:mypage'))}\n\n"
-        )
-        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
 
 class SubscriptionManager:

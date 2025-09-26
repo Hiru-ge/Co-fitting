@@ -164,7 +164,7 @@ class EmailChangeTestCase(BaseTestCase):
         new_email = 'new@example.com'
         self.client.post(self.email_change_url, {'email': new_email})
         self.assertEqual(len(mail.outbox), 1)
-        self.assertIn('メールアドレス変更確認', mail.outbox[0].subject)
+        self.assertIn('メールアドレス変更の確認', mail.outbox[0].subject)
 
         # メール本文をプレーンテキストとして解析し、確認URLを抽出
         email_body = mail.outbox[0].body

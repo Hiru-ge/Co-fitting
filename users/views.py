@@ -7,7 +7,8 @@ from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
-from .models import User, TokenService
+from .models import User
+from Co_fitting.utils.security_utils import SecurityUtils
 from Co_fitting.utils.response_helper import ResponseHelper
 
 
@@ -27,7 +28,7 @@ def signup_request(request):
 
 def signup_confirm(request, uidb64, token, email):
     """サインアップの確認（リンクをクリック）"""
-    user = TokenService.verify_token(uidb64, token)
+    user = SecurityUtils.verify_confirmation_tokens(uidb64, token)
 
     if user is not None:
         if user.is_active:
@@ -86,14 +87,12 @@ def email_change_request(request):
 @login_required
 def email_change_confirm(request, uidb64, token, email):
     """メールアドレス変更の確認（リンクをクリック）"""
-    result = TokenService.verify_token(uidb64, token, email)
+    user, decoded_email = SecurityUtils.verify_confirmation_tokens(uidb64, token, email)
     
-    if result and len(result) == 2:
-        user, decoded_email = result
-        if user is not None and decoded_email is not None:
-            User.objects.change_user_email(user, decoded_email)
-            messages.success(request, "メールアドレスを変更しました。")
-            return redirect("recipes:mypage")
+    if user is not None and decoded_email is not None:
+        User.objects.change_user_email(user, decoded_email)
+        messages.success(request, "メールアドレスを変更しました。")
+        return redirect("recipes:mypage")
     
     messages.error(request, "無効なリンクです。")
     return redirect("recipes:mypage")

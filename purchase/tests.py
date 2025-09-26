@@ -71,7 +71,7 @@ class StripePaymentTest(BaseTestCase):
             }
         }
 
-        with patch("purchase.models.send_mail") as mock_send_mail:
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -167,7 +167,7 @@ class StripePaymentTest(BaseTestCase):
             }
         }
 
-        with patch("purchase.models.send_mail") as mock_send_mail:
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -354,7 +354,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
             }
         }
         
-        with patch("purchase.models.send_mail") as mock_send_mail:
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -385,7 +385,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
             }
         }
         
-        with patch("purchase.models.send_mail") as mock_send_mail:
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -461,7 +461,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
             }
         }
         
-        with patch("purchase.models.send_mail") as mock_send_mail:
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
