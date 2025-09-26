@@ -291,10 +291,10 @@ class SharedRecipeManager(models.Manager):
             )
 
             # ステップを複製
-            shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+            shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
             for shared_step in shared_steps:
                 PresetRecipeStep.objects.create(
-                    recipe_id=new_recipe,
+                    recipe=new_recipe,
                     step_number=shared_step.step_number,
                     minute=shared_step.minute,
                     seconds=shared_step.seconds,
@@ -517,7 +517,7 @@ class PresetRecipe(BaseRecipe):
     
     def to_dict(self):
         """レシピを辞書形式に変換するメソッド"""
-        steps = PresetRecipeStep.objects.filter(recipe_id=self).order_by('step_number')
+        steps = PresetRecipeStep.objects.filter(recipe=self).order_by('step_number')
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
         return {
             'id': self.id,
@@ -541,7 +541,7 @@ class PresetRecipe(BaseRecipe):
             
             if total_water_ml_this_step and minute and second:
                 PresetRecipeStep.objects.create(
-                    recipe_id=self,
+                    recipe=self,
                     step_number=step_number,
                     minute=int(minute),
                     seconds=int(second),
@@ -569,7 +569,7 @@ class PresetRecipe(BaseRecipe):
         self.save()
         
         # 既存のステップを削除
-        PresetRecipeStep.objects.filter(recipe_id=self).delete()
+        PresetRecipeStep.objects.filter(recipe=self).delete()
         
         # 新しいステップを作成
         self.create_steps_from_form_data(form_data)
@@ -578,21 +578,21 @@ class PresetRecipe(BaseRecipe):
 
 class PresetRecipeStep(BaseRecipeStep):
     """プリセットレシピステップ"""
-    recipe_id = models.ForeignKey(to=PresetRecipe, on_delete=models.CASCADE, related_name='steps')
+    recipe = models.ForeignKey(to=PresetRecipe, on_delete=models.CASCADE, related_name='steps')
     
     class Meta:
         ordering = ['step_number']  # 手順の順番で並べる
 
     def __str__(self):
-        return f"Step {self.step_number} for {self.recipe_id.name}"
+        return f"Step {self.step_number} for {self.recipe.name}"
     
     def get_recipe_field_name(self):
         """レシピフィールド名を取得"""
-        return 'recipe_id'
+        return 'recipe'
     
     def get_recipe_instance(self):
         """レシピインスタンスを取得"""
-        return self.recipe_id
+        return self.recipe
 
 
 class SharedRecipe(BaseRecipe):
@@ -608,7 +608,7 @@ class SharedRecipe(BaseRecipe):
     
     def to_dict(self):
         """共有レシピを辞書形式に変換するメソッド"""
-        steps = SharedRecipeStep.objects.filter(shared_recipe=self).order_by('step_number')
+        steps = SharedRecipeStep.objects.filter(recipe=self).order_by('step_number')
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
         return {
             'name': self.name,
@@ -630,7 +630,7 @@ class SharedRecipe(BaseRecipe):
         for i, step in enumerate(recipe_data['steps']):
             # プリセットのtotal_water_ml_this_stepは既に累積湯量なので、そのまま使用
             SharedRecipeStep.objects.create(
-                shared_recipe=self,
+                recipe=self,
                 step_number=step.get('step_number', i+1),
                 minute=step['minute'],
                 seconds=step['seconds'],
@@ -648,7 +648,7 @@ class SharedRecipe(BaseRecipe):
             if total_water_ml_this_step and minute and second:
                 # フォームから受け取った累積湯量をそのまま保存
                 SharedRecipeStep.objects.create(
-                    shared_recipe=self,
+                    recipe=self,
                     step_number=step_number,
                     minute=int(minute),
                     seconds=int(second),
@@ -662,7 +662,7 @@ class SharedRecipe(BaseRecipe):
         self.save()  # 基本情報を保存
         
         # 既存のステップを削除
-        SharedRecipeStep.objects.filter(shared_recipe=self).delete()
+        SharedRecipeStep.objects.filter(recipe=self).delete()
         
         # 新しいステップを作成
         self.create_steps_from_form_data(form_data)
@@ -671,18 +671,18 @@ class SharedRecipe(BaseRecipe):
 
 class SharedRecipeStep(BaseRecipeStep):
     """共有レシピステップ"""
-    shared_recipe = models.ForeignKey(to=SharedRecipe, on_delete=models.CASCADE, related_name='steps')
+    recipe = models.ForeignKey(to=SharedRecipe, on_delete=models.CASCADE, related_name='steps')
 
     class Meta:
         ordering = ['step_number']
 
     def __str__(self):
-        return f"SharedStep {self.step_number} for {self.shared_recipe.name}"
+        return f"SharedStep {self.step_number} for {self.recipe.name}"
     
     def get_recipe_field_name(self):
         """レシピフィールド名を取得"""
-        return 'shared_recipe'
+        return 'recipe'
     
     def get_recipe_instance(self):
         """レシピインスタンスを取得"""
-        return self.shared_recipe
+        return self.recipe

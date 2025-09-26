@@ -18,7 +18,7 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
     )
     for i in range(len_steps):
         PresetRecipeStep.objects.create(
-            recipe_id=PresetRecipe.objects.last(),
+            recipe=PresetRecipe.objects.last(),
             step_number=i + 1,
             minute=i,
             seconds=0,

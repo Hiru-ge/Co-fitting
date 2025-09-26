@@ -82,7 +82,7 @@ def preset_create(request):
 @login_required
 def preset_edit(request, recipe_id):
     recipe = get_object_or_404(PresetRecipe, id=recipe_id, create_user=request.user)
-    steps = PresetRecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+    steps = PresetRecipeStep.objects.filter(recipe=recipe).order_by('step_number')
 
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, instance=recipe)

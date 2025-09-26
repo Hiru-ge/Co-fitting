@@ -98,7 +98,7 @@ class EndToEndWorkflowTestCase(TestCase):
         self.assertEqual(recipe.bean_g, 20)
         
         # 4. ステップが正しく作成されることを確認
-        steps = PresetRecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+        steps = PresetRecipeStep.objects.filter(recipe=recipe).order_by('step_number')
         self.assertEqual(len(steps), 3)
         self.assertEqual(steps[0].total_water_ml_this_step, 50)
         self.assertEqual(steps[1].total_water_ml_this_step, 100)
@@ -126,14 +126,14 @@ class EndToEndWorkflowTestCase(TestCase):
         
         # ステップを作成
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=2,
             minute=1,
             seconds=30,
@@ -480,7 +480,7 @@ class PerformanceTestCase(TestCase):
         
         for i in range(5):
             PresetRecipeStep.objects.create(
-                recipe_id=recipe,
+                recipe=recipe,
                 step_number=i + 1,
                 minute=i,
                 seconds=0,

@@ -22,7 +22,7 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
     )
     for i in range(len_steps):
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=i + 1,
             minute=i,
             seconds=0,
@@ -49,7 +49,7 @@ def create_mock_shared_recipe(user, name, is_ice, len_steps, bean_g, water_ml, m
     )
     for i in range(len_steps):
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=i + 1,
             minute=i,
             seconds=0,
@@ -455,7 +455,7 @@ class SharedRecipeTestCase(TestCase):
             access_token='free_test_token_12345678901234567890123456789012'[:32]
         )
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=0,
@@ -544,7 +544,7 @@ class SharedRecipeTestCase(TestCase):
                 access_token=f'sub_test_token_{i:02d}_12345678901234567890123456789012'[:32]
             )
             SharedRecipeStep.objects.create(
-                shared_recipe=shared_recipe,
+                recipe=shared_recipe,
                 step_number=1,
                 minute=0,
                 seconds=0,
@@ -669,7 +669,7 @@ class SharedRecipeTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         # 作成された共有レシピを取得
         shared_recipe = SharedRecipe.objects.get(name="累積湯量テスト")
-        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         cumulative_expected = [24.0, 48.0, 72.0, 96.0, 120.0]
         for step, expected in zip(steps, cumulative_expected):
             self.assertEqual(step.total_water_ml_this_step, expected)
@@ -952,14 +952,14 @@ class RecipeModelTestCase(TestCase):
         )
         
         step = PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
         
-        self.assertEqual(step.recipe_id, recipe)
+        self.assertEqual(step.recipe, recipe)
         self.assertEqual(step.step_number, 1)
         self.assertEqual(step.minute, 0)
         self.assertEqual(step.seconds, 30)
@@ -977,7 +977,7 @@ class RecipeModelTestCase(TestCase):
         )
         
         step = PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=1,
             minute=0,
             seconds=30,
@@ -999,28 +999,28 @@ class RecipeModelTestCase(TestCase):
         
         # ステップを逆順で作成
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=3,
             minute=2,
             seconds=0,
             total_water_ml_this_step=100.0
         )
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=1,
             minute=0,
             seconds=0,
             total_water_ml_this_step=100.0
         )
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=2,
             minute=1,
             seconds=0,
             total_water_ml_this_step=100.0
         )
         
-        steps = PresetRecipeStep.objects.filter(recipe_id=recipe)
+        steps = PresetRecipeStep.objects.filter(recipe=recipe)
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
 
@@ -1048,7 +1048,7 @@ class RecipeModelTestCase(TestCase):
         recipe.create_steps_from_form_data(form_data)
         
         # ステップが正しく作成されたかチェック
-        steps = PresetRecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+        steps = PresetRecipeStep.objects.filter(recipe=recipe).order_by('step_number')
         self.assertEqual(steps.count(), 2)
         
         # 最初のステップ
@@ -1114,14 +1114,14 @@ class RecipeModelTestCase(TestCase):
         
         # ステップを作成
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
         PresetRecipeStep.objects.create(
-            recipe_id=recipe,
+            recipe=recipe,
             step_number=2,
             minute=1,
             seconds=0,
@@ -1204,14 +1204,14 @@ class SharedRecipeModelTestCase(TestCase):
         )
         
         step = SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
         
-        self.assertEqual(step.shared_recipe, shared_recipe)
+        self.assertEqual(step.recipe, shared_recipe)
         self.assertEqual(step.step_number, 1)
         self.assertEqual(step.minute, 0)
         self.assertEqual(step.seconds, 30)
@@ -1230,7 +1230,7 @@ class SharedRecipeModelTestCase(TestCase):
         )
         
         step = SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=30,
@@ -1253,28 +1253,28 @@ class SharedRecipeModelTestCase(TestCase):
         
         # ステップを逆順で作成
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=3,
             minute=2,
             seconds=0,
             total_water_ml_this_step=100.0
         )
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=0,
             total_water_ml_this_step=100.0
         )
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=2,
             minute=1,
             seconds=0,
             total_water_ml_this_step=100.0
         )
         
-        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe)
+        steps = SharedRecipeStep.objects.filter(recipe=shared_recipe)
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
 
@@ -1312,7 +1312,7 @@ class SharedRecipeModelTestCase(TestCase):
         shared_recipe.create_steps_from_recipe_data(recipe_data)
         
         # ステップが正しく作成されたかチェック
-        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(steps.count(), 2)
         
         # 最初のステップ（累積湯量: 100ml）
@@ -1357,7 +1357,7 @@ class SharedRecipeModelTestCase(TestCase):
         shared_recipe.create_steps_from_form_data(form_data)
         
         # ステップが正しく作成されたかチェック
-        steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(steps.count(), 3)
         
         # 各ステップの累積湯量が正しく保存されているかチェック
@@ -1394,21 +1394,21 @@ class SharedRecipeModelTestCase(TestCase):
         
         # プリセットのステップを作成（累積湯量）
         PresetRecipeStep.objects.create(
-            recipe_id=preset,
+            recipe=preset,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0  # 1投目の累積湯量
         )
         PresetRecipeStep.objects.create(
-            recipe_id=preset,
+            recipe=preset,
             step_number=2,
             minute=1,
             seconds=0,
             total_water_ml_this_step=200.0  # 2投目の累積湯量
         )
         PresetRecipeStep.objects.create(
-            recipe_id=preset,
+            recipe=preset,
             step_number=3,
             minute=1,
             seconds=30,
@@ -1420,7 +1420,7 @@ class SharedRecipeModelTestCase(TestCase):
         shared_recipe = SharedRecipe.objects.create_shared_recipe_from_data(recipe_data, self.user)
         
         # 共有レシピのステップが正しく作成されているかチェック
-        shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(shared_steps.count(), 3)
         
         # 各ステップの累積湯量が正しく保存されているかチェック
@@ -1448,14 +1448,14 @@ class SharedRecipeModelTestCase(TestCase):
         
         # 初期ステップを作成（累積湯量）
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=2,
             minute=1,
             seconds=0,
@@ -1490,7 +1490,7 @@ class SharedRecipeModelTestCase(TestCase):
         self.assertEqual(shared_recipe.memo, '編集されたメモ')
         
         # 更新されたステップをチェック
-        updated_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        updated_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(updated_steps.count(), 2)
         
         step1 = updated_steps[0]
@@ -1522,14 +1522,14 @@ class SharedRecipeModelTestCase(TestCase):
         
         # プリセットのステップ（累積湯量）
         PresetRecipeStep.objects.create(
-            recipe_id=preset,
+            recipe=preset,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0  # 1投目の累積湯量
         )
         PresetRecipeStep.objects.create(
-            recipe_id=preset,
+            recipe=preset,
             step_number=2,
             minute=1,
             seconds=0,
@@ -1547,7 +1547,7 @@ class SharedRecipeModelTestCase(TestCase):
         # 1投目: 100.0
         # 2投目: 200.0
         
-        shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+        shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         
         # 修正後の実装では元の値がそのまま保存されることを確認
         self.assertEqual(shared_steps[0].total_water_ml_this_step, 100.0)
@@ -1573,14 +1573,14 @@ class SharedRecipeModelTestCase(TestCase):
         
         # ステップを作成
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=2,
             minute=1,
             seconds=0,
@@ -2030,7 +2030,7 @@ class RecipeAPITestCase(TestCase):
             access_token='free_test_token_12345678901234567890123456789012'[:32]
         )
         SharedRecipeStep.objects.create(
-            shared_recipe=shared_recipe,
+            recipe=shared_recipe,
             step_number=1,
             minute=0,
             seconds=0,
@@ -2080,7 +2080,7 @@ class RecipeAPITestCase(TestCase):
                 access_token=f'sub_test_token_{i:02d}_12345678901234567890123456789012'[:32]
             )
             SharedRecipeStep.objects.create(
-                shared_recipe=shared_recipe,
+                recipe=shared_recipe,
                 step_number=1,
                 minute=0,
                 seconds=0,
