@@ -1,43 +1,19 @@
 from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import MagicMock, patch
-from users.models import User
-from recipes.models import PresetRecipe, PresetRecipeStep
 import json
 
-
-def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
-    PresetRecipe.objects.create(
-        name=name,
-        create_user=user,
-        is_ice=is_ice,
-        len_steps=len_steps,
-        bean_g=bean_g,
-        water_ml=water_ml,
-        memo=memo
-    )
-    for i in range(len_steps):
-        PresetRecipeStep.objects.create(
-            recipe=PresetRecipe.objects.last(),
-            step_number=i + 1,
-            minute=i,
-            seconds=0,
-            total_water_ml_this_step=water_ml / len_steps,
-        )
+from tests.helpers import (
+    create_test_user, create_test_recipe, login_test_user, BaseTestCase
+)
+from users.models import User
+from recipes.models import PresetRecipe, PresetRecipeStep
 
 
-class StripePaymentTest(TestCase):
+class StripePaymentTest(BaseTestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-
-        login_success = self.client.login(username='test@example.com', password='securepassword123')
-        self.assertTrue(login_success)
+        super().setUp()
+        self.user = self.create_and_login_user()
 
     @patch("purchase.models.StripeService.create_checkout_session")
     def test_create_checkout_session(self, mock_stripe_session):
@@ -124,7 +100,7 @@ class StripePaymentTest(TestCase):
 
         # MyPresetを3つ作成
         for i in range(3):
-            create_mock_recipe(
+            create_test_recipe(
                 user=self.user,
                 name=f"Preset {i + 1}",
                 is_ice=False,
@@ -206,18 +182,13 @@ class StripePaymentTest(TestCase):
         self.assertEqual(recipient_list, [self.user.email])
 
 
-class PurchaseViewsTestCase(TestCase):
+class PurchaseViewsTestCase(BaseTestCase):
     """購入ビューのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_create_checkout_session_requires_login(self):
         """チェックアウトセッション作成はログインが必要であることをテスト"""
@@ -231,7 +202,7 @@ class PurchaseViewsTestCase(TestCase):
 
     def test_get_preset_limit_api(self):
         """プリセット制限取得APIのテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         response = self.client.get(reverse('purchase:get_preset_limit'))
         self.assertEqual(response.status_code, 200)
@@ -254,7 +225,7 @@ class PurchaseViewsTestCase(TestCase):
     @patch("purchase.models.StripeService.create_portal_session")
     def test_create_portal_session_success(self, mock_portal_session):
         """ポータルセッション作成が正常に動作することをテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # ユーザーにStripe顧客IDを設定
         self.user.stripe_customer_id = 'cus_test123'
@@ -272,7 +243,7 @@ class PurchaseViewsTestCase(TestCase):
 
     def test_create_portal_session_no_customer_id(self):
         """Stripe顧客IDがない場合のポータルセッション作成エラーテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         response = self.client.post(reverse('purchase:create_portal_session'))
         
@@ -280,18 +251,13 @@ class PurchaseViewsTestCase(TestCase):
         self.assertIn(response.status_code, [200, 400, 500])
 
 
-class PurchaseWebhookTestCase(TestCase):
+class PurchaseWebhookTestCase(BaseTestCase):
     """購入Webhookのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_webhook_invalid_json(self):
         """無効なJSONでのWebhookリクエストのテスト"""
@@ -434,22 +400,17 @@ class PurchaseWebhookTestCase(TestCase):
         self.assertEqual(recipient_list, [self.user.email])
 
 
-class PurchaseIntegrationTestCase(TestCase):
+class PurchaseIntegrationTestCase(BaseTestCase):
     """購入機能の統合テスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_complete_purchase_flow(self):
         """完全な購入フローのテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 1. チェックアウトセッション作成
         with patch("purchase.models.StripeService.create_checkout_session") as mock_stripe_session:
@@ -521,7 +482,7 @@ class PurchaseIntegrationTestCase(TestCase):
 
     def test_subscription_cancellation_flow(self):
         """サブスクリプション解約フローのテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # ユーザーを有料ユーザーに設定
         self.user.preset_limit = 4
@@ -531,7 +492,7 @@ class PurchaseIntegrationTestCase(TestCase):
         
         # プリセットレシピを作成
         for i in range(3):
-            create_mock_recipe(
+            create_test_recipe(
                 user=self.user,
                 name=f"Preset {i + 1}",
                 is_ice=False,
@@ -572,18 +533,13 @@ class PurchaseIntegrationTestCase(TestCase):
         self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())
 
 
-class PurchaseSecurityTestCase(TestCase):
+class PurchaseSecurityTestCase(BaseTestCase):
     """購入機能のセキュリティテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_webhook_csrf_exempt(self):
         """WebhookエンドポイントがCSRF免除されていることをテスト"""

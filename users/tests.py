@@ -1,12 +1,16 @@
 from django.test import TestCase, override_settings
 from django.core import mail
 from django.urls import reverse
-from users.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django.core.management import call_command
 from unittest.mock import patch
 from django_recaptcha.client import RecaptchaResponse
+
+from tests.helpers import (
+    create_test_user, create_default_preset_user, login_test_user, BaseTestCase
+)
+from users.models import User
 
 
 @override_settings(RECAPTCHA_TESTING=True)
@@ -43,7 +47,7 @@ class SignUpTestCase(TestCase):
 
     def test_duplicate_email_signup_fails(self):
         """既存のメールアドレスでは登録できないことをテスト"""
-        User.objects.create_user(username='existinguser', email='test@example.com', password='password123')
+        create_test_user(username='existinguser', email='test@example.com', password='password123')
         response = self.client.post(self.signup_request_url, {
             'username': 'newuser',
             'email': 'test@example.com',
@@ -63,17 +67,12 @@ class SignUpTestCase(TestCase):
         self.assertRedirects(response, reverse('users:signup_request'))
 
 
-class LoginTestCase(TestCase):
+class LoginTestCase(BaseTestCase):
     def setUp(self):
         """テスト用ユーザー作成"""
+        super().setUp()
         self.login_url = reverse('users:login')
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123',
-        )
-        self.user.is_active = True
-        self.user.save()
+        self.user = create_test_user()
 
     def test_valid_login(self):
         """正しいメールアドレスとパスワードでログインできることをテスト"""
@@ -128,29 +127,14 @@ class LoginTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 1)  # メールが送信されていることを確認
 
 
-class LogoutTestCase(TestCase):
+class LogoutTestCase(BaseTestCase):
     def setUp(self):
         """テストユーザーを作成してログイン"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-        # indexでDefaultPresetが居ることを前提とした処理があるので、テストにも追加する必要がある
-        self.default_preset_user = User.objects.create_user(
-            username='DefaultPreset',
-            email='default@example.com',
-            password='defaultpassword123'
-        )
-        self.default_preset_user.is_active = True
-        self.default_preset_user.save()
-
+        super().setUp()
+        self.user = create_test_user()
         self.login_url = reverse('users:login')
         self.logout_url = reverse('users:logout')
-        login_success = self.client.login(username='test@example.com', password='securepassword123')
-        self.assertTrue(login_success)    # ログインが成功したかチェック
+        login_test_user(self, user=self.user)
 
     def test_user_can_logout(self):
         """ログアウトが正常に行われることをテスト"""
@@ -167,20 +151,11 @@ class LogoutTestCase(TestCase):
         self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('recipes:mypage')}")
 
 
-class EmailChangeTestCase(TestCase):
+class EmailChangeTestCase(BaseTestCase):
     def setUp(self):
         """テスト用ユーザー作成・有効化 & ログイン"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-
-        success = self.client.login(username='test@example.com', password='securepassword123')
-        self.assertTrue(success)    # ログインが成功したかチェック
-
+        super().setUp()
+        self.user = self.create_and_login_user()
         self.email_change_url = reverse('users:email_change_request')
 
     def test_user_can_email_change(self):
@@ -202,7 +177,7 @@ class EmailChangeTestCase(TestCase):
 
     def test_user_cannot_change_to_existing_email(self):
         """すでに登録されているメールアドレスには変更できないか"""
-        User.objects.create_user(username='otheruser', email='taken@example.com', password='password123')
+        create_test_user(username='otheruser', email='taken@example.com', password='password123')
 
         response = self.client.post(self.email_change_url, {'email': 'taken@example.com'})
         self.assertEqual(response.status_code, 400)  # エラーレスポンス
@@ -218,20 +193,12 @@ class EmailChangeTestCase(TestCase):
         self.assertRedirects(response, reverse('recipes:mypage'))
 
 
-class PasswordChangeTestCase(TestCase):
+class PasswordChangeTestCase(BaseTestCase):
     def setUp(self):
         """テスト用ユーザー作成・有効化 & ログイン"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='oldpassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-
-        login_success = self.client.login(username='test@example.com', password='oldpassword123')
-        self.assertTrue(login_success)    # ログインが成功したかチェック
-
+        super().setUp()
+        self.user = create_test_user(password='oldpassword123')
+        login_test_user(self, user=self.user, password='oldpassword123')
         self.password_change_url = reverse("users:password_change")
 
     def test_user_can_password_change(self):
@@ -310,20 +277,12 @@ class PasswordChangeTestCase(TestCase):
         self.assertTrue(self.user.check_password("anotherpassword123"))
 
 
-class PasswordResetTestCase(TestCase):
+class PasswordResetTestCase(BaseTestCase):
     def setUp(self):
         """テスト用ユーザー作成・有効化 & ログイン"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-
-        login_success = self.client.login(username='test@example.com', password='securepassword123')
-        self.assertTrue(login_success)    # ログインが成功したかチェック
-
+        super().setUp()
+        self.user = create_test_user()
+        login_test_user(self, user=self.user)
         self.password_reset_url = reverse("users:password_reset")
 
     def test_user_can_password_reset(self):
@@ -356,23 +315,10 @@ class PasswordResetTestCase(TestCase):
         self.assertEqual(len(mail.outbox), 0)  # メールが送信されていないことを確認
 
 
-class AccountDeleteTestCase(TestCase):
+class AccountDeleteTestCase(BaseTestCase):
     def setUp(self):
-        # indexでDefaultPresetが居ることを前提とした処理があるので、テストにも追加する必要があった
-        self.default_preset_user = User.objects.create_user(
-            username='DefaultPreset',
-            email='default@example.com',
-            password='defaultpassword123'
-        )
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-        login_success = self.client.login(username='test@example.com', password='securepassword123')
-        self.assertTrue(login_success)
+        super().setUp()
+        self.user = self.create_and_login_user()
         self.delete_account_url = reverse('users:account_delete')
 
     def test_user_cannot_login_after_deletion(self):
@@ -408,18 +354,13 @@ class AccountDeleteTestCase(TestCase):
             User.objects.get(username='testuser')
 
 
-class UserModelTestCase(TestCase):
+class UserModelTestCase(BaseTestCase):
     """ユーザーモデルのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_user_creation(self):
         """ユーザーが正常に作成されることをテスト"""
@@ -489,18 +430,13 @@ class UserModelTestCase(TestCase):
         self.assertEqual(User._meta.db_table, 'User')
 
 
-class UserFormTestCase(TestCase):
+class UserFormTestCase(BaseTestCase):
     """ユーザーフォームのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_signup_form_valid_data(self):
         """有効なデータでサインアップフォームが動作することをテスト"""
@@ -597,18 +533,13 @@ class UserFormTestCase(TestCase):
             self.assertEqual(user.preset_limit, 1)
 
 
-class UserViewsIntegrationTestCase(TestCase):
+class UserViewsIntegrationTestCase(BaseTestCase):
     """ユーザービューの統合テスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_login_redirect_after_successful_login(self):
         """ログイン成功後のリダイレクトが正しいことをテスト"""
@@ -680,18 +611,13 @@ class UserViewsIntegrationTestCase(TestCase):
         self.assertEqual(response.url, reverse('recipes:index'))
 
 
-class UserSecurityTestCase(TestCase):
+class UserSecurityTestCase(BaseTestCase):
     """ユーザーセキュリティのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_csrf_protection_on_login(self):
         """ログインフォームにCSRF保護が適用されていることをテスト"""
@@ -764,18 +690,13 @@ class UserSecurityTestCase(TestCase):
         self.assertContains(response, 'このフィールドは必須です')
 
 
-class UserSessionTestCase(TestCase):
+class UserSessionTestCase(BaseTestCase):
     """ユーザーセッションのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_session_creation_on_login(self):
         """ログイン時にセッションが作成されることをテスト"""

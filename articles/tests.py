@@ -2,21 +2,18 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
+from tests.helpers import create_test_user, BaseTestCase
+
 User = get_user_model()
 
 
-class ArticlesViewsTestCase(TestCase):
+class ArticlesViewsTestCase(BaseTestCase):
     """記事ページのビューテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     def test_how_to_use_page_access(self):
         """使い方ページにアクセスできることをテスト"""

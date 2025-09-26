@@ -11,23 +11,23 @@ from unittest.mock import patch, MagicMock
 from django_recaptcha.client import RecaptchaResponse
 import json
 
+from tests.helpers import (
+    create_test_user, create_test_recipe, create_test_shared_recipe,
+    login_test_user, BaseTestCase, assert_json_response,
+    create_recipe_data, create_form_data
+)
 from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedRecipeStep
 
 User = get_user_model()
 
 
-class EndToEndWorkflowTestCase(TestCase):
+class EndToEndWorkflowTestCase(BaseTestCase):
     """エンドツーエンドワークフローのテスト"""
     
     def setUp(self):
         """テスト用ユーザーの作成"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
+        super().setUp()
+        self.user = create_test_user()
 
     @override_settings(RECAPTCHA_TESTING=True)
     def test_complete_user_registration_workflow(self):
@@ -62,33 +62,31 @@ class EndToEndWorkflowTestCase(TestCase):
         self.assertTrue(user.is_active)
         
         # 5. ログインできることを確認
-        login_success = self.client.login(username='new@example.com', password='newpassword123')
-        self.assertTrue(login_success)
+        new_user = User.objects.get(email='new@example.com')
+        login_test_user(self, user=new_user, password='newpassword123')
 
     def test_complete_recipe_creation_workflow(self):
         """完全なレシピ作成ワークフローのテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 1. レシピ作成ページにアクセス
         response = self.client.get(reverse('recipes:preset_create'))
         self.assertEqual(response.status_code, 200)
         
         # 2. レシピを作成
-        response = self.client.post(reverse('recipes:preset_create'), {
-            "name": "統合テストレシピ",
-            "len_steps": 3,
-            "bean_g": 20,
-            'step1_minute': 0,
-            'step1_second': 30,
+        form_data = create_form_data(
+            name="統合テストレシピ",
+            len_steps=3,
+            bean_g=20,
+            memo="統合テスト用メモ"
+        )
+        form_data.update({
             'step1_water': 50,
-            'step2_minute': 1,
-            'step2_second': 0,
             'step2_water': 100,
-            'step3_minute': 2,
-            'step3_second': 0,
             'step3_water': 150,
-            "memo": "統合テスト用メモ",
         })
+        
+        response = self.client.post(reverse('recipes:preset_create'), form_data)
         
         self.assertEqual(response.status_code, 302)
         
@@ -111,12 +109,12 @@ class EndToEndWorkflowTestCase(TestCase):
 
     def test_complete_recipe_sharing_workflow(self):
         """完全なレシピ共有ワークフローのテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 1. レシピを作成
-        recipe = PresetRecipe.objects.create(
+        recipe = create_test_recipe(
+            user=self.user,
             name='共有テストレシピ',
-            create_user=self.user,
             is_ice=False,
             len_steps=2,
             bean_g=20.0,
@@ -124,25 +122,9 @@ class EndToEndWorkflowTestCase(TestCase):
             memo='共有テスト用メモ'
         )
         
-        # ステップを作成
-        PresetRecipeStep.objects.create(
-            recipe=recipe,
-            step_number=1,
-            minute=0,
-            seconds=30,
-            total_water_ml_this_step=100.0
-        )
-        PresetRecipeStep.objects.create(
-            recipe=recipe,
-            step_number=2,
-            minute=1,
-            seconds=30,
-            total_water_ml_this_step=200.0
-        )
-        
         # 2. レシピを共有
         response = self.client.post(reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id}))
-        self.assertEqual(response.status_code, 200)
+        assert_json_response(self, response, expected_status=200, expected_keys=['access_token'])
         
         response_data = json.loads(response.content)
         access_token = response_data['access_token']
@@ -153,32 +135,25 @@ class EndToEndWorkflowTestCase(TestCase):
         
         # 4. 共有レシピを取得
         response = self.client.get(reverse('recipes:retrieve_shared_recipe', kwargs={'token': access_token}))
-        self.assertEqual(response.status_code, 200)
+        assert_json_response(self, response, expected_status=200, expected_keys=['name', 'steps'])
         
         response_data = json.loads(response.content)
         self.assertEqual(response_data['name'], '共有テストレシピ')
         self.assertEqual(len(response_data['steps']), 2)
         
         # 5. 別のユーザーで共有レシピをプリセットに追加
-        other_user = User.objects.create_user(
-            username='otheruser',
-            email='other@example.com',
-            password='otherpassword123'
-        )
-        other_user.is_active = True
-        other_user.save()
-        
-        self.client.login(username='other@example.com', password='otherpassword123')
+        other_user = create_test_user(username='otheruser', email='other@example.com', password='otherpassword123')
+        login_test_user(self, user=other_user, password='otherpassword123')
         
         response = self.client.post(reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': access_token}))
-        self.assertEqual(response.status_code, 200)
+        assert_json_response(self, response, expected_status=200)
         
         # 6. プリセットに追加されることを確認
         self.assertTrue(PresetRecipe.objects.filter(name='共有テストレシピ', create_user=other_user).exists())
 
     def test_recipe_sharing_limit_workflow(self):
         """レシピ共有制限のワークフローテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 無料ユーザーであることを確認
         self.assertFalse(self.user.is_subscribed)
@@ -234,7 +209,7 @@ class EndToEndWorkflowTestCase(TestCase):
 
     def test_complete_purchase_workflow(self):
         """完全な購入ワークフローのテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 1. チェックアウトセッション作成
         with patch("purchase.views.stripe.checkout.Session.create") as mock_stripe_session:
@@ -347,14 +322,14 @@ class ErrorHandlingTestCase(TestCase):
             water_ml=200.0
         )
         
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         response = self.client.get(reverse('recipes:preset_edit', kwargs={'recipe_id': recipe.id}))
         self.assertIn(response.status_code, [404, 500])  # 404または500が返される（権限チェック）
 
     def test_400_error_handling(self):
         """400エラーのハンドリングテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 無効なデータでレシピ作成
         response = self.client.post(reverse('recipes:preset_create'), {
@@ -379,7 +354,7 @@ class ErrorHandlingTestCase(TestCase):
 
     def test_database_error_handling(self):
         """データベースエラーのハンドリングテスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 存在しないユーザーIDでレシピ作成を試行
         with patch('recipes.models.PresetRecipe.objects.create') as mock_create:
@@ -413,7 +388,7 @@ class PerformanceTestCase(TestCase):
 
     def test_large_recipe_list_performance(self):
         """大量のレシピリストのパフォーマンステスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 大量のレシピを作成
         recipes = []
@@ -440,7 +415,7 @@ class PerformanceTestCase(TestCase):
 
     def test_large_shared_recipe_list_performance(self):
         """大量の共有レシピリストのパフォーマンステスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 大量の共有レシピを作成
         for i in range(50):
@@ -466,7 +441,7 @@ class PerformanceTestCase(TestCase):
 
     def test_database_query_optimization(self):
         """データベースクエリの最適化テスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # レシピとステップを作成
         recipe = PresetRecipe.objects.create(
@@ -516,7 +491,7 @@ class SecurityTestCase(TestCase):
 
     def test_sql_injection_protection(self):
         """SQLインジェクション攻撃の保護テスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # SQLインジェクション攻撃を試行
         malicious_input = "'; DROP TABLE recipes_recipe; --"
@@ -535,7 +510,7 @@ class SecurityTestCase(TestCase):
 
     def test_xss_protection(self):
         """XSS攻撃の保護テスト"""
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # XSS攻撃を試行
         malicious_input = "<script>alert('XSS')</script>"
@@ -603,7 +578,7 @@ class SecurityTestCase(TestCase):
             water_ml=200.0
         )
         
-        self.client.login(username='test@example.com', password='securepassword123')
+        login_test_user(self, user=self.user)
         
         # 他のユーザーのレシピを編集しようとする
         response = self.client.post(reverse('recipes:preset_edit', kwargs={'recipe_id': recipe.id}), {
