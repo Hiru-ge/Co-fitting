@@ -125,14 +125,14 @@ class EndToEndWorkflowTestCase(TestCase):
         )
         
         # ステップを作成
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=2,
             minute=1,
@@ -184,7 +184,7 @@ class EndToEndWorkflowTestCase(TestCase):
         self.assertFalse(self.user.is_subscribed)
         
         # 1. 最初のレシピを作成・共有（成功するはず）
-        recipe1 = Recipe.objects.create(
+        recipe1 = PresetRecipe.objects.create(
             name='共有テストレシピ1',
             create_user=self.user,
             is_ice=False,
@@ -194,7 +194,7 @@ class EndToEndWorkflowTestCase(TestCase):
             memo='共有テスト用メモ1'
         )
         
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe1,
             step_number=1,
             minute=0,
@@ -206,7 +206,7 @@ class EndToEndWorkflowTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # 2. 2個目のレシピを作成・共有（制限超過で失敗するはず）
-        recipe2 = Recipe.objects.create(
+        recipe2 = PresetRecipe.objects.create(
             name='共有テストレシピ2',
             create_user=self.user,
             is_ice=False,
@@ -216,7 +216,7 @@ class EndToEndWorkflowTestCase(TestCase):
             memo='共有テスト用メモ2'
         )
         
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe2,
             step_number=1,
             minute=0,
@@ -451,7 +451,6 @@ class PerformanceTestCase(TestCase):
                 len_steps=1,
                 bean_g=20.0,
                 water_ml=200.0,
-                expires_at=timezone.now() + timedelta(days=7),
                 access_token=f'test_token_{i}_12345678901234567890123456789012'[:32]
             )
         
@@ -480,7 +479,7 @@ class PerformanceTestCase(TestCase):
         )
         
         for i in range(5):
-            RecipeStep.objects.create(
+            PresetRecipeStep.objects.create(
                 recipe_id=recipe,
                 step_number=i + 1,
                 minute=i,

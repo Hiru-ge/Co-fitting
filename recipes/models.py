@@ -117,8 +117,6 @@ class ShareConstants:
     FONT_SIZE_MEDIUM = 38
     FONT_SIZE_SMALL = 28
     
-    # 期限設定
-    DEFAULT_EXPIRY_DAYS = 365 * 100  # 100年後（実質無期限）
 
 
 class ResponseHelper:
@@ -186,13 +184,6 @@ class SharedRecipeManager(models.Manager):
         """指定ユーザーの共有レシピを取得"""
         return self.filter(shared_by_user=user)
     
-    def active(self):
-        """有効な共有レシピを取得（期限切れでない）"""
-        return self.filter(expires_at__gt=timezone.now())
-    
-    def expired(self):
-        """期限切れの共有レシピを取得"""
-        return self.filter(expires_at__lte=timezone.now())
     
     def by_token(self, token):
         """トークンで共有レシピを取得"""
@@ -207,16 +198,11 @@ class SharedRecipeManager(models.Manager):
         if not shared_recipe:
             return {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
         
-        if shared_recipe.is_expired():
-            return {'error': 'expired', 'message': 'この共有リンクは期限切れです。'}
         
         return shared_recipe.to_dict()
     
-    def create_shared_recipe_from_data(self, recipe_data, user, expires_at=None):
+    def create_shared_recipe_from_data(self, recipe_data, user):
         """レシピデータから共有レシピを作成する"""
-        if expires_at is None:
-            expires_at = timezone.now() + timedelta(days=ShareConstants.DEFAULT_EXPIRY_DAYS)
-        
         access_token = secrets.token_hex(ShareConstants.TOKEN_LENGTH)
         
         shared_recipe = SharedRecipe.objects.create(
@@ -228,8 +214,6 @@ class SharedRecipeManager(models.Manager):
             bean_g=recipe_data['bean_g'],
             water_ml=recipe_data['water_ml'],
             memo=recipe_data.get('memo', ''),
-            created_at=timezone.now(),
-            expires_at=expires_at,
             access_token=access_token
         )
         
@@ -244,8 +228,6 @@ class SharedRecipeManager(models.Manager):
         if not shared_recipe:
             return None, ResponseHelper.create_error_response('not_found', 'この共有リンクは存在しません。', 404)
 
-        if shared_recipe.is_expired():
-            return None, ResponseHelper.create_error_response('expired', 'この共有リンクは期限切れです。', 410)
 
         return shared_recipe, None
     
@@ -617,7 +599,6 @@ class SharedRecipe(BaseRecipe):
     """共有レシピ"""
     shared_by_user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
     access_token = models.CharField(max_length=32, unique=True)
     
     objects = SharedRecipeManager()
@@ -639,15 +620,10 @@ class SharedRecipe(BaseRecipe):
             'water_ml': self.water_ml,
             'memo': self.memo,
             'created_at': self.created_at,
-            'expires_at': self.expires_at,
             'access_token': self.access_token,
             'steps': steps_data
         }
     
-    def is_expired(self):
-        """共有レシピが期限切れかどうかを判定する"""
-        from django.utils import timezone
-        return self.expires_at and self.expires_at < timezone.now()
     
     def create_steps_from_recipe_data(self, recipe_data):
         """レシピデータから共有レシピステップを作成する（累積湯量をそのまま保存）"""

@@ -50,7 +50,7 @@ class SharedRecipeStepInline(admin.TabularInline):
 
 @admin.register(SharedRecipe)
 class SharedRecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'id', 'shared_by_user', 'is_ice', 'len_steps', 'bean_g', 'water_ml', 'expires_at', 'access_token')
+    list_display = ('name', 'id', 'shared_by_user', 'is_ice', 'len_steps', 'bean_g', 'water_ml', 'access_token')
     list_filter = ('is_ice',)
     search_fields = ('name', 'access_token')
     inlines = [SharedRecipeStepInline]

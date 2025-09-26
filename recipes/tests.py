@@ -45,7 +45,6 @@ def create_mock_shared_recipe(user, name, is_ice, len_steps, bean_g, water_ml, m
         bean_g=bean_g,
         water_ml=water_ml,
         memo=memo,
-        expires_at=timezone.now() + timedelta(days=7),
         access_token=access_token
     )
     for i in range(len_steps):
@@ -453,7 +452,6 @@ class SharedRecipeTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0,
             memo="無料ユーザーテスト",
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='free_test_token_12345678901234567890123456789012'[:32]
         )
         SharedRecipeStep.objects.create(
@@ -543,7 +541,6 @@ class SharedRecipeTestCase(TestCase):
                 bean_g=20.0,
                 water_ml=200.0,
                 memo="サブスクリプションテスト",
-                expires_at=timezone.now() + timedelta(days=7),
                 access_token=f'sub_test_token_{i:02d}_12345678901234567890123456789012'[:32]
             )
             SharedRecipeStep.objects.create(
@@ -720,27 +717,6 @@ class SharedRecipeRetrieveTestCase(TestCase):
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'not_found')
 
-    def test_retrieve_shared_recipe_expired(self):
-        """期限切れトークンでのエラーハンドリング"""
-        # 期限切れの共有レシピを作成
-        expired_recipe = SharedRecipe.objects.create(
-            name="期限切れレシピ",
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo="期限切れテスト",
-            expires_at=timezone.now() - timedelta(days=1),  # 1日前に期限切れ
-            access_token='expired_token_12345678901234567890123456789012'[:32]
-        )
-
-        retrieve_url = reverse('recipes:retrieve_shared_recipe', kwargs={'token': expired_recipe.access_token})
-        response = self.client.get(retrieve_url)
-
-        self.assertEqual(response.status_code, 410)
-        response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'expired')
 
 
 class SharedRecipeAddToPresetTestCase(TestCase):
@@ -839,27 +815,6 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'not_found')
 
-    def test_add_shared_recipe_to_preset_expired(self):
-        """期限切れトークンでのエラーハンドリング"""
-        # 期限切れの共有レシピを作成
-        expired_recipe = SharedRecipe.objects.create(
-            name="期限切れレシピ",
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo="期限切れテスト",
-            expires_at=timezone.now() - timedelta(days=1),
-            access_token='expired_token_12345678901234567890123456789012'[:32]
-        )
-
-        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': expired_recipe.access_token})
-        response = self.client.post(add_url)
-
-        self.assertEqual(response.status_code, 410)
-        response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'expired')
 
     def test_add_shared_recipe_to_preset_not_logged_in(self):
         """未ログインユーザーがプリセット追加を試みた場合のエラーハンドリング"""
@@ -890,157 +845,6 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         self.assertTrue(len(response_data['message']) > 0)
 
 
-class DeleteExpiredSharedRecipesCommandTestCase(TestCase):
-    """期限切れ共有レシピ削除コマンドのテスト"""
-    
-    def setUp(self):
-        """テストユーザーの作成とテスト環境の準備"""
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='securepassword123'
-        )
-        self.user.is_active = True
-        self.user.save()
-        
-        # テスト用の画像ディレクトリを作成
-        self.media_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
-        os.makedirs(self.media_dir, exist_ok=True)
-    
-    def tearDown(self):
-        """テスト後のクリーンアップ"""
-        if os.path.exists(self.media_dir):
-            for filename in os.listdir(self.media_dir):
-                if filename.endswith('.png'):
-                    file_path = os.path.join(self.media_dir, filename)
-                    os.remove(file_path)
-            os.rmdir(self.media_dir)
-    
-    def create_test_image_file(self, filename, content="test content"):
-        """テスト用の画像ファイルを作成"""
-        file_path = os.path.join(self.media_dir, filename)
-        with open(file_path, 'w') as file:
-            file.write(content)
-        return file_path
-    
-    def test_delete_expired_shared_recipes_success(self):
-        """期限切れレシピの正常な削除"""
-        # テストデータの準備
-        access_token = 'expired_token_12345678901234567890123456789012'[:32]
-        expired_time = timezone.now() - timedelta(days=1)
-        SharedRecipe.objects.create(
-            name='期限切れレシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=15.0,
-            water_ml=250.0,
-            memo='期限切れのテストレシピ',
-            expires_at=expired_time,
-            access_token=access_token
-        )
-        self.create_test_image_file(f'{access_token}.png')
-        
-        # 削除前の状態確認
-        self.assertEqual(SharedRecipe.objects.count(), 1)
-        image_path = os.path.join(self.media_dir, f'{access_token}.png')
-        self.assertTrue(os.path.exists(image_path))
-        
-        # コマンドの実行（ログ出力抑制）
-        call_command('delete_expired_shared_recipes', quiet=True)
-        
-        # 削除後の状態確認
-        self.assertEqual(SharedRecipe.objects.count(), 0)
-        self.assertFalse(os.path.exists(image_path))
-    
-    def test_delete_expired_shared_recipes_with_orphaned_images(self):
-        """孤立した画像ファイルも含めて削除"""
-        # テストデータの準備
-        access_token = 'expired_token_12345678901234567890123456789012'[:32]
-        expired_time = timezone.now() - timedelta(days=1)
-        SharedRecipe.objects.create(
-            name='期限切れレシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=15.0,
-            water_ml=250.0,
-            memo='期限切れのテストレシピ',
-            expires_at=expired_time,
-            access_token=access_token
-        )
-        self.create_test_image_file(f'{access_token}.png')
-        self.create_test_image_file('orphaned_image_12345678901234567890123456789012.png')
-        
-        # 削除前の状態確認
-        self.assertEqual(SharedRecipe.objects.count(), 1)
-        self.assertEqual(len([f for f in os.listdir(self.media_dir) if f.endswith('.png')]), 2)
-        
-        # コマンドの実行（ログ出力抑制）
-        call_command('delete_expired_shared_recipes', quiet=True)
-        
-        # 削除後の状態確認
-        self.assertEqual(SharedRecipe.objects.count(), 0)
-        self.assertEqual(len([f for f in os.listdir(self.media_dir) if f.endswith('.png')]), 0)
-    
-    def test_delete_expired_shared_recipes_no_expired_recipes(self):
-        """期限切れレシピが存在しない場合"""
-        # テストデータの準備
-        access_token = 'valid_token_12345678901234567890123456789012'[:32]
-        valid_time = timezone.now() + timedelta(days=7)
-        SharedRecipe.objects.create(
-            name='有効なレシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=15.0,
-            water_ml=250.0,
-            memo='有効なテストレシピ',
-            expires_at=valid_time,
-            access_token=access_token
-        )
-        
-        # 削除前の状態確認
-        initial_count = SharedRecipe.objects.count()
-        self.assertEqual(initial_count, 1)
-        
-        # コマンドの実行（ログ出力抑制）
-        call_command('delete_expired_shared_recipes', quiet=True)
-        
-        # 有効なレシピは削除されていないことを確認
-        self.assertEqual(SharedRecipe.objects.count(), 1)
-    
-    def test_delete_expired_shared_recipes_image_deletion_failure(self):
-        """画像ファイル削除の処理確認"""
-        # テストデータの準備
-        access_token = 'expired_token_12345678901234567890123456789012'[:32]
-        expired_time = timezone.now() - timedelta(days=1)
-        SharedRecipe.objects.create(
-            name='期限切れレシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=15.0,
-            water_ml=250.0,
-            memo='期限切れのテストレシピ',
-            expires_at=expired_time,
-            access_token=access_token
-        )
-        image_path = self.create_test_image_file(f'{access_token}.png')
-        
-        # 削除前の状態確認
-        self.assertEqual(SharedRecipe.objects.count(), 1)
-        self.assertTrue(os.path.exists(image_path))
-        
-        # コマンドの実行（ログ出力抑制）
-        call_command('delete_expired_shared_recipes', quiet=True)
-        
-        # レシピと画像ファイルの両方が削除されることを確認
-        self.assertEqual(SharedRecipe.objects.count(), 0)
-        self.assertFalse(os.path.exists(image_path))
-        
-        # 孤立した画像ファイルも削除されることを確認
-        self.assertEqual(len([f for f in os.listdir(self.media_dir) if f.endswith('.png')]), 0)
 
 
 class RecipeFormTestCase(TestCase):
@@ -1360,7 +1164,6 @@ class SharedRecipeModelTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0,
             memo='テスト用メモ',
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='test_token_12345678901234567890123456789012'[:32][:32]
         )
         
@@ -1382,7 +1185,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=1,
             bean_g=20.0,
             water_ml=200.0,
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
         
@@ -1398,7 +1200,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=2,
             bean_g=20.0,
             water_ml=200.0,
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
         
@@ -1425,7 +1226,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=1,
             bean_g=20.0,
             water_ml=200.0,
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
         
@@ -1448,7 +1248,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=3,
             bean_g=20.0,
             water_ml=300.0,
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
         
@@ -1479,40 +1278,9 @@ class SharedRecipeModelTestCase(TestCase):
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
 
-    def test_is_expired(self):
-        """期限切れ判定のテスト"""
-        # 有効な共有レシピ
-        future_expires = timezone.now() + timedelta(days=30)
-        active_recipe = SharedRecipe.objects.create(
-            name='有効レシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            expires_at=future_expires,
-            access_token='active_token'
-        )
-        
-        # 期限切れの共有レシピ
-        past_expires = timezone.now() - timedelta(days=1)
-        expired_recipe = SharedRecipe.objects.create(
-            name='期限切れレシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            expires_at=past_expires,
-            access_token='expired_token'
-        )
-        
-        self.assertFalse(active_recipe.is_expired())
-        self.assertTrue(expired_recipe.is_expired())
 
     def test_create_steps_from_recipe_data(self):
         """レシピデータからステップを作成するテスト（累積湯量をそのまま保存）"""
-        expires_at = timezone.now() + timedelta(days=30)
         shared_recipe = SharedRecipe.objects.create(
             name='共有テストレシピ',
             shared_by_user=self.user,
@@ -1520,7 +1288,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=2,
             bean_g=20.0,
             water_ml=200.0,
-            expires_at=expires_at,
             access_token='test_token'
         )
         
@@ -1564,7 +1331,6 @@ class SharedRecipeModelTestCase(TestCase):
 
     def test_create_steps_from_form_data(self):
         """フォームデータから共有レシピステップを作成するテスト（累積湯量をそのまま保存）"""
-        expires_at = timezone.now() + timedelta(days=30)
         shared_recipe = SharedRecipe.objects.create(
             name='共有テストレシピ',
             shared_by_user=self.user,
@@ -1572,7 +1338,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=3,
             bean_g=20.0,
             water_ml=300.0,
-            expires_at=expires_at,
             access_token='test_token'
         )
         
@@ -1671,7 +1436,6 @@ class SharedRecipeModelTestCase(TestCase):
     def test_shared_recipe_edit_workflow(self):
         """共有レシピ編集のワークフローテスト"""
         # 共有レシピを作成
-        expires_at = timezone.now() + timedelta(days=30)
         shared_recipe = SharedRecipe.objects.create(
             name='共有テストレシピ',
             shared_by_user=self.user,
@@ -1679,7 +1443,6 @@ class SharedRecipeModelTestCase(TestCase):
             len_steps=2,
             bean_g=20.0,
             water_ml=200.0,
-            expires_at=expires_at,
             access_token='test_token'
         )
         
@@ -1796,7 +1559,6 @@ class SharedRecipeModelTestCase(TestCase):
 
     def test_to_dict(self):
         """to_dictメソッドのテスト"""
-        expires_at = timezone.now() + timedelta(days=30)
         shared_recipe = SharedRecipe.objects.create(
             name='共有テストレシピ',
             shared_by_user=self.user,
@@ -1806,7 +1568,6 @@ class SharedRecipeModelTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0,
             memo='共有テストメモ',
-            expires_at=expires_at,
             access_token='test_token_123'
         )
         
@@ -1942,7 +1703,6 @@ class SharedRecipeManagerTestCase(TestCase):
         )
         
         # 有効な共有レシピ
-        future_expires = timezone.now() + timedelta(days=30)
         SharedRecipe.objects.create(
             name='有効レシピ',
             shared_by_user=self.user,
@@ -1950,39 +1710,15 @@ class SharedRecipeManagerTestCase(TestCase):
             len_steps=1,
             bean_g=20.0,
             water_ml=200.0,
-            expires_at=future_expires,
             access_token='active_token'
         )
         
-        # 期限切れの共有レシピ
-        past_expires = timezone.now() - timedelta(days=1)
-        SharedRecipe.objects.create(
-            name='期限切れレシピ',
-            shared_by_user=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            expires_at=past_expires,
-            access_token='expired_token'
-        )
     
     def test_for_user(self):
         """ユーザー別共有レシピ取得のテスト"""
         user_recipes = SharedRecipe.objects.for_user(self.user)
-        self.assertEqual(user_recipes.count(), 2)
+        self.assertEqual(user_recipes.count(), 1)
     
-    def test_active(self):
-        """有効な共有レシピ取得のテスト"""
-        active_recipes = SharedRecipe.objects.active()
-        self.assertEqual(active_recipes.count(), 1)
-        self.assertEqual(active_recipes.first().name, '有効レシピ')
-    
-    def test_expired(self):
-        """期限切れ共有レシピ取得のテスト"""
-        expired_recipes = SharedRecipe.objects.expired()
-        self.assertEqual(expired_recipes.count(), 1)
-        self.assertEqual(expired_recipes.first().name, '期限切れレシピ')
     
     def test_by_token(self):
         """トークンで共有レシピ取得のテスト"""
@@ -2001,10 +1737,6 @@ class SharedRecipeManagerTestCase(TestCase):
         self.assertIsNotNone(data)
         self.assertEqual(data['name'], '有効レシピ')
         
-        # 期限切れトークン
-        data = SharedRecipe.objects.get_shared_recipe_data('expired_token')
-        self.assertIsNotNone(data)
-        self.assertEqual(data['error'], 'expired')
         
         # 存在しないトークン
         data = SharedRecipe.objects.get_shared_recipe_data('nonexistent_token')
@@ -2295,7 +2027,6 @@ class RecipeAPITestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0,
             memo="無料ユーザーテスト",
-            expires_at=timezone.now() + timedelta(days=7),
             access_token='free_test_token_12345678901234567890123456789012'[:32]
         )
         SharedRecipeStep.objects.create(
@@ -2346,7 +2077,6 @@ class RecipeAPITestCase(TestCase):
                 bean_g=20.0,
                 water_ml=200.0,
                 memo="サブスクリプションテスト",
-                expires_at=timezone.now() + timedelta(days=7),
                 access_token=f'sub_test_token_{i:02d}_12345678901234567890123456789012'[:32]
             )
             SharedRecipeStep.objects.create(

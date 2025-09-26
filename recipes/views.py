@@ -158,7 +158,6 @@ def create_shared_recipe(request):
     return JsonResponse({
         'url': share_url, 
         'access_token': shared_recipe.access_token, 
-        'expires_at': shared_recipe.expires_at, 
         'image_url': image_path
     })
 
