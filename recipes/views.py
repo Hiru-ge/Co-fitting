@@ -41,7 +41,7 @@ def index(request):
 @login_required
 def mypage(request):
     user = request.user
-    recipes = PresetRecipe.objects.for_user(user)
+    recipes = PresetRecipe.objects.filter(created_by=user)
 
     # サブスクリプション状態を取得（Model層で実行）
     subscription_status = User.objects.get_subscription_status(user)
@@ -82,7 +82,7 @@ def preset_create(request):
 
 @login_required
 def preset_edit(request, recipe_id):
-    recipe = get_object_or_404(PresetRecipe, id=recipe_id, create_user=request.user)
+    recipe = get_object_or_404(PresetRecipe, id=recipe_id, created_by=request.user)
     steps = PresetRecipeStep.objects.filter(recipe=recipe).order_by('step_number')
 
     if request.method == 'POST':
@@ -109,7 +109,7 @@ class PresetDeleteView(LoginRequiredMixin, DeleteView):
     model = PresetRecipe
 
     def get_queryset(self):
-        return PresetRecipe.objects.for_user(self.request.user)
+        return PresetRecipe.objects.filter(created_by=self.request.user)
     
     def post(self, request, *args, **kwargs):
         """AJAX削除用のPOSTメソッド"""
@@ -214,7 +214,7 @@ def get_user_shared_recipes(request):
 @login_required
 def share_preset_recipe(request, recipe_id):
     try:
-        recipe = get_object_or_404(PresetRecipe, id=recipe_id, create_user=request.user)
+        recipe = get_object_or_404(PresetRecipe, id=recipe_id, created_by=request.user)
         
         # 共有レシピ上限チェック（Model層で実行）
         error_response = SharedRecipe.objects.check_share_limit_or_error(request.user)
@@ -249,7 +249,7 @@ def share_preset_recipe(request, recipe_id):
 @login_required
 def delete_shared_recipe(request, token):
     shared_recipe = SharedRecipe.objects.by_token(token)
-    if not shared_recipe or shared_recipe.shared_by_user != request.user:
+    if not shared_recipe or shared_recipe.created_by != request.user:
         return ResponseHelper.create_not_found_error_response('共有レシピが見つかりません。')
     
     # 共有レシピと画像ファイルを削除（Model層で実行）
@@ -258,7 +258,7 @@ def delete_shared_recipe(request, token):
 
 @login_required
 def shared_recipe_edit(request, token):
-    shared_recipe = get_object_or_404(SharedRecipe, access_token=token, shared_by_user=request.user)
+    shared_recipe = get_object_or_404(SharedRecipe, access_token=token, created_by=request.user)
     steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
 
     if request.method == 'POST':

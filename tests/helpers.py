@@ -71,7 +71,7 @@ def create_test_recipe(user, name='テストレシピ', is_ice=False, len_steps=
     
     recipe = PresetRecipe.objects.create(
         name=name,
-        create_user=user,
+        created_by=user,
         is_ice=is_ice,
         len_steps=len_steps,
         bean_g=bean_g,
@@ -116,7 +116,7 @@ def create_test_shared_recipe(user, name='テスト共有レシピ', is_ice=Fals
     
     shared_recipe = SharedRecipe.objects.create(
         name=name,
-        shared_by_user=user,
+        created_by=user,
         is_ice=is_ice,
         len_steps=len_steps,
         bean_g=bean_g,

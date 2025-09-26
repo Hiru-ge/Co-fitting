@@ -20,9 +20,14 @@ class BaseRecipe(models.Model):
     bean_g = models.FloatField()
     water_ml = models.FloatField()
     memo = models.TextField(blank=True, null=True, max_length=300)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     
     class Meta:
         abstract = True
+    
+    def for_user(self, user):
+        """指定ユーザーのレシピを取得"""
+        return self.filter(created_by=user)
     
     def to_dict(self):
         """レシピを辞書形式に変換するメソッド"""
@@ -156,24 +161,20 @@ class BaseRecipeStep(models.Model):
 class RecipeManager(models.Manager):
     """レシピ用のカスタムManager"""
     
-    def for_user(self, user):
-        """指定ユーザーのレシピを取得"""
-        return self.filter(create_user=user)
-    
     def default_presets(self):
         """デフォルトプリセットを取得"""
         default_user = User.objects.get(username='DefaultPreset')
-        return self.filter(create_user=default_user)
+        return self.filter(created_by=default_user)
     
     def get_preset_recipes_for_user(self, user):
         """ユーザーのプリセットレシピとデフォルトプリセットを取得"""
-        user_preset_recipes = self.for_user(user)
+        user_preset_recipes = self.filter(created_by=user)
         default_preset_recipes = self.default_presets()
         return user_preset_recipes, default_preset_recipes
     
     def check_preset_limit_or_error(self, user):
         """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
-        current_preset_count = self.for_user(user).count()
+        current_preset_count = self.filter(created_by=user).count()
         if current_preset_count >= user.preset_limit:
             if user.is_subscribed:
                 return ResponseHelper.create_error_response(
@@ -190,11 +191,6 @@ class RecipeManager(models.Manager):
 
 class SharedRecipeManager(models.Manager):
     """共有レシピ用のカスタムManager"""
-    
-    def for_user(self, user):
-        """指定ユーザーの共有レシピを取得"""
-        return self.filter(shared_by_user=user)
-    
     
     def by_token(self, token):
         """トークンで共有レシピを取得"""
@@ -218,7 +214,7 @@ class SharedRecipeManager(models.Manager):
         
         shared_recipe = SharedRecipe.objects.create(
             name=recipe_data['name'],
-            shared_by_user=user,
+            created_by=user,
             is_ice=recipe_data['is_ice'],
             ice_g=recipe_data.get('ice_g'),
             len_steps=recipe_data['len_steps'],
@@ -244,7 +240,7 @@ class SharedRecipeManager(models.Manager):
     
     def check_share_limit_or_error(self, user):
         """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
-        current_count = self.for_user(user).count()
+        current_count = self.filter(created_by=user).count()
         is_subscribed = getattr(user, 'is_subscribed', False)
         
         if is_subscribed:
@@ -295,7 +291,7 @@ class SharedRecipeManager(models.Manager):
             # 共有レシピをプリセットとして複製
             new_recipe = PresetRecipe.objects.create(
                 name=shared_recipe.name,
-                create_user=user,
+                created_by=user,
                 is_ice=shared_recipe.is_ice,
                 ice_g=shared_recipe.ice_g,
                 len_steps=shared_recipe.len_steps,
@@ -345,7 +341,7 @@ class SharedRecipeManager(models.Manager):
     def get_user_shared_recipes_data(self, user):
         """ユーザーの共有レシピ一覧データを取得"""
         try:
-            shared_recipes = self.for_user(user).order_by('-created_at')
+            shared_recipes = self.filter(created_by=user).order_by('-created_at')
             recipes_data = []
             
             for recipe in shared_recipes:
@@ -519,7 +515,6 @@ def generate_recipe_image(recipe_data, steps_data, access_token):
 
 class PresetRecipe(BaseRecipe):
     """プリセットレシピ"""
-    create_user = models.ForeignKey(User, on_delete=models.CASCADE)
     
     objects = RecipeManager()
 
@@ -548,7 +543,7 @@ class PresetRecipe(BaseRecipe):
     
     def create_with_user_and_steps(self, form_data, user):
         """ユーザーとステップを含めてレシピを作成する"""
-        self.create_user = user
+        self.created_by = user
         # まずレシピを保存（water_mlは後で設定）
         self.water_ml = 0  # 一時的に0を設定
         self.save()
@@ -581,7 +576,6 @@ class PresetRecipeStep(BaseRecipeStep):
     
 class SharedRecipe(BaseRecipe):
     """共有レシピ"""
-    shared_by_user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     access_token = models.CharField(max_length=32, unique=True)
     
@@ -596,7 +590,7 @@ class SharedRecipe(BaseRecipe):
     
     def add_specific_fields_to_dict(self, base_data):
         """共有レシピ固有のフィールドを辞書に追加するメソッド"""
-        base_data['shared_by_user'] = self.shared_by_user.username
+        base_data['shared_by_user'] = self.created_by.username
         base_data['created_at'] = self.created_at
         base_data['access_token'] = self.access_token
         return base_data

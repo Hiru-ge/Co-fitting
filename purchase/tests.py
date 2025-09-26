@@ -129,7 +129,7 @@ class StripePaymentTest(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertEqual(self.user.preset_limit, 1)
-        self.assertEqual(PresetRecipe.objects.filter(create_user=self.user).count(), 1)  # ユーザーのレシピが1つだけ残っていることを確認
+        self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), 1)  # ユーザーのレシピが1つだけ残っていることを確認
         self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())    # 最初のレシピが残っていることを確認
         self.assertFalse(PresetRecipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
         self.assertFalse(self.user.is_subscribed)
@@ -531,7 +531,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
         
         # プリセットレシピが1つだけ残ることを確認
         from recipes.models import PresetRecipe
-        self.assertEqual(PresetRecipe.objects.filter(create_user=self.user).count(), 1)
+        self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), 1)
         self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())
 
 

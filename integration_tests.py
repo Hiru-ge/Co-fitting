@@ -91,7 +91,7 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 302)
         
         # 3. レシピが作成されることを確認
-        recipe = PresetRecipe.objects.get(name="統合テストレシピ", create_user=self.user)
+        recipe = PresetRecipe.objects.get(name="統合テストレシピ", created_by=self.user)
         self.assertEqual(recipe.len_steps, 3)
         self.assertEqual(recipe.bean_g, 20)
         
@@ -149,7 +149,7 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         assert_json_response(self, response, expected_status=200)
         
         # 6. プリセットに追加されることを確認
-        self.assertTrue(PresetRecipe.objects.filter(name='共有テストレシピ', create_user=other_user).exists())
+        self.assertTrue(PresetRecipe.objects.filter(name='共有テストレシピ', created_by=other_user).exists())
 
     def test_recipe_sharing_limit_workflow(self):
         """レシピ共有制限のワークフローテスト"""
@@ -161,7 +161,7 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         # 1. 最初のレシピを作成・共有（成功するはず）
         recipe1 = PresetRecipe.objects.create(
             name='共有テストレシピ1',
-            create_user=self.user,
+            created_by=self.user,
             is_ice=False,
             len_steps=1,
             bean_g=20.0,
@@ -183,7 +183,7 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         # 2. 2個目のレシピを作成・共有（制限超過で失敗するはず）
         recipe2 = PresetRecipe.objects.create(
             name='共有テストレシピ2',
-            create_user=self.user,
+            created_by=self.user,
             is_ice=False,
             len_steps=1,
             bean_g=20.0,
@@ -315,7 +315,7 @@ class ErrorHandlingTestCase(TestCase):
         
         recipe = PresetRecipe.objects.create(
             name='他人のレシピ',
-            create_user=other_user,
+            created_by=other_user,
             is_ice=False,
             len_steps=1,
             bean_g=20.0,
@@ -395,7 +395,7 @@ class PerformanceTestCase(TestCase):
         for i in range(100):
             recipe = PresetRecipe.objects.create(
                 name=f'レシピ{i}',
-                create_user=self.user,
+                created_by=self.user,
                 is_ice=False,
                 len_steps=1,
                 bean_g=20.0,
@@ -421,7 +421,7 @@ class PerformanceTestCase(TestCase):
         for i in range(50):
             SharedRecipe.objects.create(
                 name=f'共有レシピ{i}',
-                shared_by_user=self.user,
+                created_by=self.user,
                 is_ice=False,
                 len_steps=1,
                 bean_g=20.0,
@@ -446,7 +446,7 @@ class PerformanceTestCase(TestCase):
         # レシピとステップを作成
         recipe = PresetRecipe.objects.create(
             name='クエリテストレシピ',
-            create_user=self.user,
+            created_by=self.user,
             is_ice=False,
             len_steps=5,
             bean_g=20.0,
@@ -506,7 +506,7 @@ class SecurityTestCase(TestCase):
         })
         
         # エラーが発生してもテーブルが削除されないことを確認
-        self.assertTrue(PresetRecipe.objects.filter(create_user=self.user).exists())
+        self.assertTrue(PresetRecipe.objects.filter(created_by=self.user).exists())
 
     def test_xss_protection(self):
         """XSS攻撃の保護テスト"""
@@ -571,7 +571,7 @@ class SecurityTestCase(TestCase):
         
         recipe = PresetRecipe.objects.create(
             name='他人のレシピ',
-            create_user=other_user,
+            created_by=other_user,
             is_ice=False,
             len_steps=1,
             bean_g=20.0,

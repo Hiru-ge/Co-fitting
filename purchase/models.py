@@ -132,7 +132,7 @@ class SubscriptionManager:
                 user.is_subscribed = False
                 user.preset_limit = AppConstants.FREE_PRESET_LIMIT
                 # ユーザーのレシピを1つだけ残して削除
-                users_recipes = PresetRecipe.objects.filter(create_user=user)
+                users_recipes = PresetRecipe.objects.filter(created_by=user)
                 if users_recipes.exists():
                     users_recipes.exclude(id=users_recipes.first().id).delete()
             elif status in AppConstants.ACTIVE_STATUSES:
