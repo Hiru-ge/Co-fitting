@@ -2,12 +2,12 @@ from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import MagicMock, patch
 from users.models import User
-from recipes.models import Recipe, RecipeStep
+from recipes.models import PresetRecipe, PresetRecipeStep
 import json
 
 
 def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
-    Recipe.objects.create(
+    PresetRecipe.objects.create(
         name=name,
         create_user=user,
         is_ice=is_ice,
@@ -17,8 +17,8 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
         memo=memo
     )
     for i in range(len_steps):
-        RecipeStep.objects.create(
-            recipe_id=Recipe.objects.last(),
+        PresetRecipeStep.objects.create(
+            recipe_id=PresetRecipe.objects.last(),
             step_number=i + 1,
             minute=i,
             seconds=0,
@@ -153,9 +153,9 @@ class StripePaymentTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertEqual(self.user.preset_limit, 1)
-        self.assertEqual(Recipe.objects.filter(create_user=self.user).count(), 1)  # ユーザーのレシピが1つだけ残っていることを確認
-        self.assertTrue(Recipe.objects.filter(name="Preset 1").exists())    # 最初のレシピが残っていることを確認
-        self.assertFalse(Recipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
+        self.assertEqual(PresetRecipe.objects.filter(create_user=self.user).count(), 1)  # ユーザーのレシピが1つだけ残っていることを確認
+        self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())    # 最初のレシピが残っていることを確認
+        self.assertFalse(PresetRecipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
         self.assertFalse(self.user.is_subscribed)
 
     def test_invalid_webhook_event(self):
@@ -567,9 +567,9 @@ class PurchaseIntegrationTestCase(TestCase):
         self.assertFalse(self.user.is_subscribed)
         
         # プリセットレシピが1つだけ残ることを確認
-        from recipes.models import Recipe
-        self.assertEqual(Recipe.objects.filter(create_user=self.user).count(), 1)
-        self.assertTrue(Recipe.objects.filter(name="Preset 1").exists())
+        from recipes.models import PresetRecipe
+        self.assertEqual(PresetRecipe.objects.filter(create_user=self.user).count(), 1)
+        self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())
 
 
 class PurchaseSecurityTestCase(TestCase):

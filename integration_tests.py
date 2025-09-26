@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 from django_recaptcha.client import RecaptchaResponse
 import json
 
-from recipes.models import Recipe, RecipeStep, SharedRecipe, SharedRecipeStep
+from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedRecipeStep
 
 User = get_user_model()
 
@@ -93,12 +93,12 @@ class EndToEndWorkflowTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         
         # 3. レシピが作成されることを確認
-        recipe = Recipe.objects.get(name="統合テストレシピ", create_user=self.user)
+        recipe = PresetRecipe.objects.get(name="統合テストレシピ", create_user=self.user)
         self.assertEqual(recipe.len_steps, 3)
         self.assertEqual(recipe.bean_g, 20)
         
         # 4. ステップが正しく作成されることを確認
-        steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+        steps = PresetRecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
         self.assertEqual(len(steps), 3)
         self.assertEqual(steps[0].total_water_ml_this_step, 50)
         self.assertEqual(steps[1].total_water_ml_this_step, 100)
@@ -114,7 +114,7 @@ class EndToEndWorkflowTestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
         
         # 1. レシピを作成
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='共有テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -174,7 +174,7 @@ class EndToEndWorkflowTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         
         # 6. プリセットに追加されることを確認
-        self.assertTrue(Recipe.objects.filter(name='共有テストレシピ', create_user=other_user).exists())
+        self.assertTrue(PresetRecipe.objects.filter(name='共有テストレシピ', create_user=other_user).exists())
 
     def test_recipe_sharing_limit_workflow(self):
         """レシピ共有制限のワークフローテスト"""
@@ -338,7 +338,7 @@ class ErrorHandlingTestCase(TestCase):
         other_user.is_active = True
         other_user.save()
         
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='他人のレシピ',
             create_user=other_user,
             is_ice=False,
@@ -382,7 +382,7 @@ class ErrorHandlingTestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
         
         # 存在しないユーザーIDでレシピ作成を試行
-        with patch('recipes.models.Recipe.objects.create') as mock_create:
+        with patch('recipes.models.PresetRecipe.objects.create') as mock_create:
             mock_create.side_effect = Exception("Database error")
             
             response = self.client.post(reverse('recipes:preset_create'), {
@@ -418,7 +418,7 @@ class PerformanceTestCase(TestCase):
         # 大量のレシピを作成
         recipes = []
         for i in range(100):
-            recipe = Recipe.objects.create(
+            recipe = PresetRecipe.objects.create(
                 name=f'レシピ{i}',
                 create_user=self.user,
                 is_ice=False,
@@ -470,7 +470,7 @@ class PerformanceTestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
         
         # レシピとステップを作成
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='クエリテストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -532,7 +532,7 @@ class SecurityTestCase(TestCase):
         })
         
         # エラーが発生してもテーブルが削除されないことを確認
-        self.assertTrue(Recipe.objects.filter(create_user=self.user).exists())
+        self.assertTrue(PresetRecipe.objects.filter(create_user=self.user).exists())
 
     def test_xss_protection(self):
         """XSS攻撃の保護テスト"""
@@ -595,7 +595,7 @@ class SecurityTestCase(TestCase):
         other_user.is_active = True
         other_user.save()
         
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='他人のレシピ',
             create_user=other_user,
             is_ice=False,

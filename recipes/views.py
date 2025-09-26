@@ -4,7 +4,7 @@ from django.views.decorators.http import require_POST, require_GET, require_http
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from .models import (
-    Recipe, RecipeStep, User, SharedRecipe, SharedRecipeStep,
+    PresetRecipe, PresetRecipeStep, User, SharedRecipe, SharedRecipeStep,
     ResponseHelper, generate_recipe_image
 )
 from .forms import RecipeForm, SharedRecipeDataForm
@@ -23,9 +23,9 @@ def index(request):
     # 匿名ユーザーの場合は空のリストを返す
     if user.is_anonymous:
         user_preset_recipes = []
-        default_preset_recipes = Recipe.objects.default_presets()
+        default_preset_recipes = PresetRecipe.objects.default_presets()
     else:
-        user_preset_recipes, default_preset_recipes = Recipe.objects.get_preset_recipes_for_user(user)
+        user_preset_recipes, default_preset_recipes = PresetRecipe.objects.get_preset_recipes_for_user(user)
     
     shared_recipe_data = SharedRecipe.objects.get_shared_recipe_data(shared_token)
 
@@ -40,7 +40,7 @@ def index(request):
 @login_required
 def mypage(request):
     user = request.user
-    recipes = Recipe.objects.for_user(user)
+    recipes = PresetRecipe.objects.for_user(user)
 
     # サブスクリプション状態を取得（Model層で実行）
     subscription_status = User.objects.get_subscription_status(user)
@@ -58,7 +58,7 @@ def mypage(request):
 def preset_create(request):
     if request.method == 'POST':
         # プリセット上限チェック（Model層で実行）
-        error_response = Recipe.objects.check_preset_limit_or_error(request.user)
+        error_response = PresetRecipe.objects.check_preset_limit_or_error(request.user)
         if error_response:
             messages.error(request, "エラー：プリセットレシピ上限を超過しています")
             recipe_form = RecipeForm()
@@ -81,8 +81,8 @@ def preset_create(request):
 
 @login_required
 def preset_edit(request, recipe_id):
-    recipe = get_object_or_404(Recipe, id=recipe_id, create_user=request.user)
-    steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+    recipe = get_object_or_404(PresetRecipe, id=recipe_id, create_user=request.user)
+    steps = PresetRecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
 
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, instance=recipe)
@@ -105,10 +105,10 @@ def preset_edit(request, recipe_id):
 
 
 class PresetDeleteView(LoginRequiredMixin, DeleteView):
-    model = Recipe
+    model = PresetRecipe
 
     def get_queryset(self):
-        return Recipe.objects.for_user(self.request.user)
+        return PresetRecipe.objects.for_user(self.request.user)
     
     def post(self, request, *args, **kwargs):
         """AJAX削除用のPOSTメソッド"""
@@ -217,7 +217,7 @@ def get_user_shared_recipes(request):
 @login_required
 def share_preset_recipe(request, recipe_id):
     try:
-        recipe = get_object_or_404(Recipe, id=recipe_id, create_user=request.user)
+        recipe = get_object_or_404(PresetRecipe, id=recipe_id, create_user=request.user)
         
         # 共有レシピ上限チェック（Model層で実行）
         error_response = SharedRecipe.objects.check_share_limit_or_error(request.user)
@@ -315,9 +315,9 @@ def get_preset_recipes(request):
         # 匿名ユーザーの場合は空のリストを返す
         if user.is_anonymous:
             user_preset_recipes = []
-            default_preset_recipes = Recipe.objects.default_presets()
+            default_preset_recipes = PresetRecipe.objects.default_presets()
         else:
-            user_preset_recipes, default_preset_recipes = Recipe.objects.get_preset_recipes_for_user(user)
+            user_preset_recipes, default_preset_recipes = PresetRecipe.objects.get_preset_recipes_for_user(user)
         
         return JsonResponse({
             'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],

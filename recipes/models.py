@@ -9,6 +9,95 @@ from PIL import Image, ImageDraw, ImageFont
 from users.models import User
 
 
+class BaseRecipe(models.Model):
+    """レシピの基底クラス"""
+    name = models.CharField(max_length=30)
+    is_ice = models.BooleanField(default=False)
+    ice_g = models.FloatField(blank=True, null=True)
+    len_steps = models.IntegerField()
+    bean_g = models.FloatField()
+    water_ml = models.FloatField()
+    memo = models.TextField(blank=True, null=True, max_length=300)
+    
+    class Meta:
+        abstract = True
+    
+    def to_dict(self):
+        """レシピを辞書形式に変換するメソッド"""
+        # サブクラスで実装
+        raise NotImplementedError("サブクラスで実装してください")
+    
+    def create_steps_from_form_data(self, form_data):
+        """フォームデータからレシピステップを作成する"""
+        # サブクラスで実装
+        raise NotImplementedError("サブクラスで実装してください")
+    
+    def update_with_steps(self, form_data):
+        """ステップを含めてレシピを更新する"""
+        # サブクラスで実装
+        raise NotImplementedError("サブクラスで実装してください")
+    
+    def update_from_form_data(self, form_data):
+        """フォームデータからレシピの基本情報を更新する"""
+        self.name = form_data.get('name', self.name)
+        self.len_steps = int(form_data.get('len_steps', self.len_steps))
+        self.bean_g = float(form_data.get('bean_g', self.bean_g))
+        self.is_ice = form_data.get('is_ice') == 'on'
+        self.ice_g = float(form_data.get('ice_g', 0)) if self.is_ice else None
+        self.memo = form_data.get('memo', self.memo)
+        return self
+
+
+class BaseRecipeStep(models.Model):
+    """レシピステップの基底クラス"""
+    step_number = models.IntegerField()
+    minute = models.IntegerField()
+    seconds = models.IntegerField()
+    total_water_ml_this_step = models.FloatField()
+
+    class Meta:
+        abstract = True
+        ordering = ['step_number']
+    
+    @property
+    def pour_ml_this_step(self):
+        """このステップでの注湯量を計算する"""
+        if self.step_number == 1:
+            return self.total_water_ml_this_step
+        
+        # 前のステップの累積湯量を取得
+        previous_step = self.__class__.objects.filter(
+            **{self.get_recipe_field_name(): self.get_recipe_instance()},
+            step_number=self.step_number - 1
+        ).first()
+        
+        if previous_step:
+            return self.total_water_ml_this_step - previous_step.total_water_ml_this_step
+        
+        return self.total_water_ml_this_step
+    
+    @property
+    def cumulative_water_ml(self):
+        """このステップまでの累積湯量を計算する"""
+        cumulative = 0
+        for step_number in range(1, self.step_number + 1):
+            step = self.__class__.objects.filter(
+                **{self.get_recipe_field_name(): self.get_recipe_instance()},
+                step_number=step_number
+            ).first()
+            if step:
+                cumulative += step.pour_ml_this_step
+        return cumulative
+    
+    def get_recipe_field_name(self):
+        """レシピフィールド名を取得（サブクラスで実装）"""
+        raise NotImplementedError("サブクラスで実装してください")
+    
+    def get_recipe_instance(self):
+        """レシピインスタンスを取得（サブクラスで実装）"""
+        raise NotImplementedError("サブクラスで実装してください")
+
+
 class ShareConstants:
     """共有レシピ関連の定数"""
     # 共有制限
@@ -186,29 +275,29 @@ class SharedRecipeManager(models.Manager):
     def prepare_image_data(self, data):
         """画像生成用のステップデータを準備"""
         steps_for_image = []
-        cumulative = 0
+
         for i, step in enumerate(data['steps']):
-            pour_ml = step['total_water_ml_this_step']
-            cumulative += pour_ml
+            cumulative_water_ml = step['total_water_ml_this_step']
+
             steps_for_image.append({
                 'minute': step['minute'],
                 'seconds': step['seconds'],
                 'step_number': step.get('step_number', i+1),
-                'pour_ml': pour_ml,
-                'cumulative_water_ml': cumulative
+                'pour_ml': cumulative_water_ml,
+                'cumulative_water_ml': cumulative_water_ml
             })
         return steps_for_image
     
     def copy_to_preset(self, shared_recipe, user):
         """共有レシピをプリセットとして複製"""
         # プリセット上限チェック
-        error_response = Recipe.objects.check_preset_limit_or_error(user)
+        error_response = PresetRecipe.objects.check_preset_limit_or_error(user)
         if error_response:
             return None, error_response
         
         try:
             # 共有レシピをプリセットとして複製
-            new_recipe = Recipe.objects.create(
+            new_recipe = PresetRecipe.objects.create(
                 name=shared_recipe.name,
                 create_user=user,
                 is_ice=shared_recipe.is_ice,
@@ -222,7 +311,7 @@ class SharedRecipeManager(models.Manager):
             # ステップを複製
             shared_steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
             for shared_step in shared_steps:
-                RecipeStep.objects.create(
+                PresetRecipeStep.objects.create(
                     recipe_id=new_recipe,
                     step_number=shared_step.step_number,
                     minute=shared_step.minute,
@@ -323,11 +412,11 @@ class RecipeImageGenerator:
 
     def _draw_basic_info(self, draw, font_small, y_position):
         draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
-                 f"豆量: {self.recipe_data['bean_g']}g", font=font_small, fill=self.text_color)
+                 f"豆量: {int(self.recipe_data['bean_g'])}g", font=font_small, fill=self.text_color)
         y_position += 40
         if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
             draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
-                     f"氷量: {self.recipe_data['ice_g']}g", font=font_small, fill=self.text_color)
+                     f"氷量: {int(self.recipe_data['ice_g'])}g", font=font_small, fill=self.text_color)
             y_position += 40
         return y_position
 
@@ -346,7 +435,6 @@ class RecipeImageGenerator:
         draw.text((table_x + col1_width, header_y), "総注湯量", font=font_small, fill=self.text_color)
 
         # データ行を描画
-        cumulative_water = 0
         for i, step in enumerate(self.steps_data):
             y = table_y + (i + 1) * row_h + 10  # ヘッダー分のオフセット
             # 時間表記を0:00形式に変更
@@ -354,9 +442,8 @@ class RecipeImageGenerator:
             draw.text((table_x, y), time_str, 
                      font=font_small, fill=self.text_color)
             
-            # 総注湯量（累積）
-            cumulative_water += step['pour_ml']
-            draw.text((table_x + col1_width, y), f"{cumulative_water}ml", 
+            # 総注湯量（pour_mlは既に累積総注湯量、整数表示）
+            draw.text((table_x + col1_width, y), f"{int(step['pour_ml'])}ml", 
                      font=font_small, fill=self.text_color)
 
         return table_y + (len(self.steps_data) + 1) * row_h + 20
@@ -437,15 +524,9 @@ def generate_recipe_image(recipe_data, steps_data, access_token):
     return image_generator.generate_image(access_token)
 
 
-class Recipe(models.Model):
-    name = models.CharField(max_length=30)
+class PresetRecipe(BaseRecipe):
+    """プリセットレシピ"""
     create_user = models.ForeignKey(User, on_delete=models.CASCADE)
-    is_ice = models.BooleanField(default=False)
-    ice_g = models.FloatField(blank=True, null=True)
-    len_steps = models.IntegerField()
-    bean_g = models.FloatField()
-    water_ml = models.FloatField()
-    memo = models.TextField(blank=True, null=True, max_length=300)
     
     objects = RecipeManager()
 
@@ -454,7 +535,7 @@ class Recipe(models.Model):
     
     def to_dict(self):
         """レシピを辞書形式に変換するメソッド"""
-        steps = RecipeStep.objects.filter(recipe_id=self).order_by('step_number')
+        steps = PresetRecipeStep.objects.filter(recipe_id=self).order_by('step_number')
         steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
         return {
             'id': self.id,
@@ -477,7 +558,7 @@ class Recipe(models.Model):
             second = form_data.get(f'step{step_number}_second')
             
             if total_water_ml_this_step and minute and second:
-                RecipeStep.objects.create(
+                PresetRecipeStep.objects.create(
                     recipe_id=self,
                     step_number=step_number,
                     minute=int(minute),
@@ -491,16 +572,6 @@ class Recipe(models.Model):
         self.save()
         return self
     
-    def update_from_form_data(self, form_data):
-        """フォームデータからレシピを更新する"""
-        self.name = form_data.get('name', self.name)
-        self.len_steps = int(form_data.get('len_steps', self.len_steps))
-        self.bean_g = float(form_data.get('bean_g', self.bean_g))
-        self.is_ice = form_data.get('is_ice') == 'on'
-        self.ice_g = float(form_data.get('ice_g', 0)) if self.is_ice else None
-        self.memo = form_data.get('memo', self.memo)
-        return self
-    
     def create_with_user_and_steps(self, form_data, user):
         """ユーザーとステップを含めてレシピを作成する"""
         self.water_ml = 0
@@ -511,70 +582,40 @@ class Recipe(models.Model):
     
     def update_with_steps(self, form_data):
         """ステップを含めてレシピを更新する"""
+        self.update_from_form_data(form_data)
         self.water_ml = 0
         self.save()
         
         # 既存のステップを削除
-        RecipeStep.objects.filter(recipe_id=self).delete()
+        PresetRecipeStep.objects.filter(recipe_id=self).delete()
         
         # 新しいステップを作成
         self.create_steps_from_form_data(form_data)
         return self
 
 
-class RecipeStep(models.Model):
-    recipe_id = models.ForeignKey(to=Recipe, on_delete=models.CASCADE, related_name='steps')
-    step_number = models.IntegerField()
-    minute = models.IntegerField()
-    seconds = models.IntegerField()
-    total_water_ml_this_step = models.FloatField()
-
+class PresetRecipeStep(BaseRecipeStep):
+    """プリセットレシピステップ"""
+    recipe_id = models.ForeignKey(to=PresetRecipe, on_delete=models.CASCADE, related_name='steps')
+    
     class Meta:
         ordering = ['step_number']  # 手順の順番で並べる
 
     def __str__(self):
         return f"Step {self.step_number} for {self.recipe_id.name}"
     
-    @property
-    def pour_ml_this_step(self):
-        """このステップでの注湯量を計算する"""
-        if self.step_number == 1:
-            return self.total_water_ml_this_step
-        
-        # 前のステップの累積湯量を取得
-        previous_step = RecipeStep.objects.filter(
-            recipe_id=self.recipe_id,
-            step_number=self.step_number - 1
-        ).first()
-        
-        if previous_step:
-            return self.total_water_ml_this_step - previous_step.total_water_ml_this_step
-        
-        return self.total_water_ml_this_step
+    def get_recipe_field_name(self):
+        """レシピフィールド名を取得"""
+        return 'recipe_id'
     
-    @property
-    def cumulative_water_ml(self):
-        """このステップまでの累積湯量を計算する"""
-        cumulative = 0
-        for step_number in range(1, self.step_number + 1):
-            step = RecipeStep.objects.filter(
-                recipe_id=self.recipe_id,
-                step_number=step_number
-            ).first()
-            if step:
-                cumulative += step.pour_ml_this_step
-        return cumulative
+    def get_recipe_instance(self):
+        """レシピインスタンスを取得"""
+        return self.recipe_id
 
 
-class SharedRecipe(models.Model):
-    name = models.CharField(max_length=30)
+class SharedRecipe(BaseRecipe):
+    """共有レシピ"""
     shared_by_user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
-    is_ice = models.BooleanField(default=False)
-    ice_g = models.FloatField(blank=True, null=True)
-    len_steps = models.IntegerField()
-    bean_g = models.FloatField()
-    water_ml = models.FloatField()
-    memo = models.TextField(blank=True, null=True, max_length=300)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     access_token = models.CharField(max_length=32, unique=True)
@@ -621,17 +662,6 @@ class SharedRecipe(models.Model):
             )
         return self
     
-    def update_from_form_data(self, form_data):
-        """フォームデータから共有レシピを更新する"""
-        self.name = form_data.get('name', self.name)
-        self.len_steps = int(form_data.get('len_steps', self.len_steps))
-        self.bean_g = float(form_data.get('bean_g', self.bean_g))
-        self.is_ice = form_data.get('is_ice') == 'on'
-        self.ice_g = float(form_data.get('ice_g', 0)) if self.is_ice else None
-        self.memo = form_data.get('memo', self.memo)
-        self.save()
-        return self
-    
     def create_steps_from_form_data(self, form_data):
         """フォームデータから共有レシピステップを作成する（累積湯量をそのまま保存）"""
         for step_number in range(1, self.len_steps + 1):
@@ -653,6 +683,7 @@ class SharedRecipe(models.Model):
     def update_with_steps(self, form_data):
         """ステップを含めて共有レシピを更新する"""
         self.update_from_form_data(form_data)
+        self.save()  # 基本情報を保存
         
         # 既存のステップを削除
         SharedRecipeStep.objects.filter(shared_recipe=self).delete()
@@ -662,12 +693,9 @@ class SharedRecipe(models.Model):
         return self
 
 
-class SharedRecipeStep(models.Model):
+class SharedRecipeStep(BaseRecipeStep):
+    """共有レシピステップ"""
     shared_recipe = models.ForeignKey(to=SharedRecipe, on_delete=models.CASCADE, related_name='steps')
-    step_number = models.IntegerField()
-    minute = models.IntegerField()
-    seconds = models.IntegerField()
-    total_water_ml_this_step = models.FloatField()
 
     class Meta:
         ordering = ['step_number']
@@ -675,32 +703,10 @@ class SharedRecipeStep(models.Model):
     def __str__(self):
         return f"SharedStep {self.step_number} for {self.shared_recipe.name}"
     
-    @property
-    def pour_ml_this_step(self):
-        """このステップでの注湯量を計算する"""
-        if self.step_number == 1:
-            return self.total_water_ml_this_step
-        
-        # 前のステップの累積湯量を取得
-        previous_step = SharedRecipeStep.objects.filter(
-            shared_recipe=self.shared_recipe,
-            step_number=self.step_number - 1
-        ).first()
-        
-        if previous_step:
-            return self.total_water_ml_this_step - previous_step.total_water_ml_this_step
-        
-        return self.total_water_ml_this_step
+    def get_recipe_field_name(self):
+        """レシピフィールド名を取得"""
+        return 'shared_recipe'
     
-    @property
-    def cumulative_water_ml(self):
-        """このステップまでの累積湯量を計算する"""
-        cumulative = 0
-        for step_number in range(1, self.step_number + 1):
-            step = SharedRecipeStep.objects.filter(
-                shared_recipe=self.shared_recipe,
-                step_number=step_number
-            ).first()
-            if step:
-                cumulative += step.pour_ml_this_step
-        return cumulative
+    def get_recipe_instance(self):
+        """レシピインスタンスを取得"""
+        return self.shared_recipe

@@ -1,11 +1,11 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from .models import Recipe, RecipeStep, ShareConstants
+from .models import PresetRecipe, PresetRecipeStep, ShareConstants
 
 
 class RecipeForm(forms.ModelForm):
     class Meta:
-        model = Recipe
+        model = PresetRecipe
         fields = ['name', 'is_ice', 'ice_g', 'len_steps', 'bean_g', 'memo']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '30'}),
@@ -63,7 +63,7 @@ class RecipeForm(forms.ModelForm):
 
 class RecipeStepForm(forms.ModelForm):
     class Meta:
-        model = RecipeStep
+        model = PresetRecipeStep
         fields = ['minute', 'seconds', 'total_water_ml_this_step']
         widgets = {
             'minute': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '59'}),

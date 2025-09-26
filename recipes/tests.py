@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from users.models import User
-from recipes.models import Recipe, RecipeStep, SharedRecipe, SharedRecipeStep
+from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedRecipeStep
 from django.utils import timezone
 from datetime import timedelta
 import json
@@ -11,7 +11,7 @@ from django.core.management import call_command
 
 
 def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
-    recipe = Recipe.objects.create(
+    recipe = PresetRecipe.objects.create(
         name=name,
         create_user=user,
         is_ice=is_ice,
@@ -21,7 +21,7 @@ def create_mock_recipe(user, name, is_ice, len_steps, bean_g, water_ml, memo):
         memo=memo
     )
     for i in range(len_steps):
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=i + 1,
             minute=i,
@@ -90,7 +90,7 @@ class RecipeCreateTestCase(TestCase):
         })
 
         self.assertEqual(response.status_code, 302)  # リダイレクト確認
-        self.assertTrue(Recipe.objects.filter(name="テストレシピ", create_user=self.user).exists())  # DBに作成されたか確認
+        self.assertTrue(PresetRecipe.objects.filter(name="テストレシピ", create_user=self.user).exists())  # DBに作成されたか確認
 
     def test_create_ice_recipe_success(self):
         """アイス用プリセットレシピ作成が正常にできるか"""
@@ -110,13 +110,13 @@ class RecipeCreateTestCase(TestCase):
         })
 
         self.assertEqual(response.status_code, 302)  # リダイレクト確認
-        self.assertTrue(Recipe.objects.filter(name="テストレシピ アイス", create_user=self.user).exists())  # DBに作成されたか確認
+        self.assertTrue(PresetRecipe.objects.filter(name="テストレシピ アイス", create_user=self.user).exists())  # DBに作成されたか確認
 
     def test_create_recipe_limit_exceeded(self):
         """プリセットレシピ作成時の上限チェック"""
         # 既に上限いっぱいまでレシピを作成済
-        Recipe.objects.bulk_create([
-            Recipe(name=f"レシピ{i+1}", create_user=self.user, is_ice=False, len_steps=3, bean_g=15.0, water_ml=250.0)
+        PresetRecipe.objects.bulk_create([
+            PresetRecipe(name=f"レシピ{i+1}", create_user=self.user, is_ice=False, len_steps=3, bean_g=15.0, water_ml=250.0)
             for i in range(self.user.preset_limit)
         ])
 
@@ -135,7 +135,7 @@ class RecipeCreateTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "エラー：プリセットレシピ上限を超過しています")  # エラーメッセージが表示されるか確認
-        self.assertFalse(Recipe.objects.filter(name="上限超えレシピ", create_user=self.user).exists())  # DBに登録されていないことを確認
+        self.assertFalse(PresetRecipe.objects.filter(name="上限超えレシピ", create_user=self.user).exists())  # DBに登録されていないことを確認
 
 
 class RecipeEditTestCase(TestCase):
@@ -270,7 +270,7 @@ class RecipeDeleteTestCase(TestCase):
         self.assertEqual(response.status_code, 200)  # JSONレスポンス確認
         response_data = json.loads(response.content)
         self.assertTrue(response_data['success'])
-        self.assertFalse(Recipe.objects.filter(id=self.recipe.id).exists())  # DBから削除されたことを確認
+        self.assertFalse(PresetRecipe.objects.filter(id=self.recipe.id).exists())  # DBから削除されたことを確認
 
     def test_delete_recipe_not_owner(self):
         """他のユーザーのプリセットレシピ削除ができないことを確認"""
@@ -278,7 +278,7 @@ class RecipeDeleteTestCase(TestCase):
         response = self.client.post(self.delete_url)
 
         self.assertEqual(response.status_code, 500)  # 権限なしなら500エラーが返る
-        self.assertTrue(Recipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
+        self.assertTrue(PresetRecipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
 
     def test_delete_recipe_not_logged_in(self):
         """ログインしていない状態でレシピを削除できないことを確認"""
@@ -286,7 +286,7 @@ class RecipeDeleteTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('users:login')))  # ログイン画面にリダイレクトされることを確認
-        self.assertTrue(Recipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
+        self.assertTrue(PresetRecipe.objects.filter(id=self.recipe.id).exists())  # レシピが削除されていないことを確認
 
 
 class RecipeActivationTestCase(TestCase):
@@ -778,8 +778,8 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         self.assertIn('recipe_id', response_data)
         
         # プリセットに追加されたことを確認
-        self.assertTrue(Recipe.objects.filter(name="テスト共有レシピ", create_user=self.user).exists())
-        added_recipe = Recipe.objects.get(name="テスト共有レシピ", create_user=self.user)
+        self.assertTrue(PresetRecipe.objects.filter(name="テスト共有レシピ", create_user=self.user).exists())
+        added_recipe = PresetRecipe.objects.get(name="テスト共有レシピ", create_user=self.user)
         self.assertEqual(added_recipe.bean_g, 20.0)
         self.assertEqual(added_recipe.water_ml, 200.0)
         self.assertEqual(added_recipe.len_steps, 2)
@@ -1105,7 +1105,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_recipe_creation(self):
         """レシピが正常に作成されることをテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -1125,7 +1125,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_recipe_string_representation(self):
         """レシピの文字列表現が正しいことをテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -1138,7 +1138,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_recipe_step_creation(self):
         """レシピステップが正常に作成されることをテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -1147,7 +1147,7 @@ class RecipeModelTestCase(TestCase):
             water_ml=200.0
         )
         
-        step = RecipeStep.objects.create(
+        step = PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=1,
             minute=0,
@@ -1163,7 +1163,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_recipe_step_string_representation(self):
         """レシピステップの文字列表現が正しいことをテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -1172,7 +1172,7 @@ class RecipeModelTestCase(TestCase):
             water_ml=200.0
         )
         
-        step = RecipeStep.objects.create(
+        step = PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=1,
             minute=0,
@@ -1184,7 +1184,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_recipe_step_ordering(self):
         """レシピステップが正しい順序で並ぶことをテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -1194,21 +1194,21 @@ class RecipeModelTestCase(TestCase):
         )
         
         # ステップを逆順で作成
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=3,
             minute=2,
             seconds=0,
             total_water_ml_this_step=100.0
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=1,
             minute=0,
             seconds=0,
             total_water_ml_this_step=100.0
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=2,
             minute=1,
@@ -1216,13 +1216,13 @@ class RecipeModelTestCase(TestCase):
             total_water_ml_this_step=100.0
         )
         
-        steps = RecipeStep.objects.filter(recipe_id=recipe)
+        steps = PresetRecipeStep.objects.filter(recipe_id=recipe)
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
 
     def test_create_steps_from_form_data(self):
         """フォームデータからステップを作成するテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=False,
@@ -1244,7 +1244,7 @@ class RecipeModelTestCase(TestCase):
         recipe.create_steps_from_form_data(form_data)
         
         # ステップが正しく作成されたかチェック
-        steps = RecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
+        steps = PresetRecipeStep.objects.filter(recipe_id=recipe).order_by('step_number')
         self.assertEqual(steps.count(), 2)
         
         # 最初のステップ
@@ -1267,7 +1267,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_update_from_form_data(self):
         """フォームデータからレシピを更新するテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='元のレシピ名',
             create_user=self.user,
             is_ice=False,
@@ -1297,7 +1297,7 @@ class RecipeModelTestCase(TestCase):
 
     def test_to_dict(self):
         """to_dictメソッドのテスト"""
-        recipe = Recipe.objects.create(
+        recipe = PresetRecipe.objects.create(
             name='テストレシピ',
             create_user=self.user,
             is_ice=True,
@@ -1309,14 +1309,14 @@ class RecipeModelTestCase(TestCase):
         )
         
         # ステップを作成
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=recipe,
             step_number=2,
             minute=1,
@@ -1617,7 +1617,7 @@ class SharedRecipeModelTestCase(TestCase):
     def test_preset_to_shared_recipe_workflow(self):
         """プリセットから共有レシピ作成のワークフローテスト"""
         # プリセットを作成（累積湯量で保存）
-        preset = Recipe.objects.create(
+        preset = PresetRecipe.objects.create(
             name='テストプリセット',
             create_user=self.user,
             is_ice=False,
@@ -1628,21 +1628,21 @@ class SharedRecipeModelTestCase(TestCase):
         )
         
         # プリセットのステップを作成（累積湯量）
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=preset,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0  # 1投目の累積湯量
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=preset,
             step_number=2,
             minute=1,
             seconds=0,
             total_water_ml_this_step=200.0  # 2投目の累積湯量
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=preset,
             step_number=3,
             minute=1,
@@ -1747,7 +1747,7 @@ class SharedRecipeModelTestCase(TestCase):
         # このテストは修正前の実装（累積計算）では失敗し、修正後の実装では成功する
         
         # プリセットから共有レシピを作成する場合
-        preset = Recipe.objects.create(
+        preset = PresetRecipe.objects.create(
             name='テストプリセット',
             create_user=self.user,
             is_ice=False,
@@ -1758,14 +1758,14 @@ class SharedRecipeModelTestCase(TestCase):
         )
         
         # プリセットのステップ（累積湯量）
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=preset,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=100.0  # 1投目の累積湯量
         )
-        RecipeStep.objects.create(
+        PresetRecipeStep.objects.create(
             recipe_id=preset,
             step_number=2,
             minute=1,
@@ -1862,7 +1862,7 @@ class RecipeManagerTestCase(TestCase):
         )
         
         # テスト用レシピを作成
-        Recipe.objects.create(
+        PresetRecipe.objects.create(
             name='ユーザー1のレシピ',
             create_user=self.user1,
             is_ice=False,
@@ -1870,7 +1870,7 @@ class RecipeManagerTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0
         )
-        Recipe.objects.create(
+        PresetRecipe.objects.create(
             name='ユーザー2のレシピ',
             create_user=self.user2,
             is_ice=False,
@@ -1878,7 +1878,7 @@ class RecipeManagerTestCase(TestCase):
             bean_g=25.0,
             water_ml=250.0
         )
-        Recipe.objects.create(
+        PresetRecipe.objects.create(
             name='デフォルトレシピ',
             create_user=self.default_user,
             is_ice=False,
@@ -1889,23 +1889,23 @@ class RecipeManagerTestCase(TestCase):
     
     def test_for_user(self):
         """ユーザー別レシピ取得のテスト"""
-        user1_recipes = Recipe.objects.for_user(self.user1)
+        user1_recipes = PresetRecipe.objects.for_user(self.user1)
         self.assertEqual(user1_recipes.count(), 1)
         self.assertEqual(user1_recipes.first().name, 'ユーザー1のレシピ')
         
-        user2_recipes = Recipe.objects.for_user(self.user2)
+        user2_recipes = PresetRecipe.objects.for_user(self.user2)
         self.assertEqual(user2_recipes.count(), 1)
         self.assertEqual(user2_recipes.first().name, 'ユーザー2のレシピ')
     
     def test_default_presets(self):
         """デフォルトプリセット取得のテスト"""
-        default_recipes = Recipe.objects.default_presets()
+        default_recipes = PresetRecipe.objects.default_presets()
         self.assertEqual(default_recipes.count(), 1)
         self.assertEqual(default_recipes.first().name, 'デフォルトレシピ')
 
     def test_get_preset_recipes_for_user(self):
         """ユーザーのプリセットレシピとデフォルトプリセットを取得するテスト"""
-        user1_recipes, default_recipes = Recipe.objects.get_preset_recipes_for_user(self.user1)
+        user1_recipes, default_recipes = PresetRecipe.objects.get_preset_recipes_for_user(self.user1)
         self.assertEqual(user1_recipes.count(), 1)
         self.assertEqual(default_recipes.count(), 1)
         self.assertEqual(user1_recipes.first().name, 'ユーザー1のレシピ')
@@ -1918,7 +1918,7 @@ class RecipeManagerTestCase(TestCase):
         self.user1.preset_limit = 1
         self.user1.save()
         
-        error_response = Recipe.objects.check_preset_limit_or_error(self.user1)
+        error_response = PresetRecipe.objects.check_preset_limit_or_error(self.user1)
         self.assertIsNotNone(error_response)
         self.assertEqual(error_response.status_code, 400)
         
@@ -1926,7 +1926,7 @@ class RecipeManagerTestCase(TestCase):
         self.user1.preset_limit = 2
         self.user1.save()
         
-        error_response = Recipe.objects.check_preset_limit_or_error(self.user1)
+        error_response = PresetRecipe.objects.check_preset_limit_or_error(self.user1)
         self.assertIsNone(error_response)
 
 

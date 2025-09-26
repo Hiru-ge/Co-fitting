@@ -5,7 +5,7 @@ from django.conf import settings
 from django.urls import reverse
 import stripe
 from users.models import User
-from recipes.models import Recipe
+from recipes.models import PresetRecipe
 
 
 class SubscriptionConstants:
@@ -143,7 +143,7 @@ class SubscriptionManager:
                 user.is_subscribed = False
                 user.preset_limit = SubscriptionConstants.FREE_PRESET_LIMIT
                 # ユーザーのレシピを1つだけ残して削除
-                users_recipes = Recipe.objects.filter(create_user=user)
+                users_recipes = PresetRecipe.objects.filter(create_user=user)
                 if users_recipes.exists():
                     users_recipes.exclude(id=users_recipes.first().id).delete()
             elif status in SubscriptionConstants.ACTIVE_STATUSES:
