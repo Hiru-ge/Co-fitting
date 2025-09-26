@@ -322,9 +322,6 @@ class RecipeImageGenerator:
         return font, font_bold, font_small
 
     def _draw_basic_info(self, draw, font_small, y_position):
-        draw.text((ShareConstants.CARD_MARGIN+40, y_position),
-                 f"レシピ名: {self.recipe_data['name']}", font=font_small, fill=self.text_color)
-        y_position += 40
         draw.text((ShareConstants.CARD_MARGIN+40, y_position), 
                  f"豆量: {self.recipe_data['bean_g']}g", font=font_small, fill=self.text_color)
         y_position += 40
@@ -338,20 +335,31 @@ class RecipeImageGenerator:
         table_x = ShareConstants.CARD_MARGIN + 40
         table_y = start_y
         row_h = ShareConstants.ROW_HEIGHT
+        
+        # カラム幅の設定
+        col1_width = 200  # 時間
+        col2_width = 300  # 総注湯量
 
+        # ヘッダー行を描画
+        header_y = table_y
+        draw.text((table_x, header_y), "時間", font=font_small, fill=self.text_color)
+        draw.text((table_x + col1_width, header_y), "総注湯量", font=font_small, fill=self.text_color)
+
+        # データ行を描画
+        cumulative_water = 0
         for i, step in enumerate(self.steps_data):
-            y = table_y + i * row_h
-            draw.text((table_x, y), f"ステップ{step['step_number']}: {step['minute']}分{step['seconds']}秒", 
+            y = table_y + (i + 1) * row_h + 10  # ヘッダー分のオフセット
+            # 時間表記を0:00形式に変更
+            time_str = f"{step['minute']}:{step['seconds']:02d}"
+            draw.text((table_x, y), time_str, 
                      font=font_small, fill=self.text_color)
-            draw.text((table_x + 400, y), f"{step['pour_ml']}ml", 
+            
+            # 総注湯量（累積）
+            cumulative_water += step['pour_ml']
+            draw.text((table_x + col1_width, y), f"{cumulative_water}ml", 
                      font=font_small, fill=self.text_color)
 
-        sy = table_y + len(self.steps_data) * row_h
-        draw.text((table_x, sy), "合計", font=font_small, fill=self.text_color)
-        draw.text((table_x + 400, sy), f"{sum(step['pour_ml'] for step in self.steps_data)}ml", 
-                 font=font_small, fill=self.text_color)
-
-        return sy + row_h + 10
+        return table_y + (len(self.steps_data) + 1) * row_h + 20
 
     def generate_image(self, access_token):
         try:
@@ -373,8 +381,8 @@ class RecipeImageGenerator:
 
             font, font_bold, font_small = self._setup_fonts()
 
-            # タイトル
-            title_text = "コーヒーレシピ"
+            # タイトル（レシピ名）
+            title_text = self.recipe_data['name']
             title_bbox = draw.textbbox((0, 0), title_text, font=font_bold)
             title_width = title_bbox[2] - title_bbox[0]
             title_x = (self.img_width - title_width) // 2
@@ -386,7 +394,29 @@ class RecipeImageGenerator:
 
             # テーブル
             table_start_y = y_position + 20
-            self._draw_table(draw, font_small, table_start_y)
+            table_end_y = self._draw_table(draw, font_small, table_start_y)
+
+            # 出来上がり量の表示
+            total_water = sum(step['pour_ml'] for step in self.steps_data)
+            # アイスモードの場合は氷量も加算
+            if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
+                try:
+                    ice_g = float(self.recipe_data['ice_g'])
+                except (ValueError, TypeError):
+                    ice_g = 0
+                total_water += ice_g
+            draw.text((ShareConstants.CARD_MARGIN + 40, table_end_y),
+                     f"出来上がり量: {int(total_water)} ml",
+                     font=font_small, fill=self.text_color)
+
+            # Powered by Co-fittingの表示
+            pb_text = "Powered by Co-fitting"
+            pb_bbox = draw.textbbox((0, 0), pb_text, font=font_small)
+            pb_w = pb_bbox[2] - pb_bbox[0]
+            pb_h = pb_bbox[3] - pb_bbox[1]
+            draw.text((self.img_width - ShareConstants.CARD_MARGIN - pb_w - 20,
+                      self.img_height - ShareConstants.CARD_MARGIN - pb_h - 40),
+                     pb_text, font=font_small, fill=self.bg_color)
 
             # 画像保存
             img_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
