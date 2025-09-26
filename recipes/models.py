@@ -24,12 +24,73 @@ class BaseRecipe(models.Model):
     
     def to_dict(self):
         """レシピを辞書形式に変換するメソッド"""
-        # サブクラスで実装
+        # ステップデータを取得
+        steps = self.get_steps()
+        steps_data = [
+            {
+                'step_number': step.step_number,
+                'minute': step.minute,
+                'seconds': step.seconds,
+                'total_water_ml_this_step': step.total_water_ml_this_step
+            }
+            for step in steps
+        ]
+        
+        # 基本情報を構築
+        base_data = {
+            'name': self.name,
+            'is_ice': self.is_ice,
+            'len_steps': self.len_steps,
+            'bean_g': self.bean_g,
+            'water_ml': self.water_ml,
+            'ice_g': self.ice_g,
+            'memo': self.memo,
+            'steps': steps_data
+        }
+        
+        # サブクラス固有のデータを追加
+        return self.add_specific_fields_to_dict(base_data)
+    
+    def get_steps(self):
+        """ステップを取得するメソッド（サブクラスで実装）"""
+        raise NotImplementedError("サブクラスで実装してください")
+    
+    def add_specific_fields_to_dict(self, base_data):
+        """サブクラス固有のフィールドを辞書に追加するメソッド（サブクラスで実装）"""
         raise NotImplementedError("サブクラスで実装してください")
     
     def create_steps_from_form_data(self, form_data):
         """フォームデータからレシピステップを作成する"""
-        # サブクラスで実装
+        total_water_ml = 0
+        
+        for step_number in range(1, self.len_steps + 1):
+            total_water_ml_this_step = form_data.get(f'step{step_number}_water')
+            minute = form_data.get(f'step{step_number}_minute')
+            second = form_data.get(f'step{step_number}_second')
+            
+            if total_water_ml_this_step and minute and second:
+                # ステップを作成
+                self.create_step(
+                    step_number=step_number,
+                    minute=int(minute),
+                    seconds=int(second),
+                    total_water_ml_this_step=float(total_water_ml_this_step)
+                )
+                total_water_ml = float(total_water_ml_this_step)
+        
+        # 最後のステップの総湯量をレシピの総湯量として設定
+        if total_water_ml > 0:
+            # アイスコーヒーの場合は氷量を足す
+            if self.is_ice and self.ice_g:
+                self.water_ml = total_water_ml + self.ice_g
+            else:
+                self.water_ml = total_water_ml
+            self.save()
+        
+        return self
+    
+    def create_step(self, step_number, minute, seconds, total_water_ml_this_step):
+        """ステップを作成するメソッド（サブクラスで実装）"""
         raise NotImplementedError("サブクラスで実装してください")
     
     def update_with_steps(self, form_data):
@@ -67,7 +128,7 @@ class BaseRecipeStep(models.Model):
         
         # 前のステップの累積湯量を取得
         previous_step = self.__class__.objects.filter(
-            **{self.get_recipe_field_name(): self.get_recipe_instance()},
+            recipe=self.recipe,
             step_number=self.step_number - 1
         ).first()
         
@@ -82,20 +143,13 @@ class BaseRecipeStep(models.Model):
         cumulative = 0
         for step_number in range(1, self.step_number + 1):
             step = self.__class__.objects.filter(
-                **{self.get_recipe_field_name(): self.get_recipe_instance()},
+                recipe=self.recipe,
                 step_number=step_number
             ).first()
             if step:
                 cumulative += step.pour_ml_this_step
         return cumulative
     
-    def get_recipe_field_name(self):
-        """レシピフィールド名を取得（サブクラスで実装）"""
-        raise NotImplementedError("サブクラスで実装してください")
-    
-    def get_recipe_instance(self):
-        """レシピインスタンスを取得（サブクラスで実装）"""
-        raise NotImplementedError("サブクラスで実装してください")
 
 
 class ShareConstants:
@@ -515,57 +569,39 @@ class PresetRecipe(BaseRecipe):
     def __str__(self):
         return self.name
     
-    def to_dict(self):
-        """レシピを辞書形式に変換するメソッド"""
-        steps = PresetRecipeStep.objects.filter(recipe=self).order_by('step_number')
-        steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
-        return {
-            'id': self.id,
-            'name': self.name,
-            'is_ice': self.is_ice,
-            'len_steps': self.len_steps,
-            'bean_g': self.bean_g,
-            'water_ml': self.water_ml,
-            'ice_g': self.ice_g,
-            'memo': self.memo,
-            'steps': steps_data
-        }
+    def get_steps(self):
+        """ステップを取得するメソッド"""
+        return PresetRecipeStep.objects.filter(recipe=self).order_by('step_number')
     
-    def create_steps_from_form_data(self, form_data):
-        """フォームデータからレシピステップを作成する"""
-        total_water_ml = 0
-        for step_number in range(1, self.len_steps + 1):
-            total_water_ml_this_step = form_data.get(f'step{step_number}_water')
-            minute = form_data.get(f'step{step_number}_minute')
-            second = form_data.get(f'step{step_number}_second')
-            
-            if total_water_ml_this_step and minute and second:
-                PresetRecipeStep.objects.create(
-                    recipe=self,
-                    step_number=step_number,
-                    minute=int(minute),
-                    seconds=int(second),
-                    total_water_ml_this_step=float(total_water_ml_this_step),
-                )
-                total_water_ml = float(total_water_ml_this_step)
-        
-        # 総湯量を更新
-        self.water_ml = total_water_ml
-        self.save()
-        return self
+    def add_specific_fields_to_dict(self, base_data):
+        """プリセットレシピ固有のフィールドを辞書に追加するメソッド"""
+        base_data['id'] = self.id
+        return base_data
+    
+    def create_step(self, step_number, minute, seconds, total_water_ml_this_step):
+        """ステップを作成するメソッド"""
+        PresetRecipeStep.objects.create(
+            recipe=self,
+            step_number=step_number,
+            minute=minute,
+            seconds=seconds,
+            total_water_ml_this_step=total_water_ml_this_step,
+        )
+    
     
     def create_with_user_and_steps(self, form_data, user):
         """ユーザーとステップを含めてレシピを作成する"""
-        self.water_ml = 0
         self.create_user = user
+        # まずレシピを保存（water_mlは後で設定）
+        self.water_ml = 0  # 一時的に0を設定
         self.save()
+        # ステップを作成（water_mlが設定される）
         self.create_steps_from_form_data(form_data)
         return self
     
     def update_with_steps(self, form_data):
         """ステップを含めてレシピを更新する"""
         self.update_from_form_data(form_data)
-        self.water_ml = 0
         self.save()
         
         # 既存のステップを削除
@@ -586,15 +622,6 @@ class PresetRecipeStep(BaseRecipeStep):
     def __str__(self):
         return f"Step {self.step_number} for {self.recipe.name}"
     
-    def get_recipe_field_name(self):
-        """レシピフィールド名を取得"""
-        return 'recipe'
-    
-    def get_recipe_instance(self):
-        """レシピインスタンスを取得"""
-        return self.recipe
-
-
 class SharedRecipe(BaseRecipe):
     """共有レシピ"""
     shared_by_user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
@@ -606,23 +633,16 @@ class SharedRecipe(BaseRecipe):
     def __str__(self):
         return f"Shared: {self.name} ({self.access_token})"
     
-    def to_dict(self):
-        """共有レシピを辞書形式に変換するメソッド"""
-        steps = SharedRecipeStep.objects.filter(recipe=self).order_by('step_number')
-        steps_data = [{'step_number': step.step_number, 'minute': step.minute, 'seconds': step.seconds, 'total_water_ml_this_step': step.total_water_ml_this_step} for step in steps]
-        return {
-            'name': self.name,
-            'shared_by_user': self.shared_by_user.username,
-            'is_ice': self.is_ice,
-            'ice_g': self.ice_g,
-            'len_steps': self.len_steps,
-            'bean_g': self.bean_g,
-            'water_ml': self.water_ml,
-            'memo': self.memo,
-            'created_at': self.created_at,
-            'access_token': self.access_token,
-            'steps': steps_data
-        }
+    def get_steps(self):
+        """ステップを取得するメソッド"""
+        return SharedRecipeStep.objects.filter(recipe=self).order_by('step_number')
+    
+    def add_specific_fields_to_dict(self, base_data):
+        """共有レシピ固有のフィールドを辞書に追加するメソッド"""
+        base_data['shared_by_user'] = self.shared_by_user.username
+        base_data['created_at'] = self.created_at
+        base_data['access_token'] = self.access_token
+        return base_data
     
     
     def create_steps_from_recipe_data(self, recipe_data):
@@ -638,23 +658,16 @@ class SharedRecipe(BaseRecipe):
             )
         return self
     
-    def create_steps_from_form_data(self, form_data):
-        """フォームデータから共有レシピステップを作成する（累積湯量をそのまま保存）"""
-        for step_number in range(1, self.len_steps + 1):
-            total_water_ml_this_step = form_data.get(f'step{step_number}_water')
-            minute = form_data.get(f'step{step_number}_minute')
-            second = form_data.get(f'step{step_number}_second')
-            
-            if total_water_ml_this_step and minute and second:
-                # フォームから受け取った累積湯量をそのまま保存
-                SharedRecipeStep.objects.create(
-                    recipe=self,
-                    step_number=step_number,
-                    minute=int(minute),
-                    seconds=int(second),
-                    total_water_ml_this_step=float(total_water_ml_this_step)
-                )
-        return self
+    def create_step(self, step_number, minute, seconds, total_water_ml_this_step):
+        """ステップを作成するメソッド"""
+        SharedRecipeStep.objects.create(
+            recipe=self,
+            step_number=step_number,
+            minute=minute,
+            seconds=seconds,
+            total_water_ml_this_step=total_water_ml_this_step
+        )
+    
     
     def update_with_steps(self, form_data):
         """ステップを含めて共有レシピを更新する"""
@@ -678,11 +691,3 @@ class SharedRecipeStep(BaseRecipeStep):
 
     def __str__(self):
         return f"SharedStep {self.step_number} for {self.recipe.name}"
-    
-    def get_recipe_field_name(self):
-        """レシピフィールド名を取得"""
-        return 'recipe'
-    
-    def get_recipe_instance(self):
-        """レシピインスタンスを取得"""
-        return self.recipe

@@ -110,6 +110,11 @@ class RecipeCreateTestCase(TestCase):
 
         self.assertEqual(response.status_code, 302)  # リダイレクト確認
         self.assertTrue(PresetRecipe.objects.filter(name="テストレシピ アイス", create_user=self.user).exists())  # DBに作成されたか確認
+        
+        # アイスコーヒーの場合、最後のステップの総湯量 + 氷量 = 総湯量になることを確認
+        recipe = PresetRecipe.objects.get(name="テストレシピ アイス", create_user=self.user)
+        expected_water_ml = 120 + 80  # 最後のステップの総湯量(120) + 氷量(80)
+        self.assertEqual(recipe.water_ml, expected_water_ml)
 
     def test_create_recipe_limit_exceeded(self):
         """プリセットレシピ作成時の上限チェック"""
