@@ -1,6 +1,3 @@
-"""
-メール送信のサービスクラス
-"""
 import threading
 from django.core.mail import send_mail
 from django.conf import settings
@@ -10,7 +7,7 @@ from django.utils import timezone
 
 class EmailService:
     """メール送信のサービスクラス"""
-    
+
     @staticmethod
     def send_signup_confirmation_email(user, confirmation_link):
         """サインアップ確認メールを送信"""
@@ -23,7 +20,7 @@ class EmailService:
             "このリンクは一度しか使用できませんのでご注意ください。"
         )
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
-    
+
     @staticmethod
     def send_login_notification_email(user, ip_address):
         """ログイン通知メールを送信"""
@@ -36,12 +33,12 @@ class EmailService:
             "もしこのログインに心当たりがない場合は、至急パスワードを変更してください。"
         )
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
-    
+
     @staticmethod
     def send_login_notification_async(user, ip_address):
         """ログイン通知メールを非同期で送信"""
         threading.Thread(target=EmailService.send_login_notification_email, args=(user, ip_address)).start()
-    
+
     @staticmethod
     def send_email_change_confirmation_email(user, new_email, confirmation_link):
         """メールアドレス変更確認メールを送信"""
@@ -55,7 +52,7 @@ class EmailService:
             "このリンクは一度しか使用できませんのでご注意ください。"
         )
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [new_email])
-    
+
     @staticmethod
     def send_payment_success_email(user):
         """支払い成功メールを送信"""
@@ -67,7 +64,7 @@ class EmailService:
             "これからもCo-fittingをよろしくお願いいたします。\n\n"
         )
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])
-    
+
     @staticmethod
     def send_payment_failed_email(user, request):
         """支払い失敗メールを送信"""

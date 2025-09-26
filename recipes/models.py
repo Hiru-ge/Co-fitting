@@ -1,7 +1,4 @@
 from django.db import models
-from django.utils import timezone
-from django.http import JsonResponse
-from datetime import timedelta
 import secrets
 import os
 from django.conf import settings
@@ -21,14 +18,14 @@ class BaseRecipe(models.Model):
     water_ml = models.FloatField()
     memo = models.TextField(blank=True, null=True, max_length=300)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    
+
     class Meta:
         abstract = True
-    
+
     def for_user(self, user):
         """指定ユーザーのレシピを取得"""
         return self.filter(created_by=user)
-    
+
     def to_dict(self):
         """レシピを辞書形式に変換するメソッド"""
         # ステップデータを取得
@@ -42,7 +39,7 @@ class BaseRecipe(models.Model):
             }
             for step in steps
         ]
-        
+
         # 基本情報を構築
         base_data = {
             'name': self.name,
@@ -54,27 +51,27 @@ class BaseRecipe(models.Model):
             'memo': self.memo,
             'steps': steps_data
         }
-        
+
         # サブクラス固有のデータを追加
         return self.add_specific_fields_to_dict(base_data)
-    
+
     def get_steps(self):
         """ステップを取得するメソッド（サブクラスで実装）"""
         raise NotImplementedError("サブクラスで実装してください")
-    
+
     def add_specific_fields_to_dict(self, base_data):
         """サブクラス固有のフィールドを辞書に追加するメソッド（サブクラスで実装）"""
         raise NotImplementedError("サブクラスで実装してください")
-    
+
     def create_steps_from_form_data(self, form_data):
         """フォームデータからレシピステップを作成する"""
         total_water_ml = 0
-        
+
         for step_number in range(1, self.len_steps + 1):
             total_water_ml_this_step = form_data.get(f'step{step_number}_water')
             minute = form_data.get(f'step{step_number}_minute')
             second = form_data.get(f'step{step_number}_second')
-            
+
             if total_water_ml_this_step and minute and second:
                 # ステップを作成
                 self.create_step(
@@ -84,7 +81,7 @@ class BaseRecipe(models.Model):
                     total_water_ml_this_step=float(total_water_ml_this_step)
                 )
                 total_water_ml = float(total_water_ml_this_step)
-        
+
         # 最後のステップの総湯量をレシピの総湯量として設定
         if total_water_ml > 0:
             # アイスコーヒーの場合は氷量を足す
@@ -93,18 +90,18 @@ class BaseRecipe(models.Model):
             else:
                 self.water_ml = total_water_ml
             self.save()
-        
+
         return self
-    
+
     def create_step(self, step_number, minute, seconds, total_water_ml_this_step):
         """ステップを作成するメソッド（サブクラスで実装）"""
         raise NotImplementedError("サブクラスで実装してください")
-    
+
     def update_with_steps(self, form_data):
         """ステップを含めてレシピを更新する"""
         # サブクラスで実装
         raise NotImplementedError("サブクラスで実装してください")
-    
+
     def update_from_form_data(self, form_data):
         """フォームデータからレシピの基本情報を更新する"""
         self.name = form_data.get('name', self.name)
@@ -126,24 +123,24 @@ class BaseRecipeStep(models.Model):
     class Meta:
         abstract = True
         ordering = ['step_number']
-    
+
     @property
     def pour_ml_this_step(self):
         """このステップでの注湯量を計算する"""
         if self.step_number == 1:
             return self.total_water_ml_this_step
-        
+
         # 前のステップの累積湯量を取得
         previous_step = self.__class__.objects.filter(
             recipe=self.recipe,
             step_number=self.step_number - 1
         ).first()
-        
+
         if previous_step:
             return self.total_water_ml_this_step - previous_step.total_water_ml_this_step
-        
+
         return self.total_water_ml_this_step
-    
+
     @property
     def cumulative_water_ml(self):
         """このステップまでの累積湯量を計算する"""
@@ -158,11 +155,9 @@ class BaseRecipeStep(models.Model):
         return cumulative
 
 
-
-
 class RecipeImageGenerator:
     """レシピ画像生成クラス"""
-    
+
     def __init__(self, recipe_data, steps_data):
         self.recipe_data = recipe_data
         self.steps_data = steps_data
@@ -198,12 +193,12 @@ class RecipeImageGenerator:
         return font, font_bold, font_small
 
     def _draw_basic_info(self, draw, font_small, y_position):
-        draw.text((ImageConstants.CARD_MARGIN+40, y_position), 
-                 f"豆量: {int(self.recipe_data['bean_g'])}g", font=font_small, fill=self.text_color)
+        draw.text((ImageConstants.CARD_MARGIN+40, y_position),
+                  f"豆量: {int(self.recipe_data['bean_g'])}g", font=font_small, fill=self.text_color)
         y_position += 40
         if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
-            draw.text((ImageConstants.CARD_MARGIN+40, y_position), 
-                     f"氷量: {int(self.recipe_data['ice_g'])}g", font=font_small, fill=self.text_color)
+            draw.text((ImageConstants.CARD_MARGIN+40, y_position),
+                      f"氷量: {int(self.recipe_data['ice_g'])}g", font=font_small, fill=self.text_color)
             y_position += 40
         return y_position
 
@@ -211,7 +206,7 @@ class RecipeImageGenerator:
         table_x = ImageConstants.CARD_MARGIN + 40
         table_y = start_y
         row_h = ImageConstants.ROW_HEIGHT
-        
+
         # カラム幅の設定
         col1_width = 200  # 時間
         col2_width = 300  # 総注湯量
@@ -226,12 +221,12 @@ class RecipeImageGenerator:
             y = table_y + (i + 1) * row_h + 10  # ヘッダー分のオフセット
             # 時間表記を0:00形式に変更
             time_str = f"{step['minute']}:{step['seconds']:02d}"
-            draw.text((table_x, y), time_str, 
-                     font=font_small, fill=self.text_color)
-            
+            draw.text((table_x, y), time_str,
+                      font=font_small, fill=self.text_color)
+
             # 総注湯量（pour_mlは既に累積総注湯量、整数表示）
-            draw.text((table_x + col1_width, y), f"{int(step['pour_ml'])}ml", 
-                     font=font_small, fill=self.text_color)
+            draw.text((table_x + col1_width, y), f"{int(step['pour_ml'])}ml",
+                      font=font_small, fill=self.text_color)
 
         return table_y + (len(self.steps_data) + 1) * row_h + 20
 
@@ -243,15 +238,15 @@ class RecipeImageGenerator:
             def rounded_rectangle(draw, xy, radius, fill):
                 draw.rounded_rectangle(xy, radius=radius, fill=fill)
 
-            rounded_rectangle(draw, 
-                            (
-                                ImageConstants.CARD_MARGIN, 
-                                ImageConstants.CARD_MARGIN, 
-                                self.img_width - ImageConstants.CARD_MARGIN, 
-                                self.img_height - ImageConstants.CARD_MARGIN
-                            ), 
-                            radius=ImageConstants.CARD_RADIUS, 
-                            fill=self.card_color)
+            rounded_rectangle(draw,
+                              (
+                                  ImageConstants.CARD_MARGIN,
+                                  ImageConstants.CARD_MARGIN,
+                                  self.img_width - ImageConstants.CARD_MARGIN,
+                                  self.img_height - ImageConstants.CARD_MARGIN
+                              ),
+                              radius=ImageConstants.CARD_RADIUS,
+                              fill=self.card_color)
 
             font, font_bold, font_small = self._setup_fonts()
 
@@ -280,8 +275,8 @@ class RecipeImageGenerator:
                     ice_g = 0
                 total_water += ice_g
             draw.text((ImageConstants.CARD_MARGIN + 40, table_end_y),
-                     f"出来上がり量: {int(total_water)} ml",
-                     font=font_small, fill=self.text_color)
+                      f"出来上がり量: {int(total_water)} ml",
+                      font=font_small, fill=self.text_color)
 
             # Powered by Co-fittingの表示
             pb_text = "Powered by Co-fitting"
@@ -290,7 +285,7 @@ class RecipeImageGenerator:
             pb_h = pb_bbox[3] - pb_bbox[1]
             draw.text((self.img_width - ImageConstants.CARD_MARGIN - pb_w - 20,
                       self.img_height - ImageConstants.CARD_MARGIN - pb_h - 40),
-                     pb_text, font=font_small, fill=self.bg_color)
+                      pb_text, font=font_small, fill=self.bg_color)
 
             # 画像保存
             img_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
@@ -313,23 +308,23 @@ def generate_recipe_image(recipe_data, steps_data, access_token):
 
 class PresetRecipe(BaseRecipe):
     """プリセットレシピ"""
-    
+
     def __str__(self):
         return self.name
-    
+
     @classmethod
     def default_presets(cls):
         """デフォルトプリセットを取得"""
         default_user = User.objects.get(username='DefaultPreset')
         return cls.objects.filter(created_by=default_user)
-    
+
     @classmethod
     def get_preset_recipes_for_user(cls, user):
         """ユーザーのプリセットレシピとデフォルトプリセットを取得"""
         user_preset_recipes = cls.objects.filter(created_by=user)
         default_preset_recipes = cls.default_presets()
         return user_preset_recipes, default_preset_recipes
-    
+
     @classmethod
     def check_preset_limit_or_error(cls, user):
         """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
@@ -337,25 +332,25 @@ class PresetRecipe(BaseRecipe):
         if current_preset_count >= user.preset_limit:
             if user.is_subscribed:
                 return ResponseHelper.create_error_response(
-                    'preset_limit_exceeded_premium', 
+                    'preset_limit_exceeded_premium',
                     'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
                 )
             else:
                 return ResponseHelper.create_error_response(
-                    'preset_limit_exceeded', 
+                    'preset_limit_exceeded',
                     'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。'
                 )
         return None
-    
+
     def get_steps(self):
         """ステップを取得するメソッド"""
         return PresetRecipeStep.objects.filter(recipe=self).order_by('step_number')
-    
+
     def add_specific_fields_to_dict(self, base_data):
         """プリセットレシピ固有のフィールドを辞書に追加するメソッド"""
         base_data['id'] = self.id
         return base_data
-    
+
     def create_step(self, step_number, minute, seconds, total_water_ml_this_step):
         """ステップを作成するメソッド"""
         PresetRecipeStep.objects.create(
@@ -365,8 +360,7 @@ class PresetRecipe(BaseRecipe):
             seconds=seconds,
             total_water_ml_this_step=total_water_ml_this_step,
         )
-    
-    
+
     def create_with_user_and_steps(self, form_data, user):
         """ユーザーとステップを含めてレシピを作成する"""
         self.created_by = user
@@ -376,15 +370,15 @@ class PresetRecipe(BaseRecipe):
         # ステップを作成（water_mlが設定される）
         self.create_steps_from_form_data(form_data)
         return self
-    
+
     def update_with_steps(self, form_data):
         """ステップを含めてレシピを更新する"""
         self.update_from_form_data(form_data)
         self.save()
-        
+
         # 既存のステップを削除
         PresetRecipeStep.objects.filter(recipe=self).delete()
-        
+
         # 新しいステップを作成
         self.create_steps_from_form_data(form_data)
         return self
@@ -393,43 +387,44 @@ class PresetRecipe(BaseRecipe):
 class PresetRecipeStep(BaseRecipeStep):
     """プリセットレシピステップ"""
     recipe = models.ForeignKey(to=PresetRecipe, on_delete=models.CASCADE, related_name='steps')
-    
+
     class Meta:
         ordering = ['step_number']  # 手順の順番で並べる
 
     def __str__(self):
         return f"Step {self.step_number} for {self.recipe.name}"
-    
+
+
 class SharedRecipe(BaseRecipe):
     """共有レシピ"""
     created_at = models.DateTimeField(auto_now_add=True)
     access_token = models.CharField(max_length=32, unique=True)
-    
+
     def __str__(self):
         return f"Shared: {self.name} ({self.access_token})"
-    
+
     @classmethod
     def by_token(cls, token):
         """トークンで共有レシピを取得"""
         return cls.objects.filter(access_token=token).first()
-    
+
     @classmethod
     def get_shared_recipe_data(cls, shared_token):
         """共有レシピデータを取得（エラーハンドリング付き）"""
         if not shared_token:
             return None
-        
+
         shared_recipe = cls.by_token(shared_token)
         if not shared_recipe:
             return {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
-        
+
         return shared_recipe.to_dict()
-    
+
     @classmethod
     def create_shared_recipe_from_data(cls, recipe_data, user):
         """レシピデータから共有レシピを作成する"""
         access_token = secrets.token_hex(AppConstants.TOKEN_LENGTH)
-        
+
         shared_recipe = cls.objects.create(
             name=recipe_data['name'],
             created_by=user,
@@ -441,12 +436,12 @@ class SharedRecipe(BaseRecipe):
             memo=recipe_data.get('memo', ''),
             access_token=access_token
         )
-        
+
         # Model層のメソッドを使用してステップを作成
         shared_recipe.create_steps_from_recipe_data(recipe_data)
-        
+
         return shared_recipe
-    
+
     @classmethod
     def get_shared_recipe_or_404(cls, token):
         """共有レシピを取得し、存在・期限チェックを行う"""
@@ -455,23 +450,23 @@ class SharedRecipe(BaseRecipe):
             return None, ResponseHelper.create_error_response('not_found', 'この共有リンクは存在しません。', 404)
 
         return shared_recipe, None
-    
+
     @classmethod
     def check_share_limit_or_error(cls, user):
         """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
         current_count = cls.objects.filter(created_by=user).count()
         is_subscribed = getattr(user, 'is_subscribed', False)
-        
+
         if is_subscribed:
             limit = AppConstants.SHARE_LIMIT_PREMIUM
             limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
         else:
             limit = AppConstants.SHARE_LIMIT_FREE
             limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{AppConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
-        
+
         if current_count >= limit:
             return ResponseHelper.create_error_response(
-                'share_limit_exceeded', 
+                'share_limit_exceeded',
                 limit_message,
                 status_code=429,
                 details={
@@ -480,9 +475,9 @@ class SharedRecipe(BaseRecipe):
                     'is_premium': is_subscribed
                 }
             )
-        
+
         return None
-    
+
     @classmethod
     def prepare_image_data(cls, data):
         """画像生成用のステップデータを準備"""
@@ -499,7 +494,7 @@ class SharedRecipe(BaseRecipe):
                 'cumulative_water_ml': cumulative_water_ml
             })
         return steps_for_image
-    
+
     @classmethod
     def copy_to_preset(cls, shared_recipe, user):
         """共有レシピをプリセットとして複製"""
@@ -507,7 +502,7 @@ class SharedRecipe(BaseRecipe):
         error_response = PresetRecipe.check_preset_limit_or_error(user)
         if error_response:
             return None, error_response
-        
+
         try:
             # 共有レシピをプリセットとして複製
             new_recipe = PresetRecipe.objects.create(
@@ -539,7 +534,7 @@ class SharedRecipe(BaseRecipe):
                 'レシピの保存に失敗しました。しばらく時間をおいてから再度お試しください。',
                 500
             )
-    
+
     @classmethod
     def delete_with_image(cls, shared_recipe):
         """共有レシピと画像ファイルを削除"""
@@ -548,10 +543,10 @@ class SharedRecipe(BaseRecipe):
             image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
             if os.path.exists(image_path):
                 os.remove(image_path)
-            
+
             # 共有レシピを削除
             shared_recipe.delete()
-            
+
             return ResponseHelper.create_success_response('共有レシピを削除しました。')
         except Exception as e:
             return ResponseHelper.create_error_response(
@@ -559,14 +554,14 @@ class SharedRecipe(BaseRecipe):
                 '共有レシピの削除に失敗しました。',
                 500
             )
-    
+
     @classmethod
     def get_user_shared_recipes_data(cls, user):
         """ユーザーの共有レシピ一覧データを取得"""
         try:
             shared_recipes = cls.objects.filter(created_by=user).order_by('-created_at')
             recipes_data = []
-            
+
             for recipe in shared_recipes:
                 recipes_data.append({
                     'access_token': recipe.access_token,
@@ -579,23 +574,22 @@ class SharedRecipe(BaseRecipe):
                     'len_steps': recipe.len_steps,
                     'memo': recipe.memo
                 })
-            
+
             return ResponseHelper.create_data_response({'shared_recipes': recipes_data})
         except Exception as e:
             return ResponseHelper.create_server_error_response('共有レシピ一覧の取得に失敗しました。')
-    
+
     def get_steps(self):
         """ステップを取得するメソッド"""
         return SharedRecipeStep.objects.filter(recipe=self).order_by('step_number')
-    
+
     def add_specific_fields_to_dict(self, base_data):
         """共有レシピ固有のフィールドを辞書に追加するメソッド"""
         base_data['shared_by_user'] = self.created_by.username
         base_data['created_at'] = self.created_at
         base_data['access_token'] = self.access_token
         return base_data
-    
-    
+
     def create_steps_from_recipe_data(self, recipe_data):
         """レシピデータから共有レシピステップを作成する（累積湯量をそのまま保存）"""
         for i, step in enumerate(recipe_data['steps']):
@@ -608,7 +602,7 @@ class SharedRecipe(BaseRecipe):
                 total_water_ml_this_step=step['total_water_ml_this_step']
             )
         return self
-    
+
     def create_step(self, step_number, minute, seconds, total_water_ml_this_step):
         """ステップを作成するメソッド"""
         SharedRecipeStep.objects.create(
@@ -618,16 +612,15 @@ class SharedRecipe(BaseRecipe):
             seconds=seconds,
             total_water_ml_this_step=total_water_ml_this_step
         )
-    
-    
+
     def update_with_steps(self, form_data):
         """ステップを含めて共有レシピを更新する"""
         self.update_from_form_data(form_data)
         self.save()  # 基本情報を保存
-        
+
         # 既存のステップを削除
         SharedRecipeStep.objects.filter(recipe=self).delete()
-        
+
         # 新しいステップを作成
         self.create_steps_from_form_data(form_data)
         return self

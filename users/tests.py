@@ -6,10 +6,7 @@ from datetime import timedelta
 from django.core.management import call_command
 from unittest.mock import patch
 from django_recaptcha.client import RecaptchaResponse
-
-from tests.helpers import (
-    create_test_user, create_default_preset_user, login_test_user, BaseTestCase
-)
+from tests.helpers import create_test_user, login_test_user, BaseTestCase
 from users.models import User
 
 
@@ -209,7 +206,7 @@ class PasswordChangeTestCase(BaseTestCase):
             "new_password2": "newpassword123",
         })
         self.assertEqual(response.status_code, 200)  # JSONレスポンス
-        
+
         # レスポンス内容を確認
         import json
         response_data = json.loads(response.content.decode('utf-8'))
@@ -217,7 +214,7 @@ class PasswordChangeTestCase(BaseTestCase):
         self.assertIn('パスワードを変更しました', response_data['message'])
         self.assertIn('ログアウトされました', response_data['message'])
         self.assertEqual(response_data['redirect_url'], '/users/login')
-        
+
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))  # パスワード変更が適用されているか
 
@@ -250,27 +247,27 @@ class PasswordChangeTestCase(BaseTestCase):
         """Model層のchange_user_passwordメソッドの単体テスト"""
         from django.test import RequestFactory
         from django.contrib.sessions.middleware import SessionMiddleware
-        
+
         # パスワード変更前の確認
         self.assertTrue(self.user.check_password("oldpassword123"))
-        
+
         # Model層のメソッドを直接テスト（リクエストなし）
         User.objects.change_user_password(self.user, "newpassword123")
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))
-        
+
         # リクエスト付きでテスト（ログアウト処理も含む）
         factory = RequestFactory()
         request = factory.post('/test/')
-        
+
         # セッションミドルウェアを適用してセッションを有効化
         middleware = SessionMiddleware(lambda req: None)
         middleware.process_request(request)
         request.session.save()
-        
+
         # ユーザーをリクエストに設定（ログイン状態をシミュレート）
         request.user = self.user
-        
+
         # リクエスト付きでパスワード変更（ログアウト処理も含む）
         User.objects.change_user_password(self.user, "anotherpassword123", request)
         self.user.refresh_from_db()
@@ -356,7 +353,7 @@ class AccountDeleteTestCase(BaseTestCase):
 
 class UserModelTestCase(BaseTestCase):
     """ユーザーモデルのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -385,7 +382,7 @@ class UserModelTestCase(BaseTestCase):
             email='new@example.com',
             password='newpassword123'
         )
-        
+
         self.assertEqual(user.username, 'newuser')
         self.assertEqual(user.email, 'new@example.com')
         self.assertEqual(user.preset_limit, 1)
@@ -400,7 +397,7 @@ class UserModelTestCase(BaseTestCase):
             email='admin@example.com',
             password='adminpassword123'
         )
-        
+
         self.assertEqual(superuser.username, 'admin')
         self.assertEqual(superuser.email, 'admin@example.com')
         self.assertEqual(superuser.preset_limit, 1)
@@ -432,7 +429,7 @@ class UserModelTestCase(BaseTestCase):
 
 class UserFormTestCase(BaseTestCase):
     """ユーザーフォームのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -441,7 +438,7 @@ class UserFormTestCase(BaseTestCase):
     def test_signup_form_valid_data(self):
         """有効なデータでサインアップフォームが動作することをテスト"""
         from .forms import SignUpForm
-        
+
         form_data = {
             'username': 'newuser',
             'email': 'new@example.com',
@@ -449,7 +446,7 @@ class UserFormTestCase(BaseTestCase):
             'password2': 'newpassword123',
             'captcha': 'test'
         }
-        
+
         form = SignUpForm(data=form_data)
         # reCAPTCHAのテスト環境では有効性チェックが失敗する場合がある
         # フォームの基本構造が正しいことを確認
@@ -461,7 +458,7 @@ class UserFormTestCase(BaseTestCase):
     def test_signup_form_duplicate_email(self):
         """重複するメールアドレスでサインアップフォームがエラーを返すことをテスト"""
         from .forms import SignUpForm
-        
+
         form_data = {
             'username': 'newuser',
             'email': 'test@example.com',  # 既存のメールアドレス
@@ -469,7 +466,7 @@ class UserFormTestCase(BaseTestCase):
             'password2': 'newpassword123',
             'captcha': 'test'
         }
-        
+
         form = SignUpForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('email', form.errors)
@@ -477,7 +474,7 @@ class UserFormTestCase(BaseTestCase):
     def test_signup_form_password_mismatch(self):
         """パスワードが一致しない場合にサインアップフォームがエラーを返すことをテスト"""
         from .forms import SignUpForm
-        
+
         form_data = {
             'username': 'newuser',
             'email': 'new@example.com',
@@ -485,7 +482,7 @@ class UserFormTestCase(BaseTestCase):
             'password2': 'differentpassword123',  # 異なるパスワード
             'captcha': 'test'
         }
-        
+
         form = SignUpForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('password2', form.errors)
@@ -493,22 +490,22 @@ class UserFormTestCase(BaseTestCase):
     def test_email_change_form_valid_data(self):
         """有効なデータでメール変更フォームが動作することをテスト"""
         from .forms import EmailChangeForm
-        
+
         form_data = {
             'email': 'newemail@example.com'
         }
-        
+
         form = EmailChangeForm(data=form_data)
         self.assertTrue(form.is_valid())
 
     def test_email_change_form_duplicate_email(self):
         """重複するメールアドレスでメール変更フォームがエラーを返すことをテスト"""
         from .forms import EmailChangeForm
-        
+
         form_data = {
             'email': 'test@example.com'  # 既存のメールアドレス
         }
-        
+
         form = EmailChangeForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('email', form.errors)
@@ -516,7 +513,7 @@ class UserFormTestCase(BaseTestCase):
     def test_signup_form_save_method(self):
         """サインアップフォームのsaveメソッドが正しく動作することをテスト"""
         from .forms import SignUpForm
-        
+
         form_data = {
             'username': 'newuser',
             'email': 'new@example.com',
@@ -524,7 +521,7 @@ class UserFormTestCase(BaseTestCase):
             'password2': 'newpassword123',
             'captcha': 'test'
         }
-        
+
         form = SignUpForm(data=form_data)
         if form.is_valid():
             user = form.save()
@@ -535,7 +532,7 @@ class UserFormTestCase(BaseTestCase):
 
 class UserViewsIntegrationTestCase(BaseTestCase):
     """ユーザービューの統合テスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -547,7 +544,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
             'username': 'test@example.com',
             'password': 'securepassword123'
         })
-        
+
         # ログイン成功後はマイページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('recipes:mypage'))
@@ -555,9 +552,9 @@ class UserViewsIntegrationTestCase(BaseTestCase):
     def test_logout_redirect_after_successful_logout(self):
         """ログアウト成功後のリダイレクトが正しいことをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         response = self.client.post(reverse('users:logout'))
-        
+
         # ログアウト後はログインページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('users:login'))
@@ -566,7 +563,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
         """サインアップ成功後のリダイレクトが正しいことをテスト"""
         with patch("django_recaptcha.fields.client.submit") as mocked_submit:
             mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-            
+
             response = self.client.post(reverse('users:signup_request'), {
                 'username': 'newuser',
                 'email': 'new@example.com',
@@ -574,7 +571,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
                 'password2': 'newpassword123',
                 'g-recaptcha-response': 'test'
             })
-            
+
             # サインアップ成功後は確認メール送信完了ページにリダイレクトされる
             self.assertEqual(response.status_code, 302)
 
@@ -583,7 +580,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
         response = self.client.post(reverse('users:password_reset'), {
             'email': 'test@example.com'
         })
-        
+
         # パスワードリセット成功後は完了ページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('users:password_reset_done'))
@@ -591,11 +588,11 @@ class UserViewsIntegrationTestCase(BaseTestCase):
     def test_email_change_redirect_after_successful_request(self):
         """メール変更成功後のリダイレクトが正しいことをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         response = self.client.post(reverse('users:email_change_request'), {
             'email': 'newemail@example.com'
         })
-        
+
         # メール変更成功後はマイページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('recipes:mypage'))
@@ -603,9 +600,9 @@ class UserViewsIntegrationTestCase(BaseTestCase):
     def test_account_delete_redirect_after_successful_deletion(self):
         """アカウント削除成功後のリダイレクトが正しいことをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         response = self.client.post(reverse('users:account_delete'))
-        
+
         # アカウント削除後はインデックスページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('recipes:index'))
@@ -613,7 +610,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
 
 class UserSecurityTestCase(BaseTestCase):
     """ユーザーセキュリティのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -632,7 +629,7 @@ class UserSecurityTestCase(BaseTestCase):
     def test_csrf_protection_on_password_change(self):
         """パスワード変更フォームにCSRF保護が適用されていることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         response = self.client.get(reverse('users:password_change'))
         # パスワード変更はAPIエンドポイントのため、CSRFトークンが直接表示されない場合がある
         # レスポンスが正常に返されることを確認
@@ -641,7 +638,7 @@ class UserSecurityTestCase(BaseTestCase):
     def test_csrf_protection_on_email_change(self):
         """メール変更フォームにCSRF保護が適用されていることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         response = self.client.get(reverse('users:email_change_request'))
         # メール変更はAPIエンドポイントのため、CSRFトークンが直接表示されない場合がある
         # レスポンスが正常に返されることを確認
@@ -657,7 +654,7 @@ class UserSecurityTestCase(BaseTestCase):
             'password2': '123',
             'g-recaptcha-response': 'test'
         })
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'このパスワードは短すぎます')
 
@@ -671,7 +668,7 @@ class UserSecurityTestCase(BaseTestCase):
             'password2': 'validpassword123',
             'g-recaptcha-response': 'test'
         })
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '有効なメールアドレスを入力してください')
 
@@ -685,14 +682,14 @@ class UserSecurityTestCase(BaseTestCase):
             'password2': 'validpassword123',
             'g-recaptcha-response': 'test'
         })
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'このフィールドは必須です')
 
 
 class UserSessionTestCase(BaseTestCase):
     """ユーザーセッションのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -704,31 +701,31 @@ class UserSessionTestCase(BaseTestCase):
             'username': 'test@example.com',
             'password': 'securepassword123'
         })
-        
+
         # セッションにユーザーIDが保存されていることを確認
         self.assertIn('_auth_user_id', self.client.session)
 
     def test_session_clearing_on_logout(self):
         """ログアウト時にセッションがクリアされることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # ログイン後はセッションにユーザーIDが存在
         self.assertIn('_auth_user_id', self.client.session)
-        
+
         self.client.post(reverse('users:logout'))
-        
+
         # ログアウト後はセッションからユーザーIDが削除
         self.assertNotIn('_auth_user_id', self.client.session)
 
     def test_session_persistence_across_requests(self):
         """セッションがリクエスト間で維持されることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # 複数のリクエストを送信
         response1 = self.client.get(reverse('recipes:mypage'))
         # indexページはDefaultPresetユーザーが必要なため、別のページを使用
         response2 = self.client.get(reverse('articles:how-to-use'))
-        
+
         # 両方のリクエストでログイン状態が維持されていることを確認
         self.assertEqual(response1.status_code, 200)
         self.assertEqual(response2.status_code, 200)

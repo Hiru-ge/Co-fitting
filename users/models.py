@@ -1,17 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.contrib.auth.tokens import default_token_generator
-from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import logout
 from Co_fitting.services.email_service import EmailService
 from Co_fitting.utils.security_utils import SecurityUtils
-
-
-
-
 
 
 class UserManager(BaseUserManager):
@@ -40,31 +32,31 @@ class UserManager(BaseUserManager):
         user.is_superuser = True
         user.save(using=self._db)
         return user
-    
+
     @staticmethod
     def get_client_ip(request):
         """リクエストのIPアドレスを取得"""
         return SecurityUtils.get_client_ip(request)
-    
+
     @staticmethod
     def send_login_notification_async(user, ip_address):
         """ログイン通知メールを非同期で送信"""
         EmailService.send_login_notification_async(user, ip_address)
-    
+
     @staticmethod
     def activate_user(user):
         """ユーザーアカウントを有効化"""
         user.is_active = True
         user.save()
         return user
-    
+
     @staticmethod
     def change_user_email(user, new_email):
         """ユーザーのメールアドレスを変更"""
         user.email = new_email
         user.save()
         return user
-    
+
     @staticmethod
     def deactivate_user(user):
         """ユーザーアカウントを論理削除"""
@@ -72,7 +64,7 @@ class UserManager(BaseUserManager):
         user.deactivated_at = timezone.now()
         user.save()
         return user
-    
+
     @staticmethod
     def create_inactive_user_with_confirmation(form, request):
         """非アクティブユーザーを作成して確認メールを送信"""
@@ -85,9 +77,9 @@ class UserManager(BaseUserManager):
             user, request, "users:signup_confirm"
         )
         EmailService.send_signup_confirmation_email(user, confirmation_link)
-        
+
         return user
-    
+
     @staticmethod
     def send_email_change_confirmation(user, new_email, request):
         """メールアドレス変更確認メールを送信"""
@@ -95,7 +87,7 @@ class UserManager(BaseUserManager):
             user, request, "users:email_change_confirm", new_email
         )
         EmailService.send_email_change_confirmation_email(user, new_email, confirmation_link)
-    
+
     @staticmethod
     def get_subscription_status(user):
         """ユーザーのサブスクリプション状態を取得"""
@@ -103,17 +95,17 @@ class UserManager(BaseUserManager):
             return "契約中"
         else:
             return "未契約"
-    
+
     @staticmethod
     def change_user_password(user, new_password, request=None):
         """ユーザーのパスワードを変更し、必要に応じてログアウト処理を行う"""
         user.set_password(new_password)
         user.save()
-        
+
         # リクエストが提供されている場合はログアウト処理を行う
         if request:
             logout(request)
-        
+
         return user
 
 

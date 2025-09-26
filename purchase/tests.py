@@ -1,13 +1,8 @@
-from django.test import TestCase
 from django.urls import reverse
 from unittest.mock import MagicMock, patch
 import json
-
-from tests.helpers import (
-    create_test_user, create_test_recipe, login_test_user, BaseTestCase
-)
-from users.models import User
-from recipes.models import PresetRecipe, PresetRecipeStep
+from tests.helpers import create_test_user, create_test_recipe, login_test_user, BaseTestCase
+from recipes.models import PresetRecipe
 
 
 class StripePaymentTest(BaseTestCase):
@@ -79,7 +74,7 @@ class StripePaymentTest(BaseTestCase):
             )
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
-        
+
         # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
         subject, message, from_email, recipient_list = args
@@ -176,7 +171,7 @@ class StripePaymentTest(BaseTestCase):
 
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
-        
+
         # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
         subject, message, from_email, recipient_list = args
@@ -186,7 +181,7 @@ class StripePaymentTest(BaseTestCase):
 
 class PurchaseViewsTestCase(BaseTestCase):
     """購入ビューのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -198,17 +193,13 @@ class PurchaseViewsTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('users:login')))
 
-
-
-
-
     def test_get_preset_limit_api(self):
         """プリセット制限取得APIのテスト"""
         login_test_user(self, user=self.user)
-        
+
         response = self.client.get(reverse('purchase:get_preset_limit'))
         self.assertEqual(response.status_code, 200)
-        
+
         response_data = json.loads(response.content)
         self.assertEqual(response_data['preset_limit'], self.user.preset_limit)
 
@@ -228,34 +219,34 @@ class PurchaseViewsTestCase(BaseTestCase):
     def test_create_portal_session_success(self, mock_portal_session):
         """ポータルセッション作成が正常に動作することをテスト"""
         login_test_user(self, user=self.user)
-        
+
         # ユーザーにStripe顧客IDを設定
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
-        
+
         # モックの設定
         mock_session = MagicMock()
         mock_session.url = 'https://billing.stripe.com/session123'
         mock_portal_session.return_value = mock_session
-        
+
         response = self.client.post(reverse('purchase:create_portal_session'))
-        
+
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, 'https://billing.stripe.com/session123')
 
     def test_create_portal_session_no_customer_id(self):
         """Stripe顧客IDがない場合のポータルセッション作成エラーテスト"""
         login_test_user(self, user=self.user)
-        
+
         response = self.client.post(reverse('purchase:create_portal_session'))
-        
+
         # エラーレスポンスが返されることを確認
         self.assertIn(response.status_code, [200, 400, 500])
 
 
 class PurchaseWebhookTestCase(BaseTestCase):
     """購入Webhookのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -268,14 +259,14 @@ class PurchaseWebhookTestCase(BaseTestCase):
             data='invalid json',
             content_type='application/json'
         )
-        
+
         self.assertEqual(response.status_code, 400)
 
     def test_webhook_customer_subscription_updated(self):
         """サブスクリプション更新イベントのテスト"""
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
-        
+
         event_data = {
             "type": "customer.subscription.updated",
             "data": {
@@ -285,20 +276,20 @@ class PurchaseWebhookTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
             content_type='application/json'
         )
-        
+
         self.assertEqual(response.status_code, 200)
 
     def test_webhook_customer_subscription_created(self):
         """サブスクリプション作成イベントのテスト"""
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
-        
+
         event_data = {
             "type": "customer.subscription.created",
             "data": {
@@ -308,20 +299,20 @@ class PurchaseWebhookTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
             content_type='application/json'
         )
-        
+
         self.assertEqual(response.status_code, 200)
 
     def test_webhook_invoice_created(self):
         """請求書作成イベントのテスト"""
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
-        
+
         event_data = {
             "type": "invoice.created",
             "data": {
@@ -330,13 +321,13 @@ class PurchaseWebhookTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
             content_type='application/json'
         )
-        
+
         # イベントが処理されることを確認
         self.assertIn(response.status_code, [200, 400])
 
@@ -344,7 +335,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
         """請求書支払い成功イベントのテスト"""
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
-        
+
         event_data = {
             "type": "invoice.paid",
             "data": {
@@ -353,18 +344,18 @@ class PurchaseWebhookTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
                 content_type='application/json'
             )
-        
+
         # イベントが処理されることを確認
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
-        
+
         # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
         subject, message, from_email, recipient_list = args
@@ -375,7 +366,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
         """請求書支払い失敗イベントのテスト"""
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
-        
+
         event_data = {
             "type": "invoice.payment_failed",
             "data": {
@@ -384,17 +375,17 @@ class PurchaseWebhookTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
                 content_type='application/json'
             )
-        
+
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
-        
+
         # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
         subject, message, from_email, recipient_list = args
@@ -404,7 +395,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
 
 class PurchaseIntegrationTestCase(BaseTestCase):
     """購入機能の統合テスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -413,17 +404,17 @@ class PurchaseIntegrationTestCase(BaseTestCase):
     def test_complete_purchase_flow(self):
         """完全な購入フローのテスト"""
         login_test_user(self, user=self.user)
-        
+
         # 1. チェックアウトセッション作成
         with patch("purchase.models.StripeService.create_checkout_session") as mock_stripe_session:
             mock_session = MagicMock()
             mock_session.url = reverse("purchase:checkout_success")
             mock_stripe_session.return_value = mock_session
-            
+
             response = self.client.post(reverse('purchase:create_checkout_session'))
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse("purchase:checkout_success"))
-        
+
         # 2. チェックアウト完了イベント
         customer_id = 'cus_test123'
         event_data = {
@@ -439,18 +430,18 @@ class PurchaseIntegrationTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
             content_type='application/json'
         )
         self.assertEqual(response.status_code, 200)
-        
+
         # 3. ユーザーにStripe顧客IDが設定されることを確認
         self.user.refresh_from_db()
         self.assertEqual(self.user.stripe_customer_id, customer_id)
-        
+
         # 4. 支払い完了イベント
         event_data = {
             "type": "invoice.paid",
@@ -460,23 +451,23 @@ class PurchaseIntegrationTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
                 content_type='application/json'
             )
-        
+
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
-        
+
         # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
         subject, message, from_email, recipient_list = args
         self.assertEqual(subject, "支払い完了通知")
         self.assertEqual(recipient_list, [self.user.email])
-        
+
         # 5. ユーザーのサブスクリプション状態が更新されることを確認
         self.user.refresh_from_db()
         self.assertEqual(self.user.preset_limit, 4)
@@ -485,13 +476,13 @@ class PurchaseIntegrationTestCase(BaseTestCase):
     def test_subscription_cancellation_flow(self):
         """サブスクリプション解約フローのテスト"""
         login_test_user(self, user=self.user)
-        
+
         # ユーザーを有料ユーザーに設定
         self.user.preset_limit = 4
         self.user.stripe_customer_id = 'cus_test123'
         self.user.is_subscribed = True
         self.user.save()
-        
+
         # プリセットレシピを作成
         for i in range(3):
             create_test_recipe(
@@ -503,7 +494,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
                 water_ml=100,
                 memo="Test recipe"
             )
-        
+
         # サブスクリプション解約イベント
         event_data = {
             "type": "customer.subscription.deleted",
@@ -515,20 +506,20 @@ class PurchaseIntegrationTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
             content_type='application/json'
         )
-        
+
         self.assertEqual(response.status_code, 200)
-        
+
         # ユーザーの状態が更新されることを確認
         self.user.refresh_from_db()
         self.assertEqual(self.user.preset_limit, 1)
         self.assertFalse(self.user.is_subscribed)
-        
+
         # プリセットレシピが1つだけ残ることを確認
         from recipes.models import PresetRecipe
         self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), 1)
@@ -537,7 +528,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
 
 class PurchaseSecurityTestCase(BaseTestCase):
     """購入機能のセキュリティテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         super().setUp()
@@ -551,7 +542,7 @@ class PurchaseSecurityTestCase(BaseTestCase):
             data=json.dumps({"type": "test.event", "data": {"object": {}}}),
             content_type='application/json'
         )
-        
+
         # CSRFエラーではなく、イベントタイプエラーが返されることを確認
         self.assertEqual(response.status_code, 400)
         response_data = json.loads(response.content)
@@ -570,7 +561,7 @@ class PurchaseSecurityTestCase(BaseTestCase):
             data="plain text",
             content_type='text/plain'
         )
-        
+
         self.assertEqual(response.status_code, 400)
 
     def test_webhook_user_id_validation(self):
@@ -588,12 +579,12 @@ class PurchaseSecurityTestCase(BaseTestCase):
                 }
             }
         }
-        
+
         response = self.client.post(
             reverse('purchase:webhook'),
             data=json.dumps(event_data),
             content_type='application/json'
         )
-        
+
         # エラーが発生することを確認
         self.assertIn(response.status_code, [400, 404, 500])

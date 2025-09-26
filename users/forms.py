@@ -19,10 +19,10 @@ class SignUpForm(UserCreationForm):
         widget=forms.EmailInput(attrs={"class": "form-control"})
     )
     captcha = ReCaptchaField(widget=ReCaptchaV2Checkbox(
-         attrs={
-             'data-theme': 'dark',
-         }
-     ))
+        attrs={
+            'data-theme': 'dark',
+        }
+    ))
 
     class Meta:
         model = User
@@ -50,7 +50,7 @@ class SignUpForm(UserCreationForm):
                 raise forms.ValidationError("ユーザー名は3文字以上で入力してください。")
             if len(username) > 20:
                 raise forms.ValidationError("ユーザー名は20文字以下で入力してください。")
-            
+
             # ユーザー名の文字制限（英数字とアンダースコアのみ）
             if not re.match(r'^[a-zA-Z0-9_]+$', username):
                 raise forms.ValidationError("ユーザー名は英数字とアンダースコアのみ使用できます。")
@@ -70,7 +70,7 @@ class SignUpForm(UserCreationForm):
             # パスワードの長さチェック
             if len(password1) < 8:
                 raise forms.ValidationError("パスワードは8文字以上で入力してください。")
-            
+
             # パスワードの複雑さチェック
             if not re.search(r'[A-Za-z]', password1):
                 raise forms.ValidationError("パスワードには英字を含めてください。")
@@ -127,7 +127,7 @@ class PasswordChangeForm(forms.Form):
             # パスワードの長さチェック
             if len(new_password1) < 8:
                 raise forms.ValidationError("パスワードは8文字以上で入力してください。")
-            
+
             # パスワードの複雑さチェック
             if not re.search(r'[A-Za-z]', new_password1):
                 raise forms.ValidationError("パスワードには英字を含めてください。")
@@ -147,12 +147,10 @@ class PasswordChangeForm(forms.Form):
         cleaned_data = super().clean()
         old_password = cleaned_data.get('old_password')
         new_password1 = cleaned_data.get('new_password1')
-        
+
         # 現在のパスワードと新しいパスワードが同じでないかチェック
         if old_password and new_password1:
             if old_password == new_password1:
                 raise forms.ValidationError("新しいパスワードは現在のパスワードと異なるものを入力してください。")
-        
+
         return cleaned_data
-
-

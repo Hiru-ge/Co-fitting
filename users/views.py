@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import SignUpForm, EmailChangeForm, PasswordChangeForm
@@ -88,12 +87,12 @@ def email_change_request(request):
 def email_change_confirm(request, uidb64, token, email):
     """メールアドレス変更の確認（リンクをクリック）"""
     user, decoded_email = SecurityUtils.verify_confirmation_tokens(uidb64, token, email)
-    
+
     if user is not None and decoded_email is not None:
         User.objects.change_user_email(user, decoded_email)
         messages.success(request, "メールアドレスを変更しました。")
         return redirect("recipes:mypage")
-    
+
     messages.error(request, "無効なリンクです。")
     return redirect("recipes:mypage")
 
@@ -114,7 +113,7 @@ def password_change_api(request):
         else:
             # フォームエラーを返す
             return ResponseHelper.create_validation_error_response(form.errors)
-    
+
     return ResponseHelper.create_error_response('invalid_request', '無効なリクエストです。')
 
 

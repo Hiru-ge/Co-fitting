@@ -1,13 +1,10 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponseServerError
+from django.http import HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 import stripe
-from .models import (
-    StripeService, SubscriptionManager
-)
-from Co_fitting.utils.constants import AppConstants
+from .models import StripeService, SubscriptionManager
 from Co_fitting.utils.response_helper import ResponseHelper
 
 
@@ -47,14 +44,14 @@ def get_preset_limit(request):
 def webhook(request):
     """StripeのWebhookを受け取り、サブスクリプション状態を管理するエンドポイント"""
     payload = request.body
-    
+
     try:
         event = StripeService.construct_event(payload, stripe.api_key)
     except ValueError:
         return ResponseHelper.create_error_response("invalid_payload", "Invalid payload")
     except stripe.error.SignatureVerificationError:
         return ResponseHelper.create_error_response("invalid_signature", "Invalid signature")
-    
+
     # イベントタイプに応じて処理を分岐
     if event.type == 'checkout.session.completed':
         return SubscriptionManager.handle_checkout_session_completed(event)
@@ -77,7 +74,7 @@ def create_portal_session(request):
     try:
         return_url = request.build_absolute_uri(reverse("recipes:mypage"))
         portal_session = StripeService.create_portal_session(
-            request.user.stripe_customer_id, 
+            request.user.stripe_customer_id,
             return_url
         )
         return redirect(portal_session.url)

@@ -1,6 +1,5 @@
-from django.db import models
-from django.http import JsonResponse
 import stripe
+from django.urls import reverse
 from users.models import User
 from recipes.models import PresetRecipe
 from Co_fitting.utils.response_helper import ResponseHelper
@@ -8,11 +7,9 @@ from Co_fitting.utils.constants import AppConstants
 from Co_fitting.services.email_service import EmailService
 
 
-
-
 class StripeService:
     """Stripe API処理のサービスクラス"""
-    
+
     @staticmethod
     def create_checkout_session(user, request):
         """チェックアウトセッションを作成"""
@@ -34,7 +31,7 @@ class StripeService:
             return session
         except Exception as e:
             raise Exception(f"Stripe checkout session creation failed: {e}")
-    
+
     @staticmethod
     def create_portal_session(customer_id, return_url):
         """顧客ポータルセッションを作成"""
@@ -47,7 +44,7 @@ class StripeService:
             return portal_session
         except Exception as e:
             raise Exception(f"Stripe portal session creation failed: {e}")
-    
+
     @staticmethod
     def construct_event(payload, api_key):
         """Stripeイベントを構築"""
@@ -64,18 +61,16 @@ class StripeService:
             raise stripe.error.SignatureVerificationError("Invalid signature")
 
 
-
-
 class SubscriptionManager:
     """サブスクリプション管理のManagerクラス"""
-    
+
     @staticmethod
     def handle_checkout_session_completed(event):
         """Checkoutセッション完了時の処理"""
         session = event.data.object
         customer_id = session.customer
         user_id = session.get("metadata", {}).get("user_id")
-        
+
         try:
             user = User.objects.get(id=user_id)
             user.stripe_customer_id = customer_id
@@ -83,19 +78,19 @@ class SubscriptionManager:
             user.is_subscribed = True
             user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
             user.save()
-            
+
             # 成功メールを送信
             EmailService.send_payment_success_email(user)
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
-    
+
     @staticmethod
     def handle_subscription_change(event):
         """サブスクリプション状態変更時の処理"""
         subscription = event.data.object
         status = subscription.status
-        
+
         try:
             user = User.objects.get(stripe_customer_id=subscription.customer)
             if status in AppConstants.INACTIVE_STATUSES:
@@ -112,34 +107,33 @@ class SubscriptionManager:
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
-    
+
     @staticmethod
     def handle_invoice_paid(event):
         """支払い成功時の処理"""
         session = event.data.object
         customer_id = session.customer
-        
+
         try:
             user = User.objects.get(stripe_customer_id=customer_id)
             user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
             user.is_subscribed = True
             user.save()
-            
+
             EmailService.send_payment_success_email(user)
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
-    
+
     @staticmethod
     def handle_invoice_payment_failed(event, request):
         """支払い失敗時の処理"""
         session = event.data.object
         customer_id = session.customer
-        
+
         try:
             user = User.objects.get(stripe_customer_id=customer_id)
             EmailService.send_payment_failed_email(user, request)
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
-

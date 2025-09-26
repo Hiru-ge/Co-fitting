@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -20,14 +19,14 @@ def index(request):
     """メインページの表示"""
     user = request.user
     shared_token = request.GET.get('shared')
-    
+
     # 匿名ユーザーの場合は空のリストを返す
     if user.is_anonymous:
         user_preset_recipes = []
         default_preset_recipes = PresetRecipe.default_presets()
     else:
         user_preset_recipes, default_preset_recipes = PresetRecipe.get_preset_recipes_for_user(user)
-    
+
     shared_recipe_data = SharedRecipe.get_shared_recipe_data(shared_token)
 
     context = {
@@ -64,12 +63,12 @@ def preset_create(request):
             messages.error(request, "エラー：プリセットレシピ上限を超過しています")
             recipe_form = RecipeForm()
             return render(request, 'recipes/preset_create.html', {'recipe_form': recipe_form})
-        
+
         # レシピデータのバリデーション
         recipe_form = RecipeForm(request.POST)
         if recipe_form.is_valid():
             recipe = recipe_form.save(commit=False)
-            
+
             # Model層のメソッドを使用してレシピとステップを作成
             recipe.create_with_user_and_steps(request.POST, request.user)
 
@@ -89,7 +88,7 @@ def preset_edit(request, recipe_id):
         recipe_form = RecipeForm(request.POST, instance=recipe)
         if recipe_form.is_valid():
             updated_recipe = recipe_form.save(commit=False)
-            
+
             # Model層のメソッドを使用してレシピとステップを更新
             updated_recipe.update_with_steps(request.POST)
 
@@ -110,7 +109,7 @@ class PresetDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         return PresetRecipe.objects.filter(created_by=self.request.user)
-    
+
     def post(self, request, *args, **kwargs):
         """AJAX削除用のPOSTメソッド"""
         try:
@@ -144,24 +143,22 @@ def create_shared_recipe(request):
 
     # 共通関数を使用して共有レシピを作成
     shared_recipe = SharedRecipe.create_shared_recipe_from_data(data, user)
-    
+
     # 画像生成用のステップデータを準備（Model層で実行）
     steps_for_image = SharedRecipe.prepare_image_data(data)
-    
+
     # 画像を生成
     image_path = generate_recipe_image(data, steps_for_image, shared_recipe.access_token)
-    
+
     share_url = request.build_absolute_uri(f'/?shared={shared_recipe.access_token}')
     return ResponseHelper.create_success_response(
         '共有レシピを作成しました。',
         {
-            'url': share_url, 
-            'access_token': shared_recipe.access_token, 
+            'url': share_url,
+            'access_token': shared_recipe.access_token,
             'image_url': image_path
         }
     )
-
-
 
 
 @csrf_exempt
@@ -215,24 +212,24 @@ def get_user_shared_recipes(request):
 def share_preset_recipe(request, recipe_id):
     try:
         recipe = get_object_or_404(PresetRecipe, id=recipe_id, created_by=request.user)
-        
+
         # 共有レシピ上限チェック（Model層で実行）
         error_response = SharedRecipe.check_share_limit_or_error(request.user)
         if error_response:
             return error_response
-        
+
         # レシピデータを準備（Model層で実行）
         recipe_data = recipe.to_dict()
-        
+
         # 共通関数を使用して共有レシピを作成
         shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, request.user)
-        
+
         # 画像生成用のステップデータを準備（Model層で実行）
         steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
-        
+
         # 共通関数を使用して画像を生成
         image_url = generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
-        
+
         return ResponseHelper.create_success_response(
             'プリセットを共有しました。',
             {
@@ -251,7 +248,7 @@ def delete_shared_recipe(request, token):
     shared_recipe = SharedRecipe.by_token(token)
     if not shared_recipe or shared_recipe.created_by != request.user:
         return ResponseHelper.create_not_found_error_response('共有レシピが見つかりません。')
-    
+
     # 共有レシピと画像ファイルを削除（Model層で実行）
     return SharedRecipe.delete_with_image(shared_recipe)
 
@@ -270,10 +267,10 @@ def shared_recipe_edit(request, token):
 
             # レシピデータを準備（Model層で実行）
             recipe_data = shared_recipe.to_dict()
-            
+
             # 画像生成用のステップデータを準備（Model層で実行）
             steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
-            
+
             # 共通関数を使用して画像を生成
             generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
 
@@ -305,14 +302,14 @@ def get_preset_recipes(request):
     """プリセットレシピデータを取得するAPIエンドポイント"""
     try:
         user = request.user
-        
+
         # 匿名ユーザーの場合は空のリストを返す
         if user.is_anonymous:
             user_preset_recipes = []
             default_preset_recipes = PresetRecipe.default_presets()
         else:
             user_preset_recipes, default_preset_recipes = PresetRecipe.get_preset_recipes_for_user(user)
-        
+
         return ResponseHelper.create_data_response({
             'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
             'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes]

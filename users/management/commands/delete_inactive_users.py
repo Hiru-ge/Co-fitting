@@ -8,6 +8,7 @@ class Command(BaseCommand):
     """
     退会から30日たった非アクティブユーザーをDBから削除する
     """
+
     def handle(self, *args, **kwargs):
         threshold_date = timezone.now() - timedelta(days=30)
         users_to_delete = User.objects.filter(is_active=False, deactivated_at__lte=threshold_date)

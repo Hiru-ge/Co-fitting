@@ -1,12 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
-from datetime import timedelta
 import json
-import os
-from django.conf import settings
-from django.core.management import call_command
-
 from tests.helpers import (
     create_test_user, create_test_recipe, create_test_shared_recipe,
     login_test_user, BaseTestCase, assert_json_response,
@@ -30,7 +24,7 @@ class RecipeCreateTestCase(BaseTestCase):
             'step1_water': 30,
             'step2_water': 120,
         })
-        
+
         response = self.client.post(self.create_url, form_data)
 
         self.assertEqual(response.status_code, 302)  # リダイレクト確認
@@ -50,12 +44,12 @@ class RecipeCreateTestCase(BaseTestCase):
             'step1_water': 30,
             'step2_water': 120,
         })
-        
+
         response = self.client.post(self.create_url, form_data)
 
         self.assertEqual(response.status_code, 302)  # リダイレクト確認
         self.assertTrue(PresetRecipe.objects.filter(name="テストレシピ アイス", created_by=self.user).exists())  # DBに作成されたか確認
-        
+
         # アイスコーヒーの場合、最後のステップの総湯量 + 氷量 = 総湯量になることを確認
         recipe = PresetRecipe.objects.get(name="テストレシピ アイス", created_by=self.user)
         expected_water_ml = 120 + 80  # 最後のステップの総湯量(120) + 氷量(80)
@@ -83,7 +77,7 @@ class RecipeCreateTestCase(BaseTestCase):
             'step1_water': 30,
             'step2_water': 120,
         })
-        
+
         response = self.client.post(self.create_url, form_data)
 
         self.assertEqual(response.status_code, 200)
@@ -122,7 +116,7 @@ class RecipeEditTestCase(BaseTestCase):
             'step2_water': 100,
             'step3_water': 150,
         })
-        
+
         response = self.client.post(self.edit_url, form_data)
 
         self.assertEqual(response.status_code, 302)  # 成功時はリダイレクト
@@ -150,7 +144,7 @@ class RecipeEditTestCase(BaseTestCase):
         form_data.update({
             'step1_water': 30,
         })
-        
+
         response = self.client.post(self.edit_url, form_data)
         self.assertEqual(response.status_code, 404)  # 404が返ってくることを確認
         self.recipe.refresh_from_db()
@@ -169,7 +163,7 @@ class RecipeEditTestCase(BaseTestCase):
         form_data.update({
             'step1_water': 30,
         })
-        
+
         response = self.client.post(self.edit_url, form_data)
 
         self.assertEqual(response.status_code, 302)  # リダイレクトされることを確認
@@ -331,7 +325,7 @@ class SharedRecipeTestCase(BaseTestCase):
         """無料ユーザーのレシピ共有制限テスト"""
         # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
         self.assertFalse(self.user.is_subscribed)
-        
+
         # 無料ユーザーの制限（1個）まで共有レシピを作成
         create_test_shared_recipe(
             user=self.user,
@@ -368,7 +362,7 @@ class SharedRecipeTestCase(BaseTestCase):
         """無料ユーザーが1個のレシピを正常に共有できることをテスト"""
         # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
         self.assertFalse(self.user.is_subscribed)
-        
+
         recipe_data = create_recipe_data(
             name="無料ユーザー共有レシピ",
             bean_g=20.0,
@@ -384,7 +378,7 @@ class SharedRecipeTestCase(BaseTestCase):
         )
 
         assert_json_response(self, response, expected_status=200, expected_keys=['access_token'])
-        
+
         # 共有レシピが正しく作成されたことを確認
         self.assertTrue(SharedRecipe.objects.filter(created_by=self.user).exists())
 
@@ -393,7 +387,7 @@ class SharedRecipeTestCase(BaseTestCase):
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
         self.user.save()
-        
+
         # サブスクリプション契約者の制限（5個）まで共有レシピを作成
         for i in range(5):
             shared_recipe = SharedRecipe.objects.create(
@@ -448,7 +442,7 @@ class SharedRecipeTestCase(BaseTestCase):
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
         self.user.save()
-        
+
         # 5個のレシピを順次作成して、すべて成功することを確認
         for i in range(5):
             recipe_data = {
@@ -476,7 +470,7 @@ class SharedRecipeTestCase(BaseTestCase):
             self.assertEqual(response.status_code, 200, f"レシピ{i+1}の作成に失敗")
             response_data = json.loads(response.content)
             self.assertIn('access_token', response_data)
-        
+
         # 5個の共有レシピが正しく作成されたことを確認
         self.assertEqual(SharedRecipe.objects.filter(created_by=self.user).count(), 5)
 
@@ -521,7 +515,7 @@ class SharedRecipeTestCase(BaseTestCase):
                 {"step_number": 2, "minute": 0, "seconds": 40, "total_water_ml_this_step": 48.0},  # 2投目の累積湯量
                 {"step_number": 3, "minute": 1, "seconds": 10, "total_water_ml_this_step": 72.0},  # 3投目の累積湯量
                 {"step_number": 4, "minute": 1, "seconds": 40, "total_water_ml_this_step": 96.0},  # 4投目の累積湯量
-                {"step_number": 5, "minute": 2, "seconds": 10, "total_water_ml_this_step": 120.0}, # 5投目の累積湯量
+                {"step_number": 5, "minute": 2, "seconds": 10, "total_water_ml_this_step": 120.0},  # 5投目の累積湯量
             ]
         }
         response = self.client.post(
@@ -581,7 +575,6 @@ class SharedRecipeRetrieveTestCase(TestCase):
         self.assertEqual(response_data['error'], 'not_found')
 
 
-
 class SharedRecipeAddToPresetTestCase(TestCase):
     def setUp(self):
         """テストユーザーと共有レシピの作成"""
@@ -615,7 +608,7 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         response_data = json.loads(response.content)
         self.assertTrue(response_data['success'])
         self.assertIn('recipe_id', response_data)
-        
+
         # プリセットに追加されたことを確認
         self.assertTrue(PresetRecipe.objects.filter(name="テスト共有レシピ", created_by=self.user).exists())
         added_recipe = PresetRecipe.objects.get(name="テスト共有レシピ", created_by=self.user)
@@ -678,7 +671,6 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'not_found')
 
-
     def test_add_shared_recipe_to_preset_not_logged_in(self):
         """未ログインユーザーがプリセット追加を試みた場合のエラーハンドリング"""
         self.client.logout()
@@ -700,7 +692,7 @@ class SharedRecipeAddToPresetTestCase(TestCase):
 
         self.assertEqual(response.status_code, 401)
         response_data = json.loads(response.content)
-        
+
         # レスポンス形式の確認
         self.assertIn('error', response_data)
         self.assertIn('message', response_data)
@@ -708,11 +700,9 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         self.assertTrue(len(response_data['message']) > 0)
 
 
-
-
 class RecipeFormTestCase(TestCase):
     """レシピフォームのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user = User.objects.create_user(
@@ -726,7 +716,7 @@ class RecipeFormTestCase(TestCase):
     def test_recipe_form_valid_data(self):
         """有効なデータでレシピフォームが動作することをテスト"""
         from .forms import RecipeForm
-        
+
         form_data = {
             'name': 'テストレシピ',
             'is_ice': False,
@@ -735,21 +725,21 @@ class RecipeFormTestCase(TestCase):
             'bean_g': 20.0,
             'memo': 'テスト用メモ'
         }
-        
+
         form = RecipeForm(data=form_data)
         self.assertTrue(form.is_valid())
 
     def test_recipe_form_invalid_data(self):
         """無効なデータでレシピフォームがエラーを返すことをテスト"""
         from .forms import RecipeForm
-        
+
         form_data = {
             'name': '',  # 空の名前
             'is_ice': False,
             'len_steps': 0,  # 無効なステップ数
             'bean_g': -1,  # 負の値
         }
-        
+
         form = RecipeForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn('name', form.errors)
@@ -759,7 +749,7 @@ class RecipeFormTestCase(TestCase):
 
 class RecipeModelTestCase(TestCase):
     """レシピモデルのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user = User.objects.create_user(
@@ -781,7 +771,7 @@ class RecipeModelTestCase(TestCase):
             water_ml=200.0,
             memo='テスト用メモ'
         )
-        
+
         self.assertEqual(recipe.name, 'テストレシピ')
         self.assertEqual(recipe.created_by, self.user)
         self.assertFalse(recipe.is_ice)
@@ -800,7 +790,7 @@ class RecipeModelTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0
         )
-        
+
         self.assertEqual(str(recipe), 'テストレシピ')
 
     def test_recipe_step_creation(self):
@@ -813,7 +803,7 @@ class RecipeModelTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0
         )
-        
+
         step = PresetRecipeStep.objects.create(
             recipe=recipe,
             step_number=1,
@@ -821,7 +811,7 @@ class RecipeModelTestCase(TestCase):
             seconds=30,
             total_water_ml_this_step=100.0
         )
-        
+
         self.assertEqual(step.recipe, recipe)
         self.assertEqual(step.step_number, 1)
         self.assertEqual(step.minute, 0)
@@ -838,7 +828,7 @@ class RecipeModelTestCase(TestCase):
             bean_g=20.0,
             water_ml=200.0
         )
-        
+
         step = PresetRecipeStep.objects.create(
             recipe=recipe,
             step_number=1,
@@ -846,7 +836,7 @@ class RecipeModelTestCase(TestCase):
             seconds=30,
             total_water_ml_this_step=100.0
         )
-        
+
         self.assertEqual(str(step), 'Step 1 for テストレシピ')
 
     def test_recipe_step_ordering(self):
@@ -859,7 +849,7 @@ class RecipeModelTestCase(TestCase):
             bean_g=20.0,
             water_ml=300.0
         )
-        
+
         # ステップを逆順で作成
         PresetRecipeStep.objects.create(
             recipe=recipe,
@@ -882,7 +872,7 @@ class RecipeModelTestCase(TestCase):
             seconds=0,
             total_water_ml_this_step=100.0
         )
-        
+
         steps = PresetRecipeStep.objects.filter(recipe=recipe)
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
@@ -898,7 +888,7 @@ class RecipeModelTestCase(TestCase):
             water_ml=0.0,  # 初期値
             memo='テストメモ'
         )
-        
+
         form_data = {
             'step1_minute': '0',
             'step1_second': '30',
@@ -907,27 +897,27 @@ class RecipeModelTestCase(TestCase):
             'step2_second': '0',
             'step2_water': '100.0',
         }
-        
+
         recipe.create_steps_from_form_data(form_data)
-        
+
         # ステップが正しく作成されたかチェック
         steps = PresetRecipeStep.objects.filter(recipe=recipe).order_by('step_number')
         self.assertEqual(steps.count(), 2)
-        
+
         # 最初のステップ
         step1 = steps[0]
         self.assertEqual(step1.step_number, 1)
         self.assertEqual(step1.minute, 0)
         self.assertEqual(step1.seconds, 30)
         self.assertEqual(step1.total_water_ml_this_step, 100.0)
-        
+
         # 2番目のステップ
         step2 = steps[1]
         self.assertEqual(step2.step_number, 2)
         self.assertEqual(step2.minute, 1)
         self.assertEqual(step2.seconds, 0)
         self.assertEqual(step2.total_water_ml_this_step, 100.0)
-        
+
         # 総湯量が更新されたかチェック
         recipe.refresh_from_db()
         self.assertEqual(recipe.water_ml, 100.0)  # 最後のステップの湯量
@@ -943,7 +933,7 @@ class RecipeModelTestCase(TestCase):
             water_ml=150.0,
             memo='元のメモ'
         )
-        
+
         form_data = {
             'name': '更新されたレシピ名',
             'len_steps': '3',
@@ -952,9 +942,9 @@ class RecipeModelTestCase(TestCase):
             'ice_g': '50.0',
             'memo': '更新されたメモ'
         }
-        
+
         recipe.update_from_form_data(form_data)
-        
+
         self.assertEqual(recipe.name, '更新されたレシピ名')
         self.assertEqual(recipe.len_steps, 3)
         self.assertEqual(recipe.bean_g, 25.0)
@@ -974,7 +964,7 @@ class RecipeModelTestCase(TestCase):
             water_ml=200.0,
             memo='テストメモ'
         )
-        
+
         # ステップを作成
         PresetRecipeStep.objects.create(
             recipe=recipe,
@@ -990,9 +980,9 @@ class RecipeModelTestCase(TestCase):
             seconds=0,
             total_water_ml_this_step=100.0
         )
-        
+
         recipe_dict = recipe.to_dict()
-        
+
         self.assertEqual(recipe_dict['id'], recipe.id)
         self.assertEqual(recipe_dict['name'], 'テストレシピ')
         self.assertTrue(recipe_dict['is_ice'])
@@ -1006,7 +996,7 @@ class RecipeModelTestCase(TestCase):
 
 class SharedRecipeModelTestCase(TestCase):
     """共有レシピモデルのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user = User.objects.create_user(
@@ -1029,7 +1019,7 @@ class SharedRecipeModelTestCase(TestCase):
             memo='テスト用メモ',
             access_token='test_token_12345678901234567890123456789012'[:32][:32]
         )
-        
+
         self.assertEqual(shared_recipe.name, 'テスト共有レシピ')
         self.assertEqual(shared_recipe.created_by, self.user)
         self.assertFalse(shared_recipe.is_ice)
@@ -1050,7 +1040,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=200.0,
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
-        
+
         expected = 'Shared: テスト共有レシピ (test_token_123456789012345678901)'
         self.assertEqual(str(shared_recipe), expected)
 
@@ -1065,7 +1055,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=200.0,
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
-        
+
         step = SharedRecipeStep.objects.create(
             recipe=shared_recipe,
             step_number=1,
@@ -1073,7 +1063,7 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=30,
             total_water_ml_this_step=100.0
         )
-        
+
         self.assertEqual(step.recipe, shared_recipe)
         self.assertEqual(step.step_number, 1)
         self.assertEqual(step.minute, 0)
@@ -1091,7 +1081,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=200.0,
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
-        
+
         step = SharedRecipeStep.objects.create(
             recipe=shared_recipe,
             step_number=1,
@@ -1099,7 +1089,7 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=30,
             total_water_ml_this_step=100.0
         )
-        
+
         self.assertEqual(str(step), 'SharedStep 1 for テスト共有レシピ')
 
     def test_shared_recipe_step_ordering(self):
@@ -1113,7 +1103,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=300.0,
             access_token='test_token_12345678901234567890123456789012'[:32]
         )
-        
+
         # ステップを逆順で作成
         SharedRecipeStep.objects.create(
             recipe=shared_recipe,
@@ -1136,11 +1126,10 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=0,
             total_water_ml_this_step=100.0
         )
-        
+
         steps = SharedRecipeStep.objects.filter(recipe=shared_recipe)
         step_numbers = [step.step_number for step in steps]
         self.assertEqual(step_numbers, [1, 2, 3])
-
 
     def test_create_steps_from_recipe_data(self):
         """レシピデータからステップを作成するテスト（累積湯量をそのまま保存）"""
@@ -1153,7 +1142,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=200.0,
             access_token='test_token'
         )
-        
+
         # プリセットから共有レシピを作成する場合のデータ（累積湯量）
         recipe_data = {
             'steps': [
@@ -1171,20 +1160,20 @@ class SharedRecipeModelTestCase(TestCase):
                 }
             ]
         }
-        
+
         shared_recipe.create_steps_from_recipe_data(recipe_data)
-        
+
         # ステップが正しく作成されたかチェック
         steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(steps.count(), 2)
-        
+
         # 最初のステップ（累積湯量: 100ml）
         step1 = steps[0]
         self.assertEqual(step1.step_number, 1)
         self.assertEqual(step1.minute, 0)
         self.assertEqual(step1.seconds, 30)
         self.assertEqual(step1.total_water_ml_this_step, 100.0)
-        
+
         # 2番目のステップ（累積湯量: 200ml）
         step2 = steps[1]
         self.assertEqual(step2.step_number, 2)
@@ -1203,7 +1192,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=300.0,
             access_token='test_token'
         )
-        
+
         # 共有レシピ編集フォームからのデータ（各ステップの累積湯量）
         form_data = {
             'step1_minute': '0',
@@ -1216,26 +1205,26 @@ class SharedRecipeModelTestCase(TestCase):
             'step3_second': '30',
             'step3_water': '300.0',  # 3投目の累積湯量
         }
-        
+
         shared_recipe.create_steps_from_form_data(form_data)
-        
+
         # ステップが正しく作成されたかチェック
         steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(steps.count(), 3)
-        
+
         # 各ステップの累積湯量が正しく保存されているかチェック
         step1 = steps[0]
         self.assertEqual(step1.step_number, 1)
         self.assertEqual(step1.minute, 0)
         self.assertEqual(step1.seconds, 30)
         self.assertEqual(step1.total_water_ml_this_step, 100.0)
-        
+
         step2 = steps[1]
         self.assertEqual(step2.step_number, 2)
         self.assertEqual(step2.minute, 1)
         self.assertEqual(step2.seconds, 0)
         self.assertEqual(step2.total_water_ml_this_step, 200.0)
-        
+
         step3 = steps[2]
         self.assertEqual(step3.step_number, 3)
         self.assertEqual(step3.minute, 1)
@@ -1254,7 +1243,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=300.0,
             memo='テストメモ'
         )
-        
+
         # プリセットのステップを作成（累積湯量）
         PresetRecipeStep.objects.create(
             recipe=preset,
@@ -1277,22 +1266,22 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=30,
             total_water_ml_this_step=300.0  # 3投目の累積湯量
         )
-        
+
         # プリセットを共有レシピとして作成
         recipe_data = preset.to_dict()
         shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, self.user)
-        
+
         # 共有レシピのステップが正しく作成されているかチェック
         shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(shared_steps.count(), 3)
-        
+
         # 各ステップの累積湯量が正しく保存されているかチェック
         step1 = shared_steps[0]
         self.assertEqual(step1.total_water_ml_this_step, 100.0)
-        
+
         step2 = shared_steps[1]
         self.assertEqual(step2.total_water_ml_this_step, 200.0)
-        
+
         step3 = shared_steps[2]
         self.assertEqual(step3.total_water_ml_this_step, 300.0)
 
@@ -1308,7 +1297,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=200.0,
             access_token='test_token'
         )
-        
+
         # 初期ステップを作成（累積湯量）
         SharedRecipeStep.objects.create(
             recipe=shared_recipe,
@@ -1324,7 +1313,7 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=0,
             total_water_ml_this_step=200.0
         )
-        
+
         # 編集フォームデータ（各ステップの累積湯量）
         form_data = {
             'name': '編集されたレシピ',
@@ -1340,10 +1329,10 @@ class SharedRecipeModelTestCase(TestCase):
             'step2_second': '15',
             'step2_water': '300.0',  # 2投目の累積湯量
         }
-        
+
         # 共有レシピを更新
         shared_recipe.update_with_steps(form_data)
-        
+
         # 更新された共有レシピの基本情報をチェック
         shared_recipe.refresh_from_db()
         self.assertEqual(shared_recipe.name, '編集されたレシピ')
@@ -1351,17 +1340,17 @@ class SharedRecipeModelTestCase(TestCase):
         self.assertTrue(shared_recipe.is_ice)
         self.assertEqual(shared_recipe.ice_g, 80.0)
         self.assertEqual(shared_recipe.memo, '編集されたメモ')
-        
+
         # 更新されたステップをチェック
         updated_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
         self.assertEqual(updated_steps.count(), 2)
-        
+
         step1 = updated_steps[0]
         self.assertEqual(step1.step_number, 1)
         self.assertEqual(step1.minute, 0)
         self.assertEqual(step1.seconds, 45)
         self.assertEqual(step1.total_water_ml_this_step, 150.0)
-        
+
         step2 = updated_steps[1]
         self.assertEqual(step2.step_number, 2)
         self.assertEqual(step2.minute, 1)
@@ -1371,7 +1360,7 @@ class SharedRecipeModelTestCase(TestCase):
     def test_water_amount_calculation_regression(self):
         """注湯量計算の回帰テスト（修正前の実装では失敗する）"""
         # このテストは修正前の実装（累積計算）では失敗し、修正後の実装では成功する
-        
+
         # プリセットから共有レシピを作成する場合
         preset = PresetRecipe.objects.create(
             name='テストプリセット',
@@ -1382,7 +1371,7 @@ class SharedRecipeModelTestCase(TestCase):
             water_ml=200.0,
             memo='テストメモ'
         )
-        
+
         # プリセットのステップ（累積湯量）
         PresetRecipeStep.objects.create(
             recipe=preset,
@@ -1398,24 +1387,24 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=0,
             total_water_ml_this_step=200.0  # 2投目の累積湯量
         )
-        
+
         # プリセットを共有レシピとして作成
         recipe_data = preset.to_dict()
         shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, self.user)
-        
+
         # 修正前の実装では累積計算により以下の値になる：
         # 1投目: 100.0 + 0 = 100.0
         # 2投目: 200.0 + 100.0 = 300.0
         # 修正後の実装では元の値がそのまま保存される：
         # 1投目: 100.0
         # 2投目: 200.0
-        
+
         shared_steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
-        
+
         # 修正後の実装では元の値がそのまま保存されることを確認
         self.assertEqual(shared_steps[0].total_water_ml_this_step, 100.0)
         self.assertEqual(shared_steps[1].total_water_ml_this_step, 200.0)
-        
+
         # 修正前の実装では以下の値になってしまう（これは間違い）
         # self.assertEqual(shared_steps[0].total_water_ml_this_step, 100.0)  # これは正しい
         # self.assertEqual(shared_steps[1].total_water_ml_this_step, 300.0)  # これは間違い（200.0であるべき）
@@ -1433,7 +1422,7 @@ class SharedRecipeModelTestCase(TestCase):
             memo='共有テストメモ',
             access_token='test_token_123'
         )
-        
+
         # ステップを作成
         SharedRecipeStep.objects.create(
             recipe=shared_recipe,
@@ -1449,9 +1438,9 @@ class SharedRecipeModelTestCase(TestCase):
             seconds=0,
             total_water_ml_this_step=100.0
         )
-        
+
         recipe_dict = shared_recipe.to_dict()
-        
+
         self.assertEqual(recipe_dict['name'], '共有テストレシピ')
         self.assertEqual(recipe_dict['shared_by_user'], self.user.username)
         self.assertTrue(recipe_dict['is_ice'])
@@ -1466,7 +1455,7 @@ class SharedRecipeModelTestCase(TestCase):
 
 class RecipeManagerTestCase(TestCase):
     """RecipeManagerのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user1 = User.objects.create_user(
@@ -1484,7 +1473,7 @@ class RecipeManagerTestCase(TestCase):
             email='default@example.com',
             password='testpass123'
         )
-        
+
         # テスト用レシピを作成
         PresetRecipe.objects.create(
             name='ユーザー1のレシピ',
@@ -1510,17 +1499,17 @@ class RecipeManagerTestCase(TestCase):
             bean_g=15.0,
             water_ml=150.0
         )
-    
+
     def test_for_user(self):
         """ユーザー別レシピ取得のテスト"""
         user1_recipes = PresetRecipe.objects.filter(created_by=self.user1)
         self.assertEqual(user1_recipes.count(), 1)
         self.assertEqual(user1_recipes.first().name, 'ユーザー1のレシピ')
-        
+
         user2_recipes = PresetRecipe.objects.filter(created_by=self.user2)
         self.assertEqual(user2_recipes.count(), 1)
         self.assertEqual(user2_recipes.first().name, 'ユーザー2のレシピ')
-    
+
     def test_default_presets(self):
         """デフォルトプリセット取得のテスト"""
         default_recipes = PresetRecipe.default_presets()
@@ -1541,22 +1530,22 @@ class RecipeManagerTestCase(TestCase):
         self.user1.is_subscribed = False
         self.user1.preset_limit = 1
         self.user1.save()
-        
+
         error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNotNone(error_response)
         self.assertEqual(error_response.status_code, 400)
-        
+
         # 上限内の場合（プリセット数を減らす）
         self.user1.preset_limit = 2
         self.user1.save()
-        
+
         error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNone(error_response)
 
 
 class SharedRecipeManagerTestCase(TestCase):
     """SharedRecipeManagerのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user = User.objects.create_user(
@@ -1564,7 +1553,7 @@ class SharedRecipeManagerTestCase(TestCase):
             email='test@example.com',
             password='testpass123'
         )
-        
+
         # 有効な共有レシピ
         SharedRecipe.objects.create(
             name='有効レシピ',
@@ -1575,20 +1564,18 @@ class SharedRecipeManagerTestCase(TestCase):
             water_ml=200.0,
             access_token='active_token'
         )
-        
-    
+
     def test_for_user(self):
         """ユーザー別共有レシピ取得のテスト"""
         user_recipes = SharedRecipe.objects.filter(created_by=self.user)
         self.assertEqual(user_recipes.count(), 1)
-    
-    
+
     def test_by_token(self):
         """トークンで共有レシピ取得のテスト"""
         recipe = SharedRecipe.by_token('active_token')
         self.assertIsNotNone(recipe)
         self.assertEqual(recipe.name, '有効レシピ')
-        
+
         # 存在しないトークン
         no_recipe = SharedRecipe.by_token('nonexistent_token')
         self.assertIsNone(no_recipe)
@@ -1599,13 +1586,12 @@ class SharedRecipeManagerTestCase(TestCase):
         data = SharedRecipe.get_shared_recipe_data('active_token')
         self.assertIsNotNone(data)
         self.assertEqual(data['name'], '有効レシピ')
-        
-        
+
         # 存在しないトークン
         data = SharedRecipe.get_shared_recipe_data('nonexistent_token')
         self.assertIsNotNone(data)
         self.assertEqual(data['error'], 'not_found')
-        
+
         # 空のトークン
         data = SharedRecipe.get_shared_recipe_data(None)
         self.assertIsNone(data)
@@ -1613,7 +1599,7 @@ class SharedRecipeManagerTestCase(TestCase):
 
 class RecipeViewsIntegrationTestCase(TestCase):
     """レシピビューの統合テスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user = User.objects.create_user(
@@ -1645,10 +1631,10 @@ class RecipeViewsIntegrationTestCase(TestCase):
             water_ml=200.0,
             memo='デフォルトメモ'
         )
-        
+
         # ユーザーをログインさせる
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # ユーザープリセットレシピを作成
         user_recipe = create_test_recipe(
             user=self.user,
@@ -1659,7 +1645,7 @@ class RecipeViewsIntegrationTestCase(TestCase):
             water_ml=150.0,
             memo='ユーザーメモ'
         )
-        
+
         response = self.client.get(reverse('recipes:index'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'デフォルトレシピ')
@@ -1669,7 +1655,7 @@ class RecipeViewsIntegrationTestCase(TestCase):
     def test_mypage_displays_user_recipes(self):
         """マイページにユーザーのレシピが表示されることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # ユーザーのレシピを作成
         user_recipe = create_test_recipe(
             user=self.user,
@@ -1680,7 +1666,7 @@ class RecipeViewsIntegrationTestCase(TestCase):
             water_ml=200.0,
             memo='マイメモ'
         )
-        
+
         response = self.client.get(reverse('recipes:mypage'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'マイレシピ')
@@ -1708,7 +1694,7 @@ class RecipeViewsIntegrationTestCase(TestCase):
             water_ml=200.0,
             memo='テストメモ'
         )
-        
+
         response = self.client.get(reverse('recipes:preset_edit', kwargs={'recipe_id': recipe.id}))
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('users:login')))
@@ -1716,7 +1702,7 @@ class RecipeViewsIntegrationTestCase(TestCase):
 
 class RecipeAPITestCase(TestCase):
     """レシピAPIのテスト"""
-    
+
     def setUp(self):
         """テスト用ユーザーの作成"""
         self.user = User.objects.create_user(
@@ -1730,7 +1716,7 @@ class RecipeAPITestCase(TestCase):
     def test_get_user_shared_recipes_api(self):
         """ユーザーの共有レシピ取得APIのテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # 共有レシピを作成
         shared_recipe = create_test_shared_recipe(
             user=self.user,
@@ -1741,18 +1727,18 @@ class RecipeAPITestCase(TestCase):
             water_ml=200.0,
             memo='テストメモ'
         )
-        
+
         response = self.client.get(reverse('recipes:get_user_shared_recipes'))
         self.assertEqual(response.status_code, 200)
-        
+
         response_data = json.loads(response.content)
         # APIが正常に応答することを確認
         self.assertIn('shared_recipes', response_data)
         self.assertIsInstance(response_data['shared_recipes'], list)
-        
+
         # 共有レシピが作成されていることをDBで確認
         self.assertTrue(SharedRecipe.objects.filter(created_by=self.user, name='テスト共有レシピ').exists())
-        
+
         # レスポンスに共有レシピが含まれていることを確認
         if len(response_data['shared_recipes']) > 0:
             self.assertEqual(response_data['shared_recipes'][0]['name'], 'テスト共有レシピ')
@@ -1766,7 +1752,7 @@ class RecipeAPITestCase(TestCase):
     def test_delete_shared_recipe_api(self):
         """共有レシピ削除APIのテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # 共有レシピを作成
         shared_recipe = create_test_shared_recipe(
             user=self.user,
@@ -1777,10 +1763,10 @@ class RecipeAPITestCase(TestCase):
             water_ml=200.0,
             memo='削除用メモ'
         )
-        
+
         delete_url = reverse('recipes:delete_shared_recipe', kwargs={'token': shared_recipe.access_token})
         response = self.client.post(delete_url)
-        
+
         # 405エラー（Method Not Allowed）が返される場合がある
         self.assertIn(response.status_code, [200, 405])
         if response.status_code == 200:
@@ -1797,7 +1783,7 @@ class RecipeAPITestCase(TestCase):
         )
         other_user.is_active = True
         other_user.save()
-        
+
         # 他のユーザーの共有レシピを作成
         shared_recipe = create_test_shared_recipe(
             user=other_user,
@@ -1808,11 +1794,11 @@ class RecipeAPITestCase(TestCase):
             water_ml=200.0,
             memo='他人のメモ'
         )
-        
+
         self.client.login(username='test@example.com', password='securepassword123')
         delete_url = reverse('recipes:delete_shared_recipe', kwargs={'token': shared_recipe.access_token})
         response = self.client.post(delete_url)
-        
+
         # 404エラー、405エラー、または500エラーが返されることを確認
         self.assertIn(response.status_code, [404, 405, 500])
         self.assertTrue(SharedRecipe.objects.filter(id=shared_recipe.id).exists())
@@ -1820,7 +1806,7 @@ class RecipeAPITestCase(TestCase):
     def test_share_preset_recipe_api(self):
         """プリセットレシピ共有APIのテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # プリセットレシピを作成
         recipe = create_test_recipe(
             user=self.user,
@@ -1831,16 +1817,16 @@ class RecipeAPITestCase(TestCase):
             water_ml=200.0,
             memo='共有用メモ'
         )
-        
+
         share_url = reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id})
         response = self.client.post(share_url)
-        
+
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertIn('access_token', response_data)
         # urlフィールドが存在しない場合があるので、access_tokenの存在を確認
         # self.assertIn('url', response_data)
-        
+
         # 共有レシピが作成されていることを確認
         self.assertTrue(SharedRecipe.objects.filter(name='共有対象レシピ', created_by=self.user).exists())
 
@@ -1853,7 +1839,7 @@ class RecipeAPITestCase(TestCase):
         )
         other_user.is_active = True
         other_user.save()
-        
+
         # 他のユーザーのプリセットレシピを作成
         recipe = create_test_recipe(
             user=other_user,
@@ -1864,11 +1850,11 @@ class RecipeAPITestCase(TestCase):
             water_ml=200.0,
             memo='他人のメモ'
         )
-        
+
         self.client.login(username='test@example.com', password='securepassword123')
         share_url = reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id})
         response = self.client.post(share_url)
-        
+
         # 500エラー、404エラー、または405エラーが返されることを確認
         self.assertIn(response.status_code, [404, 405, 500])
         self.assertFalse(SharedRecipe.objects.filter(name='他人のレシピ', created_by=self.user).exists())
@@ -1877,10 +1863,10 @@ class RecipeAPITestCase(TestCase):
         """無料ユーザーのプリセットレシピ共有制限テスト"""
         # ログイン
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
         self.assertFalse(self.user.is_subscribed)
-        
+
         # 無料ユーザーの制限（1個）まで共有レシピを作成
         shared_recipe = SharedRecipe.objects.create(
             name="無料ユーザー共有レシピ1",
@@ -1925,11 +1911,11 @@ class RecipeAPITestCase(TestCase):
         """サブスクリプション契約ユーザーのプリセットレシピ共有制限テスト"""
         # ログイン
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
         self.user.save()
-        
+
         # サブスクリプション契約者の制限（5個）まで共有レシピを作成
         for i in range(5):
             shared_recipe = SharedRecipe.objects.create(
@@ -1975,10 +1961,10 @@ class RecipeAPITestCase(TestCase):
         """無料ユーザーが1個のプリセットレシピを正常に共有できることをテスト"""
         # ログイン
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
         self.assertFalse(self.user.is_subscribed)
-        
+
         # プリセットレシピを作成
         recipe = create_test_recipe(
             user=self.user,
@@ -1996,7 +1982,7 @@ class RecipeAPITestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         response_data = json.loads(response.content)
         self.assertIn('access_token', response_data)
-        
+
         # 共有レシピが正しく作成されたことを確認
         self.assertTrue(SharedRecipe.objects.filter(name='共有対象レシピ', created_by=self.user).exists())
 
@@ -2004,11 +1990,11 @@ class RecipeAPITestCase(TestCase):
         """サブスクリプション契約ユーザーが5個のプリセットレシピを正常に共有できることをテスト"""
         # ログイン
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
         self.user.save()
-        
+
         # 5個のプリセットレシピを順次作成して、すべて成功することを確認
         for i in range(5):
             recipe = create_test_recipe(
@@ -2027,6 +2013,6 @@ class RecipeAPITestCase(TestCase):
             self.assertEqual(response.status_code, 200, f"レシピ{i+1}の共有に失敗")
             response_data = json.loads(response.content)
             self.assertIn('access_token', response_data)
-        
+
         # 5個の共有レシピが正しく作成されたことを確認
         self.assertEqual(SharedRecipe.objects.filter(created_by=self.user).count(), 5)
