@@ -256,7 +256,7 @@ def delete_shared_recipe(request, token):
 @login_required
 def shared_recipe_edit(request, token):
     shared_recipe = get_object_or_404(SharedRecipe, access_token=token, created_by=request.user)
-    steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+    steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
 
     if request.method == 'POST':
         # Form層でバリデーション
@@ -277,7 +277,7 @@ def shared_recipe_edit(request, token):
             return redirect('recipes:mypage')
         else:
             # フォームエラーの場合は再表示
-            steps = SharedRecipeStep.objects.filter(shared_recipe=shared_recipe).order_by('step_number')
+            steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')
 
     return render(request, 'recipes/shared_recipe_edit.html', {
         'shared_recipe': shared_recipe,
