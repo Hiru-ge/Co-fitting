@@ -14,6 +14,9 @@ from pathlib import Path
 import os
 import environ
 import sys
+import boto3
+from botocore.exceptions import ClientError
+import json
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,6 +30,22 @@ env = environ.Env(
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
+
+def get_aurora_secret():
+    client = boto3.session.Session().client(
+        service_name='secretsmanager',
+        region_name='ap-northeast-1'
+    )
+
+    try:
+        secret_string = client.get_secret_value(
+            SecretId=env('AURORA_SECRET_ARN')
+            )['SecretString']
+        return json.loads(secret_string)
+    except ClientError as e:
+        raise e
+
+AURORA_SECRET_DICT = get_aurora_secret()
 
 DEBUG = env('DEBUG')
 
@@ -101,11 +120,11 @@ LOGOUT_REDIRECT_URL = '/users/login'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Co_fitting',
-        'USER': 'root',
-        'PASSWORD': env('DATABASE_KEY'),
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': AURORA_SECRET_DICT['username'],
+        'PASSWORD': AURORA_SECRET_DICT['password'],
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         }
@@ -212,6 +231,14 @@ SECURE_HSTS_PRELOAD = True
 # こうしないとリダイレクト関係のテストが通らない
 if 'test' in sys.argv:
     SECURE_SSL_REDIRECT = False
+
+# 開発環境では本番環境DBに触らないようにするための設定
+if DEBUG:
+    DEV_DB_NAME = os.getenv('DEV_DB_NAME')
+    DEV_DB_USER = os.getenv('DEV_DB_USER')
+    DEV_DB_PASSWORD = os.getenv('DEV_DB_PASSWORD')
+    DEV_DB_HOST = os.getenv('DEV_DB_HOST')
+    DEV_DB_PORT = os.getenv('DEV_DB_PORT')
 
 # reCAPTCHA設定
 RECAPTCHA_PUBLIC_KEY = env('RECAPTCHA_PUBLIC_KEY')
