@@ -102,7 +102,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'Co_fitting',
-        'USER': 'root',
+        'USER': env('DATABASE_USER'),
         'PASSWORD': env('DATABASE_KEY'),
         'HOST': 'localhost',
         'PORT': '3306',
