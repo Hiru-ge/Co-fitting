@@ -592,7 +592,6 @@ $(document).ready(function() {
                 <p><strong>総湯量:</strong> <span>${recipeData.water_ml}ml</span></p>
                 ${recipeData.is_ice ? `<p><strong>氷量:</strong> <span>${recipeData.ice_g}g</span></p>` : ''}
                 <p><strong>ステップ数:</strong> <span>${recipeData.len_steps}ステップ</span></p>
-                ${recipeData.memo ? `<p><strong>メモ:</strong> <span>${recipeData.memo}</span></p>` : ''}
             </div>
             <div class="modal-actions">
                 <button id="add-to-preset-btn" class="btn btn-primary">追加</button>
