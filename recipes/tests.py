@@ -8,6 +8,7 @@ from tests.helpers import (
 )
 from users.models import User
 from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedRecipeStep
+from Co_fitting.utils.constants import AppConstants
 
 
 class RecipeCreateTestCase(BaseTestCase):
@@ -386,6 +387,7 @@ class SharedRecipeTestCase(BaseTestCase):
         """サブスクリプション契約者のレシピ共有制限テスト"""
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
+        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
         self.user.save()
 
         # サブスクリプション契約者の制限（5個）まで共有レシピを作成
@@ -441,6 +443,7 @@ class SharedRecipeTestCase(BaseTestCase):
         """サブスクリプション契約ユーザーが5個のレシピを正常に共有できることをテスト"""
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
+        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
         self.user.save()
 
         # 5個のレシピを順次作成して、すべて成功することを確認
@@ -1914,6 +1917,7 @@ class RecipeAPITestCase(TestCase):
 
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
+        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
         self.user.save()
 
         # サブスクリプション契約者の制限（5個）まで共有レシピを作成
@@ -1993,6 +1997,7 @@ class RecipeAPITestCase(TestCase):
 
         # サブスクリプション契約ユーザーに変更
         self.user.is_subscribed = True
+        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
         self.user.save()
 
         # 5個のプリセットレシピを順次作成して、すべて成功することを確認
