@@ -6,20 +6,20 @@ from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedR
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'is_subscribed', 'email', 'is_staff', 'preset_limit')
+    list_display = ('username', 'is_subscribed', 'email', 'is_staff', 'preset_limit', 'share_limit')
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('username', 'is_subscribed', 'stripe_customer_id')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
-        ('Custom Fields', {'fields': ('preset_limit',)}),
+        ('Custom Fields', {'fields': ('preset_limit', 'share_limit')}),
     )
 
     # 管理画面からユーザー追加を行う際のフォーム設定
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2', 'preset_limit'),
+            'fields': ('email', 'username', 'password1', 'password2', 'preset_limit', 'share_limit'),
         }),
     )
 

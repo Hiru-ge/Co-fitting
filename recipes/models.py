@@ -456,12 +456,11 @@ class SharedRecipe(BaseRecipe):
         """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
         current_count = cls.objects.filter(created_by=user).count()
         is_subscribed = getattr(user, 'is_subscribed', False)
+        limit = getattr(user, 'share_limit', AppConstants.SHARE_LIMIT_FREE)
 
         if is_subscribed:
-            limit = AppConstants.SHARE_LIMIT_PREMIUM
             limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
         else:
-            limit = AppConstants.SHARE_LIMIT_FREE
             limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{AppConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
 
         if current_count >= limit:

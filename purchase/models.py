@@ -77,6 +77,7 @@ class SubscriptionManager:
             # サブスクリプション状態を更新
             user.is_subscribed = True
             user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
+            user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
             user.save()
 
             # 成功メールを送信
@@ -96,6 +97,7 @@ class SubscriptionManager:
             if status in AppConstants.INACTIVE_STATUSES:
                 user.is_subscribed = False
                 user.preset_limit = AppConstants.FREE_PRESET_LIMIT
+                user.share_limit = AppConstants.SHARE_LIMIT_FREE
                 # ユーザーのレシピを1つだけ残して削除
                 users_recipes = PresetRecipe.objects.filter(created_by=user)
                 if users_recipes.exists():
@@ -103,6 +105,7 @@ class SubscriptionManager:
             elif status in AppConstants.ACTIVE_STATUSES:
                 user.is_subscribed = True
                 user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
+                user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
             user.save()
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
@@ -117,6 +120,7 @@ class SubscriptionManager:
         try:
             user = User.objects.get(stripe_customer_id=customer_id)
             user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
+            user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
             user.is_subscribed = True
             user.save()
 

@@ -17,6 +17,7 @@ class UserManager(BaseUserManager):
         )
         user.set_password(password)
         user.preset_limit = 1
+        user.share_limit = 1
         user.save(using=self._db)
         return user
 
@@ -27,6 +28,7 @@ class UserManager(BaseUserManager):
         )
         user.set_password(password)
         user.preset_limit = 1
+        user.share_limit = 1
         user.is_staff = True
         user.is_active = True
         user.is_superuser = True
@@ -114,6 +116,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True)
     is_subscribed = models.BooleanField(default=False)
     preset_limit = models.IntegerField(default=1)
+    share_limit = models.IntegerField(default=1)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     deactivated_at = models.DateTimeField(null=True, blank=True)  # 退会日時を記録するフィールド(退会から30日経ったらDBから完全削除する)
