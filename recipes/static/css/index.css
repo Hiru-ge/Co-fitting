@@ -359,6 +359,7 @@ header.ice-mode, footer.ice-mode {
     margin: 0;
     font-size: 1rem;
     color: #fff;
+    font-weight: 700;
 }
 
 .memo-content {
@@ -407,4 +408,37 @@ header.ice-mode, footer.ice-mode {
     outline: none;
     border-color: #876b36;
     background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* 今月のおすすめレシピ用アイコンボタン */
+.recommended-info-btn {
+    background-color: #666;
+    color: #fff;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    margin: 0;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute; /* 絶対位置配置 */
+    right: 1.5rem; /* ボタンの内側に配置 */
+    top: 50%; /* 上下中央 */
+    transform: translateY(-50%); /* 上下中央調整 */
+}
+
+/* おすすめレシピボタンは右側に余白を持たせる（アイコンと被らないように） */
+.preset-button.has-info {
+    padding-right: 3rem;
+}
+
+/* accordion-item に relative を追加して絶対位置配置の基準にする */
+.accordion-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }

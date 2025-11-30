@@ -734,6 +734,19 @@ $(document).ready(function() {
     // メモ欄を初期状態で非表示にする
     $('.memo-section').hide();
 
+    // 今月のおすすめレシピのインフォメーションボタン
+    $(document).on('click', '.recommended-info-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation(); // 親要素へのイベント伝播を防ぐ（プリセットボタンが反応しないように）
+        
+        const content = `
+            <p>これは今月のおすすめレシピです。</p>
+            <p>このレシピに関する詳細な説明は、こちらの<a href="https://note.com/hiruge" target="_blank" style="color: #876b36; text-decoration: underline;">note</a>から確認することができます。</p>
+        `;
+        
+        ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
+    });
+
     // 共有レシピの処理を実行
     handleSharedRecipe();
 });

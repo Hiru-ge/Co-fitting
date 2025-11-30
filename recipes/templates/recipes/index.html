@@ -27,7 +27,10 @@
             <div class="preset-buttons">
                 {% for default_preset_recipe in default_preset_recipes %}
                     <div class="accordion-item">
-                        <button id="{{default_preset_recipe.id}}" class="preset-button">{{default_preset_recipe.name}}</button>
+                        <button id="{{default_preset_recipe.id}}" class="preset-button {% if forloop.counter == 4 %}has-info{% endif %}">{{default_preset_recipe.name}}</button>
+                        {% if forloop.counter == 4 %}
+                            <button class="recommended-info-btn">?</button>
+                        {% endif %}
                     </div>
                 {% endfor %}
                 
