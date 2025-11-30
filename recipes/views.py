@@ -117,7 +117,7 @@ class PresetDeleteView(LoginRequiredMixin, DeleteView):
             self.object = self.get_object()
             self.object.delete()
             return ResponseHelper.create_success_response('プリセットを削除しました。')
-        except Exception as e:
+        except Exception:
             return ResponseHelper.create_error_response('delete_failed', 'プリセットの削除に失敗しました。', 500)
 
 
@@ -237,7 +237,7 @@ def share_preset_recipe(request, recipe_id):
                 'image_url': image_url
             }
         )
-    except Exception as e:
+    except Exception:
         return ResponseHelper.create_server_error_response('プリセットの共有に失敗しました。')
 
 
@@ -314,5 +314,5 @@ def get_preset_recipes(request):
             'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
             'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes]
         })
-    except Exception as e:
+    except Exception:
         return ResponseHelper.create_server_error_response('プリセットレシピの取得に失敗しました。')

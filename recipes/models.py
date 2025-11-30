@@ -296,7 +296,7 @@ class RecipeImageGenerator:
 
             return f"{settings.MEDIA_URL}shared_recipes/{img_filename}"
 
-        except Exception as e:
+        except Exception:
             return None
 
 
@@ -547,7 +547,7 @@ class SharedRecipe(BaseRecipe):
             shared_recipe.delete()
 
             return ResponseHelper.create_success_response('共有レシピを削除しました。')
-        except Exception as e:
+        except Exception:
             return ResponseHelper.create_error_response(
                 'delete_failed',
                 '共有レシピの削除に失敗しました。',
@@ -575,7 +575,7 @@ class SharedRecipe(BaseRecipe):
                 })
 
             return ResponseHelper.create_data_response({'shared_recipes': recipes_data})
-        except Exception as e:
+        except Exception:
             return ResponseHelper.create_server_error_response('共有レシピ一覧の取得に失敗しました。')
 
     def get_steps(self):
