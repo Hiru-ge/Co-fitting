@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.contrib.auth import logout
 from Co_fitting.services.email_service import EmailService
 from Co_fitting.utils.security_utils import SecurityUtils
+from Co_fitting.utils.constants import AppConstants
 
 
 class UserManager(BaseUserManager):
@@ -16,8 +17,8 @@ class UserManager(BaseUserManager):
             email=email
         )
         user.set_password(password)
-        user.preset_limit = 1
-        user.share_limit = 1
+        user.preset_limit = AppConstants.FREE_PRESET_LIMIT
+        user.share_limit = AppConstants.SHARE_LIMIT_FREE
         user.save(using=self._db)
         return user
 
@@ -27,8 +28,8 @@ class UserManager(BaseUserManager):
             email=email,
         )
         user.set_password(password)
-        user.preset_limit = 1
-        user.share_limit = 1
+        user.preset_limit = AppConstants.FREE_PRESET_LIMIT
+        user.share_limit = AppConstants.SHARE_LIMIT_FREE
         user.is_staff = True
         user.is_active = True
         user.is_superuser = True
