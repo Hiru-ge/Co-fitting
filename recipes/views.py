@@ -29,12 +29,12 @@ def index(request):
 
     shared_recipe_data = SharedRecipe.get_shared_recipe_data(shared_token)
 
-    context = {
+    params = {
         'user_preset_recipes': [recipe.to_dict() for recipe in user_preset_recipes],
         'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes],
         'shared_recipe_data': shared_recipe_data
     }
-    return render(request, 'recipes/index.html', context)
+    return render(request, 'recipes/index.html', params)
 
 
 @login_required
@@ -132,23 +132,23 @@ def create_shared_recipe(request):
         return error_response
 
     try:
-        data = json.loads(request.body)
+        recipe_data = json.loads(request.body)
     except json.JSONDecodeError:
         return ResponseHelper.create_error_response('invalid_json', 'JSONデータの形式が正しくありません。')
 
     # Form層でデータ検証
-    form = SharedRecipeDataForm(data)
+    form = SharedRecipeDataForm(recipe_data)
     if not form.is_valid():
         return ResponseHelper.create_validation_error_response(form.errors)
 
     # 共通関数を使用して共有レシピを作成
-    shared_recipe = SharedRecipe.create_shared_recipe_from_data(data, user)
+    shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, user)
 
     # 画像生成用のステップデータを準備（Model層で実行）
-    steps_for_image = SharedRecipe.prepare_image_data(data)
+    steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
 
     # 画像を生成
-    image_path = generate_recipe_image(data, steps_for_image, shared_recipe.access_token)
+    image_path = generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
 
     share_url = request.build_absolute_uri(f'/?shared={shared_recipe.access_token}')
     return ResponseHelper.create_success_response(
@@ -169,7 +169,7 @@ def add_shared_recipe_to_preset(request, token):
             'ログインが必要です。マイプリセットに追加するにはログインしてください。'
         )
 
-    shared_recipe, error_response = SharedRecipe.get_shared_recipe_or_404(token)
+    shared_recipe, error_response = SharedRecipe.get_shared_recipe_or_error(token)
     if error_response:
         return error_response
 
@@ -187,16 +187,16 @@ def add_shared_recipe_to_preset(request, token):
 
 
 def shared_recipe_ogp(request, token):
-    shared_recipe = SharedRecipe.by_token(token)
+    shared_recipe = SharedRecipe.get_by_token(token)
     if not shared_recipe:
         from django.http import Http404
         raise Http404("共有レシピが見つかりません。")
     image_url = request.build_absolute_uri(f"{settings.MEDIA_URL}shared_recipes/{shared_recipe.access_token}.png")
-    context = {
+    params = {
         'shared_recipe': shared_recipe,
         'image_url': image_url,
     }
-    return render(request, 'recipes/shared_recipe_ogp.html', context)
+    return render(request, 'recipes/shared_recipe_ogp.html', params)
 
 
 @require_GET
@@ -245,7 +245,7 @@ def share_preset_recipe(request, recipe_id):
 @require_http_methods(["DELETE"])
 @login_required
 def delete_shared_recipe(request, token):
-    shared_recipe = SharedRecipe.by_token(token)
+    shared_recipe = SharedRecipe.get_by_token(token)
     if not shared_recipe or shared_recipe.created_by != request.user:
         return ResponseHelper.create_not_found_error_response('共有レシピが見つかりません。')
 
@@ -289,7 +289,7 @@ def shared_recipe_edit(request, token):
 @require_GET
 @csrf_exempt
 def retrieve_shared_recipe(request, token):
-    shared_recipe, error_response = SharedRecipe.get_shared_recipe_or_404(token)
+    shared_recipe, error_response = SharedRecipe.get_shared_recipe_or_error(token)
     if error_response:
         return error_response
 

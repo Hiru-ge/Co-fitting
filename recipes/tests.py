@@ -1575,29 +1575,29 @@ class SharedRecipeManagerTestCase(TestCase):
 
     def test_by_token(self):
         """トークンで共有レシピ取得のテスト"""
-        recipe = SharedRecipe.by_token('active_token')
+        recipe = SharedRecipe.get_by_token('active_token')
         self.assertIsNotNone(recipe)
         self.assertEqual(recipe.name, '有効レシピ')
 
         # 存在しないトークン
-        no_recipe = SharedRecipe.by_token('nonexistent_token')
+        no_recipe = SharedRecipe.get_by_token('nonexistent_token')
         self.assertIsNone(no_recipe)
 
     def test_get_shared_recipe_data(self):
         """共有レシピデータ取得のテスト"""
         # 有効なトークン
-        data = SharedRecipe.get_shared_recipe_data('active_token')
-        self.assertIsNotNone(data)
-        self.assertEqual(data['name'], '有効レシピ')
+        recipe_data = SharedRecipe.get_shared_recipe_data('active_token')
+        self.assertIsNotNone(recipe_data)
+        self.assertEqual(recipe_data['name'], '有効レシピ')
 
         # 存在しないトークン
-        data = SharedRecipe.get_shared_recipe_data('nonexistent_token')
-        self.assertIsNotNone(data)
-        self.assertEqual(data['error'], 'not_found')
+        recipe_data = SharedRecipe.get_shared_recipe_data('nonexistent_token')
+        self.assertIsNotNone(recipe_data)
+        self.assertEqual(recipe_data['error'], 'not_found')
 
         # 空のトークン
-        data = SharedRecipe.get_shared_recipe_data(None)
-        self.assertIsNone(data)
+        recipe_data = SharedRecipe.get_shared_recipe_data(None)
+        self.assertIsNone(recipe_data)
 
 
 class RecipeViewsIntegrationTestCase(TestCase):

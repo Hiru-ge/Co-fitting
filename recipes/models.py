@@ -404,7 +404,7 @@ class SharedRecipe(BaseRecipe):
         return f"Shared: {self.name} ({self.access_token})"
 
     @classmethod
-    def by_token(cls, token):
+    def get_by_token(cls, token):
         """トークンで共有レシピを取得"""
         return cls.objects.filter(access_token=token).first()
 
@@ -414,7 +414,7 @@ class SharedRecipe(BaseRecipe):
         if not shared_token:
             return None
 
-        shared_recipe = cls.by_token(shared_token)
+        shared_recipe = cls.get_by_token(shared_token)
         if not shared_recipe:
             return {'error': 'not_found', 'message': 'この共有リンクは存在しません。'}
 
@@ -443,9 +443,9 @@ class SharedRecipe(BaseRecipe):
         return shared_recipe
 
     @classmethod
-    def get_shared_recipe_or_404(cls, token):
+    def get_shared_recipe_or_error(cls, token):
         """共有レシピを取得し、存在・期限チェックを行う"""
-        shared_recipe = cls.by_token(token)
+        shared_recipe = cls.get_by_token(token)
         if not shared_recipe:
             return None, ResponseHelper.create_error_response('not_found', 'この共有リンクは存在しません。', 404)
 
@@ -478,11 +478,11 @@ class SharedRecipe(BaseRecipe):
         return None
 
     @classmethod
-    def prepare_image_data(cls, data):
+    def prepare_image_data(cls, recipe_data):
         """画像生成用のステップデータを準備"""
         steps_for_image = []
 
-        for i, step in enumerate(data['steps']):
+        for i, step in enumerate(recipe_data['steps']):
             cumulative_water_ml = step['total_water_ml_this_step']
 
             steps_for_image.append({
