@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 import stripe
 from .models import StripeService, SubscriptionManager
@@ -22,7 +21,7 @@ def create_checkout_session(request):
         session = StripeService.create_checkout_session(request.user, request)
         return redirect(session.url)
     except Exception as e:
-        return HttpResponseServerError(f"Error: {e}")
+        return ResponseHelper.create_server_error_response(f"エラーが発生しました: {e}")
 
 
 @login_required
@@ -79,7 +78,7 @@ def create_portal_session(request):
         )
         return redirect(portal_session.url)
     except Exception as e:
-        return HttpResponseServerError(f"Error: {e}")
+        return ResponseHelper.create_server_error_response(f"エラーが発生しました: {e}")
 
 
 @login_required
