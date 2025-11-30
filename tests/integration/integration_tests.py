@@ -1,10 +1,13 @@
 from django.test import TestCase, override_settings
+from django.test.utils import override_settings as override_settings_utils
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.db import connection
 from unittest.mock import patch, MagicMock
 from django_recaptcha.client import RecaptchaResponse
 import json
+import time
 
 from tests.helpers import (
     create_test_user, create_test_recipe,
@@ -399,7 +402,6 @@ class PerformanceTestCase(TestCase):
             recipes.append(recipe)
 
         # マイページのレスポンス時間をテスト
-        import time
         start_time = time.time()
         response = self.client.get(reverse('recipes:mypage'))
         end_time = time.time()
@@ -425,7 +427,6 @@ class PerformanceTestCase(TestCase):
             )
 
         # 共有レシピ取得APIのレスポンス時間をテスト
-        import time
         start_time = time.time()
         response = self.client.get(reverse('recipes:get_user_shared_recipes'))
         end_time = time.time()
@@ -458,10 +459,7 @@ class PerformanceTestCase(TestCase):
             )
 
         # クエリ数をカウント
-        from django.test.utils import override_settings
-        from django.db import connection
-
-        with override_settings(DEBUG=True):
+        with override_settings_utils(DEBUG=True):
             connection.queries_log.clear()
 
             response = self.client.get(reverse('recipes:mypage'))

@@ -1,4 +1,5 @@
 import stripe
+import json
 from django.urls import reverse
 from users.models import User
 from recipes.models import PresetRecipe
@@ -49,7 +50,6 @@ class StripeService:
     def construct_event(payload, api_key):
         """Stripeイベントを構築"""
         try:
-            import json
             stripe.api_key = AppConstants.STRIPE_API_KEY
             event = stripe.Event.construct_from(
                 json.loads(payload), api_key

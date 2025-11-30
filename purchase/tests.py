@@ -521,7 +521,6 @@ class PurchaseIntegrationTestCase(BaseTestCase):
         self.assertFalse(self.user.is_subscribed)
 
         # プリセットレシピが1つだけ残ることを確認
-        from recipes.models import PresetRecipe
         self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), 1)
         self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())
 

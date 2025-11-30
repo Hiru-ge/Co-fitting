@@ -1,4 +1,4 @@
-from django.test import TestCase, override_settings
+from django.test import TestCase, override_settings, RequestFactory
 from django.core import mail
 from django.urls import reverse
 from django.utils import timezone
@@ -6,8 +6,10 @@ from datetime import timedelta
 from django.core.management import call_command
 from unittest.mock import patch
 from django_recaptcha.client import RecaptchaResponse
+from django.contrib.sessions.middleware import SessionMiddleware
 from tests.helpers import create_test_user, login_test_user, BaseTestCase
 from users.models import User
+import json
 
 
 @override_settings(RECAPTCHA_TESTING=True)
@@ -208,7 +210,6 @@ class PasswordChangeTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 200)  # JSONレスポンス
 
         # レスポンス内容を確認
-        import json
         response_data = json.loads(response.content.decode('utf-8'))
         self.assertTrue(response_data['success'])
         self.assertIn('パスワードを変更しました', response_data['message'])
@@ -245,9 +246,6 @@ class PasswordChangeTestCase(BaseTestCase):
 
     def test_change_user_password_model_method(self):
         """Model層のchange_user_passwordメソッドの単体テスト"""
-        from django.test import RequestFactory
-        from django.contrib.sessions.middleware import SessionMiddleware
-
         # パスワード変更前の確認
         self.assertTrue(self.user.check_password("oldpassword123"))
 

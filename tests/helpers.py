@@ -5,6 +5,7 @@ DRY原則に従い、重複するテストコードを統一する
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 import uuid
+import json
 
 User = get_user_model()
 
@@ -205,7 +206,6 @@ def assert_json_response(test_case, response, expected_status=200, expected_keys
     test_case.assertEqual(response.status_code, expected_status)
 
     if response['Content-Type'] == 'application/json':
-        import json
         response_data = json.loads(response.content)
 
         if expected_keys:

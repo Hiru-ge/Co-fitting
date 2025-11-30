@@ -8,6 +8,7 @@ from tests.helpers import (
 )
 from users.models import User
 from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedRecipeStep
+from recipes.forms import RecipeForm
 from Co_fitting.utils.constants import AppConstants
 
 
@@ -718,8 +719,6 @@ class RecipeFormTestCase(TestCase):
 
     def test_recipe_form_valid_data(self):
         """有効なデータでレシピフォームが動作することをテスト"""
-        from .forms import RecipeForm
-
         form_data = {
             'name': 'テストレシピ',
             'is_ice': False,
@@ -734,8 +733,6 @@ class RecipeFormTestCase(TestCase):
 
     def test_recipe_form_invalid_data(self):
         """無効なデータでレシピフォームがエラーを返すことをテスト"""
-        from .forms import RecipeForm
-
         form_data = {
             'name': '',  # 空の名前
             'is_ice': False,

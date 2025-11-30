@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST, require_GET, require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
 from .models import (
     PresetRecipe, PresetRecipeStep, User, SharedRecipe, SharedRecipeStep,
     generate_recipe_image
@@ -189,7 +190,6 @@ def add_shared_recipe_to_preset(request, token):
 def shared_recipe_ogp(request, token):
     shared_recipe = SharedRecipe.get_by_token(token)
     if not shared_recipe:
-        from django.http import Http404
         raise Http404("共有レシピが見つかりません。")
     image_url = request.build_absolute_uri(f"{settings.MEDIA_URL}shared_recipes/{shared_recipe.access_token}.png")
     params = {
