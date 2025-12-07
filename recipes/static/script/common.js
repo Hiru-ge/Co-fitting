@@ -39,7 +39,7 @@ $(document).ready(function() {
 const ModalWindow = {
     // 既存モーダルを表示
     show(modalId) {
-        $(`#${modalId}`).removeClass('modal-hidden').css('display', 'block');
+        $(`#${modalId}`).removeClass('modal-hidden').css('display', 'flex');
     },
     
     // モーダルを非表示
@@ -50,7 +50,7 @@ const ModalWindow = {
     // 新規モーダルを作成して表示
     createAndShow(modalId, title, content) {
         const modalHtml = `
-            <div id="${modalId}" class="modal" style="display: block;">
+            <div id="${modalId}" class="modal" style="display: flex;">
                 <div class="modal-content">
                     <div class="modal-header">
                         <div class="modal-title">
