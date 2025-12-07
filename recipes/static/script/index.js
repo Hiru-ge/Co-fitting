@@ -747,6 +747,109 @@ $(document).ready(function() {
         ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
     });
 
-    // 共有レシピの処理を実行
     handleSharedRecipe();
+
+    let pipWindow = null;
+
+    if ('documentPictureInPicture' in window) {
+        $('#pip-btn').show();
+
+        $('#pip-btn').on('click', async function() {
+            const $recipeTable = $('.recipe-output');
+            
+            if ($recipeTable.length === 0 || $recipeTable.find('tr').length <= 1) {
+                alert('変換後レシピがありません。先にレシピを変換してください。');
+                return;
+            }
+
+            try {
+                if (pipWindow && !pipWindow.closed) {
+                    pipWindow.close();
+                    pipWindow = null;
+                    return;
+                }
+
+                pipWindow = await documentPictureInPicture.requestWindow({
+                    width: 350,
+                    height: 400
+                });
+
+                let pipTableHTML = '<table class="pip-recipe-table"><thead><tr><th>経過時間</th><th>総注湯量</th></tr></thead><tbody>';
+                
+                $recipeTable.find('tr').each(function(index) {
+                    if (index === 0) return;
+                    
+                    const $row = $(this);
+                    const $cells = $row.find('td');
+                    
+                    if ($cells.length >= 3) {
+                        const time = $cells.eq(0).text().trim();
+                        const totalWater = $cells.eq(2).text().trim();
+                        pipTableHTML += `<tr><td>${time}</td><td>${totalWater}</td></tr>`;
+                    }
+                });
+                
+                pipTableHTML += '</tbody></table>';
+
+                pipWindow.document.documentElement.innerHTML = `
+                    <head>
+                        <meta charset="UTF-8">
+                        <title>変換後レシピ</title>
+                        <style>
+                            * {
+                                margin: 0;
+                                padding: 0;
+                                box-sizing: border-box;
+                            }
+                            html, body {
+                                width: 100%;
+                                height: 100%;
+                                margin: 0;
+                                padding: 0;
+                                background-color: #474747;
+                                color: #fff;
+                                font-family: 'Hiragino Kaku Gothic', '游ゴシック', sans-serif;
+                                overflow: hidden;
+                            }
+                            .pip-container {
+                                padding: 1rem;
+                                height: 100%;
+                                display: flex;
+                                flex-direction: column;
+                            }
+                            .pip-recipe-table {
+                                width: 100%;
+                                border-collapse: collapse;
+                                margin: 0;
+                            }
+                            .pip-recipe-table th,
+                            .pip-recipe-table td {
+                                padding: 0 0.5em;
+                                text-align: right;
+                            }
+                            .pip-recipe-table th {
+                                font-weight: 700;
+                                text-align: center;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="pip-container">
+                            ${pipTableHTML}
+                        </div>
+                    </body>
+                `;
+
+                pipWindow.addEventListener('pagehide', () => {
+                    pipWindow = null;
+                });
+
+            } catch (error) {
+                console.error('PiPウィンドウの開くに失敗しました:', error);
+                alert('PiPウィンドウを開くことができませんでした。');
+            }
+        });
+    } else {
+        $('#pip-button-container').hide();
+    }
 });
