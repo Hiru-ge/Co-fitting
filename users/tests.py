@@ -214,7 +214,7 @@ class PasswordChangeTestCase(BaseTestCase):
         self.assertTrue(response_data['success'])
         self.assertIn('パスワードを変更しました', response_data['message'])
         self.assertIn('ログアウトされました', response_data['message'])
-        self.assertEqual(response_data['redirect_url'], '/users/login')
+        self.assertEqual(response_data['redirect_url'], '/users/login/')
 
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))  # パスワード変更が適用されているか

@@ -6,11 +6,11 @@ from django.views.generic import TemplateView
 
 app_name = 'users'
 urlpatterns = [
-    path('login', views.CustomLoginView.as_view(template_name='users/login.html'), name='login'),
+    path('login/', views.CustomLoginView.as_view(template_name='users/login.html'), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('logout_confirm/', TemplateView.as_view(template_name="users/logout.html"), name='logout_confirm'),
     path('signup/', views.signup_request, name='signup_request'),
-    path('signup/confirm/<uidb64>/<token>/<email>', views.signup_confirm, name='signup_confirm'),
+    path('signup/confirm/<uidb64>/<token>/<email>/', views.signup_confirm, name='signup_confirm'),
 
     path("email_change/", views.email_change_request, name="email_change_request"),
     path("email_change/confirm/<uidb64>/<token>/<email>/", views.email_change_confirm, name="email_change_confirm"),

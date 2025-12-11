@@ -257,7 +257,7 @@ $(document).ready(function() {
     function showLoginPrompt() {
         const message = '共有機能はログインユーザー限定機能です！\n新規登録・ログインしていきませんか？';
         if (confirm(message)) {
-            window.location.href = '/users/login';  // ログインページにリダイレクト
+            window.location.href = '/users/login/';  // ログインページにリダイレクト
         }
     }
 
@@ -668,7 +668,7 @@ $(document).ready(function() {
 
     // ログインボタンのクリックイベント
     $('#login-redirect-btn').on('click', function() {
-        window.location.href = '/users/login';
+        window.location.href = '/users/login/';
     });
 
     // 全共有レシピ削除ボタンのクリックイベント

@@ -24,7 +24,7 @@
         <p><b>月額100円</b>でプリセット枠を3枠増やせます</p>
         <p>共有可能レシピ数も1つから5つに増えます</p>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='./purchase/create_checkout_session'">サブスク新規契約</button>
+            <button class="long-button" onclick="location.href='/purchase/create_checkout_session/'">サブスク新規契約</button>
         </div>
         <div class="button-parent">
             <button class="long-button" id="subscription-status-btn" data-subscription-status="{{ subscription_status }}">契約状況確認・解約</button>
@@ -50,7 +50,7 @@
             {% endif %}
         </div>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='./preset_create/'">プリセット新規登録</button>
+            <button class="long-button" onclick="location.href='/preset_create/'">プリセット新規登録</button>
         </div>
 
         <h3 id="shared-recipes">現在共有しているレシピ一覧</h3>

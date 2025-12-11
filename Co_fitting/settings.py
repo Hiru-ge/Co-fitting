@@ -91,9 +91,9 @@ WSGI_APPLICATION = 'Co_fitting.wsgi.application'
 AUTH_USER_MODEL = 'users.User'
 
 # ログイン周りのリダイレクト先
-LOGIN_URL = '/users/login'
-LOGIN_REDIRECT_URL = '/mypage'
-LOGOUT_REDIRECT_URL = '/users/login'
+LOGIN_URL = '/users/login/'
+LOGIN_REDIRECT_URL = '/mypage/'
+LOGOUT_REDIRECT_URL = '/users/login/'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

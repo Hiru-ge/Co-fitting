@@ -129,7 +129,7 @@ const ModalWindow = {
         // イベント設定
         modal.find('#subscribe-btn').on('click', () => {
             this.hide('share-limit-modal');
-            window.location.href = '/purchase/create_checkout_session';
+            window.location.href = '/purchase/create_checkout_session/';
         });
         
         modal.find('#manage-shares-btn').on('click', () => {
@@ -137,7 +137,7 @@ const ModalWindow = {
             if (onManageShares) {
                 onManageShares();
             } else {
-                window.location.href = '/mypage#shared-recipes';
+                window.location.href = '/mypage/#shared-recipes';
             }
         });
         

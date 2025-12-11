@@ -129,7 +129,7 @@ $(document).ready(function() {
 
     // サブスクリプションポータルボタン
     $('#portal-session-btn').on('click', function() {
-        window.location.href = '/purchase/create_portal_session';
+        window.location.href = '/purchase/create_portal_session/';
     });
 
     // サブスク状況確認・解約ボタン
@@ -141,14 +141,14 @@ $(document).ready(function() {
             ModalWindow.show('not-subscribed-modal');
         } else {
             // 契約済みの場合はカスタマーポータルに遷移
-            window.location.href = '/purchase/create_portal_session';
+            window.location.href = '/purchase/create_portal_session/';
         }
     });
 
     // モーダル内のサブスク新規契約ボタン
     $('#subscribe-from-modal-btn').on('click', function() {
         ModalWindow.hide('not-subscribed-modal');
-        window.location.href = '/purchase/create_checkout_session';
+        window.location.href = '/purchase/create_checkout_session/';
     });
 
     // 成功・エラーモーダルはModalWindowのメソッドを直接使用
