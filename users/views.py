@@ -50,11 +50,10 @@ class CustomLoginView(LoginView):
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        """認証成功時にメール通知を送信"""
-        response = super().form_valid(form)  # 既存の処理を実行
-        user = self.request.user  # 認証されたユーザー
+        """認証成功時にIPアドレスも含めたログイン通知メールを送信"""
+        response = super().form_valid(form)  # 元クラスの既存form_validメソッドを実行
+        user = self.request.user
 
-        # IPアドレスを取得してメール送信（非同期で実行）
         ip_address = User.objects.get_client_ip(self.request)
         User.objects.send_login_notification_async(user, ip_address)
 
@@ -76,10 +75,8 @@ def email_change_request(request):
             messages.success(request, "確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。")
             return redirect("recipes:mypage")
         else:
-            # フォームエラーを返す
             return ResponseHelper.create_validation_error_response(form.errors)
     else:
-        # GETリクエストの場合はマイページにリダイレクト
         return redirect("recipes:mypage")
 
 
@@ -88,7 +85,8 @@ def email_change_confirm(request, uidb64, token, email):
     """メールアドレス変更の確認（リンクをクリック）"""
     user, decoded_email = SecurityUtils.verify_confirmation_tokens(uidb64, token, email)
 
-    if user is not None and decoded_email is not None:
+    can_change_email = user is not None and decoded_email is not None
+    if can_change_email:
         User.objects.change_user_email(user, decoded_email)
         messages.success(request, "メールアドレスを変更しました。")
         return redirect("recipes:mypage")
@@ -104,14 +102,12 @@ def password_change_api(request):
         form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
             new_password = form.cleaned_data['new_password1']
-            # Model層でパスワード変更とログアウト処理を実行
             User.objects.change_user_password(request.user, new_password, request)
             return ResponseHelper.create_success_response(
                 'パスワードを変更しました。セキュリティのため、ログアウトされました。新しいパスワードでログインしてください。',
                 {'redirect_url': settings.LOGIN_URL}
             )
         else:
-            # フォームエラーを返す
             return ResponseHelper.create_validation_error_response(form.errors)
 
     return ResponseHelper.create_error_response('invalid_request', '無効なリクエストです。')
@@ -130,10 +126,9 @@ def password_reset_complete_redirect(request):
 @login_required
 def account_delete(request):
     if request.method == 'POST':
-        # 元の挙動を維持：POSTリクエストのみでアカウント削除
         user = request.user
         User.objects.deactivate_user(user)
         logout(request)
-        return redirect(reverse_lazy('recipes:index'))  # 退会後トップページへリダイレクト
+        return redirect(reverse_lazy('recipes:index'))
     else:
         return ResponseHelper.create_error_response('invalid_request', '無効なリクエストです。')

@@ -5,7 +5,7 @@ function nextField(str) {
     if (str.value.length >= str.maxLength) {
         for (var i = 0, elm = str.form.elements; i < elm.length; i++) {
             if (elm[i] == str) {
-                // 50msの遅延を加えてフォーカスを移動
+                // 50msの遅延を加えてフォーカスを移動(∵即時移動するとフォーカスが移動しないことがある)
                 setTimeout(function() {
                     (elm[i + 1] || elm[0]).focus();
                 }, 50);
@@ -37,17 +37,14 @@ $(document).ready(function() {
 
 // シンプルなモーダルウィンドウ表示ユーティリティ
 const ModalWindow = {
-    // 既存モーダルを表示
     show(modalId) {
         $(`#${modalId}`).removeClass('modal-hidden').css('display', 'flex');
     },
     
-    // モーダルを非表示
     hide(modalId) {
         $(`#${modalId}`).addClass('modal-hidden');
     },
     
-    // 新規モーダルを作成して表示
     createAndShow(modalId, title, content) {
         const modalHtml = `
             <div id="${modalId}" class="modal" style="display: flex;">
@@ -65,16 +62,13 @@ const ModalWindow = {
             </div>
         `;
         
-        // 既存のモーダルがあれば削除
-        $(`#${modalId}`).remove();
-        
-        // 新しいモーダルを追加して表示
+        $(`#${modalId}`).remove();  // 既存のモーダルがあれば削除しておく(∵同じIDのモーダルが複数表示されると正常に動作しない)
         $('body').append(modalHtml);
         
         return $(`#${modalId}`);
     },
     
-    // 成功メッセージを表示
+    // 成功メッセージモーダルを表示
     showSuccess(message) {
         const content = `
             <p>${message}</p>
@@ -86,7 +80,7 @@ const ModalWindow = {
         return this.createAndShow('success-modal', '成功', content);
     },
     
-    // エラーメッセージを表示
+    // エラーメッセージモーダルを表示
     showError(message) {
         const content = `
             <p>${message}</p>
@@ -98,7 +92,8 @@ const ModalWindow = {
         return this.createAndShow('error-modal', 'エラー', content);
     },
     
-    // 共有制限モーダルを表示
+    // レシピ共有制限オーバー時のモーダルを表示
+    // TODO: dataという引数は抽象的すぎて良くない。user等としたいがmessageがあるのでこれも難しい。よって呼び出し側の形式を見直してこれを解消したい。
     showShareLimit(data, onManageShares = null) {
         const isPremium = data.is_premium || false;
         const currentCount = data.current_count || 0;
