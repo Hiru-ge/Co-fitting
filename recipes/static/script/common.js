@@ -94,7 +94,7 @@ const ModalWindow = {
     
     // レシピ共有制限オーバー時のモーダルを表示
     // TODO: dataという引数は抽象的すぎて良くない。user等としたいがmessageがあるのでこれも難しい。よって呼び出し側の形式を見直してこれを解消したい。
-    showShareLimit(data, onManageShares = null) {
+    showShareLimit(data) {
         const isPremium = data.is_premium || false;
         const currentCount = data.current_count || 0;
         const limit = data.limit || 1;
@@ -127,13 +127,9 @@ const ModalWindow = {
             window.location.href = '/purchase/create_checkout_session/';
         });
         
-        modal.find('#manage-shares-btn').on('click', () => {
+        modal.find('#manage-shares-btn').on('click', () => {    
             this.hide('share-limit-modal');
-            if (onManageShares) {
-                onManageShares();
-            } else {
-                window.location.href = '/mypage/#shared-recipes';
-            }
+            window.location.href = '/mypage/#shared-recipes';
         });
         
         return modal;

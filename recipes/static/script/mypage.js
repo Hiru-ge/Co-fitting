@@ -226,7 +226,7 @@ $(document).ready(function() {
                     ModalWindow.showError('ログインが必要です。');
                 } else if (xhr.status === 429) {
                     const data = xhr.responseJSON;
-                    showShareLimitModal(data);
+                    ModalWindow.showShareLimit(data);
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
                     ModalWindow.showError(data.message || '入力データに問題があります。');
@@ -374,18 +374,6 @@ $(document).ready(function() {
                 ModalWindow.showError('共有レシピの削除に失敗しました。');
             }
         });
-    }
-
-    // 共有制限オーバー時のモーダル表示（ModalWindowで統一）
-    function showShareLimitModal(data) {
-        // マイページでは共有レシピ一覧にスクロールするカスタム動作
-        const onManageShares = () => {
-            $('html, body').animate({
-                scrollTop: $('#shared-recipes').offset().top
-            }, 500);
-        };
-        
-        ModalWindow.showShareLimit(data, onManageShares);
     }
 
     // Web Share APIを使用してSNS投稿
