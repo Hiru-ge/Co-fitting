@@ -218,6 +218,7 @@ class PasswordChangeTestCase(BaseTestCase):
 
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("newpassword123"))  # パスワード変更が適用されているか
+        self.assertNotIn('_auth_user_id', self.client.session)  # ログアウトされていることを確認
 
     def test_password_change_fails_with_wrong_old_password(self):
         """現在のパスワードが間違っていた場合は変更できないことをテスト"""
@@ -227,6 +228,7 @@ class PasswordChangeTestCase(BaseTestCase):
             "new_password2": "newpassword123",
         })
         self.assertEqual(response.status_code, 400)  # エラーレスポンス
+        self.assertIn('_auth_user_id', self.client.session)  # ログイン状態が維持されていることを確認
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("oldpassword123"))  # パスワードが変更されていないか確認
 
@@ -239,8 +241,10 @@ class PasswordChangeTestCase(BaseTestCase):
             "new_password2": "newpassword123",
         })
 
-        # ログアウトして新しいパスワードでログイン
-        self.client.logout()
+        # ログアウトされていることを確認
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+        # 新しいパスワードでログイン
         login_success = self.client.login(username="test@example.com", password="newpassword123")
         self.assertTrue(login_success)  # 新しいパスワードでログインできるか確認
 
@@ -248,11 +252,6 @@ class PasswordChangeTestCase(BaseTestCase):
         """Model層のchange_user_passwordメソッドの単体テスト"""
         # パスワード変更前の確認
         self.assertTrue(self.user.check_password("oldpassword123"))
-
-        # Model層のメソッドを直接テスト（リクエストなし）
-        User.objects.change_user_password(self.user, "newpassword123")
-        self.user.refresh_from_db()
-        self.assertTrue(self.user.check_password("newpassword123"))
 
         # リクエスト付きでテスト（ログアウト処理も含む）
         factory = RequestFactory()

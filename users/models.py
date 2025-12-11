@@ -101,13 +101,12 @@ class UserManager(BaseUserManager):
 
     @staticmethod
     def change_user_password(user, new_password, request=None):
-        """ユーザーのパスワードを変更し、必要に応じてログアウト処理を行う"""
+        """ユーザーのパスワードを変更し、ログアウト処理を行う"""
         user.set_password(new_password)
         user.save()
 
-        # リクエストが提供されている場合はログアウト処理を行う
-        if request:
-            logout(request)
+        # パスワードが変更されたら、セキュリティのためログアウトする
+        logout(request)
 
         return user
 
