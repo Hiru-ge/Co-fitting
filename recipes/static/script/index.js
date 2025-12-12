@@ -1,5 +1,9 @@
 'use strict';
 $(document).ready(function() {
+    // テンプレートから埋め込まれた氷量
+    const iceGFromDbElement = document.getElementById('ice_g_from_db');
+    const ice_gFromDB = iceGFromDbElement?.dataset?.iceG || null;
+
     function apply_ice_mode(isIce, ice_gFromDB){
             // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
             let iceInputDivText= `
@@ -23,6 +27,39 @@ $(document).ready(function() {
         // アイスモード切り替え時に総量を更新
         updateTotalOutput();
     }
+
+    // 豆量・湯量・秒数の表示桁数を整えるための関数
+    function normalizePresetInputs() {
+        if (!iceGFromDbElement) return;
+
+        // 豆量を整数値表示
+        const beanValue = $('#bean-input').val();
+        if (beanValue) {
+            $('#bean-input').val(Math.round(parseFloat(beanValue)));
+        }
+
+        // 湯量を整数値表示
+        $('.pour-ml').each(function() {
+            const waterValue = $(this).val();
+            if (waterValue) {
+                $(this).val(Math.round(parseFloat(waterValue)));
+            }
+        });
+
+        // 秒数を2桁表示
+        $('.seconds').each(function() {
+            const currentValue = $(this).val();
+            if (currentValue && currentValue.length === 1) {
+                $(this).val(currentValue.padStart(2, '0'));
+            }
+        });
+
+        // アイスコーヒーの総量を表示
+        if (typeof updateTotalOutput === 'function') {
+            updateTotalOutput();
+        }
+    }
+    normalizePresetInputs();
 
     // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
     $('#ice-check, #is_ice').on('change', function(){

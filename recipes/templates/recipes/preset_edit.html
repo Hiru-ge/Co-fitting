@@ -68,38 +68,5 @@
 
 {% block extra_js %}
     <script src="{% static 'script/index.js' %}"></script>
-    <script>
-        // Djangoから渡された値をJavaScriptに渡す
-        var ice_gFromDB = "{{ recipe.ice_g|default_if_none:'' }}";
-        
-        // ページ読み込み時に豆量と湯量を整数値表示に調整、秒数を2桁表示に調整
-        $(document).ready(function() {
-            // 豆量を整数値表示
-            var beanValue = $('#bean-input').val();
-            if (beanValue) {
-                $('#bean-input').val(Math.round(parseFloat(beanValue)));
-            }
-            
-            // 湯量を整数値表示
-            $('.pour-ml').each(function() {
-                var waterValue = $(this).val();
-                if (waterValue) {
-                    $(this).val(Math.round(parseFloat(waterValue)));
-                }
-            });
-            
-            // 秒数を2桁表示
-            $('.seconds').each(function() {
-                var currentValue = $(this).val();
-                if (currentValue && currentValue.length === 1) {
-                    $(this).val(currentValue.padStart(2, '0'));
-                }
-            });
-            
-            // アイスコーヒーの総量を表示
-            if (typeof updateTotalOutput === 'function') {
-                updateTotalOutput();
-            }
-        });
-    </script>
+    <span id="ice_g_from_db" data-ice-g="{{ recipe.ice_g|default_if_none:'' }}"></span>
 {% endblock %}
