@@ -7,7 +7,7 @@ from django.core.management import call_command
 from unittest.mock import patch
 from django_recaptcha.client import RecaptchaResponse
 from django.contrib.sessions.middleware import SessionMiddleware
-from tests.helpers import create_test_user, login_test_user, BaseTestCase
+from Co_fitting.tests.helpers import create_test_user, login_test_user, BaseTestCase
 from users.models import User
 import json
 

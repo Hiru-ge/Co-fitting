@@ -9,7 +9,7 @@ from django_recaptcha.client import RecaptchaResponse
 import json
 import time
 
-from tests.helpers import (
+from Co_fitting.tests.helpers import (
     create_test_user, create_test_recipe,
     login_test_user, BaseTestCase, assert_json_response,
     create_form_data

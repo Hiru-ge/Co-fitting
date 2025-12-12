@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 
-from tests.helpers import create_test_user, BaseTestCase
+from Co_fitting.tests.helpers import create_test_user, BaseTestCase
 
 User = get_user_model()
 

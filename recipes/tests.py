@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 import json
-from tests.helpers import (
+from Co_fitting.tests.helpers import (
     create_test_user, create_test_recipe, create_test_shared_recipe,
     login_test_user, BaseTestCase, assert_json_response,
     create_recipe_data, create_form_data
