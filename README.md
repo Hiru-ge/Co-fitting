@@ -58,7 +58,7 @@ https://github.com/user-attachments/assets/dc7d0e06-7307-4c2b-be9f-87a110fdd1a5
 
 1. **プリセットレシピ呼び出しボタン**：登録されているプリセットレシピを呼び出します。
 
-   <img src="recipes/static/images/how-to-description/presetRecipe.png" width="40%">
+   <img src="articles/static/images/how-to-description/presetRecipe.png" width="40%">
 
   利用したいものがあれば、登録されているプリセットレシピを呼び出します。
   プリセットレシピは、後述する「変換前レシピ入力欄」に自動的に入力されます。
@@ -66,17 +66,17 @@ https://github.com/user-attachments/assets/dc7d0e06-7307-4c2b-be9f-87a110fdd1a5
 
 2. **変換前レシピ入力欄**：変換する前のレシピの情報を入力します。
 
-   <img src="recipes/static/images/how-to-description/originRecipeForm.png" width="40%">
+   <img src="articles/static/images/how-to-description/originRecipeForm.png" width="40%">
 
    投数、豆の量、そして各投入段階の経過時間と注湯量を記入します。<br>
       ※ 投数を入力すると、その分だけレシピ入力欄が生成されます。<br>
    アイスコーヒーを入れたい場合は、アイスモードをONにし、氷量を入力します。
 
-   <img src="recipes/static/images/how-to-description/originRecipeForm-ice-mode.png" width="40%">
+   <img src="articles/static/images/how-to-description/originRecipeForm-ice-mode.png" width="40%">
 
 4. **変換目標入力欄**：変換後のレシピの情報を入力します。
 
-   <img src="recipes/static/images/how-to-description/targetParameterForm-bean-water.png" width="40%">
+   <img src="articles/static/images/how-to-description/targetParameterForm-bean-water.png" width="40%">
 
    目標とする豆の量、総湯量、そして豆と湯の比率を指定します。
 
@@ -84,7 +84,7 @@ https://github.com/user-attachments/assets/dc7d0e06-7307-4c2b-be9f-87a110fdd1a5
 
      変換目標の入力が手間かと思い、倍率を入力するだけで変換できる機能を実装しました。
 
-      <img src="recipes/static/images/how-to-description/targetParameterForm-convertRate.png" width="40%">
+     <img src="articles/static/images/how-to-description/targetParameterForm-convertRate.png" width="40%">
 
    **入力補助**
 
@@ -96,11 +96,11 @@ https://github.com/user-attachments/assets/dc7d0e06-7307-4c2b-be9f-87a110fdd1a5
 
 6. **変換後レシピの出力**：変換されたレシピが表形式で表示されます。
 
-   <img src="recipes/static/images/how-to-description/convertedRecipe.png" width="40%">   
+   <img src="articles/static/images/how-to-description/convertedRecipe.png" width="40%">   
 
 7. **ストップウォッチ機能**：抽出時の経過時間を計測する機能です。
 
-   <img src="recipes/static/images/how-to-description/stopWatch.png" width="40%">
+   <img src="articles/static/images/how-to-description/stopWatch.png" width="40%">
 
    スタートボタンを押すと計測が始まり、ストップボタンを押すと計測が終了します。
 
@@ -138,8 +138,14 @@ https://github.com/user-attachments/assets/dc7d0e06-7307-4c2b-be9f-87a110fdd1a5
 これは本変換器を利用しない場合にも有効な基本原理なので、ぜひ自分でコーヒーを淹れる際にも意識し、湯温や粉の粒度などを調整してみてください。
 
 <div align="center">
-  <img src="recipes/static/images/how-to-description/extraction-graph.png" width="80%">
+  <img src="articles/static/images/how-to-description/extraction-graph.png" width="80%">
 </div>
+
+## ディレクトリ構成メモ（主要どころ）
+- テンプレート: `Co_fitting/templates/`（`index.html`, `mypage.html` など）
+- 共通静的ファイル: `Co_fitting/static/`（JS/CSS/共通画像）
+- 記事用画像: `articles/static/images/how-to-description/`, `articles/static/images/mypreset-description/`
+- テスト: `Co_fitting/tests/`（`helpers.py` と統合テストを含む）
 
 ※ 上図は[Kenken Coffeeさんの動画](https://youtu.be/lg7bafltXsk?si=rhBRmGLMRcgXcitu&t=848)に登場したものを参考に作成
 
