@@ -146,8 +146,8 @@ class LogoutTestCase(BaseTestCase):
     def test_access_protected_page_after_logout(self):
         """ログアウト後に保護されたページへアクセスできないことをテスト"""
         self.client.post(self.logout_url)  # まずログアウト
-        response = self.client.get(reverse('recipes:mypage'))  # マイページなど保護ページにアクセス
-        self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('recipes:mypage')}")
+        response = self.client.get(reverse('mypage'))  # マイページなど保護ページにアクセス
+        self.assertRedirects(response, f"{reverse('users:login')}?next={reverse('mypage')}")
 
 
 class EmailChangeTestCase(BaseTestCase):
@@ -189,7 +189,7 @@ class EmailChangeTestCase(BaseTestCase):
 
         # 無効なリンクの場合はマイページにリダイレクトされることを確認
         self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response, reverse('recipes:mypage'))
+        self.assertRedirects(response, reverse('mypage'))
 
 
 class PasswordChangeTestCase(BaseTestCase):
@@ -318,7 +318,7 @@ class AccountDeleteTestCase(BaseTestCase):
     def test_user_cannot_login_after_deletion(self):
         """退会処理後、非アクティブになりログインできなくなることをテスト"""
         response = self.client.post(self.delete_account_url)
-        self.assertRedirects(response, reverse('recipes:index'))  # 退会後のリダイレクト先は変換ページ
+        self.assertRedirects(response, reverse('home'))  # 退会後のリダイレクト先は変換ページ
 
         # ユーザーが非アクティブになっているか確認
         self.user.refresh_from_db()
@@ -544,7 +544,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
 
         # ログイン成功後はマイページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('recipes:mypage'))
+        self.assertEqual(response.url, reverse('mypage'))
 
     def test_logout_redirect_after_successful_logout(self):
         """ログアウト成功後のリダイレクトが正しいことをテスト"""
@@ -592,7 +592,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
 
         # メール変更成功後はマイページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('recipes:mypage'))
+        self.assertEqual(response.url, reverse('mypage'))
 
     def test_account_delete_redirect_after_successful_deletion(self):
         """アカウント削除成功後のリダイレクトが正しいことをテスト"""
@@ -602,7 +602,7 @@ class UserViewsIntegrationTestCase(BaseTestCase):
 
         # アカウント削除後はインデックスページにリダイレクトされる
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('recipes:index'))
+        self.assertEqual(response.url, reverse('home'))
 
 
 class UserSecurityTestCase(BaseTestCase):
@@ -719,7 +719,7 @@ class UserSessionTestCase(BaseTestCase):
         self.client.login(username='test@example.com', password='securepassword123')
 
         # 複数のリクエストを送信
-        response1 = self.client.get(reverse('recipes:mypage'))
+        response1 = self.client.get(reverse('mypage'))
         # indexページはDefaultPresetユーザーが必要なため、別のページを使用
         response2 = self.client.get(reverse('articles:how-to-use'))
 

@@ -73,7 +73,7 @@ def preset_create(request):
             # Model層のメソッドを使用してレシピとステップを作成
             recipe.create_with_user_and_steps(request.POST, request.user)
 
-            return redirect('recipes:mypage')
+            return redirect('mypage')
     else:
         recipe_form = RecipeForm()
 
@@ -93,7 +93,7 @@ def preset_edit(request, recipe_id):
             # Model層のメソッドを使用してレシピとステップを更新
             updated_recipe.update_with_steps(request.POST)
 
-            return redirect('recipes:mypage')
+            return redirect('mypage')
 
     else:
         recipe_form = RecipeForm(instance=recipe)
@@ -274,7 +274,7 @@ def shared_recipe_edit(request, token):
             # 共通関数を使用して画像を生成
             generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
 
-            return redirect('recipes:mypage')
+            return redirect('mypage')
         else:
             # フォームエラーの場合は再表示
             steps = SharedRecipeStep.objects.filter(recipe=shared_recipe).order_by('step_number')

@@ -251,7 +251,7 @@ class RecipeActivationTestCase(BaseTestCase):
             water_ml=200,
             memo="ユーザープリセットメモ"
         )
-        self.index_url = reverse('recipes:index')  # 呼び出しを行うページのURL
+        self.index_url = reverse('home')  # 呼び出しを行うページのURL
 
     def test_preset_recipes_displayed_on_conversion_page(self):
         """変換ページにプリセットレシピが表示されていることを確認"""
@@ -1646,7 +1646,7 @@ class RecipeViewsIntegrationTestCase(TestCase):
             memo='ユーザーメモ'
         )
 
-        response = self.client.get(reverse('recipes:index'))
+        response = self.client.get(reverse('home'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'デフォルトレシピ')
         # ログインしていない場合はユーザーレシピは表示されない
@@ -1667,13 +1667,13 @@ class RecipeViewsIntegrationTestCase(TestCase):
             memo='マイメモ'
         )
 
-        response = self.client.get(reverse('recipes:mypage'))
+        response = self.client.get(reverse('mypage'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'マイレシピ')
 
     def test_mypage_requires_login(self):
         """マイページはログインが必要であることをテスト"""
-        response = self.client.get(reverse('recipes:mypage'))
+        response = self.client.get(reverse('mypage'))
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url.startswith(reverse('users:login')))
 

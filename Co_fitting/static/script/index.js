@@ -134,7 +134,7 @@ $(document).ready(function() {
         }
         
         try {
-            const response = await fetch('/api/preset-recipes/');
+            const response = await fetch('/recipes/api/preset-recipes/');
             if (!response.ok) throw new Error('プリセットレシピの取得に失敗しました');
 
             presetRecipesCache = await response.json();
@@ -269,7 +269,7 @@ $(document).ready(function() {
 
     // 共有ボタンの機能
     $('#share-recipe-btn').on('click', function() {
-        const isLoggedIn = window.isLoggedIn;
+        const isLoggedIn = document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
         if (!isLoggedIn) {
             showLoginPrompt();
             return;
@@ -333,7 +333,7 @@ $(document).ready(function() {
 
         // バックエンドAPIに送信
         $.ajax({
-            url: '/api/shared-recipes/create/',
+            url: '/recipes/api/shared-recipes/create/',
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -341,7 +341,7 @@ $(document).ready(function() {
             },
             data: JSON.stringify(recipeData),
             success: function(response) {
-                const shareUrl = `/share/${response.access_token}/`;
+                const shareUrl = `/recipes/share/${response.access_token}/`;
                 shareToSocialMedia(shareUrl, recipeData);
             },
             error: function(xhr) {
@@ -594,7 +594,7 @@ $(document).ready(function() {
         $('#add-to-preset-btn').prop('disabled', true).text('追加中...');
         
         $.ajax({
-            url: `/api/shared-recipes/${token}/add-to-preset/`,
+            url: `/recipes/api/shared-recipes/${token}/add-to-preset/`,
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken()
@@ -714,7 +714,8 @@ $(document).ready(function() {
 
     let pipWindow = null;
 
-    if ('documentPictureInPicture' in window && window.isLoggedIn) {
+    const isLoggedInFlag = document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
+    if ('documentPictureInPicture' in window && isLoggedInFlag) {
         $.ajax({
             url: '/purchase/get_preset_limit/',
             method: 'GET',

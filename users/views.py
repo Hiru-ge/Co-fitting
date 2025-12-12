@@ -18,7 +18,7 @@ def signup_request(request):
         if form.is_valid():
             User.objects.create_inactive_user_with_confirmation(form, request)
             messages.success(request, "確認メールを送信しました。登録メールアドレスの受信ボックスを確認してください。メールが届かない場合は、迷惑メールフォルダを確認してみてください。")
-            return redirect("recipes:mypage")
+            return redirect("mypage")
     else:
         form = SignUpForm()
 
@@ -36,7 +36,7 @@ def signup_confirm(request, uidb64, token, email):
             User.objects.activate_user(user)
             login(request, user)
             messages.success(request, "ユーザー登録が完了しました。")
-        return redirect("recipes:mypage")
+        return redirect("mypage")
     else:
         messages.error(request, "無効なリンクです。")
         return redirect("users:signup_request")
@@ -73,11 +73,11 @@ def email_change_request(request):
             User.objects.send_email_change_confirmation(user, new_email, request)
 
             messages.success(request, "確認メールを送信しました。新しいメールアドレスの受信ボックスを確認してください。")
-            return redirect("recipes:mypage")
+            return redirect("mypage")
         else:
             return ResponseHelper.create_validation_error_response(form.errors)
     else:
-        return redirect("recipes:mypage")
+        return redirect("mypage")
 
 
 @login_required
@@ -89,10 +89,10 @@ def email_change_confirm(request, uidb64, token, email):
     if can_change_email:
         User.objects.change_user_email(user, decoded_email)
         messages.success(request, "メールアドレスを変更しました。")
-        return redirect("recipes:mypage")
+        return redirect("mypage")
 
     messages.error(request, "無効なリンクです。")
-    return redirect("recipes:mypage")
+    return redirect("mypage")
 
 
 @login_required
@@ -115,12 +115,12 @@ def password_change_api(request):
 
 def password_reset_done_redirect(request):
     """パスワードリセット送信完了時にマイページにリダイレクトしてモーダル表示"""
-    return redirect(reverse('recipes:mypage') + '?password_reset_sent=true')
+    return redirect(reverse('mypage') + '?password_reset_sent=true')
 
 
 def password_reset_complete_redirect(request):
     """パスワードリセット完了時にマイページにリダイレクトしてモーダル表示"""
-    return redirect(reverse('recipes:mypage') + '?password_reset_success=true')
+    return redirect(reverse('mypage') + '?password_reset_success=true')
 
 
 @login_required
@@ -129,6 +129,6 @@ def account_delete(request):
         user = request.user
         User.objects.deactivate_user(user)
         logout(request)
-        return redirect(reverse_lazy('recipes:index'))
+        return redirect(reverse_lazy('home'))
     else:
         return ResponseHelper.create_error_response('invalid_request', '無効なリクエストです。')

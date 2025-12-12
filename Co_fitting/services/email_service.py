@@ -75,6 +75,6 @@ class EmailService:
             "申請いただいたサブスクリプションの支払いが失敗しました。\n\n"
             "カード情報等をご確認の上、再度お試しください。\n\n"
             "以下のリンクからマイページにアクセスし、登録されているカード情報の更新をお申し込みいただけます。\n\n"
-            f"{request.build_absolute_uri(reverse('recipes:mypage'))}\n\n"
+            f"{request.build_absolute_uri(reverse('mypage'))}\n\n"
         )
         send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user.email])

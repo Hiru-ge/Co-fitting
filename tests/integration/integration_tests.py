@@ -101,7 +101,7 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         self.assertEqual(steps[2].total_water_ml_this_step, 150)
 
         # 5. マイページにレシピが表示されることを確認
-        response = self.client.get(reverse('recipes:mypage'))
+        response = self.client.get(reverse('mypage'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "統合テストレシピ")
 
@@ -403,7 +403,7 @@ class PerformanceTestCase(TestCase):
 
         # マイページのレスポンス時間をテスト
         start_time = time.time()
-        response = self.client.get(reverse('recipes:mypage'))
+        response = self.client.get(reverse('mypage'))
         end_time = time.time()
 
         self.assertEqual(response.status_code, 200)
@@ -462,7 +462,7 @@ class PerformanceTestCase(TestCase):
         with override_settings_utils(DEBUG=True):
             connection.queries_log.clear()
 
-            response = self.client.get(reverse('recipes:mypage'))
+            response = self.client.get(reverse('mypage'))
 
             # クエリ数が適切な範囲内であることを確認
             query_count = len(connection.queries)
@@ -540,7 +540,7 @@ class SecurityTestCase(TestCase):
         """認証が必要なページのアクセス制御テスト"""
         # ログインなしで保護されたページにアクセス
         protected_urls = [
-            reverse('recipes:mypage'),
+            reverse('mypage'),
             reverse('recipes:preset_create'),
             reverse('users:email_change_request'),
             reverse('users:password_change'),

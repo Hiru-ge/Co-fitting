@@ -197,7 +197,7 @@ $(document).ready(function() {
     // プリセット共有機能
     function sharePresetRecipe(recipeId, recipeName) {
         $.ajax({
-            url: `/api/preset-share/${recipeId}/`,
+            url: `/recipes/api/preset-share/${recipeId}/`,
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken()
@@ -226,7 +226,7 @@ $(document).ready(function() {
     // 共有レシピ一覧の読み込み
     function loadSharedRecipes() {
         $.ajax({
-            url: '/api/shared-recipes/',
+            url: '/recipes/api/shared-recipes/',
             method: 'GET',
             success: function(response) {
                 displaySharedRecipes(response.shared_recipes);
@@ -346,7 +346,7 @@ $(document).ready(function() {
     // 共有レシピ削除
     function deleteSharedRecipe(token) {
         $.ajax({
-            url: `/api/shared-recipes/${token}/delete/`,
+            url: `/recipes/api/shared-recipes/${token}/delete/`,
             method: 'DELETE',
             headers: {
                 'X-CSRFToken': getCSRFToken()

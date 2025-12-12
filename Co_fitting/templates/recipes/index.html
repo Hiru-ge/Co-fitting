@@ -191,9 +191,7 @@
     {% endif %}
     
     <!-- ログイン状態をスクリプトタグに埋め込む -->
-    <script>
-        window.isLoggedIn = {% if user.is_authenticated %}true{% else %}false{% endif %};
-    </script>
+    <span id="is-logged-in" data-logged-in="{{ user.is_authenticated|yesno:'true,false' }}"></span>
 
     <!-- 共有レシピ追加確認ポップアップ -->
     <div id="shared-recipe-modal" class="modal modal-hidden">

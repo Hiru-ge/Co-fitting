@@ -16,12 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from recipes import views as recipe_views
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('recipes.urls')),
+    path('', recipe_views.index, name='home'),           # トップページ（変換）
+    path('mypage/', recipe_views.mypage, name='mypage'), # マイページ
+    path('recipes/', include('recipes.urls')),           # その他レシピ関連
     path('articles/', include('articles.urls')),
     path('users/', include('users.urls')),
     path('purchase/', include('purchase.urls')),

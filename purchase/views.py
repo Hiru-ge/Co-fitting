@@ -26,12 +26,12 @@ def create_checkout_session(request):
 
 @login_required
 def checkout_success(request):
-    return redirect(reverse('recipes:mypage') + '?purchase_success=true')
+    return redirect(reverse('mypage') + '?purchase_success=true')
 
 
 @login_required
 def checkout_cancel(request):
-    return redirect(reverse('recipes:mypage') + '?purchase_cancel=true')
+    return redirect(reverse('mypage') + '?purchase_cancel=true')
 
 
 @login_required
@@ -71,7 +71,7 @@ def create_portal_session(request):
         return render(request, 'purchase/not_subscribed.html')
 
     try:
-        return_url = request.build_absolute_uri(reverse("recipes:mypage"))
+        return_url = request.build_absolute_uri(reverse("mypage"))
         portal_session = StripeService.create_portal_session(
             request.user.stripe_customer_id,
             return_url
