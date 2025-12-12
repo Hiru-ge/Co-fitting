@@ -85,7 +85,6 @@ $(document).ready(function() {
         $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
         updateTotalOutput();
         
-        // メモを表示
         displayMemo(recipe.memo);
     }
 
@@ -99,9 +98,8 @@ $(document).ready(function() {
         
         try {
             const response = await fetch('/api/preset-recipes/');
-            if (!response.ok) {
-                throw new Error('プリセットレシピの取得に失敗しました');
-            }
+            if (!response.ok) throw new Error('プリセットレシピの取得に失敗しました');
+
             presetRecipesCache = await response.json();
             return presetRecipesCache;
         } catch (error) {
@@ -121,7 +119,6 @@ $(document).ready(function() {
         return null;
     }
 
-    // メモ表示関数
     function displayMemo(memo) {
         if (memo && memo.trim() !== '') {
             $('#origin-memo-text').text(memo);
@@ -143,14 +140,13 @@ $(document).ready(function() {
         }
     });
 
-    // レシピ入力欄の出力
+    // レシピ入力欄の伸縮
     $('#pour-times-input').on('change', function(){
         const InputPourTimes = $('#pour-times-input').val();
         const CurrentPourTimes = $('.origin-process').children().length;
         adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
     });
 
-    // 変換前レシピの入力補助
     // 入力補助関数(豆量, 総湯量, 比率): 引数を2つ渡すと、残りの1つを計算して返す
         // 配列として渡すことで、渡したい引数だけを明示的に指定できる(「総湯量は渡さない」のようなこともできるはず)
     function brewParameterCompleter([bean_g, water_ml, ratio]) {
@@ -225,7 +221,6 @@ $(document).ready(function() {
         }else if (!targetRatio){
             targetRatio = brewParameterCompleter([targetBean, targetWater, '']);
             $('#ratio-target').val(targetRatio);
-        // これ以降はエラー検知
         }
     });
 
@@ -257,13 +252,11 @@ $(document).ready(function() {
     function showLoginPrompt() {
         const message = '共有機能はログインユーザー限定機能です！\n新規登録・ログインしていきませんか？';
         if (confirm(message)) {
-            window.location.href = '/users/login/';  // ログインページにリダイレクト
+            window.location.href = '/users/login/';
         }
     }
 
-    // CSRFトークン取得はcommon.jsのgetCSRFToken()を使用
-
-    // レシピ名入力モーダル表示（ModalWindowで統一）
+    // レシピ名入力モーダル表示
     function showRecipeNameModal() {
         ModalWindow.showRecipeNameInput((recipeName) => {
             shareRecipe(recipeName);
@@ -285,17 +278,14 @@ $(document).ready(function() {
         };
 
         // 変換後レシピ欄（.recipe-outputテーブル）からステップ情報を取得
-        // テーブルのtr（1行目はヘッダーなので除外）
-        const $rows = $('.recipe-output tr').not(':first');
-        $rows.each(function(index) {
-            const $cols = $(this).find('td');
-            if ($cols.length < 3) return; // 安全対策
-            // 時間
-            const timeParts = $cols.eq(0).text().split(':');
-            const minute = parseInt(timeParts[0], 10);
-            const seconds = parseInt(timeParts[1], 10);
-            // 総注湯量（累積値）
-            const cumulative_water_ml = parseFloat($cols.eq(2).text());
+        const rows = $('.recipe-output tr').not(':first'); // 1行目はヘッダーなので除外
+        rows.each(function(index) {
+            const cols = $(this).find('td');
+            if (cols.length < 3) return; // 列数が3より少ないことはあり得ないので、そういったおかしな場合は早期リターン
+
+            const [minute, seconds] = cols.eq(0).text().split(':').map(n => parseInt(n, 10));
+            const cumulative_water_ml = parseFloat(cols.eq(2).text());
+
             recipeData.steps.push({
                 step_number: index + 1,
                 minute: minute,
@@ -314,7 +304,6 @@ $(document).ready(function() {
             },
             data: JSON.stringify(recipeData),
             success: function(response) {
-                // SNSシェア用URLを /share/<token>/ 形式に変換
                 const shareUrl = `/share/${response.access_token}/`;
                 shareToSocialMedia(shareUrl, recipeData);
             },
@@ -323,7 +312,7 @@ $(document).ready(function() {
                     ModalWindow.showError('ログインが必要です。');
                 } else if (xhr.status === 429) {
                     const data = xhr.responseJSON;
-                    showShareLimitModal(data);
+                    ModalWindow.showShareLimit(data);
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
                     ModalWindow.showError(data.message || '入力データに問題があります。');
@@ -335,11 +324,6 @@ $(document).ready(function() {
                 $('#share-recipe-btn').prop('disabled', false);
             }
         });
-    }
-
-    // 共有制限オーバー時のモーダル表示（ModalWindowで統一）
-    function showShareLimitModal(data) {
-        ModalWindow.showShareLimit(data);
     }
 
     // Web Share APIを使用してSNS投稿
@@ -434,7 +418,6 @@ $(document).ready(function() {
 
     // 変換に必要なパラメータを収集する関数
     function collectConversionParameters() {
-        // 投数を取得
         let pourTimes = $('#pour-times-input').val();
         let originWaterTotal_ml = $(`.pour-step${pourTimes}`).children('.pour-ml').val();
         let ice_g = 0;  // ice_gの初期値は0としてNanを防ぎ、ice-modeなら正しい値で更新する
@@ -450,11 +433,10 @@ $(document).ready(function() {
         }else{        
             targetBean_g = $('#bean-target').val();
             targetWaterTotal_ml = $('#water-target').val();
-            // 文字列に解釈されないよう、Number()で明示的に数値に変換
             convertRate = targetWaterTotal_ml / (Number(originWaterTotal_ml) + Number(ice_g));  
         }
         updateTotalOutput();
-        // 入力エラー検知関数に処理を投げて、エラーがあればアラートを出して処理を中断
+        
         if(inputError_Detector([pourTimes, originWaterTotal_ml, targetBean_g, targetWaterTotal_ml])=='Error'){
             return;
         }
@@ -465,7 +447,6 @@ $(document).ready(function() {
     $('.convert-button').on('click', function(){
         event.preventDefault(); // ページ遷移を防ぐ
 
-        // 変換前レシピの入力内容をモードに応じて取得
         let [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate] = collectConversionParameters();
 
         // 変換後の豆量と総湯量を転記(小数点第一位まで表示)
@@ -496,8 +477,6 @@ $(document).ready(function() {
     });
 
 
-
-
     // ストップウォッチ機能
     const Time = document.getElementById('time');
     const StartButton = document.getElementById('start');
@@ -508,15 +487,11 @@ $(document).ready(function() {
     if (!StartButton || !StopButton || !ResetButton || !Time) {
         return;
     }
-    
-    // 開始時間
+
     let startTime;
-    // 停止時間
     let stopTime = 0;
-    // タイムアウトID
     let timeoutID;
     
-    // 時間を表示する関数
     function displayTime() {
         const CurrentTime = new Date(Date.now() - startTime + stopTime);
         const M = String(CurrentTime.getMinutes()).padStart(2, '0');
@@ -531,7 +506,6 @@ $(document).ready(function() {
         StartButton.disabled = true;
         StopButton.disabled = false;
         ResetButton.disabled = true;
-        // 選択中のボタンは暗くする
         darken_selected_button('timer-button', StartButton.id);
         
         startTime = Date.now();
@@ -558,30 +532,6 @@ $(document).ready(function() {
         Time.textContent = '00:00';
         stopTime = 0;
     });
-
-    // 共有レシピの処理
-    function handleSharedRecipe() {
-        let sharedRecipeData = null;
-        const sharedRecipeScript = document.getElementById('shared_recipe_data');
-        if (sharedRecipeScript) {
-            try {
-                sharedRecipeData = JSON.parse(sharedRecipeScript.textContent);
-            } catch (e) {
-                console.error('共有レシピデータのパースに失敗:', e);
-            }
-        }
-        
-        if (sharedRecipeData) {
-            if (sharedRecipeData.error) {
-                // エラーの場合
-                ModalWindow.showError(sharedRecipeData.message);
-            } else {
-                // 正常な共有レシピの場合
-                showSharedRecipeModal(sharedRecipeData);
-            }
-        } else {
-        }
-    }
 
     // 共有レシピモーダル表示
     function showSharedRecipeModal(recipeData) {
@@ -654,7 +604,28 @@ $(document).ready(function() {
         });
     }
 
-    // モーダル関連のイベント（イベントデリゲーションを使用）
+    // 埋め込み共有レシピがあればモーダルを表示
+    function showSharedRecipeIfExist() {
+        let sharedRecipeData = null;
+        const sharedRecipeScript = document.getElementById('shared_recipe_data');
+        if (sharedRecipeScript) {
+            try {
+                sharedRecipeData = JSON.parse(sharedRecipeScript.textContent);
+            } catch (e) {
+                console.error('共有レシピデータのパースに失敗:', e);
+            }
+        }
+        
+        if (sharedRecipeData) {
+            if (sharedRecipeData.error) {
+                ModalWindow.showError(sharedRecipeData.message);
+            } else {
+                showSharedRecipeModal(sharedRecipeData);
+            }
+        }
+    }
+    showSharedRecipeIfExist();
+
     $(document).on('click', '#add-to-preset-btn', function() {
         const sharedRecipeData = JSON.parse(document.getElementById('shared_recipe_data')?.textContent || 'null');
         if (sharedRecipeData && !sharedRecipeData.error) {
@@ -666,48 +637,6 @@ $(document).ready(function() {
         ModalWindow.hide('shared-recipe-modal');
     });
 
-    // ログインボタンのクリックイベント
-    $('#login-redirect-btn').on('click', function() {
-        window.location.href = '/users/login/';
-    });
-
-    // 全共有レシピ削除ボタンのクリックイベント
-    $('#delete-all-shared-btn').on('click', function() {
-        deleteAllSharedRecipes();
-    });
-
-    // 全共有レシピ削除関数
-    function deleteAllSharedRecipes() {
-        $('#delete-all-shared-btn').prop('disabled', true).text('削除中...');
-        
-        $.ajax({
-            url: '/api/shared-recipes/delete-all',
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken()
-            },
-            success: function(response) {
-                ModalWindow.hide('error-modal');
-                ModalWindow.showSuccess(response.message);
-            },
-            error: function(xhr) {
-                let errorMessage = '共有レシピの削除に失敗しました。';
-                
-                if (xhr.status === 401) {
-                    errorMessage = 'ログインが必要です。';
-                } else if (xhr.status === 500) {
-                    const data = xhr.responseJSON;
-                    errorMessage = data.message || 'サーバーエラーが発生しました。';
-                }
-                
-                ModalWindow.showError(errorMessage);
-            },
-            complete: function() {
-                $('#delete-all-shared-btn').prop('disabled', false).text('現在有効な共有レシピを削除');
-            }
-        });
-    }
-
     $('#close-shared-modal, #close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
         const modalId = $(this).closest('.modal').attr('id');
         ModalWindow.hide(modalId);
@@ -715,20 +644,19 @@ $(document).ready(function() {
         if ($(this).attr('id') === 'close-error-modal' || $(this).attr('id') === 'close-error-btn') {
             $('#error-actions').hide();
             $('#login-redirect-btn').hide();
-            $('#delete-all-shared-btn').hide();
         }
     });
-
-    // モーダル外クリックで閉じる（グローバルイベントハンドラーで処理）
-
-    // 成功・エラーモーダルはModalWindowのメソッドを直接使用
-    // 特別なエラーモーダルが必要な場合は個別に実装
 
     // トグル機能
     $('.accordion-item').hide();
     $('.accordion-head').on('click', function() {
         $(this).children('.accordion-toggle').toggleClass('rotate-90');
         $(this).next().children('.accordion-item').slideToggle(300);
+    });
+    
+    // ログインボタンのクリックイベント
+    $('#login-redirect-btn').on('click', function() {
+        window.location.href = '/users/login/';
     });
     
     // メモ欄を初期状態で非表示にする
@@ -746,8 +674,6 @@ $(document).ready(function() {
         
         ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
     });
-
-    handleSharedRecipe();
 
     let pipWindow = null;
 

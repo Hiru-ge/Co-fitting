@@ -20,8 +20,6 @@ $(document).ready(function() {
         ModalWindow.hide(modalId);
     });
 
-    // モーダル外クリックで閉じる（ModalManagerが自動処理）
-
     // メールアドレス変更フォーム送信
     $('#email-change-form').on('submit', function(e) {
         e.preventDefault();
@@ -75,14 +73,13 @@ $(document).ready(function() {
             success: function(response) {
                 ModalWindow.hide('password-change-modal');
                 ModalWindow.showSuccess(response.message);
-                // フォームをリセット
                 $('#password-change-form')[0].reset();
                 
                 // リダイレクトURLが指定されている場合はリダイレクト
                 if (response.redirect_url) {
                     setTimeout(function() {
                         window.location.href = response.redirect_url;
-                    }, 2000); // 2秒後にリダイレクト
+                    }, 2000);
                 }
             },
             error: function(xhr) {
@@ -134,10 +131,8 @@ $(document).ready(function() {
 
     // サブスク状況確認・解約ボタン
     $('#subscription-status-btn').on('click', function() {
-        // 契約状況をチェック
         const subscriptionStatus = $(this).data('subscription-status');
         if (subscriptionStatus === '未契約') {
-            // 未契約の場合はモーダルを表示
             ModalWindow.show('not-subscribed-modal');
         } else {
             // 契約済みの場合はカスタマーポータルに遷移
@@ -151,8 +146,6 @@ $(document).ready(function() {
         window.location.href = '/purchase/create_checkout_session/';
     });
 
-    // 成功・エラーモーダルはModalWindowのメソッドを直接使用
-
     // プリセット共有ボタンのイベント（マイプリセットセクション）
     $(document).on('click', '.item:not(.shared-recipe-item) .share-preset-btn', function() {
         const recipeId = $(this).data('recipe-id');
@@ -160,19 +153,15 @@ $(document).ready(function() {
         sharePresetRecipe(recipeId, recipeName);
     });
 
-    // 共有レシピ一覧の読み込み
-    loadSharedRecipes();
-
-    // サブスクリプション状態を更新する関数
+    // サブスクリプション状態表示を更新する関数
     function updateSubscriptionStatus() {
         $.ajax({
             url: '/purchase/get_preset_limit/',
             method: 'GET',
             success: function(response) {
-                // プリセット枠数を更新
                 $('p:contains("所有プリセット枠")').html(`所有プリセット枠: <b>${response.preset_limit}</b>`);
                 
-                // サブスクリプション状態を判定して更新
+                // サブスクリプション状態を判定して表示を更新
                 const isSubscribed = response.preset_limit > 1;
                 const statusText = isSubscribed ? '契約中' : '未契約';
                 $('p:contains("サブスクリプション契約状況")').html(`サブスクリプション契約状況: <b>${statusText}</b>`);
@@ -196,15 +185,12 @@ $(document).ready(function() {
         // サブスクリプション状態を更新してからモーダルを表示
         updateSubscriptionStatus();
         ModalWindow.show('purchase-success-modal');
-        // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('password_reset_sent') === 'true') {
         ModalWindow.show('password-reset-sent-modal');
-        // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('password_reset_success') === 'true') {
         ModalWindow.show('password-reset-success-modal');
-        // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -219,7 +205,7 @@ $(document).ready(function() {
             success: function(response) {
                 const shareUrl = `/share/${response.access_token}/`;
                 shareToSocialMedia(shareUrl, { name: recipeName });
-                loadSharedRecipes(); // 一覧を更新
+                loadSharedRecipes();
             },
             error: function(xhr) {
                 if (xhr.status === 401) {
@@ -250,6 +236,7 @@ $(document).ready(function() {
             }
         });
     }
+    loadSharedRecipes();
 
     // 共有レシピ一覧の表示
     function displaySharedRecipes(sharedRecipes) {
@@ -294,7 +281,6 @@ $(document).ready(function() {
     // 共有レシピ編集ボタン
     $(document).on('click', '.edit-share-name-btn', function() {
         const token = $(this).data('token');
-        // 共有レシピ編集ページに遷移
         window.location.href = `/shared-recipe-edit/${token}/`;
     });
 
@@ -324,7 +310,6 @@ $(document).ready(function() {
         const message = `「${name}」を削除しますか？この操作は取り消せません。`;
         $('#delete-confirm-message').text(message);
         
-        // 削除ボタンのイベントを設定
         $('#confirm-delete-btn').off('click').on('click', function() {
             ModalWindow.hide('delete-confirm-modal');
             if (type === 'preset') {

@@ -148,7 +148,7 @@ const ModalWindow = {
         
         const modal = this.createAndShow('recipe-name-modal', 'レシピ名を入力', content);
         
-        // イベント設定
+        // 共有ボタンクリック時の処理
         modal.find('#confirm-share-btn').on('click', () => {
             const recipeName = modal.find('#recipe-name-input').val().trim();
             if (!recipeName) {
@@ -159,14 +159,14 @@ const ModalWindow = {
             onConfirm(recipeName);
         });
         
-        // エンターキーで確定
+        // エンターキーでも共有ボタンクリックと同じ処理を行う
         modal.find('#recipe-name-input').on('keypress', (e) => {
-            if (e.which === 13) { // Enter key
+            const isEnterKey = e.which === 13;
+            if (isEnterKey) {
                 modal.find('#confirm-share-btn').click();
             }
         });
         
-        // フォーカス・選択
         modal.find('#recipe-name-input').focus().select();
         
         return modal;
@@ -177,35 +177,30 @@ const ModalWindow = {
 function getCSRFToken() {
     // フォームから取得を試行
     const formToken = $('[name=csrfmiddlewaretoken]').val();
-    if (formToken) {
-        return formToken;
-    }
+    if (formToken) return formToken;
     
     // Cookieから取得
-    let cookieValue = null;
+    let cookieToken = null;
     if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
             const cookie = cookies[i].trim();
             if (cookie.substring(0, 10) === 'csrftoken=') {
-                cookieValue = decodeURIComponent(cookie.substring(10));
+                cookieToken = decodeURIComponent(cookie.substring(10));
                 break;
             }
         }
     }
-    return cookieValue;
+    if (cookieToken) return cookieToken;
+
+    console.warn('CSRF token not found in form or cookie');
+    return null;
 }
 
-// グローバルなモーダルイベントハンドラーを設定
+// モーダル全般に用いるイベントハンドラの設定
 $(document).ready(function() {
     // 閉じるボタンのクリック（×ボタン）
-    $(document).on('click', '.modal .close', function() {
-        const modalId = $(this).closest('.modal').attr('id');
-        ModalWindow.hide(modalId);
-    });
-    
-    // data-modal-close属性を持つボタンのクリック
-    $(document).on('click', '[data-modal-close]', function() {
+    $(document).on('click', '.modal .close, [data-modal-close]', function() {
         const modalId = $(this).closest('.modal').attr('id');
         ModalWindow.hide(modalId);
     });
