@@ -151,6 +151,7 @@ STATIC_URL = "/static/"
 if DEBUG:
     # 開発環境: 各アプリケーションのstaticディレクトリを使用
     STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'Co_fitting', 'static'),
         os.path.join(BASE_DIR, 'recipes', 'static'),
         os.path.join(BASE_DIR, 'users', 'static'),
     ]
