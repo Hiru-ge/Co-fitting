@@ -70,8 +70,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'Co_fitting', 'static', 'templates'),  # 共通テンプレート用ディレクトリ
-            os.path.join(BASE_DIR, 'users', 'static', 'templates'),  # 既存のテンプレートディレクトリ
+            os.path.join(BASE_DIR, 'Co_fitting', 'templates'),  # 共通テンプレート用ディレクトリ
         ],
         'APP_DIRS': True,
         'OPTIONS': {
