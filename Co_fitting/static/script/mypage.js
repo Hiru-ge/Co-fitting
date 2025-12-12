@@ -203,7 +203,7 @@ $(document).ready(function() {
                 'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
-                const shareUrl = `/share/${response.access_token}/`;
+                const shareUrl = `/recipes/share/${response.access_token}/`;
                 shareToSocialMedia(shareUrl, { name: recipeName });
                 loadSharedRecipes();
             },
@@ -258,7 +258,7 @@ $(document).ready(function() {
                     <div class="button-parent">
                         <button class="edit-share-name-btn" data-token="${recipe.access_token}" data-name="${recipe.name}">編集</button>
                         <button class="delete-shared-recipe-btn" data-token="${recipe.access_token}">削除</button>
-                        <button class="share-preset-btn" data-url="/share/${recipe.access_token}/" title="URLコピー">
+                        <button class="share-preset-btn" data-url="/recipes/share/${recipe.access_token}/" title="URLコピー">
                             <img src="/static/images/share-icon.png" alt="共有" />
                         </button>
                     </div>
@@ -281,13 +281,13 @@ $(document).ready(function() {
     // 共有レシピ編集ボタン
     $(document).on('click', '.edit-share-name-btn', function() {
         const token = $(this).data('token');
-        window.location.href = `/shared-recipe-edit/${token}/`;
+        window.location.href = `/recipes/shared-recipe-edit/${token}/`;
     });
 
     // プリセット編集ボタン
     $(document).on('click', '.edit-preset-btn', function() {
         const recipeId = $(this).data('recipe-id');
-        window.location.href = `/preset_edit/${recipeId}/`;
+        window.location.href = `/recipes/preset_edit/${recipeId}/`;
     });
 
     // プリセット削除ボタン
@@ -325,7 +325,7 @@ $(document).ready(function() {
     // プリセット削除
     function deletePreset(recipeId) {
         $.ajax({
-            url: `/preset_delete/${recipeId}/`,
+            url: `/recipes/preset_delete/${recipeId}/`,
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken()
