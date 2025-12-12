@@ -35,7 +35,7 @@ def index(request):
         'default_preset_recipes': [recipe.to_dict() for recipe in default_preset_recipes],
         'shared_recipe_data': shared_recipe_data
     }
-    return render(request, 'recipes/index.html', params)
+    return render(request, 'index.html', params)
 
 
 @login_required
@@ -52,7 +52,7 @@ def mypage(request):
         'subscription_status': subscription_status,
     }
 
-    return render(request, 'recipes/mypage.html', params)
+    return render(request, 'mypage.html', params)
 
 
 @login_required
