@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import json
 from Co_fitting.tests.helpers import create_test_user, create_test_recipe, login_test_user, BaseTestCase
 from recipes.models import PresetRecipe
+from Co_fitting.utils.constants import AppConstants
 
 
 class StripePaymentTest(BaseTestCase):
@@ -83,12 +84,12 @@ class StripePaymentTest(BaseTestCase):
 
         # プリセット枠が増えていることを確認
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 4)
+        self.assertEqual(self.user.preset_limit, AppConstants.PREMIUM_PRESET_LIMIT)
         self.assertTrue(self.user.is_subscribed)
 
     def test_subscription_expired_cleanup(self):
         """サブスク期限が切れたときにプリセット枠が1つになり、マイプリセットが1つ残して削除されることをテスト"""
-        self.user.preset_limit = 4
+        self.user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
         self.user.stripe_customer_id = 'cus_test123'
         self.user.is_subscribed = True
         self.user.save()
@@ -123,8 +124,8 @@ class StripePaymentTest(BaseTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 1)
-        self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), 1)  # ユーザーのレシピが1つだけ残っていることを確認
+        self.assertEqual(self.user.preset_limit, AppConstants.FREE_PRESET_LIMIT)
+        self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), AppConstants.FREE_PRESET_LIMIT)  # ユーザーのレシピが1つだけ残っていることを確認
         self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())    # 最初のレシピが残っていることを確認
         self.assertFalse(PresetRecipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
         self.assertFalse(self.user.is_subscribed)
@@ -470,7 +471,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
 
         # 5. ユーザーのサブスクリプション状態が更新されることを確認
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 4)
+        self.assertEqual(self.user.preset_limit, AppConstants.PREMIUM_PRESET_LIMIT)
         self.assertTrue(self.user.is_subscribed)
 
     def test_subscription_cancellation_flow(self):
@@ -478,7 +479,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
         login_test_user(self, user=self.user)
 
         # ユーザーを有料ユーザーに設定
-        self.user.preset_limit = 4
+        self.user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
         self.user.stripe_customer_id = 'cus_test123'
         self.user.is_subscribed = True
         self.user.save()
