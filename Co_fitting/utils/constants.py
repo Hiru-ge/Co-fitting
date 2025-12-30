@@ -6,7 +6,7 @@ class AppConstants:
 
     # プリセット制限
     FREE_PRESET_LIMIT = 1
-    PREMIUM_PRESET_LIMIT = 4
+    PREMIUM_PRESET_LIMIT = 5
 
     # 共有制限
     SHARE_LIMIT_FREE = 1  # 無料ユーザーの共有リンク数制限
