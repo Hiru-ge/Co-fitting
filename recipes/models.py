@@ -266,7 +266,7 @@ class RecipeImageGenerator:
             table_end_y = self._draw_table(draw, font_small, table_start_y)
 
             # 出来上がり量の表示
-            total_water = sum(step['pour_ml'] for step in self.steps_data)
+            total_water = self.recipe_data['water_ml']
             # アイスモードの場合は氷量も加算
             if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
                 try:
