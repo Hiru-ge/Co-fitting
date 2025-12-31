@@ -712,8 +712,84 @@ $(document).ready(function() {
         ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
     });
 
-    let pipWindow = null;
-    const isSupportPiP = document.pictureInPictureEnabled || videoElement.webkitSupportsPresentationMode === 'picture-in-picture'
+    // PiP用の非表示Video要素とCanvas要素を動的に生成
+    const pipCanvas = document.createElement('canvas');
+    pipCanvas.id = 'pip-canvas';
+    pipCanvas.width = 350;
+    pipCanvas.height = 400;
+    // 画面外に配置（display:noneだと描画やストリームが止まる可能性があるため）
+    Object.assign(pipCanvas.style, { position: 'fixed', top: '-9999px', left: '-9999px' });
+    document.body.appendChild(pipCanvas);
+
+    const pipVideo = document.createElement('video');
+    pipVideo.id = 'pip-video';
+    pipVideo.muted = true;
+    pipVideo.playsInline = true; // iOSで必須
+    pipVideo.autoplay = true;
+    Object.assign(pipVideo.style, { position: 'fixed', top: '-9999px', left: '-9999px', width: '1px', height: '1px' });
+    document.body.appendChild(pipVideo);
+
+    // Canvasにレシピテーブルを描画する関数
+    function drawRecipeToCanvas() {
+        const ctx = pipCanvas.getContext('2d');
+        const width = pipCanvas.width;
+        const height = pipCanvas.height;
+
+        // 背景塗りつぶし
+        ctx.fillStyle = '#474747';
+        ctx.fillRect(0, 0, width, height);
+
+        // テキスト設定
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+
+        // ヘッダー描画
+        ctx.fillText('変換後レシピ', width / 2, 30);
+        
+        ctx.font = '16px sans-serif';
+        // テーブルヘッダー
+        ctx.textAlign = 'left';
+        ctx.fillText('経過時間', 20, 70);
+        ctx.textAlign = 'right';
+        ctx.fillText('総注湯量', width - 20, 70);
+
+        // 区切り線
+        ctx.strokeStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(10, 80);
+        ctx.lineTo(width - 10, 80);
+        ctx.stroke();
+
+        // データ行の描画
+        const $recipeTable = $('.recipe-output');
+        let yPos = 110;
+
+        $recipeTable.find('tr').each(function(index) {
+            if (index === 0) return; // ヘッダー行スキップ
+
+            const $cols = $(this).find('td');
+            if ($cols.length >= 3) {
+                const time = $cols.eq(0).text().trim();
+                const totalWater = $cols.eq(2).text().trim();
+
+                ctx.textAlign = 'left';
+                ctx.fillText(time, 20, yPos);
+                
+                ctx.textAlign = 'right';
+                ctx.fillText(totalWater, width - 20, yPos);
+                
+                yPos += 30;
+            }
+        });
+        
+        // Canvasの内容変更を反映させるため、ダミーの矩形を描画して更新を通知する（iOS対策）
+        ctx.fillStyle = 'rgba(0,0,0,0.01)';
+        ctx.fillRect(0, 0, 1, 1);
+    }
+
+    const isSupportPiP = document.pictureInPictureEnabled || (pipVideo.webkitSupportsPresentationMode && typeof pipVideo.webkitSetPresentationMode === 'function');
+    
     const isLoggedInFlag = document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
     const isShowPiPButton = isSupportPiP && isLoggedInFlag;
     if (isShowPiPButton) {
@@ -733,87 +809,20 @@ $(document).ready(function() {
                         }
 
                         try {
-                            if (pipWindow && !pipWindow.closed) {
-                                pipWindow.close();
-                                pipWindow = null;
-                                return;
+                            drawRecipeToCanvas();
+
+                            if (!pipVideo.srcObject) {
+                                const stream = pipCanvas.captureStream(30); // 30fps
+                                pipVideo.srcObject = stream;
                             }
 
-                            pipWindow = await documentPictureInPicture.requestWindow({
-                                width: 350,
-                                height: 400
-                            });
+                            await pipVideo.play();
 
-                            let pipTableHTML = '<table class="pip-recipe-table"><thead><tr><th>経過時間</th><th>総注湯量</th></tr></thead><tbody>';
-                            
-                            $recipeTable.find('tr').each(function(index) {
-                                if (index === 0) return;
-                                
-                                const $row = $(this);
-                                const $cells = $row.find('td');
-                                
-                                if ($cells.length >= 3) {
-                                    const time = $cells.eq(0).text().trim();
-                                    const totalWater = $cells.eq(2).text().trim();
-                                    pipTableHTML += `<tr><td>${time}</td><td>${totalWater}</td></tr>`;
-                                }
-                            });
-                            
-                            pipTableHTML += '</tbody></table>';
-
-                            pipWindow.document.documentElement.innerHTML = `
-                                <head>
-                                    <meta charset="UTF-8">
-                                    <title>変換後レシピ</title>
-                                    <style>
-                                        * {
-                                            margin: 0;
-                                            padding: 0;
-                                            box-sizing: border-box;
-                                        }
-                                        html, body {
-                                            width: 100%;
-                                            height: 100%;
-                                            margin: 0;
-                                            padding: 0;
-                                            background-color: #474747;
-                                            color: #fff;
-                                            font-family: 'Hiragino Kaku Gothic', '游ゴシック', sans-serif;
-                                            overflow: hidden;
-                                        }
-                                        .pip-container {
-                                            padding: 1rem;
-                                            height: 100%;
-                                            display: flex;
-                                            flex-direction: column;
-                                        }
-                                        .pip-recipe-table {
-                                            width: 100%;
-                                            border-collapse: collapse;
-                                            margin: 0;
-                                        }
-                                        .pip-recipe-table th,
-                                        .pip-recipe-table td {
-                                            padding: 0 0.5em;
-                                            text-align: right;
-                                        }
-                                        .pip-recipe-table th {
-                                            font-weight: 700;
-                                            text-align: center;
-                                        }
-                                    </style>
-                                </head>
-                                <body>
-                                    <div class="pip-container">
-                                        ${pipTableHTML}
-                                    </div>
-                                </body>
-                            `;
-
-                            pipWindow.addEventListener('pagehide', () => {
-                                pipWindow = null;
-                            });
-
+                            if (pipVideo.requestPictureInPicture) {
+                                await pipVideo.requestPictureInPicture();
+                            } else if (pipVideo.webkitSetPresentationMode) {
+                                pipVideo.webkitSetPresentationMode('picture-in-picture');
+                            }
                         } catch (error) {
                             console.error('PiPウィンドウの開くに失敗しました:', error);
                             alert('PiPウィンドウを開くことができませんでした。');
