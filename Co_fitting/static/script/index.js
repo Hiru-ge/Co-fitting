@@ -713,9 +713,10 @@ $(document).ready(function() {
     });
 
     let pipWindow = null;
-
+    const isSupportPiP = document.pictureInPictureEnabled || videoElement.webkitSupportsPresentationMode === 'picture-in-picture'
     const isLoggedInFlag = document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
-    if ('documentPictureInPicture' in window && isLoggedInFlag) {
+    const isShowPiPButton = isSupportPiP && isLoggedInFlag;
+    if (isShowPiPButton) {
         $.ajax({
             url: '/purchase/get_preset_limit/',
             method: 'GET',
