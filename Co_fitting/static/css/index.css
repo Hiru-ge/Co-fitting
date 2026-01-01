@@ -201,7 +201,6 @@ header.ice-mode, footer.ice-mode {
     width: 5vh;
     height: 5vh;
     padding: 0.3rem;
-    background-color: #e0e0e0;
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -217,12 +216,8 @@ header.ice-mode, footer.ice-mode {
     filter: none;
 }
 
-.pip-button:hover {
-    background-color: #d0d0d0;
-}
 
 .pip-button:disabled {
-    background-color: #999;
     cursor: not-allowed;
     opacity: 0.6;
 }
