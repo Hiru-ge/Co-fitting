@@ -5,6 +5,15 @@ $(document).ready(function() {
     const ice_gFromDB = iceGFromDbElement?.dataset?.iceG || null;
 
     // ========================================
+    // 定数定義
+    // ========================================
+
+    const INDEX_CONFIG = {
+        REDIRECT_DELAY_MS: 1500,        // リダイレクトまでの遅延時間
+        PASSWORD_REDIRECT_DELAY_MS: 2000 // パスワード変更後のリダイレクト遅延時間
+    };
+
+    // ========================================
     // ユーティリティ関数
     // ========================================
 
@@ -24,23 +33,23 @@ $(document).ready(function() {
     }
 
     function inputError_Detector([pourTimes, originSumWater, targetBean, targetWater]) {
-        let defaultMessage = '【入力不備】\n'; // エラーメッセージの初期値(エラーが検知されるとこれに追加されていく)
-        let errorMassage = defaultMessage;
+        let defaultMessage = '【入力不備】<br>'; // エラーメッセージの初期値(エラーが検知されるとこれに追加されていく)
+        let errorMessage = defaultMessage;
         if (!pourTimes){
-            errorMassage += '･変換前投数\n';
+            errorMessage += '･変換前投数<br>';
         }
         if (!originSumWater){
-            errorMassage += '･変換前レシピ\n';
+            errorMessage += '･変換前レシピ<br>';
         }
         if (!targetBean){
-            errorMassage += '･変換前豆量\n';
+            errorMessage += '･変換前豆量<br>';
         }
         if (!targetWater){
-            errorMassage += '･変換前総湯量\n';
+            errorMessage += '･変換前総湯量<br>';
         }
 
-        if(errorMassage !== defaultMessage){
-            window.alert(errorMassage);
+        if(errorMessage !== defaultMessage){
+            ModalWindow.showError(errorMessage);
             return 'Error';
         }
     }
@@ -324,10 +333,19 @@ $(document).ready(function() {
     // ========================================
 
     function showLoginPrompt() {
-        const message = '共有機能はログインユーザー限定機能です！\n新規登録・ログインしていきませんか？';
-        if (confirm(message)) {
+        const content = `
+            <p>共有機能はログインユーザー限定機能です！<br>新規登録・ログインしていきませんか？</p>
+            <div class="modal-actions">
+                <button id="login-redirect-confirm-btn" class="btn btn-primary">ログイン</button>
+                <button type="button" class="btn btn-secondary" data-modal-close>キャンセル</button>
+            </div>
+        `;
+
+        const modal = ModalWindow.createAndShow('login-prompt-modal', 'ログインが必要です', content);
+
+        modal.find('#login-redirect-confirm-btn').on('click', function() {
             window.location.href = '/users/login/';
-        }
+        });
     }
 
     // レシピ名入力モーダル表示
@@ -424,9 +442,9 @@ $(document).ready(function() {
     // フォールバック: クリップボードにコピー
     function fallbackToClipboard(shareUrl) {
         navigator.clipboard.writeText(shareUrl).then(function() {
-            alert('共有URLがクリップボードにコピーされました！\n\n' + shareUrl);
-        }).catch(function(err) {
-            alert('共有URLのコピーに失敗しました。\n\n' + shareUrl);
+            ModalWindow.showSuccess(`共有URLがクリップボードにコピーされました！<br><br>${shareUrl}`);
+        }).catch(function() {
+            ModalWindow.showError(`共有URLのコピーに失敗しました。<br><br>${shareUrl}`);
         });
     }
 
@@ -470,7 +488,7 @@ $(document).ready(function() {
                 // プリセット情報を更新するため、変換ページにリダイレクト
                 setTimeout(function() {
                     window.location.href = '/';
-                }, 1500);
+                }, INDEX_CONFIG.REDIRECT_DELAY_MS);
             },
             error: function(xhr) {
                 let errorMessage = 'レシピの追加に失敗しました。';
@@ -582,15 +600,15 @@ $(document).ready(function() {
     });
 
     // 変換目標入力欄のクリア
-    $('.clear-button').on('click', function(){
-        event.preventDefault(); // ページ遷移を防ぐ
+    $('.clear-button').on('click', function(e){
+        e.preventDefault(); // ページ遷移を防ぐ
         $('#bean-target, #water-target, #ratio-target').val('');
     });
 
     // --- レシピ変換関連 ---
     // レシピの変換･変換後レシピの出力
-    $('.convert-button').on('click', function(){
-        event.preventDefault(); // ページ遷移を防ぐ
+    $('.convert-button').on('click', function(e){
+        e.preventDefault(); // ページ遷移を防ぐ
 
         let [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate] = collectConversionParameters();
 
@@ -633,7 +651,7 @@ $(document).ready(function() {
         // 変換後レシピが存在するかチェック
         const hasConvertedRecipe = $('.bean-output').text().trim() !== '';
         if (!hasConvertedRecipe) {
-            alert('変換後レシピがありません。先にレシピを変換してください。');
+            ModalWindow.showError('変換後レシピがありません。先にレシピを変換してください。');
             return;
         }
 

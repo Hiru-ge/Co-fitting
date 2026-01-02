@@ -2,6 +2,15 @@
 
 $(document).ready(function() {
     // ========================================
+    // 定数定義
+    // ========================================
+
+    const MYPAGE_CONFIG = {
+        REDIRECT_DELAY_MS: 1500,            // リダイレクトまでの遅延時間
+        PASSWORD_REDIRECT_DELAY_MS: 2000    // パスワード変更後のリダイレクト遅延時間
+    };
+
+    // ========================================
     // ユーティリティ関数
     // ========================================
 
@@ -175,7 +184,7 @@ $(document).ready(function() {
                 // ページをリロードして一覧を更新
                 setTimeout(() => {
                     window.location.reload();
-                }, 1500);
+                }, MYPAGE_CONFIG.REDIRECT_DELAY_MS);
             },
             error: function(xhr) {
                 ModalWindow.showError('プリセットの削除に失敗しました。');
@@ -284,7 +293,7 @@ $(document).ready(function() {
                 if (response.redirect_url) {
                     setTimeout(function() {
                         window.location.href = response.redirect_url;
-                    }, 2000);
+                    }, MYPAGE_CONFIG.PASSWORD_REDIRECT_DELAY_MS);
                 }
             },
             error: function(xhr) {
