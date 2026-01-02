@@ -4,28 +4,110 @@ $(document).ready(function() {
     const iceGFromDbElement = document.getElementById('ice_g_from_db');
     const ice_gFromDB = iceGFromDbElement?.dataset?.iceG || null;
 
-    function apply_ice_mode(isIce, ice_gFromDB){
-            // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
-            let iceInputDivText= `
-            <label for="ice_g">レシピの氷量(g): </label>
-            <input type="number" id="ice_g" class="wide-input" name="ice_g" maxlength="3"> g
-        `;
-        if(isIce==true){
-            $('.ice_g-div').html(iceInputDivText);
-            $('.ice-mode-show').show();
-            $('html, header, footer').addClass('ice-mode'); // アイスモード時のスタイル変更用
-            if(ice_gFromDB!=null){        
-                // マイプリセット編集画面でDBから氷量が渡された場合、氷量は入力欄確保後に明示的に格納(そうしないとvalueを格納できなかった)
-                $('#ice_g').val(ice_gFromDB); 
-            }
-        }else{
-            $('.ice_g-div').html('');
-            $('.ice-mode-show').hide();
-            $('html, header, footer').removeClass('ice-mode');  // アイスモード時のスタイル変更用
+    // ========================================
+    // ユーティリティ関数
+    // ========================================
+
+    // 入力補助関数(豆量, 総湯量, 比率): 引数を2つ渡すと、残りの1つを計算して返す
+    // 配列として渡すことで、渡したい引数だけを明示的に指定できる(「総湯量は渡さない」のようなこともできるはず)
+    function brewParameterCompleter([bean_g, water_ml, ratio]) {
+        if(bean_g && water_ml){
+            ratio = (water_ml / bean_g).toFixed(1);
+            return ratio;
+        }else if(bean_g && ratio){
+            water_ml = (bean_g * ratio).toFixed(1);
+            return water_ml;
+        }else if(water_ml && ratio){
+            bean_g = (water_ml / ratio).toFixed(1);
+            return bean_g;
         }
-        
-        // アイスモード切り替え時に総量を更新
+    }
+
+    function inputError_Detector([pourTimes, originSumWater, targetBean, targetWater]) {
+        let defaultMessage = '【入力不備】\n'; // エラーメッセージの初期値(エラーが検知されるとこれに追加されていく)
+        let errorMassage = defaultMessage;
+        if (!pourTimes){
+            errorMassage += '･変換前投数\n';
+        }
+        if (!originSumWater){
+            errorMassage += '･変換前レシピ\n';
+        }
+        if (!targetBean){
+            errorMassage += '･変換前豆量\n';
+        }
+        if (!targetWater){
+            errorMassage += '･変換前総湯量\n';
+        }
+
+        if(errorMassage !== defaultMessage){
+            window.alert(errorMassage);
+            return 'Error';
+        }
+    }
+
+    // ========================================
+    // プリセットレシピ関連
+    // ========================================
+
+    // プリセットレシピデータをキャッシュ
+    let presetRecipesCache = null;
+
+    async function loadPresetRecipes() {
+        if (presetRecipesCache) {
+            return presetRecipesCache;
+        }
+
+        try {
+            const response = await fetch('/recipes/api/preset-recipes/');
+            if (!response.ok) throw new Error('プリセットレシピの取得に失敗しました');
+
+            presetRecipesCache = await response.json();
+            return presetRecipesCache;
+        } catch (error) {
+            console.error('プリセットレシピの読み込みエラー:', error);
+            return { user_preset_recipes: [], default_preset_recipes: [] };
+        }
+    }
+
+    async function getPresetRecipeData(presetId) {
+        const data = await loadPresetRecipes();
+        const PresetRecipesJSON = data.default_preset_recipes.concat(data.user_preset_recipes);
+        for (var i = 0; i < PresetRecipesJSON.length; i++) {
+            if (PresetRecipesJSON[i].id == presetId) {
+                return PresetRecipesJSON[i];
+            }
+        }
+        return null;
+    }
+
+    function activate_preset(recipe){
+        $('#pour-times-input').val(recipe.len_steps);
+        const InputPourTimes = $('#pour-times-input').val();
+        const CurrentPourTimes = $('.origin-process').children().length;
+        adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
+
+        $('#ice-check').prop('checked', recipe.is_ice).change();
+        $('#ice_g').val(recipe.ice_g)
+        $('#bean-input').val(recipe.bean_g);
+
+        recipe.steps.forEach(step => {
+            $(`.pour-step${step.step_number} .minutes`).val(String(step.minute));
+            $(`.pour-step${step.step_number} .seconds`).val(String(step.seconds).padStart(2, '0'));
+            $(`.pour-step${step.step_number} .pour-ml`).val(String(step.total_water_ml_this_step).padStart(2, '0'));
+        });
+
+        let selectedRecipeSumWater;
+        if (recipe.ice_g) {
+            selectedRecipeSumWater = Number(recipe.water_ml) + Number(recipe.ice_g);
+        } else {
+            selectedRecipeSumWater = recipe.water_ml;
+        }
+        const OriginRatio = brewParameterCompleter([recipe.bean_g, selectedRecipeSumWater, '']);
+        $('#origin-ratio').html(OriginRatio);
+        $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
         updateTotalOutput();
+
+        displayMemo(recipe.memo);
     }
 
     // 豆量・湯量・秒数の表示桁数を整えるための関数
@@ -61,19 +143,13 @@ $(document).ready(function() {
     }
     normalizePresetInputs();
 
-    // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
-    $('#ice-check, #is_ice').on('change', function(){
-        apply_ice_mode(this.checked, /*ice_gFromDB=*/null)
-    });
-
-    // ページロード時にアイスモードをチェック
-    if ($('#is_ice').prop('checked')) {
-        apply_ice_mode(true, ice_gFromDB)
-    }
+    // ========================================
+    // レシピフォーム・UI更新関連
+    // ========================================
 
     function adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes){
         if (InputPourTimes > CurrentPourTimes) {
-            for (let i = CurrentPourTimes; i < InputPourTimes; i++) {                
+            for (let i = CurrentPourTimes; i < InputPourTimes; i++) {
                 let processInput = `
                     <div class="pour-step${i + 1}">
                         <label>${i + 1}投目</label>
@@ -89,131 +165,6 @@ $(document).ready(function() {
             }
         }
     }
-
-    function activate_preset(recipe){
-        $('#pour-times-input').val(recipe.len_steps);
-        const InputPourTimes = $('#pour-times-input').val();
-        const CurrentPourTimes = $('.origin-process').children().length;
-        adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
-
-        $('#ice-check').prop('checked', recipe.is_ice).change();
-        $('#ice_g').val(recipe.ice_g)
-        $('#bean-input').val(recipe.bean_g);
-
-        recipe.steps.forEach(step => {
-            $(`.pour-step${step.step_number} .minutes`).val(String(step.minute));
-            $(`.pour-step${step.step_number} .seconds`).val(String(step.seconds).padStart(2, '0'));
-            $(`.pour-step${step.step_number} .pour-ml`).val(String(step.total_water_ml_this_step).padStart(2, '0'));
-        });
-
-        let selectedRecipeSumWater;
-        if (recipe.ice_g) {
-            selectedRecipeSumWater = Number(recipe.water_ml) + Number(recipe.ice_g);
-        } else {
-            selectedRecipeSumWater = recipe.water_ml;
-        }
-        const OriginRatio = brewParameterCompleter([recipe.bean_g, selectedRecipeSumWater, '']);
-        $('#origin-ratio').html(OriginRatio);
-        $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
-        updateTotalOutput();
-        
-        displayMemo(recipe.memo);
-    }
-
-    // プリセットレシピデータをキャッシュ
-    let presetRecipesCache = null;
-
-    async function loadPresetRecipes() {
-        if (presetRecipesCache) {
-            return presetRecipesCache;
-        }
-        
-        try {
-            const response = await fetch('/recipes/api/preset-recipes/');
-            if (!response.ok) throw new Error('プリセットレシピの取得に失敗しました');
-
-            presetRecipesCache = await response.json();
-            return presetRecipesCache;
-        } catch (error) {
-            console.error('プリセットレシピの読み込みエラー:', error);
-            return { user_preset_recipes: [], default_preset_recipes: [] };
-        }
-    }
-
-    async function getPresetRecipeData(presetId) {
-        const data = await loadPresetRecipes();
-        const PresetRecipesJSON = data.default_preset_recipes.concat(data.user_preset_recipes);
-        for (var i = 0; i < PresetRecipesJSON.length; i++) {
-            if (PresetRecipesJSON[i].id == presetId) {
-                return PresetRecipesJSON[i];
-            }
-        }
-        return null;
-    }
-
-    function displayMemo(memo) {
-        if (memo && memo.trim() !== '') {
-            $('#origin-memo-text').text(memo);
-            $('#converted-memo-text').text(memo);
-            $('.memo-section').show();
-        } else {
-            $('#origin-memo-text').text('');
-            $('#converted-memo-text').text('');
-            $('.memo-section').hide();
-        }
-    }
-
-    $('.preset-button').on('click', async function() {
-        const presetId = $(this).attr('id');
-        const recipe = await getPresetRecipeData(presetId);
-        if (recipe) {
-            darken_selected_button('preset-button', presetId);
-            activate_preset(recipe);
-        }
-    });
-
-    // レシピ入力欄の伸縮
-    $('#pour-times-input').on('change', function(){
-        const InputPourTimes = $('#pour-times-input').val();
-        const CurrentPourTimes = $('.origin-process').children().length;
-        adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
-    });
-
-    // 入力補助関数(豆量, 総湯量, 比率): 引数を2つ渡すと、残りの1つを計算して返す
-        // 配列として渡すことで、渡したい引数だけを明示的に指定できる(「総湯量は渡さない」のようなこともできるはず)
-    function brewParameterCompleter([bean_g, water_ml, ratio]) {
-        if(bean_g && water_ml){
-            ratio = (water_ml / bean_g).toFixed(1);
-            return ratio;
-        }else if(bean_g && ratio){
-            water_ml = (bean_g * ratio).toFixed(1);
-            return water_ml;
-        }else if(water_ml && ratio){
-            bean_g = (water_ml / ratio).toFixed(1);
-            return bean_g;
-        }
-    }
-
-    // 元レシピの比率計算とターゲット比率の自動転記を行う関数
-    function updateOriginRatio() {
-        updateTotalOutput();
-        const PourTimes = $('#pour-times-input').val();
-        const OriginSumWater = $(`.pour-step${PourTimes}`).children('.pour-ml').val();
-        let isIceMode = $('#ice-check').prop('checked');
-        if(isIceMode){
-            OriginSumWater = Number(OriginSumWater) + Number($('#ice_g').val());
-        }
-        const OriginBean = $('#bean-input').val();
-        if (OriginBean && OriginSumWater) {
-            const OriginRatio = brewParameterCompleter([/*豆量=*/OriginBean, /*総湯量=*/OriginSumWater, /*比率=*/'']);
-            $('#origin-ratio').html(OriginRatio);
-            $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
-        }
-    }
-
-    // 元レシピ内のinputは動的に生成されるため、イベント委譲で動的にバインドする必要がある
-    $('.origin-process').on('change', 'input', updateOriginRatio);
-    $('#ice_g, #bean-input').on('change', updateOriginRatio);
 
     function updateTotalOutput() {
         const PourTimes = $('#pour-times-input').val();
@@ -239,47 +190,138 @@ $(document).ready(function() {
         }
     }
 
-    // 変換目標入力欄の入力補助(豆量･総湯量･比率のどれか2つを入力すると、残り1つを計算して補完する)
-    $('.targetBrewParameter').on('change', function(){
-        let targetBean = $('#bean-target').val();
-        let targetWater = $('#water-target').val();
-        let targetRatio = $('#ratio-target').val();
-        if (!targetBean){
-            targetBean = brewParameterCompleter(['', targetWater, targetRatio]);
-            $('#bean-target').val(targetBean);
-        }else if (!targetWater){
-            targetWater = brewParameterCompleter([targetBean, '', targetRatio]);
-            $('#water-target').val(targetWater);
-        }else if (!targetRatio){
-            targetRatio = brewParameterCompleter([targetBean, targetWater, '']);
-            $('#ratio-target').val(targetRatio);
+    // 元レシピの比率計算とターゲット比率の自動転記を行う関数
+    function updateOriginRatio() {
+        updateTotalOutput();
+        const PourTimes = $('#pour-times-input').val();
+        const OriginSumWater = $(`.pour-step${PourTimes}`).children('.pour-ml').val();
+        let isIceMode = $('#ice-check').prop('checked');
+        if(isIceMode){
+            OriginSumWater = Number(OriginSumWater) + Number($('#ice_g').val());
         }
-    });
+        const OriginBean = $('#bean-input').val();
+        if (OriginBean && OriginSumWater) {
+            const OriginRatio = brewParameterCompleter([/*豆量=*/OriginBean, /*総湯量=*/OriginSumWater, /*比率=*/'']);
+            $('#origin-ratio').html(OriginRatio);
+            $('#ratio-target').val(OriginRatio);    // ターゲット比率を自動転記
+        }
+    }
 
-    // 変換目標入力欄のクリア
-    $('.clear-button').on('click', function(){
-        event.preventDefault(); // ページ遷移を防ぐ
-        $('#bean-target, #water-target, #ratio-target').val('');
-    });
+    // ========================================
+    // アイスモード関連
+    // ========================================
 
-    // 共有ボタンの機能
-    $('#share-recipe-btn').on('click', function() {
-        const isLoggedIn = document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
-        if (!isLoggedIn) {
-            showLoginPrompt();
+    function apply_ice_mode(isIce, ice_gFromDB){
+            // 当初は.show()と.hide()で表示を切り替えていたが、フォームの自動フォーカスが効かなくなるため、html()で中身を書き換えることにした
+            let iceInputDivText= `
+            <label for="ice_g">レシピの氷量(g): </label>
+            <input type="number" id="ice_g" class="wide-input" name="ice_g" maxlength="3"> g
+        `;
+        if(isIce==true){
+            $('.ice_g-div').html(iceInputDivText);
+            $('.ice-mode-show').show();
+            $('html, header, footer').addClass('ice-mode'); // アイスモード時のスタイル変更用
+            if(ice_gFromDB!=null){
+                // マイプリセット編集画面でDBから氷量が渡された場合、氷量は入力欄確保後に明示的に格納(そうしないとvalueを格納できなかった)
+                $('#ice_g').val(ice_gFromDB);
+            }
+        }else{
+            $('.ice_g-div').html('');
+            $('.ice-mode-show').hide();
+            $('html, header, footer').removeClass('ice-mode');  // アイスモード時のスタイル変更用
+        }
+
+        // アイスモード切り替え時に総量を更新
+        updateTotalOutput();
+    }
+
+    // ========================================
+    // レシピ変換関連
+    // ========================================
+
+    // 変換に必要なパラメータを収集する関数
+    function collectConversionParameters() {
+        let pourTimes = $('#pour-times-input').val();
+        let originWaterTotal_ml = $(`.pour-step${pourTimes}`).children('.pour-ml').val();
+        let ice_g = 0;  // ice_gの初期値は0としてNanを防ぎ、ice-modeなら正しい値で更新する
+        if($('#ice-check').prop('checked')){
+            ice_g = $('#ice_g').val();
+        }
+
+        let targetBean_g, targetWaterTotal_ml, convertRate;
+        if($('#magnification').val()){ // 変換率が手動入力されている場合は、それを採用して変換する
+            convertRate = $('#magnification').val();
+            targetBean_g = $('#bean-input').val()*convertRate;
+            targetWaterTotal_ml = originWaterTotal_ml*convertRate;
+        }else{
+            targetBean_g = $('#bean-target').val();
+            targetWaterTotal_ml = $('#water-target').val();
+            convertRate = targetWaterTotal_ml / (Number(originWaterTotal_ml) + Number(ice_g));
+        }
+        updateTotalOutput();
+
+        if(inputError_Detector([pourTimes, originWaterTotal_ml, targetBean_g, targetWaterTotal_ml])=='Error'){
             return;
         }
+        return [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate];
+    }
 
-        // 変換後レシピが存在するかチェック
-        const hasConvertedRecipe = $('.bean-output').text().trim() !== '';
-        if (!hasConvertedRecipe) {
-            alert('変換後レシピがありません。先にレシピを変換してください。');
-            return;
+    function recipeConverter(pourTimes, convertRate, isShowPercentage = false) {
+        const DefaultOutput = `
+            <tr>
+                <th>経過時間</th>
+                <th>注湯量</th>
+                <th>総注湯量</th>
+                ${isShowPercentage ? '<th>%</th>' : ''}
+            </tr>
+        `;
+        let Output = DefaultOutput;
+        let totalWater_mls=[0], minutes=["0"], seconds=["00"], input_pour_mls=[0],convertedPour_mls=[0];
+        for(let i = 1; i <= pourTimes; i++){
+            minutes.push(String($(`.pour-step${i}`).children('.minutes').val()).padStart(2, '0'));
+            seconds.push(String($(`.pour-step${i}`).children('.seconds').val()).padStart(2, '0'));
+            input_pour_mls.push($(`.pour-step${i}`).children('.pour-ml').val());
+            totalWater_mls.push(Math.trunc(input_pour_mls[i] * convertRate));
+
+            // 各投での注湯量を計算(総湯量 - ひとつ前の総湯量)
+            convertedPour_mls.push(Math.trunc(totalWater_mls[i] - totalWater_mls[i-1]));
         }
 
-        // レシピ名入力モーダルを表示
-        showRecipeNameModal();
-    });
+        for (let i = 1; i <= pourTimes; i++) {
+            let percentage = Math.trunc(((totalWater_mls[i]/totalWater_mls[pourTimes])*100));
+            Output += `
+                <tr>
+                    <td>${minutes[i]}:${seconds[i]}</td>
+                    <td>${convertedPour_mls[i]} ml</td>
+                    <td>${totalWater_mls[i]} ml</td>
+                    ${isShowPercentage ? `<td>${percentage} %</td>` : ''}
+                </tr>
+            `;
+        }
+        updateTotalOutput();
+
+        return Output;
+    }
+
+    // ========================================
+    // メモ表示関連
+    // ========================================
+
+    function displayMemo(memo) {
+        if (memo && memo.trim() !== '') {
+            $('#origin-memo-text').text(memo);
+            $('#converted-memo-text').text(memo);
+            $('.memo-section').show();
+        } else {
+            $('#origin-memo-text').text('');
+            $('#converted-memo-text').text('');
+            $('.memo-section').hide();
+        }
+    }
+
+    // ========================================
+    // 共有機能関連
+    // ========================================
 
     function showLoginPrompt() {
         const message = '共有機能はログインユーザー限定機能です！\n新規登録・ログインしていきませんか？';
@@ -297,7 +339,7 @@ $(document).ready(function() {
 
     function shareRecipe(recipeName) {
         $('#share-recipe-btn').prop('disabled', true);
-        
+
         // 変換後レシピのデータを収集
         const recipeData = {
             name: recipeName,
@@ -388,125 +430,9 @@ $(document).ready(function() {
         });
     }
 
-
-    function inputError_Detector([pourTimes, originSumWater, targetBean, targetWater]) {
-        let defaultMessage = '【入力不備】\n'; // エラーメッセージの初期値(エラーが検知されるとこれに追加されていく)
-        let errorMassage = defaultMessage;
-        if (!pourTimes){
-            errorMassage += '･変換前投数\n';
-        }
-        if (!originSumWater){
-            errorMassage += '･変換前レシピ\n';
-        }
-        if (!targetBean){
-            errorMassage += '･変換前豆量\n';
-        }
-        if (!targetWater){
-            errorMassage += '･変換前総湯量\n';
-        }
-
-        if(errorMassage !== defaultMessage){
-            window.alert(errorMassage);
-            return 'Error';
-        }
-    }
-
-    function recipeConverter(pourTimes, convertRate, isShowPercentage = false) {
-        const DefaultOutput = `
-            <tr>
-                <th>経過時間</th>
-                <th>注湯量</th>
-                <th>総注湯量</th>
-                ${isShowPercentage ? '<th>%</th>' : ''}
-            </tr>
-        `;
-        let Output = DefaultOutput;
-        let totalWater_mls=[0], minutes=["0"], seconds=["00"], input_pour_mls=[0],convertedPour_mls=[0];
-        for(let i = 1; i <= pourTimes; i++){
-            minutes.push(String($(`.pour-step${i}`).children('.minutes').val()).padStart(2, '0'));
-            seconds.push(String($(`.pour-step${i}`).children('.seconds').val()).padStart(2, '0'));
-            input_pour_mls.push($(`.pour-step${i}`).children('.pour-ml').val());
-            totalWater_mls.push(Math.trunc(input_pour_mls[i] * convertRate));
-
-            // 各投での注湯量を計算(総湯量 - ひとつ前の総湯量)
-            convertedPour_mls.push(Math.trunc(totalWater_mls[i] - totalWater_mls[i-1]));
-        }
-
-        for (let i = 1; i <= pourTimes; i++) {
-            let percentage = Math.trunc(((totalWater_mls[i]/totalWater_mls[pourTimes])*100));
-            Output += `
-                <tr>
-                    <td>${minutes[i]}:${seconds[i]}</td>
-                    <td>${convertedPour_mls[i]} ml</td>
-                    <td>${totalWater_mls[i]} ml</td>
-                    ${isShowPercentage ? `<td>${percentage} %</td>` : ''}
-                </tr>
-            `;
-        }
-        updateTotalOutput();
-
-        return Output;
-    }
-
-    // 変換に必要なパラメータを収集する関数
-    function collectConversionParameters() {
-        let pourTimes = $('#pour-times-input').val();
-        let originWaterTotal_ml = $(`.pour-step${pourTimes}`).children('.pour-ml').val();
-        let ice_g = 0;  // ice_gの初期値は0としてNanを防ぎ、ice-modeなら正しい値で更新する
-        if($('#ice-check').prop('checked')){
-            ice_g = $('#ice_g').val();
-        }
-
-        let targetBean_g, targetWaterTotal_ml, convertRate;
-        if($('#magnification').val()){ // 変換率が手動入力されている場合は、それを採用して変換する
-            convertRate = $('#magnification').val();
-            targetBean_g = $('#bean-input').val()*convertRate;
-            targetWaterTotal_ml = originWaterTotal_ml*convertRate;
-        }else{        
-            targetBean_g = $('#bean-target').val();
-            targetWaterTotal_ml = $('#water-target').val();
-            convertRate = targetWaterTotal_ml / (Number(originWaterTotal_ml) + Number(ice_g));  
-        }
-        updateTotalOutput();
-        
-        if(inputError_Detector([pourTimes, originWaterTotal_ml, targetBean_g, targetWaterTotal_ml])=='Error'){
-            return;
-        }
-        return [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate];
-    }
-
-    // レシピの変換･変換後レシピの出力
-    $('.convert-button').on('click', function(){
-        event.preventDefault(); // ページ遷移を防ぐ
-
-        let [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate] = collectConversionParameters();
-
-        // 変換後の豆量と総湯量を転記(小数点第一位まで表示)
-        $('.bean-output').text(Math.trunc(targetBean_g*10)/10);
-        $('.water-output').text(Math.trunc((originWaterTotal_ml*convertRate)*10)/10);
-        // 氷量が入力されている(アイスモードの)場合、変換後の氷量を算出・出力
-        let isIceMode = $('html').hasClass('ice-mode');
-        if(isIceMode){
-            let convertedIce_g = Math.trunc(ice_g*convertRate);
-            $('.ice-output').text(convertedIce_g);
-        }
-
-        // 変換後のレシピを算出・出力
-        const isShowPercentage = $('#percentage-check').prop('checked');
-        const ConvertedRecipe = recipeConverter(pourTimes, convertRate, isShowPercentage);
-        $('.recipe-output').html(ConvertedRecipe);
-        
-        // 変換後レシピのメモも表示（元レシピのメモと同じ内容）
-        const originMemo = $('#origin-memo-text').text();
-        if (originMemo && originMemo.trim() !== '') {
-            $('#converted-memo-text').text(originMemo);
-            $('.memo-section').show();
-        } else {
-            $('#converted-memo-text').text('');
-            $('.memo-section').hide();
-        }
-
-    });
+    // ========================================
+    // 共有レシピ受信関連
+    // ========================================
 
     // 共有レシピモーダル表示
     function showSharedRecipeModal(recipeData) {
@@ -523,14 +449,14 @@ $(document).ready(function() {
                 <button id="cancel-shared-btn" class="btn btn-secondary" data-modal-close>キャンセル</button>
             </div>
         `;
-        
+
         ModalWindow.createAndShow('shared-recipe-modal', 'マイプリセットに追加しますか？', content);
     }
 
     // プリセット追加処理
     function addSharedRecipeToPreset(token) {
         $('#add-to-preset-btn').prop('disabled', true).text('追加中...');
-        
+
         $.ajax({
             url: `/recipes/api/shared-recipes/${token}/add-to-preset/`,
             method: 'POST',
@@ -540,7 +466,7 @@ $(document).ready(function() {
             success: function(response) {
                 ModalWindow.hide('shared-recipe-modal');
                 ModalWindow.showSuccess(response.message);
-                
+
                 // プリセット情報を更新するため、変換ページにリダイレクト
                 setTimeout(function() {
                     window.location.href = '/';
@@ -548,7 +474,7 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 let errorMessage = 'レシピの追加に失敗しました。';
-                
+
                 if (xhr.status === 401) {
                     const data = xhr.responseJSON;
                     if (data && data.error === 'authentication_required') {
@@ -570,7 +496,7 @@ $(document).ready(function() {
                 } else if (xhr.status === 410) {
                     errorMessage = 'この共有リンクは期限切れです。';
                 }
-                
+
                 ModalWindow.showError(errorMessage);
             },
             complete: function() {
@@ -590,7 +516,7 @@ $(document).ready(function() {
                 console.error('共有レシピデータのパースに失敗:', e);
             }
         }
-        
+
         if (sharedRecipeData) {
             if (sharedRecipeData.error) {
                 ModalWindow.showError(sharedRecipeData.message);
@@ -601,6 +527,121 @@ $(document).ready(function() {
     }
     showSharedRecipeIfExist();
 
+    // ========================================
+    // イベントハンドラ
+    // ========================================
+
+    // --- アイスモード関連 ---
+    // アイスモードの切り替え(チェックボックスのON/OFFで表示を切り替える)
+    $('#ice-check, #is_ice').on('change', function(){
+        apply_ice_mode(this.checked, /*ice_gFromDB=*/null)
+    });
+
+    // ページロード時にアイスモードをチェック
+    if ($('#is_ice').prop('checked')) {
+        apply_ice_mode(true, ice_gFromDB)
+    }
+
+    // --- プリセット関連 ---
+    $('.preset-button').on('click', async function() {
+        const presetId = $(this).attr('id');
+        const recipe = await getPresetRecipeData(presetId);
+        if (recipe) {
+            darken_selected_button('preset-button', presetId);
+            activate_preset(recipe);
+        }
+    });
+
+    // --- フォーム関連 ---
+    // レシピ入力欄の伸縮
+    $('#pour-times-input').on('change', function(){
+        const InputPourTimes = $('#pour-times-input').val();
+        const CurrentPourTimes = $('.origin-process').children().length;
+        adjust_origin_recipe_form_length(InputPourTimes, CurrentPourTimes);
+    });
+
+    // 元レシピ内のinputは動的に生成されるため、イベント委譲で動的にバインドする必要がある
+    $('.origin-process').on('change', 'input', updateOriginRatio);
+    $('#ice_g, #bean-input').on('change', updateOriginRatio);
+
+    // 変換目標入力欄の入力補助(豆量･総湯量･比率のどれか2つを入力すると、残り1つを計算して補完する)
+    $('.targetBrewParameter').on('change', function(){
+        let targetBean = $('#bean-target').val();
+        let targetWater = $('#water-target').val();
+        let targetRatio = $('#ratio-target').val();
+        if (!targetBean){
+            targetBean = brewParameterCompleter(['', targetWater, targetRatio]);
+            $('#bean-target').val(targetBean);
+        }else if (!targetWater){
+            targetWater = brewParameterCompleter([targetBean, '', targetRatio]);
+            $('#water-target').val(targetWater);
+        }else if (!targetRatio){
+            targetRatio = brewParameterCompleter([targetBean, targetWater, '']);
+            $('#ratio-target').val(targetRatio);
+        }
+    });
+
+    // 変換目標入力欄のクリア
+    $('.clear-button').on('click', function(){
+        event.preventDefault(); // ページ遷移を防ぐ
+        $('#bean-target, #water-target, #ratio-target').val('');
+    });
+
+    // --- レシピ変換関連 ---
+    // レシピの変換･変換後レシピの出力
+    $('.convert-button').on('click', function(){
+        event.preventDefault(); // ページ遷移を防ぐ
+
+        let [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate] = collectConversionParameters();
+
+        // 変換後の豆量と総湯量を転記(小数点第一位まで表示)
+        $('.bean-output').text(Math.trunc(targetBean_g*10)/10);
+        $('.water-output').text(Math.trunc((originWaterTotal_ml*convertRate)*10)/10);
+        // 氷量が入力されている(アイスモードの)場合、変換後の氷量を算出・出力
+        let isIceMode = $('html').hasClass('ice-mode');
+        if(isIceMode){
+            let convertedIce_g = Math.trunc(ice_g*convertRate);
+            $('.ice-output').text(convertedIce_g);
+        }
+
+        // 変換後のレシピを算出・出力
+        const isShowPercentage = $('#percentage-check').prop('checked');
+        const ConvertedRecipe = recipeConverter(pourTimes, convertRate, isShowPercentage);
+        $('.recipe-output').html(ConvertedRecipe);
+
+        // 変換後レシピのメモも表示（元レシピのメモと同じ内容）
+        const originMemo = $('#origin-memo-text').text();
+        if (originMemo && originMemo.trim() !== '') {
+            $('#converted-memo-text').text(originMemo);
+            $('.memo-section').show();
+        } else {
+            $('#converted-memo-text').text('');
+            $('.memo-section').hide();
+        }
+
+    });
+
+    // --- 共有関連 ---
+    // 共有ボタンの機能
+    $('#share-recipe-btn').on('click', function() {
+        const isLoggedIn = document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
+        if (!isLoggedIn) {
+            showLoginPrompt();
+            return;
+        }
+
+        // 変換後レシピが存在するかチェック
+        const hasConvertedRecipe = $('.bean-output').text().trim() !== '';
+        if (!hasConvertedRecipe) {
+            alert('変換後レシピがありません。先にレシピを変換してください。');
+            return;
+        }
+
+        // レシピ名入力モーダルを表示
+        showRecipeNameModal();
+    });
+
+    // --- 共有レシピ受信関連 ---
     $(document).on('click', '#add-to-preset-btn', function() {
         const sharedRecipeData = JSON.parse(document.getElementById('shared_recipe_data')?.textContent || 'null');
         if (sharedRecipeData && !sharedRecipeData.error) {
@@ -612,6 +653,7 @@ $(document).ready(function() {
         ModalWindow.hide('shared-recipe-modal');
     });
 
+    // --- モーダル関連 ---
     $('#close-shared-modal, #close-success-modal, #close-error-modal, #close-success-btn, #close-error-btn').on('click', function() {
         const modalId = $(this).closest('.modal').attr('id');
         ModalWindow.hide(modalId);
@@ -622,18 +664,18 @@ $(document).ready(function() {
         }
     });
 
+    // ログインボタンのクリックイベント
+    $('#login-redirect-btn').on('click', function() {
+        window.location.href = '/users/login/';
+    });
+
     // トグル機能
     $('.accordion-item').hide();
     $('.accordion-head').on('click', function() {
         $(this).children('.accordion-toggle').toggleClass('rotate-90');
         $(this).next().children('.accordion-item').slideToggle(300);
     });
-    
-    // ログインボタンのクリックイベント
-    $('#login-redirect-btn').on('click', function() {
-        window.location.href = '/users/login/';
-    });
-    
+
     // メモ欄を初期状態で非表示にする
     $('.memo-section').hide();
 
@@ -641,12 +683,12 @@ $(document).ready(function() {
     $(document).on('click', '.recommended-info-btn', function(e) {
         e.preventDefault();
         e.stopPropagation(); // 親要素へのイベント伝播を防ぐ（プリセットボタンが反応しないように）
-        
+
         const content = `
             <p>これは今月のおすすめレシピです。</p>
             <p>このレシピに関する詳細な説明は、こちらの<a href="https://note.com/hiruge/n/n5511a1a9f278" target="_blank" style="color: #876b36; text-decoration: underline;">note</a>から確認することができます。</p>
         `;
-        
+
         ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
     });
 });
