@@ -16,6 +16,11 @@ function nextField(str) {
     return (str);
 }
 
+function darken_selected_button(LightButtonsClass, DarkButtonId){
+    $(`.${LightButtonsClass}`).removeClass('selected-button');
+    $(`#${DarkButtonId}`).addClass('selected-button');
+}
+
 $(document).ready(function() {
     // ハンバーガーメニューの開閉
     $('.hamburger').on('click', function() {

@@ -148,7 +148,7 @@
             
             <!-- PiPボタンと共有ボタン -->
             <div class="share-button-container">
-                <button id="pip-btn" class="pip-button" title="PiPで表示" style="display: none;"><img src="{% static 'images/popup.png' %}" alt="PiP" /></button>
+                <button id="pip-btn" class="pip-button" style="display: none;"><img src="{% static 'images/popup.png' %}" /></button>
                 <button id="share-recipe-btn" class="share-button"><img src="{% static 'images/share-icon.png' %}" /></button>
             </div>
             
@@ -219,4 +219,6 @@
 
 {% block extra_js %}
     <script src="{% static 'script/index.js' %}"></script>
+    <script src="{% static 'script/stopwatch.js' %}"></script>
+    <script src="{% static 'script/pip.js' %}"></script>
 {% endblock %}
