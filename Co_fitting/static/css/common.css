@@ -1,7 +1,116 @@
 /* 機能に関する部分 */
-/* モーダルの非表示クラス */
+/* モーダル関連のスタイル */
+.modal {
+    display: flex;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
 .modal-hidden {
     display: none !important;
+}
+
+.modal-content {
+    background-color: #474747;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.modal-header {
+    padding: 0rem 1rem;
+    border-bottom: 1px solid #666;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-title h3 {
+    margin: 0.5rem;
+}
+
+.close {
+    color: #aaa;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+.modal-body {
+    padding: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 700;
+    flex: 1;
+}
+
+.btn-primary {
+    background-color: #876b36;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #6b5b47;
+}
+
+.btn-secondary {
+    background-color: #666;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #555;
+}
+
+.btn:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.btn-danger:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
 }
 
 /* ハンバーガーメニュー */
@@ -167,4 +276,35 @@ footer button a {
     background-color: gray;
     color: #fff;
     text-decoration: none;
+}
+
+/* PiPボタンと共有ボタン */
+.pip-button, .share-button {
+    width: 5vh;
+    height: 5vh;
+    padding: 0.3rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0.5rem;
+}
+
+.pip-button img, .share-button img {
+    width: 100%;
+    height: 100%;
+    filter: none;
+}
+
+.pip-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.share-button-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
 }

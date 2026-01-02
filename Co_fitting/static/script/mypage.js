@@ -140,7 +140,7 @@ $(document).ready(function() {
                     <div class="button-parent">
                         <button class="edit-share-name-btn" data-token="${recipe.access_token}" data-name="${recipe.name}">編集</button>
                         <button class="delete-shared-recipe-btn" data-token="${recipe.access_token}">削除</button>
-                        <button class="share-preset-btn" data-url="/recipes/share/${recipe.access_token}/" title="URLコピー">
+                        <button class="share-button" data-url="/recipes/share/${recipe.access_token}/" title="URLコピー">
                             <img src="/static/images/share-icon.png" alt="共有" />
                         </button>
                     </div>

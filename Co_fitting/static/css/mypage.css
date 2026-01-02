@@ -38,9 +38,10 @@ div.button-parent button {
     color: #000;
     border: none;
     width: 6rem;
+    height: 2.75rem;
     font-weight: 700;
     border-radius: 0.5rem;
-    padding: 0.5rem 2rem;
+    padding: 0.5rem;
     margin: 0 0.5rem;
     cursor: pointer;
 }
@@ -49,103 +50,6 @@ div.button-parent button.long-button{
     background-color: #000;
     color: #fff;
     width: 13rem;
-}
-
-/* モーダル関連のスタイル */
-.modal {
-    display: flex;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background-color: #474747;
-    color: #fff;
-    margin: 0;
-    padding: 0;
-    border-radius: 1rem;
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-}
-
-.modal-header {
-    padding: 1rem;
-    border-bottom: 1px solid #666;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.modal-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.close {
-    color: #aaa;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 1.5rem;
-}
-
-.close:hover {
-    color: #fff;
-}
-
-.modal-body {
-    padding: 1rem;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 1rem;
-    gap: 1rem;
-}
-
-.btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    font-weight: 700;
-    flex: 1;
-}
-
-.btn-primary {
-    background-color: #876b36;
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #6b5b47;
-}
-
-.btn-secondary {
-    background-color: #666;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #555;
-}
-
-.btn-danger {
-    background-color: #dc3545;
-    color: white;
-}
-
-.btn-danger:hover {
-    background-color: #c82333;
 }
 
 /* フォーム関連のスタイル */
@@ -198,58 +102,6 @@ div.button-parent button.long-button{
     color: #ccc;
 }
 
-/* 共有ボタン（変換ページと同じデザイン） */
-.share-preset-btn {
-    width: 5vh !important;
-    height: 5vh !important;
-    padding: 0.3rem !important;
-    margin: 0 0.5rem !important;
-    background-color: #e0e0e0 !important;
-    color: #000 !important;
-    border: none !important;
-    border-radius: 0.5rem !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.share-preset-btn img {
-    width: 100%;
-    height: 100%;
-    filter: none; /* 元の色を保持 */
-}
-
-.share-preset-btn:hover {
-    background-color: #d0d0d0 !important;
-}
-
-/* 共有レシピ一覧の共有ボタンも同じスタイルを適用 */
-.shared-recipe-item .share-preset-btn {
-    width: 5vh !important;
-    height: 5vh !important;
-    padding: 0.3rem !important;
-    margin: 0 0.5rem !important;
-    background-color: #e0e0e0 !important;
-    color: #000 !important;
-    border: none !important;
-    border-radius: 0.5rem !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.shared-recipe-item .share-preset-btn img {
-    width: 100%;
-    height: 100%;
-    filter: none;
-}
-
-.shared-recipe-item .share-preset-btn:hover {
-    background-color: #d0d0d0 !important;
-}
-
 /* 共有レシピ一覧 */
 .shared-recipe-item {
     margin-bottom: 1rem;
@@ -257,6 +109,12 @@ div.button-parent button.long-button{
 
 .shared-recipe-item .recipe-info {
     margin-bottom: 0.5rem;
+}
+
+div.button-parent .share-button {
+    /* mypage.css内のボタン定義で変更されてしまうのでここで再定義 */
+    width: 2.75rem;
+    height: 2.75rem;
 }
 
 /* 入力フィールド */
