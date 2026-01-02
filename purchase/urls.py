@@ -11,4 +11,6 @@ urlpatterns = [
     path('get_preset_limit/', views.get_preset_limit, name='get_preset_limit'),
     path('create_portal_session/', views.create_portal_session, name='create_portal_session'),
     path('not_subscribed/', views.not_subscribed, name='not_subscribed'),
+    path('change_plan/', views.change_plan, name='change_plan'),
+    path('get_current_plan/', views.get_current_plan, name='get_current_plan'),
 ]

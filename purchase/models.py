@@ -12,26 +12,63 @@ class StripeService:
     """Stripe API処理のサービスクラス"""
 
     @staticmethod
-    def create_checkout_session(user, request):
+    def create_checkout_session(user, request, plan_type=AppConstants.PLAN_BASIC):
         """チェックアウトセッションを作成"""
         try:
             stripe.api_key = AppConstants.STRIPE_API_KEY
+
+            # プランタイプに応じたPrice IDを取得
+            price_id = AppConstants.STRIPE_PRICE_IDS.get(plan_type)
+            if not price_id:
+                raise ValueError(f"Invalid plan type: {plan_type}")
+
             session = stripe.checkout.Session.create(
                 payment_method_types=["card"],
                 line_items=[
                     {
-                        "price": AppConstants.STRIPE_PRICE_ID,
+                        "price": price_id,
                         "quantity": 1,
                     },
                 ],
                 mode="subscription",
                 success_url=request.build_absolute_uri(reverse("purchase:checkout_success")) + "?session_id={CHECKOUT_SESSION_ID}",
                 cancel_url=request.build_absolute_uri(reverse("purchase:checkout_cancel")),
-                metadata={"user_id": user.id},
+                metadata={
+                    "user_id": user.id,
+                    "plan_type": plan_type,
+                },
             )
             return session
         except Exception as e:
             raise Exception(f"Stripe checkout session creation failed: {e}")
+
+    @staticmethod
+    def change_subscription_plan(subscription_id, new_plan_type):
+        """サブスクリプションのプランを変更"""
+        try:
+            stripe.api_key = AppConstants.STRIPE_API_KEY
+
+            # 新しいプランのPrice IDを取得
+            new_price_id = AppConstants.STRIPE_PRICE_IDS.get(new_plan_type)
+            if not new_price_id:
+                raise ValueError(f"Invalid plan type: {new_plan_type}")
+
+            # サブスクリプション情報を取得
+            subscription = stripe.Subscription.retrieve(subscription_id)
+
+            # サブスクリプションアイテムを更新
+            stripe.Subscription.modify(
+                subscription_id,
+                items=[{
+                    'id': subscription['items']['data'][0].id,
+                    'price': new_price_id,
+                }],
+                proration_behavior='always_invoice',  # 差額を即時請求
+                metadata={'plan_type': new_plan_type},
+            )
+            return subscription
+        except Exception as e:
+            raise Exception(f"Stripe subscription plan change failed: {e}")
 
     @staticmethod
     def create_portal_session(customer_id, return_url):
@@ -45,6 +82,17 @@ class StripeService:
             return portal_session
         except Exception as e:
             raise Exception(f"Stripe portal session creation failed: {e}")
+
+    @staticmethod
+    def get_plan_type_from_price_id(price_id):
+        """Price IDからプランタイプを判別"""
+        for plan_type, plan_price_id in AppConstants.STRIPE_PRICE_IDS.items():
+            if plan_price_id == price_id:
+                return plan_type
+        # レガシーのPrice IDの場合はBASICとして扱う
+        if price_id == AppConstants.STRIPE_PRICE_ID:
+            return AppConstants.PLAN_BASIC
+        return None
 
     @staticmethod
     def construct_event(payload, api_key):
@@ -70,14 +118,17 @@ class SubscriptionManager:
         session = event.data.object
         customer_id = session.customer
         user_id = session.get("metadata", {}).get("user_id")
+        plan_type = session.get("metadata", {}).get("plan_type", AppConstants.PLAN_BASIC)
 
         try:
             user = User.objects.get(id=user_id)
             user.stripe_customer_id = customer_id
-            # サブスクリプション状態を更新
+            # プランタイプを更新
+            user.plan_type = plan_type
+            # レガシーフィールドも更新（後方互換性のため）
             user.is_subscribed = True
-            user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
-            user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
+            user.preset_limit = AppConstants.PRESET_LIMITS.get(plan_type, 1)
+            user.share_limit = AppConstants.SHARE_LIMITS.get(plan_type, 1)
             user.save()
 
             # 成功メールを送信
@@ -94,35 +145,102 @@ class SubscriptionManager:
 
         try:
             user = User.objects.get(stripe_customer_id=subscription.customer)
+            old_plan_type = user.plan_type
+
             if status in AppConstants.INACTIVE_STATUSES:
+                # キャンセル・非アクティブの場合はFREEプランに降格
+                new_plan_type = AppConstants.PLAN_FREE
                 user.is_subscribed = False
-                user.preset_limit = AppConstants.FREE_PRESET_LIMIT
-                user.share_limit = AppConstants.SHARE_LIMIT_FREE
-                # ユーザーのレシピを1つだけ残して削除
-                users_recipes = PresetRecipe.objects.filter(created_by=user)
-                if users_recipes.exists():
-                    users_recipes.exclude(id=users_recipes.first().id).delete()
             elif status in AppConstants.ACTIVE_STATUSES:
+                # アクティブな場合、Price IDまたはメタデータからプランタイプを取得
+                new_plan_type = subscription.get("metadata", {}).get("plan_type")
+                if not new_plan_type:
+                    # メタデータにない場合、Price IDから判別
+                    price_id = subscription['items']['data'][0]['price']['id']
+                    new_plan_type = StripeService.get_plan_type_from_price_id(price_id)
+                if not new_plan_type:
+                    # 判別できない場合はBASICとして扱う
+                    new_plan_type = AppConstants.PLAN_BASIC
                 user.is_subscribed = True
-                user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
-                user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
+            else:
+                # その他のステータスは変更なし
+                return ResponseHelper.create_success_response("サブスクリプションステータスが更新されました。")
+
+            # プランタイプを更新
+            user.plan_type = new_plan_type
+            # レガシーフィールドも更新（後方互換性のため）
+            user.preset_limit = AppConstants.PRESET_LIMITS.get(new_plan_type, 1)
+            user.share_limit = AppConstants.SHARE_LIMITS.get(new_plan_type, 1)
             user.save()
+
+            # ダウングレード時のレシピ削除処理
+            SubscriptionManager._handle_plan_downgrade_cleanup(user, old_plan_type, new_plan_type)
+
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
 
     @staticmethod
+    def _handle_plan_downgrade_cleanup(user, old_plan_type, new_plan_type):
+        """プランダウングレード時の超過データ削除処理"""
+        # 新旧プランの上限値を取得
+        old_preset_limit = AppConstants.PRESET_LIMITS.get(old_plan_type, 1)
+        new_preset_limit = AppConstants.PRESET_LIMITS.get(new_plan_type, 1)
+        old_share_limit = AppConstants.SHARE_LIMITS.get(old_plan_type, 1)
+        new_share_limit = AppConstants.SHARE_LIMITS.get(new_plan_type, 1)
+
+        # ダウングレードでない場合は何もしない
+        if new_preset_limit >= old_preset_limit and new_share_limit >= old_share_limit:
+            return
+
+        # プリセットレシピの超過分を削除（古い順に削除）
+        user_presets = PresetRecipe.objects.filter(created_by=user).order_by('created_at')
+        preset_count = user_presets.count()
+        if preset_count > new_preset_limit:
+            # 超過分を削除（古いものから）
+            delete_count = preset_count - new_preset_limit
+            presets_to_delete = user_presets[:delete_count]
+            presets_to_delete.delete()
+
+        # 共有レシピの超過分を削除（古い順に削除）
+        from recipes.models import SharedRecipe
+        user_shared = SharedRecipe.objects.filter(
+            recipe__created_by=user
+        ).order_by('created_at')
+        shared_count = user_shared.count()
+        if shared_count > new_share_limit:
+            # 超過分を削除（古いものから）
+            delete_count = shared_count - new_share_limit
+            shared_to_delete = user_shared[:delete_count]
+            shared_to_delete.delete()
+
+    @staticmethod
     def handle_invoice_paid(event):
         """支払い成功時の処理"""
-        session = event.data.object
-        customer_id = session.customer
+        invoice = event.data.object
+        customer_id = invoice.customer
 
         try:
             user = User.objects.get(stripe_customer_id=customer_id)
-            user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
-            user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
-            user.is_subscribed = True
-            user.save()
+
+            # サブスクリプション情報から現在のプランを取得
+            if invoice.get('subscription'):
+                stripe.api_key = AppConstants.STRIPE_API_KEY
+                subscription = stripe.Subscription.retrieve(invoice['subscription'])
+
+                # メタデータまたはPrice IDからプランタイプを取得
+                plan_type = subscription.get("metadata", {}).get("plan_type")
+                if not plan_type:
+                    price_id = subscription['items']['data'][0]['price']['id']
+                    plan_type = StripeService.get_plan_type_from_price_id(price_id)
+                if not plan_type:
+                    plan_type = AppConstants.PLAN_BASIC
+
+                user.plan_type = plan_type
+                user.preset_limit = AppConstants.PRESET_LIMITS.get(plan_type, 1)
+                user.share_limit = AppConstants.SHARE_LIMITS.get(plan_type, 1)
+                user.is_subscribed = True
+                user.save()
 
             EmailService.send_payment_success_email(user)
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")

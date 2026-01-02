@@ -51,7 +51,14 @@ class AppConstants:
 
     # Stripe設定
     STRIPE_API_KEY = settings.STRIPE_API_KEY
-    STRIPE_PRICE_ID = settings.STRIPE_PRICE_ID
+    STRIPE_PRICE_ID = settings.STRIPE_PRICE_ID  # レガシー（Basic相当）
+
+    # Stripe Price ID（プランごと）
+    STRIPE_PRICE_IDS = {
+        PLAN_BASIC: settings.STRIPE_PRICE_ID_BASIC,
+        PLAN_PREMIUM: settings.STRIPE_PRICE_ID_PREMIUM,
+        PLAN_UNLIMITED: settings.STRIPE_PRICE_ID_UNLIMITED,
+    }
 
 
 class ImageConstants:

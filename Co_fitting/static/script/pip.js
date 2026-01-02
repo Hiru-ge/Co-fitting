@@ -248,6 +248,7 @@ $(document).ready(function() {
     }
 
     // プレミアムユーザーかチェックしてPiPボタンを表示
+    // TODO: 現在のプランを取得するAPI(/purchase/get_current_plan/)を作ったのでそちらを使うように変更する
     $.ajax({
         url: '/purchase/get_preset_limit/',
         method: 'GET',
