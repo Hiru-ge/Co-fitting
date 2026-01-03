@@ -112,7 +112,22 @@
     <div id="upgrade-confirm-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h2>プラン変更の確認</h2>
-            <p id="upgrade-confirm-message"></p>
+            <div id="upgrade-confirm-details">
+                <div class="plan-change-summary">
+                    <h3 id="upgrade-plan-name"></h3>
+                    <p class="price-display" id="upgrade-price"></p>
+                </div>
+                <div class="plan-change-notice">
+                    <p>✓ 変更は即時反映されます</p>
+                    <p>✓ 差額が日割り計算で請求されます</p>
+                </div>
+                <div class="feature-comparison">
+                    <h4>変更後の機能</h4>
+                    <ul id="upgrade-features-list">
+                        <!-- JavaScriptで動的に生成 -->
+                    </ul>
+                </div>
+            </div>
             <div class="modal-buttons">
                 <button id="upgrade-confirm-btn" class="btn-primary">変更する</button>
                 <button id="upgrade-cancel-btn" class="btn-secondary">キャンセル</button>

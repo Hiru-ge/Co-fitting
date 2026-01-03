@@ -268,6 +268,67 @@
     background: #6b5b47;
 }
 
+/* アップグレード確認モーダルのスタイル */
+.plan-change-summary h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 20px;
+}
+
+.price-display {
+    font-size: 18px;
+    font-weight: bold;
+    color: #876b36;
+    background-color: rgba(255, 248, 225, 0.9);
+    padding: 8px 15px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.plan-change-notice {
+    background: rgba(135, 107, 54, 0.2);
+    border: 1px solid #876b36;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+}
+
+.plan-change-notice p {
+    margin: 5px 0;
+    color: #fff;
+    font-size: 13px;
+}
+
+.feature-comparison {
+    margin-bottom: 15px;
+}
+
+.feature-comparison h4 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    font-size: 16px;
+    border-bottom: 1px solid #666;
+    padding-bottom: 8px;
+}
+
+.feature-comparison ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-comparison li {
+    padding: 6px 0;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.feature-comparison .highlight {
+    color: #876b36;
+    font-weight: bold;
+}
+
 #processing-modal .modal-content {
     text-align: center;
 }

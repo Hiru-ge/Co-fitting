@@ -7,9 +7,9 @@ let currentSharedCount = 0;
 
 // プラン情報の定義（有料プランのみ）
 const PLAN_INFO = {
-    'BASIC': { name: 'Basic', presetLimit: 5, shareLimit: 5 },
-    'PREMIUM': { name: 'Premium', presetLimit: 10, shareLimit: 10 },
-    'UNLIMITED': { name: 'Unlimited', presetLimit: 100, shareLimit: 100 }
+    'BASIC': { name: 'Basic', presetLimit: 5, shareLimit: 5, price: 100, hasPip: false },
+    'PREMIUM': { name: 'Premium', presetLimit: 10, shareLimit: 10, price: 200, hasPip: true },
+    'UNLIMITED': { name: 'Unlimited', presetLimit: 100, shareLimit: 100, price: 500, hasPip: true }
 };
 
 // CSRF トークン取得
@@ -116,10 +116,38 @@ function calculateExcessData(newPlanType) {
 // アップグレード確認モーダルを表示
 function showUpgradeConfirm(newPlanType) {
     const modal = document.getElementById('upgrade-confirm-modal');
-    const messageElement = document.getElementById('upgrade-confirm-message');
     const confirmBtn = document.getElementById('upgrade-confirm-btn');
+    const planInfo = PLAN_INFO[newPlanType];
 
-    messageElement.textContent = `${PLAN_INFO[newPlanType].name}プランに変更しますか？`;
+    // プラン名と料金を設定
+    document.getElementById('upgrade-plan-name').textContent = `${planInfo.name}プランに変更`;
+    document.getElementById('upgrade-price').textContent = `月額料金: ¥${planInfo.price}/月`;
+
+    // 機能リストを生成
+    const featuresList = document.getElementById('upgrade-features-list');
+    featuresList.innerHTML = '';
+
+    // 現在のプラン情報を取得（FREEプランの場合のデフォルト値）
+    const currentPlanInfo = PLAN_INFO[currentPlan] || { presetLimit: 1, shareLimit: 1, hasPip: false };
+
+    // プリセット枠
+    const presetItem = document.createElement('li');
+    presetItem.innerHTML = `<strong>プリセット枠:</strong> ${currentPlanInfo.presetLimit}枠 → <span class="highlight">${planInfo.presetLimit}枠</span>`;
+    featuresList.appendChild(presetItem);
+
+    // 共有枠
+    const shareItem = document.createElement('li');
+    shareItem.innerHTML = `<strong>共有枠:</strong> ${currentPlanInfo.shareLimit}枠 → <span class="highlight">${planInfo.shareLimit}枠</span>`;
+    featuresList.appendChild(shareItem);
+
+    // PiP機能
+    const pipItem = document.createElement('li');
+    const pipBefore = currentPlanInfo.hasPip ? 'あり' : 'なし';
+    const pipAfter = planInfo.hasPip ? 'あり' : 'なし';
+    const pipClass = planInfo.hasPip && !currentPlanInfo.hasPip ? 'highlight' : '';
+    pipItem.innerHTML = `<strong>PiP機能:</strong> ${pipBefore} → <span class="${pipClass}">${pipAfter}</span>`;
+    featuresList.appendChild(pipItem);
+
     confirmBtn.dataset.planType = newPlanType;
     modal.style.display = 'flex';
 }
