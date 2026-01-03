@@ -13,7 +13,8 @@ from Co_fitting.utils.constants import AppConstants
 
 @login_required
 def already_subscribed(request):
-    return render(request, 'purchase/already_subscribed.html')
+    # 古いページ: select_planにリダイレクト
+    return redirect('purchase:select_plan')
 
 
 @login_required
@@ -84,7 +85,7 @@ def webhook(request):
 def create_portal_session(request):
     """顧客ポータルのURLを取得するエンドポイント"""
     if not request.user.stripe_customer_id:
-        return render(request, 'purchase/not_subscribed.html')
+        return redirect('purchase:select_plan')
 
     try:
         return_url = request.build_absolute_uri(reverse("mypage"))
@@ -99,7 +100,8 @@ def create_portal_session(request):
 
 @login_required
 def not_subscribed(request):
-    return render(request, 'purchase/not_subscribed.html')
+    # 古いページ: select_planにリダイレクト
+    return redirect('purchase:select_plan')
 
 
 @login_required
