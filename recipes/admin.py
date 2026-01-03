@@ -14,7 +14,6 @@ class CustomUserAdmin(UserAdmin):
         ('Personal Info', {'fields': ('username', 'stripe_customer_id')}),
         ('Plan Settings', {'fields': ('plan_type',)}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
-        ('Legacy Fields (削除予定)', {'fields': ('is_subscribed', 'preset_limit', 'share_limit'), 'classes': ('collapse',)}),
     )
 
     # 管理画面からユーザー追加を行う際のフォーム設定

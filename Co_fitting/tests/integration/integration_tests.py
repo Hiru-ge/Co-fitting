@@ -154,7 +154,7 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         login_test_user(self, user=self.user)
 
         # 無料ユーザーであることを確認
-        self.assertFalse(self.user.is_subscribed)
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         # 1. 最初のレシピを作成・共有（成功するはず）
         recipe1 = PresetRecipe.objects.create(
@@ -250,12 +250,26 @@ class EndToEndWorkflowTestCase(BaseTestCase):
             "type": "invoice.paid",
             "data": {
                 "object": {
-                    "customer": customer_id
+                    "customer": customer_id,
+                    "subscription": "sub_test123",
                 }
             }
         }
 
-        with patch("purchase.views.send_mail") as mock_send_mail:
+        # Stripeのサブスクリプション取得をモック
+        mock_subscription = {
+            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
+            "items": {
+                "data": [{
+                    "price": {
+                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
+                    }
+                }]
+            }
+        }
+
+        with patch("purchase.views.send_mail") as mock_send_mail, \
+             patch("stripe.Subscription.retrieve", return_value=mock_subscription):
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -266,15 +280,15 @@ class EndToEndWorkflowTestCase(BaseTestCase):
 
         # 5. ユーザーのサブスクリプション状態が更新されることを確認
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 4)
-        self.assertTrue(self.user.is_subscribed)
+        self.assertEqual(self.user.preset_limit_value, 5)
+        self.assertNotEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         # 6. プリセット制限が増加することを確認
         response = self.client.get(reverse('purchase:get_preset_limit'))
         self.assertEqual(response.status_code, 200)
 
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['preset_limit'], 4)
+        self.assertEqual(response_data['preset_limit'], 5)
 
 
 class ErrorHandlingTestCase(TestCase):

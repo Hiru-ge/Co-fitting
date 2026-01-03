@@ -10,7 +10,7 @@ import json
 User = get_user_model()
 
 
-def create_test_user(username='testuser', email='test@example.com', password='securepassword123', is_active=True, is_subscribed=False, preset_limit=1):
+def create_test_user(username='testuser', email='test@example.com', password='securepassword123', is_active=True, plan_type='FREE'):
     """
     テストユーザーを作成する共通関数
 
@@ -19,8 +19,7 @@ def create_test_user(username='testuser', email='test@example.com', password='se
         email (str): メールアドレス
         password (str): パスワード
         is_active (bool): アクティブ状態
-        is_subscribed (bool): サブスクリプション状態
-        preset_limit (int): プリセット制限数
+        plan_type (str): プランタイプ（FREE, BASIC, PREMIUM, UNLIMITED）
 
     Returns:
         User: 作成されたユーザーオブジェクト
@@ -31,8 +30,7 @@ def create_test_user(username='testuser', email='test@example.com', password='se
         password=password
     )
     user.is_active = is_active
-    user.is_subscribed = is_subscribed
-    user.preset_limit = preset_limit
+    user.plan_type = plan_type
     user.save()
     return user
 

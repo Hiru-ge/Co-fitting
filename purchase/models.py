@@ -89,9 +89,6 @@ class StripeService:
         for plan_type, plan_price_id in AppConstants.STRIPE_PRICE_IDS.items():
             if plan_price_id == price_id:
                 return plan_type
-        # レガシーのPrice IDの場合はBASICとして扱う
-        if price_id == AppConstants.STRIPE_PRICE_ID:
-            return AppConstants.PLAN_BASIC
         return None
 
     @staticmethod
@@ -123,12 +120,7 @@ class SubscriptionManager:
         try:
             user = User.objects.get(id=user_id)
             user.stripe_customer_id = customer_id
-            # プランタイプを更新
             user.plan_type = plan_type
-            # レガシーフィールドも更新（後方互換性のため）
-            user.is_subscribed = True
-            user.preset_limit = AppConstants.PRESET_LIMITS.get(plan_type, 1)
-            user.share_limit = AppConstants.SHARE_LIMITS.get(plan_type, 1)
             user.save()
 
             # 成功メールを送信
@@ -150,7 +142,6 @@ class SubscriptionManager:
             if status in AppConstants.INACTIVE_STATUSES:
                 # キャンセル・非アクティブの場合はFREEプランに降格
                 new_plan_type = AppConstants.PLAN_FREE
-                user.is_subscribed = False
             elif status in AppConstants.ACTIVE_STATUSES:
                 # アクティブな場合、Price IDまたはメタデータからプランタイプを取得
                 new_plan_type = subscription.get("metadata", {}).get("plan_type")
@@ -161,16 +152,12 @@ class SubscriptionManager:
                 if not new_plan_type:
                     # 判別できない場合はBASICとして扱う
                     new_plan_type = AppConstants.PLAN_BASIC
-                user.is_subscribed = True
             else:
                 # その他のステータスは変更なし
                 return ResponseHelper.create_success_response("サブスクリプションステータスが更新されました。")
 
             # プランタイプを更新
             user.plan_type = new_plan_type
-            # レガシーフィールドも更新（後方互換性のため）
-            user.preset_limit = AppConstants.PRESET_LIMITS.get(new_plan_type, 1)
-            user.share_limit = AppConstants.SHARE_LIMITS.get(new_plan_type, 1)
             user.save()
 
             # ダウングレード時のレシピ削除処理
@@ -193,26 +180,28 @@ class SubscriptionManager:
         if new_preset_limit >= old_preset_limit and new_share_limit >= old_share_limit:
             return
 
-        # プリセットレシピの超過分を削除（古い順に削除）
-        user_presets = PresetRecipe.objects.filter(created_by=user).order_by('id')
+        # プリセットレシピの超過分を削除（新しい順に削除、古いレシピを保持）
+        user_presets = PresetRecipe.objects.filter(created_by=user).order_by('-id')
         preset_count = user_presets.count()
         if preset_count > new_preset_limit:
-            # 超過分を削除（古いものから）
+            # 超過分を削除（新しいものから、古いレシピを保持）
             delete_count = preset_count - new_preset_limit
-            presets_to_delete = user_presets[:delete_count]
-            presets_to_delete.delete()
+            # スライシング後はdelete()できないので、IDを取得してから削除
+            preset_ids_to_delete = list(user_presets[:delete_count].values_list('id', flat=True))
+            PresetRecipe.objects.filter(id__in=preset_ids_to_delete).delete()
 
-        # 共有レシピの超過分を削除（古い順に削除）
+        # 共有レシピの超過分を削除（新しい順に削除、古いレシピを保持）
         from recipes.models import SharedRecipe
         user_shared = SharedRecipe.objects.filter(
             created_by=user
-        ).order_by('id')
+        ).order_by('-id')
         shared_count = user_shared.count()
         if shared_count > new_share_limit:
-            # 超過分を削除（古いものから）
+            # 超過分を削除（新しいものから、古いレシピを保持）
             delete_count = shared_count - new_share_limit
-            shared_to_delete = user_shared[:delete_count]
-            shared_to_delete.delete()
+            # スライシング後はdelete()できないので、IDを取得してから削除
+            shared_ids_to_delete = list(user_shared[:delete_count].values_list('id', flat=True))
+            SharedRecipe.objects.filter(id__in=shared_ids_to_delete).delete()
 
     @staticmethod
     def handle_invoice_paid(event):
@@ -237,9 +226,6 @@ class SubscriptionManager:
                     plan_type = AppConstants.PLAN_BASIC
 
                 user.plan_type = plan_type
-                user.preset_limit = AppConstants.PRESET_LIMITS.get(plan_type, 1)
-                user.share_limit = AppConstants.SHARE_LIMITS.get(plan_type, 1)
-                user.is_subscribed = True
                 user.save()
 
             EmailService.send_payment_success_email(user)

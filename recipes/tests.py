@@ -60,7 +60,7 @@ class RecipeCreateTestCase(BaseTestCase):
     def test_create_recipe_limit_exceeded(self):
         """プリセットレシピ作成時の上限チェック"""
         # 既に上限いっぱいまでレシピを作成済
-        for i in range(self.user.preset_limit):
+        for i in range(self.user.preset_limit_value):
             create_test_recipe(
                 user=self.user,
                 name=f"レシピ{i+1}",
@@ -325,8 +325,8 @@ class SharedRecipeTestCase(BaseTestCase):
 
     def test_create_shared_recipe_free_user_limit(self):
         """無料ユーザーのレシピ共有制限テスト"""
-        # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
-        self.assertFalse(self.user.is_subscribed)
+        # 無料ユーザーであることを確認
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         # 無料ユーザーの制限（1個）まで共有レシピを作成
         create_test_shared_recipe(
@@ -362,8 +362,8 @@ class SharedRecipeTestCase(BaseTestCase):
 
     def test_create_shared_recipe_free_user_success(self):
         """無料ユーザーが1個のレシピを正常に共有できることをテスト"""
-        # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
-        self.assertFalse(self.user.is_subscribed)
+        # 無料ユーザーであることを確認
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         recipe_data = create_recipe_data(
             name="無料ユーザー共有レシピ",
@@ -387,8 +387,7 @@ class SharedRecipeTestCase(BaseTestCase):
     def test_create_shared_recipe_subscription_limit(self):
         """サブスクリプション契約者のレシピ共有制限テスト"""
         # サブスクリプション契約ユーザーに変更
-        self.user.is_subscribed = True
-        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.save()
 
         # サブスクリプション契約者の制限（5個）まで共有レシピを作成
@@ -443,8 +442,7 @@ class SharedRecipeTestCase(BaseTestCase):
     def test_create_shared_recipe_subscription_success(self):
         """サブスクリプション契約ユーザーが5個のレシピを正常に共有できることをテスト"""
         # サブスクリプション契約ユーザーに変更
-        self.user.is_subscribed = True
-        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.save()
 
         # 5個のレシピを順次作成して、すべて成功することを確認
@@ -623,7 +621,7 @@ class SharedRecipeAddToPresetTestCase(TestCase):
     def test_add_shared_recipe_to_preset_limit_exceeded_free_user(self):
         """無料ユーザーのプリセット枠上限時のエラーハンドリング"""
         # プリセット枠を上限まで埋める
-        for i in range(self.user.preset_limit):
+        for i in range(self.user.preset_limit_value):
             create_test_recipe(
                 user=self.user,
                 name=f"プリセット{i+1}",
@@ -644,11 +642,11 @@ class SharedRecipeAddToPresetTestCase(TestCase):
     def test_add_shared_recipe_to_preset_limit_exceeded_premium_user(self):
         """有料ユーザーのプリセット枠上限時のエラーハンドリング"""
         # ユーザーを有料ユーザーに設定
-        self.user.is_subscribed = True
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.save()
 
         # プリセット枠を上限まで埋める
-        for i in range(self.user.preset_limit):
+        for i in range(self.user.preset_limit_value):
             create_test_recipe(
                 user=self.user,
                 name=f"プリセット{i+1}",
@@ -1527,16 +1525,15 @@ class RecipeManagerTestCase(TestCase):
     def test_check_preset_limit_or_error(self):
         """プリセット上限チェックのテスト"""
         # 上限に達した場合（無料ユーザー）
-        self.user1.is_subscribed = False
-        self.user1.preset_limit = 1
+        self.user1.plan_type = AppConstants.PLAN_FREE
         self.user1.save()
 
         error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNotNone(error_response)
         self.assertEqual(error_response.status_code, 400)
 
-        # 上限内の場合（プリセット数を減らす）
-        self.user1.preset_limit = 2
+        # 上限内の場合（プランをアップグレード）
+        self.user1.plan_type = AppConstants.PLAN_BASIC
         self.user1.save()
 
         error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
@@ -1864,8 +1861,8 @@ class RecipeAPITestCase(TestCase):
         # ログイン
         self.client.login(username='test@example.com', password='securepassword123')
 
-        # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
-        self.assertFalse(self.user.is_subscribed)
+        # 無料ユーザーであることを確認
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         # 無料ユーザーの制限（1個）まで共有レシピを作成
         shared_recipe = SharedRecipe.objects.create(
@@ -1913,8 +1910,7 @@ class RecipeAPITestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
 
         # サブスクリプション契約ユーザーに変更
-        self.user.is_subscribed = True
-        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.save()
 
         # サブスクリプション契約者の制限（5個）まで共有レシピを作成
@@ -1963,8 +1959,8 @@ class RecipeAPITestCase(TestCase):
         # ログイン
         self.client.login(username='test@example.com', password='securepassword123')
 
-        # 無料ユーザーであることを確認（デフォルトでis_subscribed=False）
-        self.assertFalse(self.user.is_subscribed)
+        # 無料ユーザーであることを確認
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         # プリセットレシピを作成
         recipe = create_test_recipe(
@@ -1993,8 +1989,7 @@ class RecipeAPITestCase(TestCase):
         self.client.login(username='test@example.com', password='securepassword123')
 
         # サブスクリプション契約ユーザーに変更
-        self.user.is_subscribed = True
-        self.user.share_limit = AppConstants.SHARE_LIMIT_PREMIUM
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.save()
 
         # 5個のプリセットレシピを順次作成して、すべて成功することを確認

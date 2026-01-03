@@ -360,8 +360,7 @@ class UserModelTestCase(BaseTestCase):
         """ユーザーが正常に作成されることをテスト"""
         self.assertEqual(self.user.username, 'testuser')
         self.assertEqual(self.user.email, 'test@example.com')
-        self.assertFalse(self.user.is_subscribed)
-        self.assertEqual(self.user.preset_limit, 1)
+        self.assertEqual(self.user.plan_type, 'FREE')
         # setUpでis_activeをTrueに設定しているため、Trueであることを確認
         self.assertTrue(self.user.is_active)
         self.assertFalse(self.user.is_staff)
@@ -382,7 +381,7 @@ class UserModelTestCase(BaseTestCase):
 
         self.assertEqual(user.username, 'newuser')
         self.assertEqual(user.email, 'new@example.com')
-        self.assertEqual(user.preset_limit, 1)
+        self.assertEqual(user.preset_limit_value, 1)
         self.assertFalse(user.is_active)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
@@ -397,7 +396,7 @@ class UserModelTestCase(BaseTestCase):
 
         self.assertEqual(superuser.username, 'admin')
         self.assertEqual(superuser.email, 'admin@example.com')
-        self.assertEqual(superuser.preset_limit, 1)
+        self.assertEqual(superuser.preset_limit_value, 1)
         self.assertTrue(superuser.is_active)
         self.assertTrue(superuser.is_staff)
         self.assertTrue(superuser.is_superuser)
@@ -524,7 +523,7 @@ class UserFormTestCase(BaseTestCase):
             user = form.save()
             self.assertEqual(user.username, 'newuser')
             self.assertEqual(user.email, 'new@example.com')
-            self.assertEqual(user.preset_limit, 1)
+            self.assertEqual(user.preset_limit_value, 1)
 
 
 class UserViewsIntegrationTestCase(BaseTestCase):

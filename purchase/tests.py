@@ -63,11 +63,25 @@ class StripePaymentTest(BaseTestCase):
             "data": {
                 "object": {
                     "customer": self.user.stripe_customer_id,
+                    "subscription": "sub_test123",
                 }
             }
         }
 
-        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
+        # Stripeのサブスクリプション取得をモック
+        mock_subscription = {
+            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
+            "items": {
+                "data": [{
+                    "price": {
+                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
+                    }
+                }]
+            }
+        }
+
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
+             patch("stripe.Subscription.retrieve", return_value=mock_subscription):
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -84,14 +98,13 @@ class StripePaymentTest(BaseTestCase):
 
         # プリセット枠が増えていることを確認
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, AppConstants.PREMIUM_PRESET_LIMIT)
-        self.assertTrue(self.user.is_subscribed)
+        self.assertEqual(self.user.preset_limit_value, AppConstants.PRESET_LIMITS.get(AppConstants.PLAN_BASIC, 1))
+        self.assertNotEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
     def test_subscription_expired_cleanup(self):
         """サブスク期限が切れたときにプリセット枠が1つになり、マイプリセットが1つ残して削除されることをテスト"""
-        self.user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.stripe_customer_id = 'cus_test123'
-        self.user.is_subscribed = True
         self.user.save()
 
         # MyPresetを3つ作成
@@ -124,11 +137,11 @@ class StripePaymentTest(BaseTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, AppConstants.FREE_PRESET_LIMIT)
+        self.assertEqual(self.user.preset_limit_value, AppConstants.FREE_PRESET_LIMIT)
         self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), AppConstants.FREE_PRESET_LIMIT)  # ユーザーのレシピが1つだけ残っていることを確認
         self.assertTrue(PresetRecipe.objects.filter(name="Preset 1").exists())    # 最初のレシピが残っていることを確認
         self.assertFalse(PresetRecipe.objects.filter(name="Preset 2").exists())   # 他のレシピが削除されていることを確認
-        self.assertFalse(self.user.is_subscribed)
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
     def test_invalid_webhook_event(self):
         """不正なWebhookイベントが送信された場合の処理をテスト"""
@@ -202,7 +215,7 @@ class PurchaseViewsTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 200)
 
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['preset_limit'], self.user.preset_limit)
+        self.assertEqual(response_data['preset_limit'], self.user.preset_limit_value)
 
     def test_get_preset_limit_api_requires_login(self):
         """プリセット制限取得APIはログインが必要であることをテスト"""
@@ -241,8 +254,9 @@ class PurchaseViewsTestCase(BaseTestCase):
 
         response = self.client.post(reverse('purchase:create_portal_session'))
 
-        # エラーレスポンスが返されることを確認
-        self.assertIn(response.status_code, [200, 400, 500])
+        # stripe_customer_idがない場合はselect_planページにリダイレクトされる
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('select_plan', response.url)
 
 
 class PurchaseWebhookTestCase(BaseTestCase):
@@ -273,7 +287,15 @@ class PurchaseWebhookTestCase(BaseTestCase):
             "data": {
                 "object": {
                     "customer": self.user.stripe_customer_id,
-                    "status": "active"
+                    "status": "active",
+                    "metadata": {"plan_type": AppConstants.PLAN_BASIC},
+                    "items": {
+                        "data": [{
+                            "price": {
+                                "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
+                            }
+                        }]
+                    }
                 }
             }
         }
@@ -296,7 +318,15 @@ class PurchaseWebhookTestCase(BaseTestCase):
             "data": {
                 "object": {
                     "customer": self.user.stripe_customer_id,
-                    "status": "active"
+                    "status": "active",
+                    "metadata": {"plan_type": AppConstants.PLAN_BASIC},
+                    "items": {
+                        "data": [{
+                            "price": {
+                                "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
+                            }
+                        }]
+                    }
                 }
             }
         }
@@ -471,17 +501,16 @@ class PurchaseIntegrationTestCase(BaseTestCase):
 
         # 5. ユーザーのサブスクリプション状態が更新されることを確認
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, AppConstants.PREMIUM_PRESET_LIMIT)
-        self.assertTrue(self.user.is_subscribed)
+        self.assertEqual(self.user.preset_limit_value, AppConstants.PRESET_LIMITS.get(AppConstants.PLAN_BASIC, 1))
+        self.assertNotEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
     def test_subscription_cancellation_flow(self):
         """サブスクリプション解約フローのテスト"""
         login_test_user(self, user=self.user)
 
         # ユーザーを有料ユーザーに設定
-        self.user.preset_limit = AppConstants.PREMIUM_PRESET_LIMIT
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.stripe_customer_id = 'cus_test123'
-        self.user.is_subscribed = True
         self.user.save()
 
         # プリセットレシピを作成
@@ -518,8 +547,8 @@ class PurchaseIntegrationTestCase(BaseTestCase):
 
         # ユーザーの状態が更新されることを確認
         self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit, 1)
-        self.assertFalse(self.user.is_subscribed)
+        self.assertEqual(self.user.preset_limit_value, 1)
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
 
         # プリセットレシピが1つだけ残ることを確認
         self.assertEqual(PresetRecipe.objects.filter(created_by=self.user).count(), 1)

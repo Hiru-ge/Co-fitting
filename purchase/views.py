@@ -28,7 +28,7 @@ def create_checkout_session(request):
         return ResponseHelper.create_error_response("invalid_plan", "無効なプランタイプです。")
 
     # 既存のサブスクリプションがある場合は別の処理へ誘導
-    if request.user.is_subscribed and request.user.stripe_customer_id:
+    if request.user.plan_type != AppConstants.PLAN_FREE and request.user.stripe_customer_id:
         return ResponseHelper.create_error_response(
             "already_subscribed",
             "既にサブスクリプションがあります。プラン変更をご利用ください。"
@@ -53,7 +53,7 @@ def checkout_cancel(request):
 
 @login_required
 def get_preset_limit(request):
-    return ResponseHelper.create_data_response({"preset_limit": request.user.preset_limit})
+    return ResponseHelper.create_data_response({"preset_limit": request.user.preset_limit_value})
 
 
 @csrf_exempt
@@ -177,8 +177,6 @@ def change_plan(request):
 
         # ユーザー情報を即座に更新（Webhookを待たない）
         request.user.plan_type = new_plan_type
-        request.user.preset_limit = AppConstants.PRESET_LIMITS.get(new_plan_type, 1)
-        request.user.share_limit = AppConstants.SHARE_LIMITS.get(new_plan_type, 1)
         request.user.save()
         logger.info(f'ユーザー情報更新完了: user_id={request.user.id}')
 
