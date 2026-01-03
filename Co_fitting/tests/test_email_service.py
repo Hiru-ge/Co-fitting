@@ -7,6 +7,7 @@ import threading
 import time
 from Co_fitting.services.email_service import EmailService
 from Co_fitting.tests.helpers import create_test_user, BaseTestCase
+from Co_fitting.utils.constants import AppConstants
 
 User = get_user_model()
 
@@ -98,19 +99,157 @@ class EmailServiceTestCase(BaseTestCase):
         self.assertEqual(email.to, [new_email])
 
     def test_send_payment_success_email_content(self):
-        """支払い成功メールの内容テスト"""
+        """支払い成功メールの内容テスト（後方互換性）"""
+        self.user.plan_type = AppConstants.PLAN_BASIC
+        self.user.save()
+
         EmailService.send_payment_success_email(self.user)
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認（新しいメソッドにリダイレクトされる）
+        email = mail.outbox[0]
+        self.assertIn('【Co-fitting】', email.subject)
+        self.assertIn(self.user.username, email.body)
+        self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_send_subscription_created_email_content(self):
+        """初回サブスクリプション登録メールの内容テスト"""
+        plan_type = AppConstants.PLAN_PREMIUM
+
+        EmailService.send_subscription_created_email(self.user, plan_type)
 
         # メールが送信されたことを確認
         self.assertEqual(len(mail.outbox), 1)
 
         # メールの内容を確認
         email = mail.outbox[0]
-        self.assertEqual(email.subject, '支払い完了通知')
+        self.assertEqual(email.subject, '【Co-fitting】プレミアムプランへのご登録ありがとうございます')
         self.assertIn(self.user.username, email.body)
-        self.assertIn('支払いが完了しました', email.body)
+        self.assertIn('プレミアムプラン', email.body)
+        self.assertIn('プリセットレシピ保存数: 10個', email.body)
+        self.assertIn('レシピ共有数: 10個', email.body)
+        self.assertIn('PiP（ピクチャーインピクチャー）機能: 利用可能', email.body)
         self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
         self.assertEqual(email.to, [self.user.email])
+
+    def test_send_subscription_renewed_email_content(self):
+        """継続課金成功メールの内容テスト"""
+        plan_type = AppConstants.PLAN_BASIC
+
+        EmailService.send_subscription_renewed_email(self.user, plan_type)
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, '【Co-fitting】ベーシックプランの継続課金が完了しました')
+        self.assertIn(self.user.username, email.body)
+        self.assertIn('ベーシックプラン', email.body)
+        self.assertIn('決済が正常に完了いたしました', email.body)
+        self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_send_plan_upgraded_email_content(self):
+        """プランアップグレードメールの内容テスト"""
+        old_plan_type = AppConstants.PLAN_BASIC
+        new_plan_type = AppConstants.PLAN_PREMIUM
+
+        EmailService.send_plan_upgraded_email(self.user, old_plan_type, new_plan_type)
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, '【Co-fitting】プレミアムプランへのアップグレードが完了しました')
+        self.assertIn(self.user.username, email.body)
+        self.assertIn('ベーシックプラン', email.body)
+        self.assertIn('プレミアムプラン', email.body)
+        self.assertIn('アップグレードが完了しました', email.body)
+        self.assertIn('プリセットレシピ保存数: 10個', email.body)
+        self.assertIn('PiP（ピクチャーインピクチャー）機能: 利用可能', email.body)
+        self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_send_plan_downgraded_email_content(self):
+        """プランダウングレードメールの内容テスト"""
+        old_plan_type = AppConstants.PLAN_PREMIUM
+        new_plan_type = AppConstants.PLAN_BASIC
+        deleted_presets_count = 3
+        deleted_shares_count = 2
+
+        EmailService.send_plan_downgraded_email(
+            self.user, old_plan_type, new_plan_type,
+            deleted_presets_count, deleted_shares_count
+        )
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, '【Co-fitting】ベーシックプランへの変更が完了しました')
+        self.assertIn(self.user.username, email.body)
+        self.assertIn('プレミアムプラン', email.body)
+        self.assertIn('ベーシックプラン', email.body)
+        self.assertIn('プリセットレシピ: 新しく作成された3個のレシピが削除されました', email.body)
+        self.assertIn('共有レシピ: 新しく作成された2個の共有レシピが削除されました', email.body)
+        self.assertIn('古いレシピは保持されています', email.body)
+        self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_send_plan_downgraded_email_without_deletion(self):
+        """データ削除なしのダウングレードメールテスト"""
+        old_plan_type = AppConstants.PLAN_PREMIUM
+        new_plan_type = AppConstants.PLAN_BASIC
+
+        EmailService.send_plan_downgraded_email(
+            self.user, old_plan_type, new_plan_type,
+            deleted_presets_count=0, deleted_shares_count=0
+        )
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認
+        email = mail.outbox[0]
+        # 削除通知が含まれないことを確認
+        self.assertNotIn('削除されました', email.body)
+
+    def test_send_subscription_canceled_email_content(self):
+        """サブスクリプションキャンセルメールの内容テスト"""
+        from datetime import datetime, timedelta
+        period_end_date = datetime.now() + timedelta(days=15)
+
+        EmailService.send_subscription_canceled_email(self.user, period_end_date)
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認
+        email = mail.outbox[0]
+        self.assertEqual(email.subject, '【Co-fitting】サブスクリプションの解約が完了しました')
+        self.assertIn(self.user.username, email.body)
+        self.assertIn('解約手続きが完了しました', email.body)
+        self.assertIn('フリープラン', email.body)
+        self.assertIn('までご利用いただけます', email.body)
+        self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
+        self.assertEqual(email.to, [self.user.email])
+
+    def test_send_subscription_canceled_email_without_period_end(self):
+        """期間終了日なしのキャンセルメールテスト"""
+        EmailService.send_subscription_canceled_email(self.user, period_end_date=None)
+
+        # メールが送信されたことを確認
+        self.assertEqual(len(mail.outbox), 1)
+
+        # メールの内容を確認
+        email = mail.outbox[0]
+        self.assertIn('解約手続きが完了しました', email.body)
 
     def test_send_payment_failed_email_with_request(self):
         """支払い失敗メールのリクエスト処理テスト"""
@@ -124,9 +263,11 @@ class EmailServiceTestCase(BaseTestCase):
 
         # メールの内容を確認
         email = mail.outbox[0]
-        self.assertEqual(email.subject, '支払い失敗通知')
+        self.assertEqual(email.subject, '【Co-fitting】お支払いに失敗しました')
         self.assertIn(self.user.username, email.body)
-        self.assertIn('支払いが失敗しました', email.body)
+        self.assertIn('決済処理に失敗しました', email.body)
+        self.assertIn('考えられる原因', email.body)
+        self.assertIn('対処方法', email.body)
         self.assertIn('http://testserver/mypage/', email.body)
         self.assertEqual(email.from_email, settings.DEFAULT_FROM_EMAIL)
         self.assertEqual(email.to, [self.user.email])
@@ -237,6 +378,10 @@ class EmailServiceEdgeCaseTestCase(BaseTestCase):
 
     def test_send_multiple_emails_in_sequence(self):
         """複数のメールを連続して送信するテスト"""
+        # ユーザーにplan_typeを設定
+        self.user.plan_type = AppConstants.PLAN_BASIC
+        self.user.save()
+
         # 複数のメールを連続して送信
         EmailService.send_signup_confirmation_email(self.user, 'http://testserver/confirm1/')
         EmailService.send_login_notification_email(self.user, '192.168.1.1')
@@ -249,7 +394,8 @@ class EmailServiceEdgeCaseTestCase(BaseTestCase):
         subjects = [email.subject for email in mail.outbox]
         self.assertIn('アカウント登録の確認', subjects)
         self.assertIn('ログイン通知', subjects)
-        self.assertIn('支払い完了通知', subjects)
+        # send_payment_success_emailは新しいメソッドにリダイレクトされる
+        self.assertTrue(any('【Co-fitting】' in subject for subject in subjects))
 
     def test_send_login_notification_async_multiple_times(self):
         """複数回の非同期ログイン通知メール送信テスト"""
@@ -277,15 +423,22 @@ class EmailServiceEdgeCaseTestCase(BaseTestCase):
         request = self.factory.get('/')
         request.META['HTTP_HOST'] = 'testserver'
 
+        self.user.plan_type = AppConstants.PLAN_BASIC
+        self.user.save()
+
         EmailService.send_signup_confirmation_email(self.user, 'http://test/')
         EmailService.send_login_notification_email(self.user, '192.168.1.1')
         EmailService.send_email_change_confirmation_email(self.user, 'new@example.com', 'http://test/')
-        EmailService.send_payment_success_email(self.user)
+        EmailService.send_subscription_created_email(self.user, AppConstants.PLAN_BASIC)
+        EmailService.send_subscription_renewed_email(self.user, AppConstants.PLAN_BASIC)
+        EmailService.send_plan_upgraded_email(self.user, AppConstants.PLAN_BASIC, AppConstants.PLAN_PREMIUM)
+        EmailService.send_plan_downgraded_email(self.user, AppConstants.PLAN_PREMIUM, AppConstants.PLAN_BASIC)
         EmailService.send_payment_failed_email(self.user, request)
+        EmailService.send_subscription_canceled_email(self.user, None)
 
         # すべての呼び出しで settings.DEFAULT_FROM_EMAIL が使用されていることを確認
         for call in mock_send_mail.call_args_list:
-            args, kwargs = call
+            args, _ = call
             # send_mailの第3引数がfrom_email
             self.assertEqual(args[2], settings.DEFAULT_FROM_EMAIL)
 
