@@ -357,14 +357,14 @@ $(document).ready(function() {
     });
 
     // プリセット共有ボタンのイベント（マイプリセットセクション）
-    $(document).on('click', '.item:not(.shared-recipe-item) .share-preset-btn', function() {
+    $(document).on('click', '.item:not(.shared-recipe-item) .share-button', function() {
         const recipeId = $(this).data('recipe-id');
         const recipeName = $(this).data('recipe-name');
         sharePresetRecipe(recipeId, recipeName);
     });
 
     // 共有レシピ一覧の共有ボタン（URLコピー）
-    $(document).on('click', '.shared-recipe-item .share-preset-btn', function() {
+    $(document).on('click', '.shared-recipe-item .share-button', function() {
         const url = window.location.origin + $(this).data('url');
         navigator.clipboard.writeText(url).then(function() {
             ModalWindow.showSuccess('共有URLをクリップボードにコピーしました。');
