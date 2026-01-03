@@ -243,28 +243,43 @@ $(document).ready(function() {
     const isPipSupported = isPictureInPictureSupported(pipVideo);
     const isLoggedIn = isUserLoggedIn();
 
-    if (!isPipSupported || !isLoggedIn) {
-        return; // PiP非対応またはログインしていない場合は早期リターン
+    if (!isPipSupported) {
+        return; // PiP非対応の場合は早期リターン
     }
 
-    // プランに基づいてPiPボタンを表示（Premium/Unlimitedプランのみ）
-    $.ajax({
-        url: '/purchase/get_current_plan/',
-        method: 'GET',
-        success: function(response) {
-            // has_pip_accessがtrueの場合のみPiPボタンを表示
-            if (response.has_pip_access) {
+    // ログイン状態に関わらずPiPボタンを表示
+    if (isLoggedIn) {
+        // ログインユーザー：プラン情報を取得して権限チェック
+        $.ajax({
+            url: '/purchase/get_current_plan/',
+            method: 'GET',
+            success: function(response) {
+                // PiPボタンを表示
                 $('#pip-btn').show();
 
+                // クリックイベントハンドラーを設定
                 $('#pip-btn').on('click', function() {
-                    handlePipButtonClick(pipCanvas, pipVideo);
+                    if (response.has_pip_access) {
+                        // プレミアムユーザーの場合：PiP機能を起動
+                        handlePipButtonClick(pipCanvas, pipVideo);
+                    } else {
+                        // 非プレミアムユーザーの場合：プレミアム限定機能モーダルを表示
+                        ModalWindow.showPremiumFeature('ピクチャーインピクチャー');
+                    }
                 });
+            },
+            error: function(xhr) {
+                if (xhr.status !== 401) {
+                    console.error('プラン情報の取得に失敗しました:', xhr);
+                }
             }
-        },
-        error: function(xhr) {
-            if (xhr.status !== 401) {
-                console.error('プラン情報の取得に失敗しました:', xhr);
-            }
-        }
-    });
+        });
+    } else {
+        // 非ログインユーザー：ボタンを表示し、クリック時にプレミアム機能案内
+        $('#pip-btn').show();
+
+        $('#pip-btn').on('click', function() {
+            ModalWindow.showPremiumFeature('ピクチャーインピクチャー');
+        });
+    }
 });
