@@ -51,7 +51,6 @@ class AppConstants:
 
     # Stripe設定
     STRIPE_API_KEY = settings.STRIPE_API_KEY
-    STRIPE_PRICE_ID = settings.STRIPE_PRICE_ID  # レガシー（Basic相当）
 
     # Stripe Price ID（プランごと）
     STRIPE_PRICE_IDS = {
