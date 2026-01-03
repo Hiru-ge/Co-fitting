@@ -36,7 +36,7 @@ async function loadCurrentPlan() {
             planNameElement.textContent = planName;
         }
 
-        // 現在のプランカードを強調表示（有料プランのみ）
+        // 現在のプランカードを強調表示
         document.querySelectorAll('.plan-card').forEach(card => {
             card.classList.remove('current-plan');
             const planType = card.dataset.plan;
@@ -46,9 +46,17 @@ async function loadCurrentPlan() {
                 card.classList.add('current-plan');
                 button.textContent = '現在のプラン';
                 button.disabled = true;
+                // FREEプランの場合のみボタンを表示
+                if (planType === 'FREE') {
+                    button.style.display = 'block';
+                }
             } else {
                 button.textContent = 'このプランを選択';
                 button.disabled = false;
+                // FREEプラン以外の場合は常に表示
+                if (planType !== 'FREE') {
+                    button.style.display = 'block';
+                }
             }
         });
 
@@ -162,6 +170,7 @@ function showDowngradeWarning(newPlanType) {
 
     // 警告メッセージを構築
     let message = `<p><strong>${PLAN_INFO[newPlanType].name}プランへのダウングレードを実行しようとしています。</strong></p>`;
+    message += '<p class="timing-notice">✓ 変更は即時反映されます</p>';
 
     if (excess.hasExcess) {
         message += '<p>以下のデータが<strong>永久に削除</strong>されます：</p><ul>';
