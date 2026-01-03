@@ -54,7 +54,7 @@ class StripePaymentTest(BaseTestCase):
         self.assertEqual(self.user.stripe_customer_id, customer_id)
 
     def test_send_mail_when_payment_succeeded(self):
-        """支払い成功時にメールが送信され、かつプリセット枠が増えるかをテスト"""
+        """支払い成功時（継続課金）にメールが送信され、かつプリセット枠が増えるかをテスト"""
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
 
@@ -64,6 +64,7 @@ class StripePaymentTest(BaseTestCase):
                 "object": {
                     "customer": self.user.stripe_customer_id,
                     "subscription": "sub_test123",
+                    "billing_reason": "subscription_cycle",  # 継続課金
                 }
             }
         }
@@ -93,7 +94,7 @@ class StripePaymentTest(BaseTestCase):
         # 件名と受信者をチェック
         args, kwargs = mock_send_mail.call_args
         subject, message, from_email, recipient_list = args
-        self.assertEqual(subject, "支払い完了通知")
+        self.assertEqual(subject, "【Co-fitting】ベーシックプランの継続課金が完了しました")
         self.assertEqual(recipient_list, [self.user.email])
 
         # プリセット枠が増えていることを確認
@@ -187,9 +188,9 @@ class StripePaymentTest(BaseTestCase):
         mock_send_mail.assert_called_once()
 
         # 件名と受信者をチェック
-        args, kwargs = mock_send_mail.call_args
-        subject, message, from_email, recipient_list = args
-        self.assertEqual(subject, "支払い失敗通知")
+        args, _ = mock_send_mail.call_args
+        subject, _, _, recipient_list = args
+        self.assertEqual(subject, "【Co-fitting】お支払いに失敗しました")
         self.assertEqual(recipient_list, [self.user.email])
 
 
@@ -363,20 +364,36 @@ class PurchaseWebhookTestCase(BaseTestCase):
         self.assertIn(response.status_code, [200, 400])
 
     def test_webhook_invoice_payment_succeeded(self):
-        """請求書支払い成功イベントのテスト"""
+        """請求書支払い成功イベントのテスト（継続課金）"""
         self.user.stripe_customer_id = 'cus_test123'
+        self.user.plan_type = AppConstants.PLAN_BASIC
         self.user.save()
 
         event_data = {
             "type": "invoice.paid",
             "data": {
                 "object": {
-                    "customer": self.user.stripe_customer_id
+                    "customer": self.user.stripe_customer_id,
+                    "subscription": "sub_test123",
+                    "billing_reason": "subscription_cycle",  # 継続課金
                 }
             }
         }
 
-        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
+        # Stripeのサブスクリプション取得をモック
+        mock_subscription = {
+            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
+            "items": {
+                "data": [{
+                    "price": {
+                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
+                    }
+                }]
+            }
+        }
+
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
+             patch("stripe.Subscription.retrieve", return_value=mock_subscription):
             response = self.client.post(
                 reverse('purchase:webhook'),
                 data=json.dumps(event_data),
@@ -388,9 +405,9 @@ class PurchaseWebhookTestCase(BaseTestCase):
         mock_send_mail.assert_called_once()
 
         # 件名と受信者をチェック
-        args, kwargs = mock_send_mail.call_args
-        subject, message, from_email, recipient_list = args
-        self.assertEqual(subject, "支払い完了通知")
+        args, _ = mock_send_mail.call_args
+        subject, _, _, recipient_list = args
+        self.assertEqual(subject, "【Co-fitting】ベーシックプランの継続課金が完了しました")
         self.assertEqual(recipient_list, [self.user.email])
 
     def test_webhook_invoice_payment_failed(self):
@@ -418,9 +435,9 @@ class PurchaseWebhookTestCase(BaseTestCase):
         mock_send_mail.assert_called_once()
 
         # 件名と受信者をチェック
-        args, kwargs = mock_send_mail.call_args
-        subject, message, from_email, recipient_list = args
-        self.assertEqual(subject, "支払い失敗通知")
+        args, _ = mock_send_mail.call_args
+        subject, _, _, recipient_list = args
+        self.assertEqual(subject, "【Co-fitting】お支払いに失敗しました")
         self.assertEqual(recipient_list, [self.user.email])
 
 
@@ -446,7 +463,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse("purchase:checkout_success"))
 
-        # 2. チェックアウト完了イベント
+        # 2. チェックアウト完了イベント（初回登録メールが送信される）
         customer_id = 'cus_test123'
         event_data = {
             "type": "checkout.session.completed",
@@ -456,29 +473,9 @@ class PurchaseIntegrationTestCase(BaseTestCase):
                     "object": "checkout.session",
                     "customer": customer_id,
                     "metadata": {
-                        "user_id": str(self.user.id)
+                        "user_id": str(self.user.id),
+                        "plan_type": AppConstants.PLAN_BASIC
                     }
-                }
-            }
-        }
-
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, 200)
-
-        # 3. ユーザーにStripe顧客IDが設定されることを確認
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.stripe_customer_id, customer_id)
-
-        # 4. 支払い完了イベント
-        event_data = {
-            "type": "invoice.paid",
-            "data": {
-                "object": {
-                    "customer": customer_id
                 }
             }
         }
@@ -489,15 +486,55 @@ class PurchaseIntegrationTestCase(BaseTestCase):
                 data=json.dumps(event_data),
                 content_type='application/json'
             )
+            self.assertEqual(response.status_code, 200)
 
-        self.assertEqual(response.status_code, 200)
-        mock_send_mail.assert_called_once()
+            # 初回登録メールが送信されることを確認
+            mock_send_mail.assert_called_once()
+            args, _ = mock_send_mail.call_args
+            subject, _, _, recipient_list = args
+            self.assertEqual(subject, "【Co-fitting】ベーシックプランへのご登録ありがとうございます")
+            self.assertEqual(recipient_list, [self.user.email])
 
-        # 件名と受信者をチェック
-        args, kwargs = mock_send_mail.call_args
-        subject, message, from_email, recipient_list = args
-        self.assertEqual(subject, "支払い完了通知")
-        self.assertEqual(recipient_list, [self.user.email])
+        # 3. ユーザーにStripe顧客IDが設定されることを確認
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.stripe_customer_id, customer_id)
+        self.assertEqual(self.user.plan_type, AppConstants.PLAN_BASIC)
+
+        # 4. 初回支払い完了イベント（billing_reason='subscription_create'なのでメール送信なし）
+        event_data = {
+            "type": "invoice.paid",
+            "data": {
+                "object": {
+                    "customer": customer_id,
+                    "subscription": "sub_test123",
+                    "billing_reason": "subscription_create",  # 初回課金
+                }
+            }
+        }
+
+        # Stripeのサブスクリプション取得をモック
+        mock_subscription = {
+            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
+            "items": {
+                "data": [{
+                    "price": {
+                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
+                    }
+                }]
+            }
+        }
+
+        with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
+             patch("stripe.Subscription.retrieve", return_value=mock_subscription):
+            response = self.client.post(
+                reverse('purchase:webhook'),
+                data=json.dumps(event_data),
+                content_type='application/json'
+            )
+
+            self.assertEqual(response.status_code, 200)
+            # 初回課金なので、メールは送信されない（checkout.session.completedで既に送信済み）
+            mock_send_mail.assert_not_called()
 
         # 5. ユーザーのサブスクリプション状態が更新されることを確認
         self.user.refresh_from_db()

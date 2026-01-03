@@ -9,6 +9,7 @@ import json
 from .models import StripeService, SubscriptionManager
 from Co_fitting.utils.response_helper import ResponseHelper
 from Co_fitting.utils.constants import AppConstants
+from Co_fitting.services.email_service import EmailService
 
 
 @login_required
@@ -181,15 +182,32 @@ def change_plan(request):
         logger.info(f'ユーザー情報更新完了: user_id={request.user.id}')
 
         # ダウングレード時はデータ削除処理を実行
+        deleted_presets_count = 0
+        deleted_shares_count = 0
         if is_downgrade:
             try:
-                SubscriptionManager._handle_plan_downgrade_cleanup(
+                deleted_presets_count, deleted_shares_count = SubscriptionManager._handle_plan_downgrade_cleanup(
                     request.user, old_plan_type, new_plan_type
                 )
-                logger.info(f'ダウングレードクリーンアップ完了')
+                logger.info(f'ダウングレードクリーンアップ完了: プリセット{deleted_presets_count}個、共有{deleted_shares_count}個削除')
             except Exception as cleanup_error:
                 logger.error(f'ダウングレードクリーンアップ失敗: {str(cleanup_error)}')
                 raise
+
+        # プラン変更メールを送信
+        try:
+            if is_downgrade:
+                EmailService.send_plan_downgraded_email(
+                    request.user, old_plan_type, new_plan_type,
+                    deleted_presets_count, deleted_shares_count
+                )
+            else:
+                # アップグレードの場合
+                EmailService.send_plan_upgraded_email(request.user, old_plan_type, new_plan_type)
+            logger.info(f'プラン変更メール送信完了')
+        except Exception as email_error:
+            logger.error(f'プラン変更メール送信失敗: {str(email_error)}')
+            # メール送信失敗はエラーにしない（プラン変更自体は成功しているため）
 
         plan_name = dict(AppConstants.PLAN_CHOICES).get(new_plan_type, new_plan_type)
         return JsonResponse({

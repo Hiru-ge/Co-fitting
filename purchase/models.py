@@ -123,8 +123,8 @@ class SubscriptionManager:
             user.plan_type = plan_type
             user.save()
 
-            # 成功メールを送信
-            EmailService.send_payment_success_email(user)
+            # 初回登録成功メールを送信
+            EmailService.send_subscription_created_email(user, plan_type)
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
@@ -142,6 +142,17 @@ class SubscriptionManager:
             if status in AppConstants.INACTIVE_STATUSES:
                 # キャンセル・非アクティブの場合はFREEプランに降格
                 new_plan_type = AppConstants.PLAN_FREE
+
+                # サブスクリプション期間終了日を取得
+                from datetime import datetime
+                period_end_date = None
+                if subscription.get('current_period_end'):
+                    period_end_date = datetime.fromtimestamp(subscription['current_period_end'])
+
+                # キャンセルメールを送信
+                if old_plan_type != AppConstants.PLAN_FREE:
+                    EmailService.send_subscription_canceled_email(user, period_end_date)
+
             elif status in AppConstants.ACTIVE_STATUSES:
                 # アクティブな場合、Price IDまたはメタデータからプランタイプを取得
                 new_plan_type = subscription.get("metadata", {}).get("plan_type")
@@ -156,12 +167,38 @@ class SubscriptionManager:
                 # その他のステータスは変更なし
                 return ResponseHelper.create_success_response("サブスクリプションステータスが更新されました。")
 
-            # プランタイプを更新
-            user.plan_type = new_plan_type
-            user.save()
+            # プラン変更があった場合のみ処理
+            if old_plan_type != new_plan_type:
+                # プランタイプを更新
+                user.plan_type = new_plan_type
+                user.save()
 
-            # ダウングレード時のレシピ削除処理
-            SubscriptionManager._handle_plan_downgrade_cleanup(user, old_plan_type, new_plan_type)
+                # プラン変更の方向を判定
+                plan_order = {
+                    AppConstants.PLAN_FREE: 0,
+                    AppConstants.PLAN_BASIC: 1,
+                    AppConstants.PLAN_PREMIUM: 2,
+                    AppConstants.PLAN_UNLIMITED: 3
+                }
+                is_downgrade = plan_order.get(new_plan_type, 0) < plan_order.get(old_plan_type, 0)
+                is_upgrade = plan_order.get(new_plan_type, 0) > plan_order.get(old_plan_type, 0)
+
+                # ダウングレード時のレシピ削除処理とメール送信
+                deleted_presets_count = 0
+                deleted_shares_count = 0
+                if is_downgrade:
+                    deleted_presets_count, deleted_shares_count = SubscriptionManager._handle_plan_downgrade_cleanup(
+                        user, old_plan_type, new_plan_type
+                    )
+                    # ダウングレードメール（キャンセル以外）
+                    if new_plan_type != AppConstants.PLAN_FREE:
+                        EmailService.send_plan_downgraded_email(
+                            user, old_plan_type, new_plan_type,
+                            deleted_presets_count, deleted_shares_count
+                        )
+                elif is_upgrade:
+                    # アップグレードメール
+                    EmailService.send_plan_upgraded_email(user, old_plan_type, new_plan_type)
 
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
@@ -169,16 +206,23 @@ class SubscriptionManager:
 
     @staticmethod
     def _handle_plan_downgrade_cleanup(user, old_plan_type, new_plan_type):
-        """プランダウングレード時の超過データ削除処理"""
+        """プランダウングレード時の超過データ削除処理
+
+        Returns:
+            tuple: (deleted_presets_count, deleted_shares_count)
+        """
         # 新旧プランの上限値を取得
         old_preset_limit = AppConstants.PRESET_LIMITS.get(old_plan_type, 1)
         new_preset_limit = AppConstants.PRESET_LIMITS.get(new_plan_type, 1)
         old_share_limit = AppConstants.SHARE_LIMITS.get(old_plan_type, 1)
         new_share_limit = AppConstants.SHARE_LIMITS.get(new_plan_type, 1)
 
+        deleted_presets_count = 0
+        deleted_shares_count = 0
+
         # ダウングレードでない場合は何もしない
         if new_preset_limit >= old_preset_limit and new_share_limit >= old_share_limit:
-            return
+            return (0, 0)
 
         # プリセットレシピの超過分を削除（新しい順に削除、古いレシピを保持）
         user_presets = PresetRecipe.objects.filter(created_by=user).order_by('-id')
@@ -189,6 +233,7 @@ class SubscriptionManager:
             # スライシング後はdelete()できないので、IDを取得してから削除
             preset_ids_to_delete = list(user_presets[:delete_count].values_list('id', flat=True))
             PresetRecipe.objects.filter(id__in=preset_ids_to_delete).delete()
+            deleted_presets_count = delete_count
 
         # 共有レシピの超過分を削除（新しい順に削除、古いレシピを保持）
         from recipes.models import SharedRecipe
@@ -202,10 +247,13 @@ class SubscriptionManager:
             # スライシング後はdelete()できないので、IDを取得してから削除
             shared_ids_to_delete = list(user_shared[:delete_count].values_list('id', flat=True))
             SharedRecipe.objects.filter(id__in=shared_ids_to_delete).delete()
+            deleted_shares_count = delete_count
+
+        return (deleted_presets_count, deleted_shares_count)
 
     @staticmethod
     def handle_invoice_paid(event):
-        """支払い成功時の処理"""
+        """支払い成功時の処理（継続課金）"""
         invoice = event.data.object
         customer_id = invoice.customer
 
@@ -228,7 +276,14 @@ class SubscriptionManager:
                 user.plan_type = plan_type
                 user.save()
 
-            EmailService.send_payment_success_email(user)
+                # 継続課金メールを送信（初回課金との重複を避けるため、billing_reasonをチェック）
+                billing_reason = invoice.get('billing_reason')
+                if billing_reason == 'subscription_cycle':
+                    # 定期更新の場合のみメール送信
+                    EmailService.send_subscription_renewed_email(user, plan_type)
+                # billing_reasonが'subscription_create'の場合は初回なのでメール送信しない
+                # （checkout.session.completedで既に送信済み）
+
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
             return ResponseHelper.create_not_found_error_response("ユーザーが見つかりません。")
