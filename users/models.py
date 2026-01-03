@@ -17,8 +17,7 @@ class UserManager(BaseUserManager):
             email=email
         )
         user.set_password(password)
-        user.preset_limit = AppConstants.FREE_PRESET_LIMIT
-        user.share_limit = AppConstants.SHARE_LIMIT_FREE
+        user.plan_type = AppConstants.PLAN_FREE
         user.save(using=self._db)
         return user
 
@@ -28,8 +27,7 @@ class UserManager(BaseUserManager):
             email=email,
         )
         user.set_password(password)
-        user.preset_limit = AppConstants.FREE_PRESET_LIMIT
-        user.share_limit = AppConstants.SHARE_LIMIT_FREE
+        user.plan_type = AppConstants.PLAN_FREE
         user.is_staff = True
         user.is_active = True
         user.is_superuser = True
@@ -92,14 +90,6 @@ class UserManager(BaseUserManager):
         EmailService.send_email_change_confirmation_email(user, new_email, confirmation_link)
 
     @staticmethod
-    def get_subscription_status(user):
-        """ユーザーのサブスクリプション状態を取得"""
-        if user.is_subscribed:
-            return "契約中"
-        else:
-            return "未契約"
-
-    @staticmethod
     def change_user_password(user, new_password, request=None):
         """ユーザーのパスワードを変更し、ログアウト処理を行う"""
         user.set_password(new_password)
@@ -110,13 +100,27 @@ class UserManager(BaseUserManager):
 
         return user
 
+    @staticmethod
+    def get_subscription_status(user):
+        """ユーザーのサブスクリプション状態を取得"""
+        from Co_fitting.utils.constants import AppConstants
+        return {
+            'is_subscribed': user.plan_type != AppConstants.PLAN_FREE,
+            'plan_type': user.plan_type,
+            'preset_limit': user.preset_limit_value,
+            'share_limit': user.share_limit_value,
+            'has_pip_access': user.has_pip_access,
+        }
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255)
     email = models.EmailField(max_length=255, unique=True)
-    is_subscribed = models.BooleanField(default=False)
-    preset_limit = models.IntegerField(default=1)
-    share_limit = models.IntegerField(default=1)
+    plan_type = models.CharField(
+        max_length=20,
+        choices=AppConstants.PLAN_CHOICES,
+        default=AppConstants.PLAN_FREE
+    )
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     deactivated_at = models.DateTimeField(null=True, blank=True)  # 退会日時を記録するフィールド(退会から30日経ったらDBから完全削除する)
@@ -132,3 +136,18 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+    @property
+    def preset_limit_value(self):
+        """プランに基づくプリセット枠の上限を返す"""
+        return AppConstants.PRESET_LIMITS.get(self.plan_type, 1)
+
+    @property
+    def share_limit_value(self):
+        """プランに基づく共有枠の上限を返す"""
+        return AppConstants.SHARE_LIMITS.get(self.plan_type, 1)
+
+    @property
+    def has_pip_access(self):
+        """PiP機能へのアクセス権限を返す"""
+        return self.plan_type in AppConstants.PIP_ENABLED_PLANS

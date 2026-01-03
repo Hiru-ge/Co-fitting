@@ -247,12 +247,13 @@ $(document).ready(function() {
         return; // PiP非対応またはログインしていない場合は早期リターン
     }
 
-    // プレミアムユーザーかチェックしてPiPボタンを表示
+    // プランに基づいてPiPボタンを表示（Premium/Unlimitedプランのみ）
     $.ajax({
-        url: '/purchase/get_preset_limit/',
+        url: '/purchase/get_current_plan/',
         method: 'GET',
         success: function(response) {
-            if (response.preset_limit > PIP_CONFIG.PREMIUM_PRESET_LIMIT) {
+            // has_pip_accessがtrueの場合のみPiPボタンを表示
+            if (response.has_pip_access) {
                 $('#pip-btn').show();
 
                 $('#pip-btn').on('click', function() {
@@ -262,7 +263,7 @@ $(document).ready(function() {
         },
         error: function(xhr) {
             if (xhr.status !== 401) {
-                console.error('プレミアム状態の確認に失敗しました:', xhr);
+                console.error('プラン情報の取得に失敗しました:', xhr);
             }
         }
     });

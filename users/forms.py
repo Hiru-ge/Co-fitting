@@ -37,7 +37,8 @@ class SignUpForm(UserCreationForm):
     # 自動で埋めたいカラムの処理
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.preset_limit = 1   # 新規ユーザーのデフォルトプリセット数は1
+        # plan_typeはUserManagerのcreate_userメソッドで自動的にFREEに設定される
+        # preset_limitはplan_typeに基づいて自動計算されるプロパティなので設定不要
         if commit:
             user.save()
         return user
