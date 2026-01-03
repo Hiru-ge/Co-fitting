@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/plan.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="plan-selection-container">
+        <h1 class="plan-title">プラン選択</h1>
+
+        <div class="current-plan-info">
+            <p>現在のプラン: <strong id="current-plan-name">読み込み中...</strong></p>
+        </div>
+
+        <div class="plan-notes">
+            <p>※ FREEプランに戻したい場合は、マイページの「契約状況確認・解約」からサブスクリプションをキャンセルしてください</p>
+            <p>※ 以下では、ピクチャインピクチャをPiPと略しています</p>
+        </div>
+
+        <div class="plan-cards">
+            <!-- BASIC PLAN -->
+            <div class="plan-card" data-plan="BASIC">
+                <div class="plan-header">
+                    <h2 class="plan-name">Basic</h2>
+                    <div class="plan-price">¥100/月</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature-row">
+                        <span class="feature-item"><strong>プリセット:</strong> 5枠</span>
+                        <span class="feature-item"><strong>共有:</strong> 5枠</span>
+                        <span class="feature-item feature-disabled">PiP機能なし</span>
+                    </div>
+                </div>
+                <button class="plan-button" data-plan-type="BASIC">
+                    このプランを選択
+                </button>
+            </div>
+
+            <!-- PREMIUM PLAN (RECOMMENDED) -->
+            <div class="plan-card plan-recommended" data-plan="PREMIUM">
+                <div class="recommended-badge">おすすめ</div>
+                <div class="plan-header">
+                    <div class="plan-name-group">
+                        <h2 class="plan-name">Premium</h2>
+                        <span class="plan-value">最もお得！</span>
+                    </div>
+                    <div class="plan-price">¥200/月</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature-row">
+                        <span class="feature-item"><strong>プリセット:</strong> 10枠</span>
+                        <span class="feature-item"><strong>共有:</strong> 10枠</span>
+                        <span class="feature-item feature-highlight"><strong>PiP機能あり</strong></span>
+                    </div>
+                </div>
+                <button class="plan-button" data-plan-type="PREMIUM">
+                    このプランを選択
+                </button>
+            </div>
+
+            <!-- UNLIMITED PLAN -->
+            <div class="plan-card" data-plan="UNLIMITED">
+                <div class="plan-header">
+                    <div class="plan-name-group">
+                        <h2 class="plan-name">Unlimited</h2>
+                        <span class="plan-value">応援プラン</span>
+                    </div>
+                    <div class="plan-price">¥500/月</div>
+                </div>
+                <div class="plan-features">
+                    <div class="feature-row">
+                        <span class="feature-item"><strong>プリセット:</strong> 100枠</span>
+                        <span class="feature-item"><strong>共有:</strong> 100枠</span>
+                        <span class="feature-item feature-highlight"><strong>PiP機能あり</strong></span>
+                    </div>
+                </div>
+                <button class="plan-button" data-plan-type="UNLIMITED">
+                    このプランを選択
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ダウングレード警告モーダル -->
+    <div id="downgrade-warning-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>ダウングレード確認</h2>
+            <div id="downgrade-warning-message"></div>
+            <div class="warning-agreement">
+                <label>
+                    <input type="checkbox" id="downgrade-agree-checkbox">
+                    上記の内容を理解し、データの削除に同意します
+                </label>
+            </div>
+            <div class="modal-buttons">
+                <button id="downgrade-confirm-btn" class="btn-danger" disabled>プラン変更</button>
+                <button id="downgrade-cancel-btn" class="btn-secondary">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 処理中モーダル -->
+    <div id="processing-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+    </div>
+
+    <!-- アップグレード確認モーダル -->
+    <div id="upgrade-confirm-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>プラン変更の確認</h2>
+            <p id="upgrade-confirm-message"></p>
+            <div class="modal-buttons">
+                <button id="upgrade-confirm-btn" class="btn-primary">変更する</button>
+                <button id="upgrade-cancel-btn" class="btn-secondary">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功メッセージモーダル -->
+    <div id="success-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>成功</h2>
+            <p id="success-message"></p>
+            <div class="modal-buttons">
+                <button id="success-ok-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- エラーメッセージモーダル -->
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h2>エラー</h2>
+            <p id="error-message"></p>
+            <div class="modal-buttons">
+                <button id="error-ok-btn" class="btn-secondary">閉じる</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'script/plan.js' %}"></script>
+{% endblock %}

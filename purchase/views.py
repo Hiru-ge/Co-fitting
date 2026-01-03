@@ -103,15 +103,25 @@ def not_subscribed(request):
 
 
 @login_required
+def select_plan(request):
+    """プラン選択ページを表示"""
+    return render(request, 'purchase/select_plan.html')
+
+
+@login_required
 @require_http_methods(["POST"])
 def change_plan(request):
-    """既存サブスクリプションのプラン変更"""
+    """既存サブスクリプションのプラン変更（有料プラン間のみ）"""
     try:
         data = json.loads(request.body)
         new_plan_type = data.get('plan_type')
 
-        # プランタイプのバリデーション
-        valid_plan_types = [choice[0] for choice in AppConstants.PLAN_CHOICES]
+        # プランタイプのバリデーション（有料プランのみ）
+        valid_plan_types = [
+            AppConstants.PLAN_BASIC,
+            AppConstants.PLAN_PREMIUM,
+            AppConstants.PLAN_UNLIMITED
+        ]
         if new_plan_type not in valid_plan_types:
             return JsonResponse({'error': '無効なプランタイプです。'}, status=400)
 
@@ -119,10 +129,13 @@ def change_plan(request):
         if new_plan_type == request.user.plan_type:
             return JsonResponse({'error': '既に同じプランに加入しています。'}, status=400)
 
-        # サブスクリプションIDを取得
-        if not request.user.stripe_customer_id:
-            return JsonResponse({'error': 'サブスクリプション情報が見つかりません。'}, status=400)
+        # FREEプランのユーザー、またはstripe_customer_idがない場合
+        if not request.user.stripe_customer_id or request.user.plan_type == AppConstants.PLAN_FREE:
+            # 新規チェックアウトセッションを作成
+            session = StripeService.create_checkout_session(request.user, request, new_plan_type)
+            return JsonResponse({'checkout_url': session.url})
 
+        # アクティブなサブスクリプションを取得
         stripe.api_key = AppConstants.STRIPE_API_KEY
         subscriptions = stripe.Subscription.list(
             customer=request.user.stripe_customer_id,
@@ -131,42 +144,57 @@ def change_plan(request):
         )
 
         if not subscriptions.data:
-            # アクティブなサブスクリプションがない場合
-            if new_plan_type == AppConstants.PLAN_FREE:
-                # FREEプランへの変更（キャンセル扱い）
-                request.user.plan_type = AppConstants.PLAN_FREE
-                request.user.is_subscribed = False
-                request.user.save()
+            # アクティブなサブスクリプションがない場合、新規チェックアウトへ
+            session = StripeService.create_checkout_session(request.user, request, new_plan_type)
+            return JsonResponse({'checkout_url': session.url})
 
-                # データ削除処理
-                old_plan_type = request.user.plan_type
-                SubscriptionManager._handle_plan_downgrade_cleanup(
-                    request.user, old_plan_type, AppConstants.PLAN_FREE
-                )
-
-                return JsonResponse({'success': True, 'message': 'FREEプランに変更しました。'})
-            else:
-                # 新規チェックアウトセッションを作成
-                session = StripeService.create_checkout_session(request.user, request, new_plan_type)
-                return JsonResponse({'checkout_url': session.url})
-
-        # アクティブなサブスクリプションがある場合
+        # アクティブなサブスクリプションがある場合、プラン変更を実行
         subscription_id = subscriptions.data[0].id
+        old_plan_type = request.user.plan_type
 
-        # FREEプランへの変更の場合はサブスクリプションをキャンセル
-        if new_plan_type == AppConstants.PLAN_FREE:
-            stripe.Subscription.delete(subscription_id)
-            return JsonResponse({
-                'success': True,
-                'message': 'サブスクリプションをキャンセルしました。次回請求日にFREEプランに変更されます。'
-            })
+        # ダウングレードかどうかを判定
+        plan_order = {
+            AppConstants.PLAN_FREE: 0,
+            AppConstants.PLAN_BASIC: 1,
+            AppConstants.PLAN_PREMIUM: 2,
+            AppConstants.PLAN_UNLIMITED: 3
+        }
+        is_downgrade = plan_order.get(new_plan_type, 0) < plan_order.get(old_plan_type, 0)
+
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f'プラン変更: {old_plan_type} → {new_plan_type}, ダウングレード: {is_downgrade}')
 
         # プラン変更を実行
-        StripeService.change_subscription_plan(subscription_id, new_plan_type)
+        try:
+            StripeService.change_subscription_plan(subscription_id, new_plan_type)
+            logger.info(f'Stripe API呼び出し成功: subscription_id={subscription_id}')
+        except Exception as stripe_error:
+            logger.error(f'Stripe API呼び出し失敗: {str(stripe_error)}')
+            raise
 
+        # ユーザー情報を即座に更新（Webhookを待たない）
+        request.user.plan_type = new_plan_type
+        request.user.preset_limit = AppConstants.PRESET_LIMITS.get(new_plan_type, 1)
+        request.user.share_limit = AppConstants.SHARE_LIMITS.get(new_plan_type, 1)
+        request.user.save()
+        logger.info(f'ユーザー情報更新完了: user_id={request.user.id}')
+
+        # ダウングレード時はデータ削除処理を実行
+        if is_downgrade:
+            try:
+                SubscriptionManager._handle_plan_downgrade_cleanup(
+                    request.user, old_plan_type, new_plan_type
+                )
+                logger.info(f'ダウングレードクリーンアップ完了')
+            except Exception as cleanup_error:
+                logger.error(f'ダウングレードクリーンアップ失敗: {str(cleanup_error)}')
+                raise
+
+        plan_name = dict(AppConstants.PLAN_CHOICES).get(new_plan_type, new_plan_type)
         return JsonResponse({
             'success': True,
-            'message': f'{new_plan_type}プランに変更しました。'
+            'message': f'{plan_name}プランに変更しました。'
         })
 
     except json.JSONDecodeError:

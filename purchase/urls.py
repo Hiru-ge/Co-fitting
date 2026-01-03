@@ -13,4 +13,5 @@ urlpatterns = [
     path('not_subscribed/', views.not_subscribed, name='not_subscribed'),
     path('change_plan/', views.change_plan, name='change_plan'),
     path('get_current_plan/', views.get_current_plan, name='get_current_plan'),
+    path('select_plan/', views.select_plan, name='select_plan'),
 ]

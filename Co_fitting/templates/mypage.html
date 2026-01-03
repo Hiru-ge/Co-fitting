@@ -10,9 +10,7 @@
         <h2>マイページ</h2>
         <h3>ユーザー情報</h3>
         <p>ユーザー名: {{ user.username }}</p>
-        <p>メールアドレス: {{ user.email }}</p>
-        <p>所有プリセット枠: <b>{{user.preset_limit}}</b><p>
-        <p>サブスクリプション契約状況: <b>{{subscription_status}}</b></p>
+        <p>メール: {{ user.email }}</p>
         <div class="button-parent">
             <button class="long-button" id="email-change-btn">メールアドレス変更</button>
         </div>
@@ -21,10 +19,10 @@
         </div>
         
         <h3>サブスクリプション</h3>
-        <p><b>月額100円</b>でプリセット枠を1枠→5枠に増やせます</p>
-        <p>共有可能レシピ数も1つから5つに増えます</p>
+        <p>現在のプラン: <b id="current-plan-display">{{ user.plan_type }}</b></p>
+        <p>プリセット枠: <b>{{ user.preset_limit_value }}</b> / 共有可能数: <b>{{ user.share_limit_value }}</b></p>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='/purchase/create_checkout_session/'">サブスク新規契約</button>
+            <button class="long-button" onclick="location.href='{% url 'purchase:select_plan' %}'">プラン選択・変更</button>
         </div>
         <div class="button-parent">
             <button class="long-button" id="subscription-status-btn" data-subscription-status="{{ subscription_status }}">契約状況確認・解約</button>
@@ -228,10 +226,9 @@
             </div>
             <div class="modal-body">
                 <p>あなたは現在サブスクリプションを契約していません。</p>
-                <p>月額100円でプリセット枠を1枠→5枠に増やせます。</p>
-                <p>また、共有できるレシピの数も1つから5つに増えます。</p>
+                <p>プリセット枠や共有レシピ枠を増やせる有料プランをご用意しています。</p>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-primary" id="subscribe-from-modal-btn">サブスク新規契約</button>
+                    <button type="button" class="btn btn-primary" id="subscribe-from-modal-btn">プランを見る</button>
                     <button type="button" class="btn btn-secondary" id="close-not-subscribed-btn">閉じる</button>
                 </div>
             </div>

@@ -194,7 +194,7 @@ class SubscriptionManager:
             return
 
         # プリセットレシピの超過分を削除（古い順に削除）
-        user_presets = PresetRecipe.objects.filter(created_by=user).order_by('created_at')
+        user_presets = PresetRecipe.objects.filter(created_by=user).order_by('id')
         preset_count = user_presets.count()
         if preset_count > new_preset_limit:
             # 超過分を削除（古いものから）
@@ -205,8 +205,8 @@ class SubscriptionManager:
         # 共有レシピの超過分を削除（古い順に削除）
         from recipes.models import SharedRecipe
         user_shared = SharedRecipe.objects.filter(
-            recipe__created_by=user
-        ).order_by('created_at')
+            created_by=user
+        ).order_by('id')
         shared_count = user_shared.count()
         if shared_count > new_share_limit:
             # 超過分を削除（古いものから）

@@ -355,10 +355,10 @@ $(document).ready(function() {
         }
     });
 
-    // モーダル内のサブスク新規契約ボタン
+    // モーダル内のプラン選択ページへボタン
     $('#subscribe-from-modal-btn').on('click', function() {
         ModalWindow.hide('not-subscribed-modal');
-        window.location.href = '/purchase/create_checkout_session/';
+        window.location.href = '/purchase/select_plan/';
     });
 
     // プリセット共有ボタンのイベント（マイプリセットセクション）
