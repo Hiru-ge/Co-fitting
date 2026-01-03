@@ -22,10 +22,7 @@
         <p>現在のプラン: <b id="current-plan-display">{{ user.plan_type }}</b></p>
         <p>プリセット枠: <b>{{ user.preset_limit_value }}</b> / 共有可能数: <b>{{ user.share_limit_value }}</b></p>
         <div class="button-parent">
-            <button class="long-button" onclick="location.href='{% url 'purchase:select_plan' %}'">プラン選択・変更</button>
-        </div>
-        <div class="button-parent">
-            <button class="long-button" id="subscription-status-btn" data-subscription-status="{{ subscription_status }}">契約状況確認・解約</button>
+            <button class="long-button" onclick="location.href='{% url 'purchase:select_plan' %}'">プラン変更</button>
         </div>
         <h3>マイプリセット</h3>
         <p><a href="{% url 'articles:mypreset-describe' %}">マイプリセット機能とは</a></p>

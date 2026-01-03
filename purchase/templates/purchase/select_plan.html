@@ -7,14 +7,16 @@
 
 {% block content %}
     <div class="plan-selection-container">
-        <h1 class="plan-title">プラン選択</h1>
+        <h1 class="plan-title">プラン変更</h1>
 
         <div class="current-plan-info">
             <p>現在のプラン: <strong id="current-plan-name">読み込み中...</strong></p>
+            <div class="button-parent">
+                <button class="long-button" id="subscription-status-btn" data-subscription-status="{{ subscription_status }}">契約状況確認・解約</button>
+            </div>
         </div>
 
         <div class="plan-notes">
-            <p>※ 有料プラン間の変更はこのページで行えます。FREEプランへの変更（完全解約）はマイページの「プラン確認・解約」から行ってください。</p>
             <p>※ 以下ではピクチャインピクチャをPiPと略しています</p>
         </div>
 

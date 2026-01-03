@@ -339,11 +339,6 @@ $(document).ready(function() {
         });
     });
 
-    // サブスクリプションポータルボタン
-    $('#portal-session-btn').on('click', function() {
-        window.location.href = '/purchase/create_portal_session/';
-    });
-
     // サブスク状況確認・解約ボタン
     $('#subscription-status-btn').on('click', function() {
         const subscriptionStatus = $(this).data('subscription-status');
