@@ -276,6 +276,11 @@
     background: #6b5b47;
 }
 
+.pricing-details {
+    font-size: 15px;
+    margin-bottom: 7rem;
+}
+
 /* アップグレード確認モーダルのスタイル */
 .plan-change-summary h3 {
     margin: 0 0 10px 0;
