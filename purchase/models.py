@@ -283,6 +283,9 @@ class SubscriptionManager:
                     EmailService.send_subscription_renewed_email(user, plan_type)
                 # billing_reasonが'subscription_create'の場合は初回なのでメール送信しない
                 # （checkout.session.completedで既に送信済み）
+            else:
+                # サブスクリプション情報がない場合（単発の支払いなど）
+                EmailService.send_payment_success_email(user)
 
             return ResponseHelper.create_success_response("サブスクリプションが正常に処理されました。")
         except User.DoesNotExist:
