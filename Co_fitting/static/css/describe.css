@@ -1,7 +1,5 @@
 /*Flexbox*/
-.container {
-    display: flex;
-    flex-direction: column;
+.container--describe {
     justify-content: flex-start;
     margin: 3rem 2rem; /* <header>で隠れないようにmargin-topを設定 */
 }
@@ -13,8 +11,8 @@
 }
 
 /*装飾･見栄えに関する部分*/
-.container ul,
-.container ol {
+.container--describe ul,
+.container--describe ol {
     margin-left: 1.5rem;
 }
 
@@ -37,10 +35,17 @@ li.supplement::before {
     max-height: 60vh;
 }
 
+iframe {
+    max-width: 100%;
+    width: 100%;
+    aspect-ratio: 484 / 861;  /* 元のアスペクト比を維持 */
+    border-radius: 1rem;
+}
+
 
 /*モバイル用のスタイル*/
 @media (max-width: 600px) {
-    .container {
+    .container--describe {
         margin: 3.5rem 0rem;
     }
 

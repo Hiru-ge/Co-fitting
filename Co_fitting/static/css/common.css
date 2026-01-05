@@ -1,4 +1,20 @@
 /* 機能に関する部分 */
+/* コンテナ基本スタイル */
+.container {
+    display: flex;
+    flex-direction: column;
+}
+
+/* アイテム基本スタイル */
+.item {
+    color: #fff;
+    background-color: #474747;
+    margin: 0.5rem 1rem;
+    padding: 1rem;
+    max-width: 95%;
+    border-radius: 1rem;
+}
+
 /* モーダル関連のスタイル */
 .modal {
     display: flex;
@@ -67,12 +83,16 @@
     gap: 1rem;
 }
 
+.modal-actions--end {
+    justify-content: flex-end;
+}
+
 .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.5rem;
+    padding: 10px 20px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 700;
+    font-size: 14px;
     flex: 1;
 }
 
@@ -84,6 +104,14 @@
 
 .btn-primary:hover {
     background-color: #6b5b47;
+}
+
+.btn-primary--gradient {
+    background: linear-gradient(135deg, #876b36, #ff8c42);
+}
+
+.btn-primary--gradient:hover {
+    background: linear-gradient(135deg, #ff5722, #876b36);
 }
 
 .btn-secondary {

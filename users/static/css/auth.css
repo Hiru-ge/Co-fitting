@@ -1,8 +1,6 @@
 /*機能に関する部分*/
 /*Flexbox*/
-.container {
-    display: flex;
-    flex-direction: column;
+.container--auth {
     align-items: center;
     margin: 5rem 0.5rem;
 }

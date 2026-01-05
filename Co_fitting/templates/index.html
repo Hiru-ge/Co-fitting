@@ -18,8 +18,8 @@
     </div>
 
     <!-- コンテンツはFlexBoxでレイアウト指定する -->
-    <div class="container">
-        <div id="preset-recipe-div" class="item">
+    <div class="container container--index">
+        <div id="preset-recipe-div" class="item item--wide">
             <h3 class="accordion-head">
                 <div class="accordion-toggle">></div>
                 <p>プリセットレシピ呼び出し</p>
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        <div class="item origin-recipe-div">
+        <div class="item item--wide origin-recipe-div">
             <h3>変換前レシピ入力欄</h3>
             <form action="#">
                 <!--変換前レシピの投数入力欄-->
@@ -100,7 +100,7 @@
         </div> <!--/変換前レシピの入力欄-->
 
         <!--変換目標入力欄-->
-        <div class="item target-recipe-div">
+        <div class="item item--wide target-recipe-div">
             <form action="#">
                 <h3>変換目標入力欄</h3>
                 <div>
@@ -137,7 +137,7 @@
         </div> <!--/item:変換目標入力欄-->
 
         <!--変換後レシピの出力欄-->
-        <div class="item output-recipe-div">
+        <div class="item item--wide output-recipe-div">
             <h3>変換後レシピ</h3>
             <p>豆量: <span class="bean-output"></span> g</p>
             <p>総湯量: <span class="water-output wide-input"></span> ml</p>
@@ -167,7 +167,7 @@
         </div> <!-- /item:変換後レシピの出力欄 -->
 
         <!--ストップウォッチ-->
-        <div class="item timer-div">
+        <div class="item item--wide timer-div">
             <h3 class="accordion-head">
                 <div class="accordion-toggle">></div>
                 <p>ストップウォッチ</p>

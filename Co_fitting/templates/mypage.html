@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container">
+    <div class="container container--mypage">
         <h2>マイページ</h2>
         <h3>ユーザー情報</h3>
         <p>ユーザー名: {{ user.username }}</p>
@@ -29,7 +29,7 @@
         <div>
             {% if recipes %}
                 {% for recipe in recipes %}
-                <div class="item">
+                <div class="item item--centered">
                     <div class="recipe-info">
                         <span class="recipe-name">{{ recipe.name }}</span>
                     </div>

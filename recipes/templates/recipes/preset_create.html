@@ -10,7 +10,7 @@
         <h2>マイプリセットの新規登録</h2>
     </div>
     <div>
-        <form id="preset-create-form" class="container" method="post" action="">
+        <form id="preset-create-form" class="container container--index" method="post" action="">
             {% csrf_token %}
             
             <div class="ice-check-container">
@@ -20,7 +20,7 @@
                 </div>
             </div>
     
-            <div class="item">
+            <div class="item item--wide">
                 <div>
                     <label for="preset-name-input">プリセット名: </label>
                     <input type="text" id="preset-name-input" class="super-wide-input" name="name" maxlength="50" required>

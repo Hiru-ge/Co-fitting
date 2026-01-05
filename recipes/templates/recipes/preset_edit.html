@@ -13,7 +13,7 @@
         {% if error_message %}
             <p class="error">{{ error_message }}</p>
         {% endif %}
-        <form id="preset-edit-form" class="container" method="post" action="">
+        <form id="preset-edit-form" class="container container--index" method="post" action="">
             {% csrf_token %}
 
             <div class="ice-check-container">
@@ -23,7 +23,7 @@
                 </div>
             </div>
 
-            <div class="item">
+            <div class="item item--wide">
                 <div>
                     <label for="preset-name-input">プリセット名: </label>
                     <input type="text" id="preset-name-input" class="super-wide-input" name="name" maxlength="50" value="{{ recipe.name }}" required>

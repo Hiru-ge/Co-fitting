@@ -13,7 +13,7 @@
         {% if error_message %}
             <p class="error">{{ error_message }}</p>
         {% endif %}
-        <form id="shared-recipe-edit-form" class="container" method="post" action="">
+        <form id="shared-recipe-edit-form" class="container container--index" method="post" action="">
             {% csrf_token %}
 
             <div class="ice-check-container">
@@ -23,7 +23,7 @@
                 </div>
             </div>
 
-            <div class="item">
+            <div class="item item--wide">
                 <div>
                     <label for="recipe-name-input">レシピ名: </label>
                     <input type="text" id="recipe-name-input" class="super-wide-input" name="name" maxlength="30" value="{{ shared_recipe.name }}" required>

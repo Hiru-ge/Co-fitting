@@ -1,8 +1,6 @@
 /*機能に関する部分*/
 /*Flexbox*/
-.container {
-    display: flex;
-    flex-direction: column;
+.container--index {
     align-items: center;
     margin-bottom: 3rem;
 }
@@ -30,14 +28,8 @@ div.introduce {
     text-align: center;
 }
 
-.item {
-    color: #fff;
-    background-color: #474747;
-    margin: 0.5rem 1rem;
-    padding: 1rem;
+.item--wide {
     width: 28rem;
-    max-width: 95%; /* 画面幅に収まるようにする */
-    border-radius: 1rem;
 }
 
 /* 出力欄テーブルの整形 */
