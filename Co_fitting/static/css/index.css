@@ -148,8 +148,7 @@ textarea {
     justify-content: space-around;
 }
 
-div.convert-button-parent,
-div.clear-button-parent {
+div.convert-button-parent {
     margin-bottom: 0;   /* 外せば分かると思うが、margin-bottomがあると余白が過剰になる */
 }
 
