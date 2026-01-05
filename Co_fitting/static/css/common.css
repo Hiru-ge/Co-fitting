@@ -79,6 +79,7 @@
 .btn-primary {
     background-color: #876b36;
     color: white;
+    border: none;
 }
 
 .btn-primary:hover {
@@ -88,6 +89,7 @@
 .btn-secondary {
     background-color: #666;
     color: white;
+    border: 1px solid #666;
 }
 
 .btn-secondary:hover {
@@ -102,9 +104,10 @@
 .btn-danger {
     background-color: #dc3545;
     color: white;
+    border: none;
 }
 
-.btn-danger:hover {
+.btn-danger:hover:not(:disabled) {
     background-color: #c82333;
 }
 
@@ -307,4 +310,62 @@ footer button a {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+}
+
+/* フォーム関連のスタイル */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #666;
+    border-radius: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus {
+    outline: none;
+    border-color: #876b36;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ボタン親要素 */
+div.button-parent {
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+div.button-parent button {
+    display: inline;
+    background-color: #ffffff;
+    color: #000;
+    border: none;
+    width: 6rem;
+    height: 2.75rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin: 0.5rem;
+    cursor: pointer;
+}
+
+div.button-parent button.long-button {
+    background-color: #000;
+    color: #fff;
+    width: 13rem;
 }

@@ -68,22 +68,8 @@ input[type="password"] {
 }
 
 /*ボタン部分*/
-div.button-parent {
-    display: flex;
-    justify-content: center;
-    text-align: center;
-}
-
 div.button-parent button {
-    display: inline;
-    background-color: #ffffff;
-    color: #000;
-    border: none;
     width: 10rem;
-    font-weight: 700;
-    border-radius: 0.5rem;
-    padding: 0.5rem 2rem;
-    cursor: pointer;
 }
 
 /* reCAPTCHAのスタイル */
