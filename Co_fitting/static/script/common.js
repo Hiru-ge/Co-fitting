@@ -205,7 +205,7 @@ const ModalWindow = {
             <p>${featureName}はプレミアムプラン以上で利用できる機能です。</p>
             <p>サインアップ・ログインののち、プレミアムプランにアップグレードして、さらに便利な機能をお楽しみください。</p>
             <div class="modal-actions">
-                <button id="view-plans-btn" class="btn btn-primary">プランを確認</button>
+                <button id="view-plans-btn" class="btn btn-primary">ログイン</button>
                 <button type="button" class="btn btn-secondary" data-modal-close>閉じる</button>
             </div>
         `;
