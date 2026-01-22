@@ -12,3 +12,4 @@ key.pem
 docs
 shared_recipes
 .claude/
+.mcp.json
