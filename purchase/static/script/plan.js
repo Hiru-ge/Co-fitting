@@ -238,6 +238,13 @@ async function executePlanChange(newPlanType) {
         $processingModal.css('display', 'none');
 
         if (data.checkout_url) {
+            // GA4カスタムイベント: checkout_start
+            if (typeof gtag === 'function') {
+                gtag('event', 'checkout_start', {
+                    'plan': newPlanType
+                });
+            }
+
             // 新規チェックアウトセッションにリダイレクト
             window.location.href = data.checkout_url;
         } else {
@@ -271,6 +278,11 @@ function handlePlanButtonClick(planType) {
 
 // 初期化処理
 $(document).ready(async function() {
+    // GA4カスタムイベント: plan_view
+    if (typeof gtag === 'function') {
+        gtag('event', 'plan_view');
+    }
+
     // 現在のプラン情報を取得
     await loadCurrentPlan();
     await loadUserData();

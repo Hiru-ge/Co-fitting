@@ -226,6 +226,11 @@ $(document).ready(function() {
             startCanvasAnimationLoop(canvas);
             initializeVideoStream(video, canvas);
             await enterPictureInPicture(video);
+
+            // GA4カスタムイベント: pip_start
+            if (typeof gtag === 'function') {
+                gtag('event', 'pip_start');
+            }
         } catch (error) {
             console.error('PiPエラー:', error.name, error.message);
             ModalWindow.showError(`PiP起動に失敗しました:\n${error.message}`);
