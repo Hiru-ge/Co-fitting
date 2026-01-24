@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /mypage/
+Disallow: /users/
+Disallow: /purchase/
+
+Sitemap: https://co-fitting.com/sitemap.xml
