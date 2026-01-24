@@ -541,9 +541,9 @@ class UserViewsIntegrationTestCase(BaseTestCase):
             'password': 'securepassword123'
         })
 
-        # ログイン成功後はマイページにリダイレクトされる
+        # ログイン成功後はマイページにリダイレクトされる（login_success=trueパラメータ付き）
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse('mypage'))
+        self.assertEqual(response.url, reverse('mypage') + '?login_success=true')
 
     def test_logout_redirect_after_successful_logout(self):
         """ログアウト成功後のリダイレクトが正しいことをテスト"""

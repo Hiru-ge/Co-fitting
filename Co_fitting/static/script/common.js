@@ -201,6 +201,13 @@ const ModalWindow = {
 
     // プレミアム機能限定モーダルを表示
     showPremiumFeature(featureName) {
+        // GA4カスタムイベント: premium_modal_view
+        if (typeof gtag === 'function') {
+            gtag('event', 'premium_modal_view', {
+                'trigger': featureName
+            });
+        }
+
         const content = `
             <p>${featureName}はプレミアムプラン以上で利用できる機能です。</p>
             <p>サインアップ・ログインののち、プレミアムプランにアップグレードして、さらに便利な機能をお楽しみください。</p>

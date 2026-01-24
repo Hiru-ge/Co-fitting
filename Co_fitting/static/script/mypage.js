@@ -49,6 +49,13 @@ $(document).ready(function() {
                 'X-CSRFToken': getCSRFToken()
             },
             success: function(response) {
+                // GA4カスタムイベント: share_recipe
+                if (typeof gtag === 'function') {
+                    gtag('event', 'share_recipe', {
+                        'recipe_name': recipeName
+                    });
+                }
+
                 const shareUrl = `/recipes/share/${response.access_token}/`;
                 shareToSocialMedia(shareUrl, { name: recipeName });
                 loadSharedRecipes();
@@ -403,13 +410,17 @@ $(document).ready(function() {
     // 初期化処理
     // ========================================
 
-    // URLパラメータからモーダル表示を判定
+    // URLパラメータからモーダル表示・GA4イベント発火を判定
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('purchase_cancel') === 'true') {
         ModalWindow.show('purchase-cancel-modal');
         // URLからパラメータを削除
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('purchase_success') === 'true') {
+        // GA4カスタムイベント: purchase
+        if (typeof gtag === 'function') {
+            gtag('event', 'purchase');
+        }
         // サブスクリプション状態を更新してからモーダルを表示
         updateSubscriptionStatus();
         ModalWindow.show('purchase-success-modal');
@@ -419,6 +430,18 @@ $(document).ready(function() {
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('password_reset_success') === 'true') {
         ModalWindow.show('password-reset-success-modal');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('login_success') === 'true') {
+        // GA4カスタムイベント: login
+        if (typeof gtag === 'function') {
+            gtag('event', 'login');
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (urlParams.get('signup_success') === 'true') {
+        // GA4カスタムイベント: sign_up
+        if (typeof gtag === 'function') {
+            gtag('event', 'sign_up');
+        }
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 

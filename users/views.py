@@ -32,11 +32,13 @@ def signup_confirm(request, uidb64, token, email):
     if user is not None:
         if user.is_active:
             messages.info(request, "アカウントは既に有効化されています。Outlook等から直接URLを踏んだ際にこのメッセージが表示される場合がありますが、基本的に問題ありません。通常通りログインいただけるはずです。")
+            return redirect("mypage")
         else:
             User.objects.activate_user(user)
             login(request, user)
             messages.success(request, "ユーザー登録が完了しました。")
-        return redirect("mypage")
+            # GA4イベント用のパラメータを追加
+            return redirect(reverse('mypage') + '?signup_success=true')
     else:
         messages.error(request, "無効なリンクです。")
         return redirect("users:signup_request")
@@ -51,13 +53,16 @@ class CustomLoginView(LoginView):
 
     def form_valid(self, form):
         """認証成功時にIPアドレスも含めたログイン通知メールを送信"""
-        response = super().form_valid(form)  # 元クラスの既存form_validメソッドを実行
+        super().form_valid(form)  # 元クラスの既存form_validメソッドを実行
         user = self.request.user
 
         ip_address = User.objects.get_client_ip(self.request)
         User.objects.send_login_notification_async(user, ip_address)
 
-        return response
+        # GA4イベント用のパラメータを追加してリダイレクト
+        next_url = self.get_success_url()
+        separator = '&' if '?' in next_url else '?'
+        return redirect(f"{next_url}{separator}login_success=true")
 
 
 @login_required

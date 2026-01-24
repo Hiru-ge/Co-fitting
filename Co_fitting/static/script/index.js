@@ -396,6 +396,13 @@ $(document).ready(function() {
             },
             data: JSON.stringify(recipeData),
             success: function(response) {
+                // GA4カスタムイベント: share_recipe
+                if (typeof gtag === 'function') {
+                    gtag('event', 'share_recipe', {
+                        'recipe_name': recipeData.name
+                    });
+                }
+
                 const shareUrl = `/recipes/share/${response.access_token}/`;
                 shareToSocialMedia(shareUrl, recipeData);
             },
@@ -539,6 +546,13 @@ $(document).ready(function() {
             if (sharedRecipeData.error) {
                 ModalWindow.showError(sharedRecipeData.message);
             } else {
+                // GA4カスタムイベント: shared_recipe_view
+                if (typeof gtag === 'function') {
+                    gtag('event', 'shared_recipe_view', {
+                        'access_token': sharedRecipeData.access_token,
+                        'recipe_name': sharedRecipeData.name
+                    });
+                }
                 showSharedRecipeModal(sharedRecipeData);
             }
         }
@@ -611,6 +625,16 @@ $(document).ready(function() {
         e.preventDefault(); // ページ遷移を防ぐ
 
         let [pourTimes, originWaterTotal_ml, ice_g, targetBean_g, convertRate] = collectConversionParameters();
+
+        // GA4カスタムイベント: recipe_convert
+        if (typeof gtag === 'function') {
+            const targetWaterTotal_ml = Math.trunc(originWaterTotal_ml * convertRate);
+            gtag('event', 'recipe_convert', {
+                'origin_water': Number(originWaterTotal_ml),
+                'target_water': targetWaterTotal_ml,
+                'is_ice_mode': $('html').hasClass('ice-mode')
+            });
+        }
 
         // 変換後の豆量と総湯量を転記(小数点第一位まで表示)
         $('.bean-output').text(Math.trunc(targetBean_g*10)/10);
@@ -696,6 +720,28 @@ $(document).ready(function() {
 
     // メモ欄を初期状態で非表示にする
     $('.memo-section').hide();
+
+    // --- プリセット保存関連 ---
+    // プリセット作成・編集フォームの送信時にGA4イベントを送信
+    $('#preset-create-form, #preset-edit-form').on('submit', function() {
+        if (typeof gtag === 'function') {
+            const presetName = $('#preset-name-input').val();
+            gtag('event', 'preset_save', {
+                'preset_name': presetName,
+                'is_shared': false
+            });
+        }
+    });
+
+    // 新規プリセット作成時のみadd_new_presetイベントを送信
+    $('#preset-create-form').on('submit', function() {
+        if (typeof gtag === 'function') {
+            const presetName = $('#preset-name-input').val();
+            gtag('event', 'add_new_preset', {
+                'preset_name': presetName
+            });
+        }
+    });
 
     // 今月のおすすめレシピのインフォメーションボタン
     $(document).on('click', '.recommended-info-btn', function(e) {
