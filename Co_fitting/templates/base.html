@@ -55,6 +55,39 @@
     <link rel="icon" type="image/png" href="{% static 'images/favicon.ico' %}">
     <!-- iOS用のPWA設定 -->
     <link rel="apple-touch-icon" href="{% static 'images/square-icon.jpg' %}">
+    <!-- 構造化データ（JSON-LD） -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Co-fitting",
+        "description": "コーヒーレシピの出来上がり量を調整し、共有もできるWebアプリ。味はキープしたまま、お気に入りレシピを好みの量に変換できます。",
+        "url": "https://co-fitting.com",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "JPY"
+        },
+        "featureList": [
+            "コーヒーレシピの量変換",
+            "プリセットレシピ管理",
+            "レシピ共有機能",
+            "ストップウォッチ機能"
+        ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Co-fitting",
+        "url": "https://co-fitting.com",
+        "logo": "https://co-fitting.com{% static 'images/square-icon.jpg' %}"
+    }
+    </script>
+    {% block extra_structured_data %}{% endblock %}
 </head>
 
 <!-- Google tag (gtag.js) -->
