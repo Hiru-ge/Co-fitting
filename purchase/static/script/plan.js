@@ -46,7 +46,7 @@ async function loadCurrentPlan() {
                     $button.show();
                 }
             } else {
-                $button.text('このプランを選択');
+                $button.html('<span>このプランを選択</span>');
                 $button.prop('disabled', false);
                 // FREEプラン以外の場合は常に表示
                 if (planType !== 'FREE') {

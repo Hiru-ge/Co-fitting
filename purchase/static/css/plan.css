@@ -1,6 +1,6 @@
 .plan-selection-container {
     max-width: 90vw;
-    margin: 5rem 1rem;
+    margin: 5rem auto;
 }
 
 .plan-title {
@@ -22,7 +22,8 @@
     border: 2px solid #666;
     border-radius: 10px;
     padding: 15px;
-    width: 260px;
+    width: 300px;
+    min-width: 280px;
     position: relative;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
@@ -41,7 +42,7 @@
     position: absolute;
     top: -12px;
     right: 20px;
-    background: linear-gradient(135deg, #876b36, #ff8c42);
+    background: linear-gradient(135deg, #c0c0c0 0%, #876b36 50%, #d4af37 100%);
     color: white;
     padding: 4px 12px;
     border-radius: 15px;
@@ -70,6 +71,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: nowrap;
 }
 
 .plan-name {
@@ -93,6 +95,7 @@
     padding: 2px 8px;
     background-color: rgba(255, 248, 225, 0.9);
     border-radius: 10px;
+    white-space: nowrap;
 }
 
 .plan-features {
@@ -104,12 +107,15 @@
     justify-content: space-between;
     padding: 4px 0;
     font-size: 12px;
+    flex-wrap: nowrap;
+    gap: 8px;
 }
 
 .feature-item {
     flex: 1;
     color: #ccc;
     text-align: center;
+    white-space: nowrap;
 }
 
 .feature-highlight {
@@ -122,32 +128,49 @@
 
 .plan-button {
     width: 100%;
-    padding: 10px;
+    padding: 3px;
     font-size: 14px;
     font-weight: bold;
     border: none;
-    border-radius: 6px;
+    border-radius: 0.5rem;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    background: linear-gradient(135deg, #876b36, #ff8c42);
+    transition: opacity 0.3s ease;
+    background: linear-gradient(135deg, #c0c0c0 0%, #876b36 50%, #d4af37 100%);
     color: white;
 }
 
+.plan-button span {
+    display: block;
+    padding: 10px;
+    background: #1a1a1a;
+    border-radius: 0.35rem;
+}
+
 .plan-button:hover {
-    background: linear-gradient(135deg, #ff5722, #876b36);
+    opacity: 0.85;
 }
 
 .plan-button:disabled {
-    background: #ccc;
+    background: #666;
     cursor: not-allowed;
 }
 
+.plan-button:disabled span {
+    background: #3a3a3a;
+    color: #888;
+}
+
 .plan-card.current-plan .plan-button {
-    background: #000;
+    background: #666;
+    padding: 10px;
+}
+
+.plan-card.current-plan .plan-button span {
+    background: #3a3a3a;
 }
 
 .plan-card.current-plan .plan-button:hover {
-    background: #000;
+    opacity: 1;
 }
 
 .current-plan-info {
@@ -171,9 +194,38 @@
 }
 
 /* モーダルスタイル - plan.css固有の拡張 */
+.modal-content {
+    padding: 1rem;
+}
+
 .modal-content h2 {
     margin-top: 0;
     color: #fff;
+}
+
+/* グラデーションボタン（黒背景、銀・金枠線） */
+.btn-gradient {
+    padding: 3px;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: opacity 0.3s ease;
+    background: linear-gradient(135deg, #c0c0c0 0%, #876b36 50%, #d4af37 100%);
+    color: white;
+    flex: 1;
+}
+
+.btn-gradient span {
+    display: block;
+    padding: 10px 20px;
+    background: #1a1a1a;
+    border-radius: 0.35rem;
+}
+
+.btn-gradient:hover {
+    opacity: 0.85;
 }
 
 .warning-agreement {
@@ -286,7 +338,7 @@
 }
 
 .feature-comparison .highlight {
-    color: #876b36;
+    color: #ccc;
     font-weight: bold;
 }
 
