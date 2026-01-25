@@ -16,6 +16,11 @@ from django.conf import settings
 import json
 
 
+def landing_page(request):
+    """ランディングページの表示"""
+    return render(request, 'lp.html')
+
+
 def index(request):
     """メインページの表示"""
     user = request.user
