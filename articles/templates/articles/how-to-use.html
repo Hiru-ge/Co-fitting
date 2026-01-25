@@ -12,6 +12,59 @@
     <link rel="stylesheet" href="{% static 'css/describe.css' %}">
 {% endblock %}
 
+{% block extra_structured_data %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "Co-fittingの使い方",
+    "description": "コーヒーレシピ変換ツールCo-fittingの使い方を解説します。プリセットレシピの呼び出し、変換目標の入力方法、レシピ共有機能などを詳しく説明します。",
+    "step": [
+        {
+            "@type": "HowToStep",
+            "position": 1,
+            "name": "プリセットレシピ呼び出し",
+            "text": "プリセットレシピを呼び出すことができます。プリセットレシピは、変換前レシピ入力欄に自動的に入力されます。",
+            "image": "https://co-fitting.com{% static 'images/how-to-description/presetRecipe.png' %}"
+        },
+        {
+            "@type": "HowToStep",
+            "position": 2,
+            "name": "変換前レシピ入力",
+            "text": "変換する前のレシピの情報を入力します。投数、豆の量、そして各投入段階の経過時間と注湯量を記入します。",
+            "image": "https://co-fitting.com{% static 'images/how-to-description/originRecipeForm.png' %}"
+        },
+        {
+            "@type": "HowToStep",
+            "position": 3,
+            "name": "変換目標入力",
+            "text": "変換後のレシピの情報を入力します。目標とする豆の量、総湯量、そして豆と湯の比率を指定します。倍率のみを入力してスムーズに変換を行うことも可能です。",
+            "image": "https://co-fitting.com{% static 'images/how-to-description/targetParameterForm-bean-water.png' %}"
+        },
+        {
+            "@type": "HowToStep",
+            "position": 4,
+            "name": "変換ボタンをクリック",
+            "text": "入力が完了したら、変換ボタンをクリックしてレシピを変換します。"
+        },
+        {
+            "@type": "HowToStep",
+            "position": 5,
+            "name": "変換後レシピの確認",
+            "text": "変換されたレシピが表形式で表示されます。",
+            "image": "https://co-fitting.com{% static 'images/how-to-description/convertedRecipe.png' %}"
+        },
+        {
+            "@type": "HowToStep",
+            "position": 6,
+            "name": "レシピ共有",
+            "text": "変換したレシピを他の人と共有できます。共有ボタンをクリックすると、共有用のリンクが生成されます。"
+        }
+    ]
+}
+</script>
+{% endblock %}
+
 {% block content %}
     <div class="container container--describe">
         <div class="container-item">
