@@ -13,14 +13,15 @@
     <!-- ヒーローセクション -->
     <section class="lp-hero">
         <div class="lp-hero-content">
-            <h2 class="lp-hero-title">味はキープで<br>量だけ変換</h2>
-            <p class="lp-hero-subtitle">お気に入りレシピを<br class="sp-only">好みの量に調整</p>
+            <h2 class="lp-hero-title">味はキープで量だけ変換</h2>
+            <p class="lp-hero-subtitle">お気に入りレシピを好みの量に調整</p>
             <p class="lp-hero-description">
-                200mlのレシピを300mlで淹れたい。<br>
+                お気に入りのレシピは200ml用。<br>
+                だけど今日はちょっと多めに飲みたい。<br>
                 そんな時に、豆量も湯量も自動で計算。
             </p>
             <div class="lp-hero-cta">
-                <a href="{% url 'home' %}" class="btn btn-primary btn-large">今すぐ試す</a>
+                <a href="{% url 'home' %}" class="btn-cta"><span>今すぐ試す</span></a>
             </div>
         </div>
     </section>
@@ -42,8 +43,8 @@
                 <div class="lp-feature-card lp-card">
                     <h3 class="lp-feature-title">アイスモード</h3>
                     <p class="lp-feature-description">
-                        アイスコーヒー用レシピにも対応。
-                        氷量を含めた出来上がり量で変換できます。
+                        アイスコーヒーレシピにも対応。<br>
+                        氷量を含めた出来上がり量で変換可能。
                     </p>
                 </div>
 
@@ -51,14 +52,14 @@
                     <h3 class="lp-feature-title">プリセット保存</h3>
                     <p class="lp-feature-description">
                         よく使うレシピを保存して、ワンタップで呼び出し。
-                        毎回入力する手間を省けます。
+                        日常使いに最適です。
                     </p>
                 </div>
 
                 <div class="lp-feature-card lp-card">
                     <h3 class="lp-feature-title">レシピ共有</h3>
                     <p class="lp-feature-description">
-                        変換したレシピをURLで共有。
+                        レシピをURLで共有可能。
                         友人や家族とお気に入りレシピを共有できます。
                     </p>
                 </div>
@@ -113,7 +114,6 @@
     <section class="lp-section lp-plans">
         <div class="lp-section-inner">
             <h2 class="lp-section-title">プラン</h2>
-            <p class="lp-section-subtitle">まずは無料でお試しください</p>
 
             <div class="lp-plan-table">
                 <table>
@@ -208,15 +208,7 @@
     </section>
 
     <!-- フッターCTA -->
-    <section class="lp-section lp-cta">
-        <div class="lp-section-inner">
-            <h2 class="lp-cta-title">さっそく使ってみる</h2>
-            <p class="lp-cta-description">
-                登録不要で、今すぐレシピ変換をお試しいただけます
-            </p>
-            <div class="lp-cta-buttons">
-                <a href="{% url 'home' %}" class="btn btn-primary btn-large">今すぐ試す</a>
-            </div>
-        </div>
+    <section class="lp-cta">
+        <a href="{% url 'home' %}" class="btn-cta"><span>今すぐ試す</span></a>
     </section>
 {% endblock %}
