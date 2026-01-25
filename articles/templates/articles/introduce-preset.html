@@ -1,6 +1,13 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}プリセットレシピ紹介 - Co-fitting{% endblock %}
+{% block meta_description %}Co-fittingで使用できるプリセットレシピの紹介。4:6メソッド、畠山大輝氏レシピなど、人気のコーヒー抽出レシピを解説しています。{% endblock %}
+{% block og_title %}プリセットレシピ紹介 - Co-fitting{% endblock %}
+{% block og_description %}Co-fittingで使用できるプリセットレシピの紹介。4:6メソッド、畠山大輝氏レシピなど、人気のコーヒー抽出レシピを解説しています。{% endblock %}
+{% block twitter_title %}プリセットレシピ紹介 - Co-fitting{% endblock %}
+{% block twitter_description %}Co-fittingで使用できるプリセットレシピの紹介。4:6メソッド、畠山大輝氏レシピなど、人気のコーヒー抽出レシピを解説しています。{% endblock %}
+
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/describe.css' %}">
 {% endblock %}

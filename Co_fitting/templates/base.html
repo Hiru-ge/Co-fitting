@@ -4,7 +4,23 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Co-fitting</title>
+    <title>{% block title %}コーヒーレシピ変換ツール - Co-fitting{% endblock %}</title>
+    <!-- SEO -->
+    <meta name="description" content="{% block meta_description %}コーヒーレシピの出来上がり量を調整し、共有もできるWebアプリ。味はキープしたまま、お気に入りレシピを好みの量に変換できます。{% endblock %}">
+    <link rel="canonical" href="{% block canonical_url %}{{ request.build_absolute_uri }}{% endblock %}">
+    <!-- OGP -->
+    <meta property="og:title" content="{% block og_title %}コーヒーレシピ変換ツール - Co-fitting{% endblock %}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:image" content="{% block og_image %}https://co-fitting.com{% static 'images/ogp.png' %}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}コーヒーレシピの出来上がり量を調整し、共有もできるWebアプリ{% endblock %}">
+    <meta property="og:site_name" content="Co-fitting">
+    <meta property="og:locale" content="ja_JP">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}コーヒーレシピ変換ツール - Co-fitting{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}コーヒーレシピの出来上がり量を調整し、共有もできるWebアプリ{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}https://co-fitting.com{% static 'images/ogp.png' %}{% endblock %}">
     <!-- PWA設定 -->
     <link rel="manifest" href="{% static 'manifest.json' %}">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -37,22 +53,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- ファビコン -->
     <link rel="icon" type="image/png" href="{% static 'images/favicon.ico' %}">
-    <!-- OGP -->
-    <meta property="og:title" content="Co-fitting(コーヒーレシピ変換器)">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://co-fitting.com">
-    <meta property="og:image" content="{% static 'images/ogp.png' %}">
-    <meta property="og:description" content="コーヒーレシピの出来上がり量を調整し、共有もできるWebアプリ">
     <!-- iOS用のPWA設定 -->
     <link rel="apple-touch-icon" href="{% static 'images/square-icon.jpg' %}">
-    <!-- SEO -->
-    <meta name="description" content="コーヒーレシピ変換器">
-    <meta name="description" content="Coffee-fitting">
-    <meta name="description" content="Co-fitting">
-    <meta name="description" content="コーヒー">
-    <meta name="description" content="レシピ">
-    <meta name="description" content="変換">
-    <meta name="description" content="コーヒーレシピの出来上がり量を調整し、共有もできるWebアプリ">
 </head>
 
 <!-- Google tag (gtag.js) -->
