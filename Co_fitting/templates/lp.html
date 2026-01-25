@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Co-fitting - コーヒーレシピ変換ツール{% endblock %}
+
+{% block meta_description %}コーヒーレシピの出来上がり量を簡単変換。味はキープしたまま、お気に入りレシピを好みの量に調整できます。無料で使えるWebアプリ。{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/lp.css' %}">
+{% endblock %}
+
+{% block content %}
+    <!-- ヒーローセクション -->
+    <section class="lp-hero">
+        <div class="lp-hero-content">
+            <h2 class="lp-hero-title">味はキープで<br>量だけ変換</h2>
+            <p class="lp-hero-subtitle">お気に入りレシピを<br class="sp-only">好みの量に調整</p>
+            <p class="lp-hero-description">
+                200mlのレシピを300mlで淹れたい。<br>
+                そんな時に、豆量も湯量も自動で計算。
+            </p>
+            <div class="lp-hero-cta">
+                <a href="{% url 'home' %}" class="btn btn-primary btn-large">今すぐ試す</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 機能紹介セクション -->
+    <section class="lp-section lp-features">
+        <div class="lp-section-inner">
+            <h2 class="lp-section-title">主な機能</h2>
+
+            <div class="lp-feature-cards">
+                <div class="lp-feature-card lp-card">
+                    <h3 class="lp-feature-title">レシピ変換</h3>
+                    <p class="lp-feature-description">
+                        豆量・湯量・比率・倍率、どれからでも変換可能。
+                        各投ごとの湯量も自動で計算します。
+                    </p>
+                </div>
+
+                <div class="lp-feature-card lp-card">
+                    <h3 class="lp-feature-title">アイスモード</h3>
+                    <p class="lp-feature-description">
+                        アイスコーヒー用レシピにも対応。
+                        氷量を含めた出来上がり量で変換できます。
+                    </p>
+                </div>
+
+                <div class="lp-feature-card lp-card">
+                    <h3 class="lp-feature-title">プリセット保存</h3>
+                    <p class="lp-feature-description">
+                        よく使うレシピを保存して、ワンタップで呼び出し。
+                        毎回入力する手間を省けます。
+                    </p>
+                </div>
+
+                <div class="lp-feature-card lp-card">
+                    <h3 class="lp-feature-title">レシピ共有</h3>
+                    <p class="lp-feature-description">
+                        変換したレシピをURLで共有。
+                        友人や家族とお気に入りレシピを共有できます。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 使い方セクション -->
+    <section class="lp-section lp-how-to">
+        <div class="lp-section-inner">
+            <h2 class="lp-section-title">かんたん3ステップ</h2>
+
+            <div class="lp-steps">
+                <div class="lp-step lp-card">
+                    <div class="lp-circle-icon">1</div>
+                    <div class="lp-step-content">
+                        <h3 class="lp-step-title">元レシピを入力</h3>
+                        <p class="lp-step-description">
+                            投数、豆量、各投の時間と湯量を入力
+                        </p>
+                    </div>
+                </div>
+
+                <div class="lp-step-arrow">→</div>
+
+                <div class="lp-step lp-card">
+                    <div class="lp-circle-icon">2</div>
+                    <div class="lp-step-content">
+                        <h3 class="lp-step-title">変換目標を設定</h3>
+                        <p class="lp-step-description">
+                            作りたい量や豆量を指定
+                        </p>
+                    </div>
+                </div>
+
+                <div class="lp-step-arrow">→</div>
+
+                <div class="lp-step lp-card">
+                    <div class="lp-circle-icon">3</div>
+                    <div class="lp-step-content">
+                        <h3 class="lp-step-title">変換完了</h3>
+                        <p class="lp-step-description">
+                            新しいレシピがすぐに表示
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- プラン比較セクション -->
+    <section class="lp-section lp-plans">
+        <div class="lp-section-inner">
+            <h2 class="lp-section-title">プラン</h2>
+            <p class="lp-section-subtitle">まずは無料でお試しください</p>
+
+            <div class="lp-plan-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Free</th>
+                            <th>Basic</th>
+                            <th class="lp-plan-highlight">Premium</th>
+                            <th>Unlimited</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="lp-plan-feature-name">料金</td>
+                            <td>無料</td>
+                            <td>¥100/月</td>
+                            <td class="lp-plan-highlight">¥200/月</td>
+                            <td>¥500/月</td>
+                        </tr>
+                        <tr>
+                            <td class="lp-plan-feature-name">レシピ変換</td>
+                            <td>無制限</td>
+                            <td>無制限</td>
+                            <td class="lp-plan-highlight">無制限</td>
+                            <td>無制限</td>
+                        </tr>
+                        <tr>
+                            <td class="lp-plan-feature-name">プリセット保存</td>
+                            <td>1枠</td>
+                            <td>5枠</td>
+                            <td class="lp-plan-highlight">10枠</td>
+                            <td>100枠</td>
+                        </tr>
+                        <tr>
+                            <td class="lp-plan-feature-name">レシピ共有</td>
+                            <td>1枠</td>
+                            <td>5枠</td>
+                            <td class="lp-plan-highlight">10枠</td>
+                            <td>100枠</td>
+                        </tr>
+                        <tr>
+                            <td class="lp-plan-feature-name">PiP機能</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td class="lp-plan-highlight">あり</td>
+                            <td>あり</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p class="lp-plan-note">※ PiP（ピクチャインピクチャ）: レシピを小窓で表示しながら抽出できる機能</p>
+        </div>
+    </section>
+
+    <!-- FAQセクション -->
+    <section class="lp-section lp-faq">
+        <div class="lp-section-inner">
+            <h2 class="lp-section-title">よくある質問</h2>
+
+            <div class="lp-faq-list">
+                <div class="lp-faq-item lp-card">
+                    <h3 class="lp-faq-question">Q. 会員登録は必要ですか？</h3>
+                    <p class="lp-faq-answer">
+                        レシピの変換自体は登録不要で使えます。プリセット保存やレシピ共有機能を使う場合は、無料の会員登録が必要です。
+                    </p>
+                </div>
+
+                <div class="lp-faq-item lp-card">
+                    <h3 class="lp-faq-question">Q. どんな変換ができますか？</h3>
+                    <p class="lp-faq-answer">
+                        豆量、湯量、比率、倍率のいずれかを指定して変換できます。例えば「豆15gのレシピを20gで作りたい」「200mlのレシピを1.5倍にしたい」といった変換が可能です。
+                    </p>
+                </div>
+
+                <div class="lp-faq-item lp-card">
+                    <h3 class="lp-faq-question">Q. 味は本当にキープできますか？</h3>
+                    <p class="lp-faq-answer">
+                        基本的な比率を維持することで、味のバランスを保ちます。ただし、極端な倍率変更や抽出器具の特性によっては微調整が必要な場合もあります。
+                    </p>
+                </div>
+
+                <div class="lp-faq-item lp-card">
+                    <h3 class="lp-faq-question">Q. スマホでも使えますか？</h3>
+                    <p class="lp-faq-answer">
+                        はい、スマホ・タブレット・PCなど、ブラウザがあればどの端末でも利用できます。ホーム画面に追加すると、アプリのように使えます。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- フッターCTA -->
+    <section class="lp-section lp-cta">
+        <div class="lp-section-inner">
+            <h2 class="lp-cta-title">さっそく使ってみる</h2>
+            <p class="lp-cta-description">
+                登録不要で、今すぐレシピ変換をお試しいただけます
+            </p>
+            <div class="lp-cta-buttons">
+                <a href="{% url 'home' %}" class="btn btn-primary btn-large">今すぐ試す</a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

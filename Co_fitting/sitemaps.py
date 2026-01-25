@@ -17,6 +17,7 @@ class StaticViewSitemap(Sitemap):
     def items(self):
         return [
             'home',
+            'landing_page',
             'articles:how-to-use',
             'articles:privacy-policy',
             'articles:commerce-law',

@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', recipe_views.index, name='home'),           # トップページ（変換）
     path('index/', recipe_views.index, name='home'),
+    path('lp/', recipe_views.landing_page, name='landing_page'),
     path('mypage/', recipe_views.mypage, name='mypage'), # マイページ
     path('recipes/', include('recipes.urls')),           # その他レシピ関連
     path('articles/', include('articles.urls')),

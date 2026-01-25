@@ -2013,3 +2013,23 @@ class RecipeAPITestCase(TestCase):
 
         # 5個の共有レシピが正しく作成されたことを確認
         self.assertEqual(SharedRecipe.objects.filter(created_by=self.user).count(), 5)
+
+
+class LandingPageTestCase(TestCase):
+    """ランディングページのテスト"""
+
+    def test_landing_page_returns_200(self):
+        """LPが正常に表示されること"""
+        response = self.client.get(reverse('landing_page'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_landing_page_uses_correct_template(self):
+        """LPが正しいテンプレートを使用すること"""
+        response = self.client.get(reverse('landing_page'))
+        self.assertTemplateUsed(response, 'lp.html')
+
+    def test_landing_page_contains_cta_link(self):
+        """LPにCTAリンクが含まれること"""
+        response = self.client.get(reverse('landing_page'))
+        self.assertContains(response, '無料で試す')
+        self.assertContains(response, reverse('home'))
