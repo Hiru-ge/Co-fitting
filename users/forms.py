@@ -30,7 +30,10 @@ class SignUpForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field in self.fields.values():
+        for field_name, field in self.fields.items():
+            # captchaフィールドはg-recaptchaクラスが必要なのでスキップ
+            if field_name == 'captcha':
+                continue
             if hasattr(field, 'widget') and hasattr(field.widget, 'attrs'):
                 field.widget.attrs["class"] = "form-control"
 
