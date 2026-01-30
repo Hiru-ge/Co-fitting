@@ -78,5 +78,5 @@ div.button-parent button {
 
 .g-recaptcha {
     transform: scale(0.9);
-    transform-origin: 0 0;
+    transform-origin: center;
 }
