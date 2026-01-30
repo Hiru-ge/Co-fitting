@@ -66,6 +66,7 @@ class SignUpTestCase(TestCase):
         self.assertRedirects(response, reverse('users:signup_request'))
 
 
+@override_settings(RECAPTCHA_TESTING=True)
 class LoginTestCase(BaseTestCase):
     def setUp(self):
         """テスト用ユーザー作成"""
@@ -73,35 +74,50 @@ class LoginTestCase(BaseTestCase):
         self.login_url = reverse('users:login')
         self.user = create_test_user()
 
-    def test_valid_login(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_valid_login(self, mocked_submit):
         """正しいメールアドレスとパスワードでログインできることをテスト"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         response = self.client.post(self.login_url, {
             'username': 'test@example.com',
-            'password': 'securepassword123'
+            'password': 'securepassword123',
+            'g-recaptcha-response': 'test',
         })
         self.assertTrue(response)   # ログインが成功すればTrueが入っている
         self.assertEqual(response.status_code, 302)     # マイページにリダイレクト
 
-    def test_invalid_password_login(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_invalid_password_login(self, mocked_submit):
         """間違ったパスワードではログインできないことをテスト"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         response = self.client.post(self.login_url, {
             'username': 'test@example.com',
-            'password': 'wrongpassword'
+            'password': 'wrongpassword',
+            'g-recaptcha-response': 'test',
         })
         self.assertEqual(response.status_code, 200)  # フォームを再表示
         self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
 
-    def test_invalid_email_login(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_invalid_email_login(self, mocked_submit):
         """存在しないメールアドレスではログインできないことをテスト"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         response = self.client.post(self.login_url, {
             'username': 'notexist@example.com',
-            'password': 'securepassword123'
+            'password': 'securepassword123',
+            'g-recaptcha-response': 'test',
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
 
-    def test_inactive_user_cannot_login(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_inactive_user_cannot_login(self, mocked_submit):
         """無効化されたユーザーはログインできないことをテスト"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         inactive_user = User.objects.create_user(
             username='inactiveuser',
             email='inactive@example.com',
@@ -112,16 +128,21 @@ class LoginTestCase(BaseTestCase):
 
         response = self.client.post(self.login_url, {
             'username': 'inactive@example.com',
-            'password': 'securepassword123'
+            'password': 'securepassword123',
+            'g-recaptcha-response': 'test',
         })
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "メールアドレスまたはパスワードが正しくありません")
 
-    def test_login_notification_mail_send(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_login_notification_mail_send(self, mocked_submit):
         """ログイン時にメール通知が行われることを確認"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         self.client.post(self.login_url, {
             'username': 'test@example.com',
-            'password': 'securepassword123'
+            'password': 'securepassword123',
+            'g-recaptcha-response': 'test',
         })
         self.assertEqual(len(mail.outbox), 1)  # メールが送信されていることを確認
 
@@ -534,11 +555,15 @@ class UserViewsIntegrationTestCase(BaseTestCase):
         super().setUp()
         self.user = create_test_user()
 
-    def test_login_redirect_after_successful_login(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_login_redirect_after_successful_login(self, mocked_submit):
         """ログイン成功後のリダイレクトが正しいことをテスト"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         response = self.client.post(reverse('users:login'), {
             'username': 'test@example.com',
-            'password': 'securepassword123'
+            'password': 'securepassword123',
+            'g-recaptcha-response': 'test',
         })
 
         # ログイン成功後はマイページにリダイレクトされる（login_success=trueパラメータ付き）
@@ -691,11 +716,15 @@ class UserSessionTestCase(BaseTestCase):
         super().setUp()
         self.user = create_test_user()
 
-    def test_session_creation_on_login(self):
+    @patch("django_recaptcha.fields.client.submit")
+    def test_session_creation_on_login(self, mocked_submit):
         """ログイン時にセッションが作成されることをテスト"""
+        mocked_submit.return_value = RecaptchaResponse(is_valid=True)
+
         response = self.client.post(reverse('users:login'), {
             'username': 'test@example.com',
-            'password': 'securepassword123'
+            'password': 'securepassword123',
+            'g-recaptcha-response': 'test',
         })
 
         # セッションにユーザーIDが保存されていることを確認

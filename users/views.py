@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from .forms import SignUpForm, EmailChangeForm, PasswordChangeForm
+from .forms import LoginForm, SignUpForm, EmailChangeForm, PasswordChangeForm
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
@@ -45,10 +45,14 @@ def signup_confirm(request, uidb64, token, email):
 
 
 class CustomLoginView(LoginView):
+    authentication_form = LoginForm
+
     # エラーメッセージの出し方を少し変更
     # 「このメールアドレスは使用済みです」だと、攻撃者からメールが使用可能であることが一目で分かりやすいので避けたい
     def form_invalid(self, form):
-        messages.error(self.request, "メールアドレスまたはパスワードが正しくありません。")
+        # reCAPTCHAエラーの場合は認証エラーメッセージを出さない
+        if 'captcha' not in form.errors:
+            messages.error(self.request, "メールアドレスまたはパスワードが正しくありません。")
         return super().form_invalid(form)
 
     def form_valid(self, form):
