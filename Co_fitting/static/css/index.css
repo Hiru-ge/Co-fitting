@@ -283,7 +283,6 @@ header.ice-mode, footer.ice-mode {
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
 }
 
 /* PiPウィンドウ内のスタイル */
