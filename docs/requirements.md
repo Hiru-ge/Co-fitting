@@ -459,19 +459,15 @@ Phase 0は**公開環境には置かない**。自分だけでテストし、外
 │  Google Maps JavaScript API     │
 ├─────────────────────────────────┤
 │          Backend                │
-│  Go (net/http or Echo/Chi)      │
+│  Go (Gin)      │
 │  JWT認証                         │
 │  Google Places API Client       │
 ├─────────────────────────────────┤
 │          Database               │
 │  MySQL 8.x                      │
-│  Redis (セッション/キャッシュ)    │
 ├─────────────────────────────────┤
 │          Infrastructure         │
 │  AWS (ECS or EC2)               │
-│  RDS (MySQL)                    │
-│  ElastiCache (Redis)            │
-│  S3 + CloudFront (静的資産)      │
 │  Route 53 (DNS)                 │
 ├─────────────────────────────────┤
 │          External APIs          │
