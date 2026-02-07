@@ -4,9 +4,8 @@
 
 - [x] X キーワード検索（「休日 マンネリ」「休日 同じ場所」等）で課題の実在確認 — 5分
 - [x] X 共感投稿 1本目（課題フレーミングテスト）— [投稿済み](https://x.com/Hiru_ge/status/2020004905256382759)
-- [ ] LP作成（Notion Site）+ ウェイトリストフォーム（Notionフォーム）
-- [ ] X 共感投稿 2本目（反応を見て表現調整）
-- [ ] LP のURLをXプロフィールに設置
+- [x] LP作成（Notion Site）+ ウェイトリストフォーム（Notionフォーム）- [作成済み](https://hiruge.notion.site/roamble-lp)
+- [] LP のURLをXプロフィールに設置
 
 ## Phase 0 実装（2月中完成目標）
 
