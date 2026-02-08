@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 開発フェーズ
 
 開発は全てt-wadaのTDDに従って、「RED→GREEN→REFACTOR」のサイクルで進行。
+ブランチはmain/masterと、機能ごとのfeatureブランチ(feat/xxx)を使用。PRベースでコードレビュー・マージ。
 現在のフェーズ: **Phase 0（最小公開・簡易版）** — コアループ「提案→行動→記録」のみ実装。2月中完成目標。
 
 Phase 0のスコープ:
