@@ -2031,5 +2031,5 @@ class LandingPageTestCase(TestCase):
     def test_landing_page_contains_cta_link(self):
         """LPにCTAリンクが含まれること"""
         response = self.client.get(reverse('landing_page'))
-        self.assertContains(response, '無料で試す')
+        self.assertContains(response, '今すぐ試す')
         self.assertContains(response, reverse('home'))
