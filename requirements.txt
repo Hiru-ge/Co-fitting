@@ -16,6 +16,7 @@ django-recaptcha==4.1.0
 idna==3.11
 jmespath==1.1.0
 MarkupSafe==3.0.3
+mod_wsgi==5.0.2
 mysqlclient==2.2.7
 packaging==26.0
 pillow==12.1.0
