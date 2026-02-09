@@ -106,14 +106,14 @@ Go プロジェクトの基本構造を整備。
 ## 実装内容
 - [x] `backend/` ディレクトリを作成
 - [x] `go.mod`, `go.sum` 初期化
-- [~] 必要なライブラリをインストール (🟡 go mod tidy 実行済み。gin-gonic/gin, joho/godotenv, golang.org/x/crypto は go.mod に記載。ただし GORM, JWT パッケージは未追加)
-  - github.com/gin-gonic/gin ✅
-  - github.com/golang-jwt/jwt/v4 ⏳
-  - github.com/joho/godotenv ✅
-  - gorm.io/gorm + gorm.io/driver/mysql ⏳
-  - golang.org/x/crypto (bcrypt) ✅
-  - googlemaps.github.io/maps ⏳
-- [ ] プロジェクト構造を定義 (config/, database/, models/, handlers/, middleware/, routes/, utils/ 디렉토리 미생성)
+- [x] 必要なライブラリをインストール
+  - github.com/gin-gonic/gin
+  - github.com/golang-jwt/jwt/v4
+  - github.com/joho/godotenv
+  - gorm.io/gorm + gorm.io/driver/mysql
+  - golang.org/x/crypto (bcrypt)
+  - googlemaps.github.io/maps
+- [x] プロジェクト構造を定義 (config/, database/, models/, handlers/, middleware/, routes/, utils/ 作成完了)
   ```
   backend/
   ├── main.go
@@ -137,17 +137,17 @@ Go プロジェクトの基本構造を整備。
   ├── Dockerfile
   └── Makefile
   ```
-- [ ] Makefile を作成
+- [x] Makefile を作成
   - `make build`: Go バイナリビルド
   - `make run`: ローカル実行
   - `make test`: ユニットテスト実行
   - `make fmt`: コード自動整形
+  - `make tidy`: 依存関係整理
 
 ## 受け入れ基準
-- [~] `go mod tidy` が実行でき、依存関係エラーが出ない (✅ go mod tidy 実行済み。ただし GORM と JWT パッケージを追加後に再実行が必要)
-- [ ] ディレクトリ構造が上記に従っている
-- [ ] `make build` でバイナリが生成される
-```
+- [x] `go mod tidy` が実行でき、依存関係エラーが出ない
+- [x] ディレクトリ構造が上記に従っている
+- [x] `make build` でバイナリが生成される
 
 ---
 
