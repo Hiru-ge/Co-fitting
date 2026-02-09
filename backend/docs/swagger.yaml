@@ -1,0 +1,21 @@
+basePath: /
+host: localhost:8080
+info:
+  contact: {}
+  description: RoambleのバックエンドAPIドキュメント
+  title: Roamble API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: サーバーのヘルスチェック用エンドポイント
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      tags:
+      - Health
+swagger: "2.0"
