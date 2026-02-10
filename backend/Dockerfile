@@ -13,8 +13,5 @@ RUN go mod download
 # Mount entire app volume for hot reload
 COPY . .
 
-# Install air for hot reload
-RUN go install github.com/cosmtrek/air@latest
-
 # Default CMD runs the app directly with air if air config exists, otherwise go run
 CMD ["sh", "-c", "if [ -f .air.toml ]; then air; else go run main.go; fi"]
