@@ -7,6 +7,7 @@ import (
 	"github.com/Hiru-ge/roamble/database"
 	_ "github.com/Hiru-ge/roamble/docs"
 	"github.com/Hiru-ge/roamble/handlers"
+	"github.com/Hiru-ge/roamble/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -49,6 +50,7 @@ func main() {
 		DB:     db,
 		JWTCfg: jwtCfg,
 	}
+	userHandler := &handlers.UserHandler{DB: db}
 
 	router := gin.Default()
 	router.GET("/health", handlers.HealthCheck)
@@ -56,6 +58,10 @@ func main() {
 	auth := router.Group("/api/auth")
 	auth.POST("/signup", authHandler.SignUp)
 	auth.POST("/login", authHandler.Login)
+
+	api := router.Group("/api")
+	api.Use(middleware.JWTAuth(jwtCfg.Secret))
+	api.GET("/users/me", userHandler.GetMe)
 
 	router.Run(":8000")
 }

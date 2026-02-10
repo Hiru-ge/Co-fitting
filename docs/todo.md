@@ -382,7 +382,7 @@ JWT 認証後、現在のユーザー情報を取得する API を実装。
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/user_test.go` を作成
+- [x] `handlers/user_test.go` を作成
 
 ```go
 func TestGetMe(t *testing.T) {
@@ -393,16 +393,16 @@ func TestGetMe(t *testing.T) {
 ```
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/user.go` に GetMe ハンドラー実装
-- [ ] JWT ミドルウェアで保護
-- [ ] 200 OK で ユーザー情報を返す
+- [x] `handlers/user.go` に GetMe ハンドラー実装
+- [x] JWT ミドルウェアで保護
+- [x] 200 OK で ユーザー情報を返す
 
 **🔵 REFACTOR PHASE**
-- [ ] 完了
+- [x] 完了
 
 **受け入れ基準**
-- [ ] JWT つきのリクエストで自身の情報が返される
-- [ ] JWT なし → 401
+- [x] JWT つきのリクエストで自身の情報が返される
+- [x] JWT なし → 401
 
 ---
 
