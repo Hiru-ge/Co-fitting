@@ -19,16 +19,20 @@ const docTemplate = `{
             "get": {
                 "description": "サーバーのヘルスチェック用エンドポイント",
                 "produces": [
-                    "text/plain"
+                    "application/json"
                 ],
                 "tags": [
                     "Health"
                 ],
+                "summary": "ヘルスチェック",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }

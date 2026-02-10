@@ -10,12 +10,15 @@ paths:
     get:
       description: サーバーのヘルスチェック用エンドポイント
       produces:
-      - text/plain
+      - application/json
       responses:
         "200":
           description: OK
           schema:
-            type: string
+            additionalProperties:
+              type: string
+            type: object
+      summary: ヘルスチェック
       tags:
       - Health
 swagger: "2.0"

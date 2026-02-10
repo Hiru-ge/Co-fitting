@@ -1,32 +1,15 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
-	"net/http"
-	"os"
 
+	"github.com/Hiru-ge/roamble/database"
 	_ "github.com/Hiru-ge/roamble/docs"
+	"github.com/Hiru-ge/roamble/handlers"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 )
-
-type Server struct {
-	db *sql.DB
-}
-
-// @title 		 Health Check
-// @description  サーバーのヘルスチェック用エンドポイント
-// @tags         Health
-// @produce      plain
-// @success      200  {string}  string	"OK"
-// @router       /health [get]
-func (s *Server) healthHandler(c *gin.Context) {
-	c.String(http.StatusOK, "OK")
-}
 
 // @title           Roamble API
 // @version         1.0
@@ -39,30 +22,24 @@ func main() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
-	cfg := mysql.NewConfig()
-	cfg.User = os.Getenv("MYSQL_USER")
-	cfg.Passwd = os.Getenv("MYSQL_PASSWORD")
-	cfg.Net = "tcp"
-	cfg.Addr = os.Getenv("MYSQL_HOST") + ":" + os.Getenv("MYSQL_PORT")
-	cfg.DBName = os.Getenv("MYSQL_DATABASE")
-	cfg.ParseTime = true // DB内部では[]byteで扱われているcreated_atを正しくtime.Timeで解釈するための設定
-
-	var err error
-	db, err := sql.Open("mysql", cfg.FormatDSN())
+	db, err := database.Init()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	// DB接続確認
-	pingErr := db.Ping()
-	if pingErr != nil {
-		log.Fatal(pingErr)
+	if err := database.Migrate(db); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
 	}
-	fmt.Println("Connected!")
 
-	// ルーティング
-	server := &Server{db: db}
+	log.Println("Database connected and migrated successfully")
+
+	defer func() {
+		if err := database.Close(); err != nil {
+			log.Printf("Error closing database: %v", err)
+		}
+	}()
+
 	router := gin.Default()
-	router.GET("/health", server.healthHandler)
+	router.GET("/health", handlers.HealthCheck)
 	router.Run(":8000")
 }
