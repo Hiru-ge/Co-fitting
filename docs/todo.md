@@ -308,7 +308,7 @@ type Claims struct {
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/auth_test.go` を作成
+- [x] `handlers/auth_test.go` を作成
 
 ```go
 func TestSignUp(t *testing.T) {
@@ -325,10 +325,10 @@ func TestLogin(t *testing.T) {
 }
 ```
 
-- [ ] テスト実行 → **失敗**
+- [x] テスト実行 → **失敗**
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/auth.go` に SignUp ハンドラー実装
+- [x] `handlers/auth.go` に SignUp ハンドラー実装
 
 ```
 POST /api/auth/signup
@@ -344,7 +344,7 @@ POST /api/auth/signup
   - bcrypt でハッシュ化
   - 201 Created で返す
 
-- [ ] `handlers/auth.go` に Login ハンドラー実装
+- [x] `handlers/auth.go` に Login ハンドラー実装
 
 ```
 POST /api/auth/login
@@ -358,17 +358,17 @@ POST /api/auth/login
   - JWT トークン生成（アクセス15分、リフレッシュ7日）
   - 200 OK で返す
 
-- [ ] テスト実行 → **通る**
+- [x] テスト実行 → **通る**
 
 **🔵 REFACTOR PHASE**
-- [ ] エラーハンドリング一元化
-- [ ] バリデーションロジック分離
+- [x] エラーハンドリング一元化
+- [x] バリデーションロジック分離
 
 **受け入れ基準**
-- [ ] `go test ./handlers -v -run Auth` で全テスト成功
-- [ ] Postman で signup → login → トークン取得までシーケンステスト実行
-- [ ] パスワードが平文で DB に保存されていない
-- [ ] 同じメールでの重複登録が拒否される
+- [x] `go test ./handlers -v -run Auth` で全テスト成功
+- [x] Postman で signup → login → トークン取得までシーケンステスト実行
+- [x] パスワードが平文で DB に保存されていない
+- [x] 同じメールでの重複登録が拒否される
 
 ---
 
