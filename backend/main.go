@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
 	_ "github.com/Hiru-ge/roamble/docs"
 	"github.com/Hiru-ge/roamble/handlers"
@@ -39,7 +40,22 @@ func main() {
 		}
 	}()
 
+	jwtCfg, err := config.LoadJWTConfig()
+	if err != nil {
+		log.Fatalf("Failed to load JWT config: %v", err)
+	}
+
+	authHandler := &handlers.AuthHandler{
+		DB:     db,
+		JWTCfg: jwtCfg,
+	}
+
 	router := gin.Default()
 	router.GET("/health", handlers.HealthCheck)
+
+	auth := router.Group("/api/auth")
+	auth.POST("/signup", authHandler.SignUp)
+	auth.POST("/login", authHandler.Login)
+
 	router.Run(":8000")
 }
