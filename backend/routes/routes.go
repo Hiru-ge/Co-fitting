@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/Hiru-ge/roamble/handlers"
 	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/redis/go-redis/v9"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -15,6 +16,7 @@ type Deps struct {
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
 	JWTSecret         string
+	RedisClient       *redis.Client
 }
 
 func Setup(router *gin.Engine, deps Deps) {
@@ -34,9 +36,14 @@ func Setup(router *gin.Engine, deps Deps) {
 	auth.POST("/login", deps.AuthHandler.Login)
 	auth.POST("/refresh", deps.AuthHandler.RefreshToken)
 
+	// 認証（JWT必要）
+	authProtected := router.Group("/api/auth")
+	authProtected.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
+	authProtected.POST("/logout", deps.AuthHandler.Logout)
+
 	// JWT保護付きAPI
 	api := router.Group("/api")
-	api.Use(middleware.JWTAuth(deps.JWTSecret))
+	api.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 	api.GET("/users/me", deps.UserHandler.GetMe)
 	if deps.SuggestionHandler != nil {
 		api.POST("/suggestions", deps.SuggestionHandler.Suggest)

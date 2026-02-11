@@ -33,7 +33,7 @@ func setupSuggestionRouter(mock PlacesSearcher) *gin.Engine {
 	}
 
 	r := gin.New()
-	r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret), handler.Suggest)
+	r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), handler.Suggest)
 	return r
 }
 
