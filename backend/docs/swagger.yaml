@@ -1,5 +1,24 @@
 basePath: /
 definitions:
+  handlers.PlaceResult:
+    properties:
+      lat:
+        type: number
+      lng:
+        type: number
+      name:
+        type: string
+      place_id:
+        type: string
+      rating:
+        type: number
+      types:
+        items:
+          type: string
+        type: array
+      vicinity:
+        type: string
+    type: object
   handlers.createVisitRequest:
     properties:
       lat:
@@ -51,6 +70,18 @@ definitions:
     - display_name
     - email
     - password
+    type: object
+  handlers.suggestionRequest:
+    properties:
+      lat:
+        type: number
+      lng:
+        type: number
+      radius:
+        type: integer
+    required:
+    - lat
+    - lng
     type: object
   models.User:
     properties:
@@ -227,6 +258,48 @@ paths:
       summary: ユーザー登録
       tags:
       - Auth
+  /api/suggestions:
+    post:
+      consumes:
+      - application/json
+      description: 指定した位置情報の周辺から、訪れたことのない場所をランダムに1件提案する
+      parameters:
+      - description: 位置情報と半径
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.suggestionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.PlaceResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 場所の提案
+      tags:
+      - Suggestion
   /api/users/me:
     get:
       description: JWT認証済みユーザーの情報を返す

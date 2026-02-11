@@ -106,7 +106,7 @@ var visitableTypes = map[string]bool{
 	"spa": true,
 	"gym": true,
 	// その他
-	"stadium":   true,
+	"stadium":    true,
 	"university": true,
 }
 
@@ -131,6 +131,19 @@ type suggestionRequest struct {
 	Radius uint    `json:"radius"`
 }
 
+// Suggest godoc
+// @Summary      場所の提案
+// @Description  指定した位置情報の周辺から、訪れたことのない場所をランダムに1件提案する
+// @Tags         Suggestion
+// @Accept       json
+// @Produce      json
+// @Param        body  body  suggestionRequest  true  "位置情報と半径"
+// @Success      200  {object}  PlaceResult
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /api/suggestions [post]
+// @Security     BearerAuth
 func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	var req suggestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

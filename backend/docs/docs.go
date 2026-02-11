@@ -202,6 +202,72 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/suggestions": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定した位置情報の周辺から、訪れたことのない場所をランダムに1件提案する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Suggestion"
+                ],
+                "summary": "場所の提案",
+                "parameters": [
+                    {
+                        "description": "位置情報と半径",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.suggestionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PlaceResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/me": {
             "get": {
                 "description": "JWT認証済みユーザーの情報を返す",
@@ -359,6 +425,35 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.PlaceResult": {
+            "type": "object",
+            "properties": {
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vicinity": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.createVisitRequest": {
             "type": "object",
             "required": [
@@ -432,6 +527,24 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 8
+                }
+            }
+        },
+        "handlers.suggestionRequest": {
+            "type": "object",
+            "required": [
+                "lat",
+                "lng"
+            ],
+            "properties": {
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "radius": {
+                    "type": "integer"
                 }
             }
         },
