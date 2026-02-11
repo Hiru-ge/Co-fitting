@@ -3,7 +3,7 @@
 # 環境変数
 GO := go
 GOFLAGS := -v
-BINARY_NAME := roamble-api
+BINARY_NAME := roamble
 
 help:
 	@echo "Available commands:"
