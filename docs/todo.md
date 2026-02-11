@@ -553,8 +553,8 @@ GET /api/visits?limit=20&offset=0
 Gin ルーターにエンドポイントを集約・整理。
 
 **実装内容**
-- [ ] `routes/routes.go` にルーターセットアップコード
-- [ ] ルート構成（Phase 0）
+- [x] `routes/routes.go` にルーターセットアップコード
+- [x] ルート構成（Phase 0）
 
 ```
 GET /health
@@ -568,13 +568,13 @@ POST /api/visits (JWT)
 GET /api/visits (JWT)
 ```
 
-- [ ] CORS ミドルウェアを有効化（開発時は`*`許可）
-- [ ] エラーハンドリング用グローバルミドルウェア
-- [ ] `main.go` で routes.Setup(router) を呼び出し
+- [x] CORS ミドルウェアを有効化（開発時は`*`許可）
+- [x] エラーハンドリング用グローバルミドルウェア
+- [x] `main.go` で routes.Setup(router) を呼び出し
 
 **受け入れ基準**
-- [ ] Postman で全エンドポイント一覧が管理可能
-- [ ] CORS エラーが出ずフロントから呼び出せる状態
+- [x] Postman で全エンドポイント一覧が管理可能
+- [x] CORS エラーが出ずフロントから呼び出せる状態
 
 ---
 
