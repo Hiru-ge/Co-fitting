@@ -372,6 +372,92 @@ POST /api/auth/login
 
 ---
 
+### Issue: トークンリフレッシュAPI実装（Go） — POST /api/auth/refresh
+**GitHub Issue**:　https://github.com/Hiru-ge/Roamble/issues/38
+**優先度**: 🔴 High | **工数**: 1h | **担当**: 個人 | **テスト駆動**: TDD
+
+**タスク概要**
+リフレッシュトークンを使用して新しいアクセストークンを取得する API を実装。
+
+**TDD プロセス**
+
+**🔴 RED PHASE**
+- [ ] `handlers/auth_test.go` に RefreshToken テストを追加
+
+```go
+func TestRefreshToken(t *testing.T) {
+  // 有効なリフレッシュトークン → 新しいアクセストークン生成
+  // 期限切れリフレッシュトークン → 401 Unauthorized
+  // 無効なトークン → 401 Unauthorized
+}
+```
+
+**🟢 GREEN PHASE**
+- [ ] `handlers/auth.go` に RefreshToken ハンドラー実装
+
+```
+POST /api/auth/refresh
+{
+  "refresh_token": "eyJ..."
+}
+```
+
+- [ ] リフレッシュトークンの期限チェック
+- [ ] JWT Claims から UserID を取得
+- [ ] 新しいアクセストークン生成（15分有効）
+- [ ] 200 OK で新しいアクセストークンを返す
+
+**🔵 REFACTOR PHASE**
+- [ ] トークン生成ロジックの共通化
+
+**受け入れ基準**
+- [ ] `go test ./handlers -v -run RefreshToken` で全テスト成功
+- [ ] 有効なリフレッシュトークンで新しいアクセストークンが発行される
+- [ ] 期限切れのリフレッシュトークンでエラーが返される
+
+---
+
+### Issue: ログアウトAPI実装（Go） — POST /api/auth/logout
+**GitHub Issue**:　https://github.com/Hiru-ge/Roamble/issues/39
+**優先度**: 🟡 Medium | **工数**: 1h | **担当**: 個人 | **テスト駆動**: TDD
+
+**タスク概要**
+ユーザーのログアウト処理を実装。トークンを無効化する。
+
+**TDD プロセス**
+
+**🔴 RED PHASE**
+- [ ] `handlers/auth_test.go` に Logout テストを追加
+
+```go
+func TestLogout(t *testing.T) {
+  // 有効なトークン → 200 OK
+  // JWT なし → 401 Unauthorized
+  // ログアウト後、古いトークンでアクセス → 401 Unauthorized
+}
+```
+
+**🟢 GREEN PHASE**
+- [ ] `handlers/auth.go` に Logout ハンドラー実装
+
+```
+POST /api/auth/logout
+```
+
+- [ ] JWT ミドルウェアで保護
+- [ ] Redis にトークンをブラックリスト登録（TTL: トークン有効期限）
+- [ ] 200 OK で返す
+
+**🔵 REFACTOR PHASE**
+- [ ] ブラックリスト管理の最適化
+
+**受け入れ基準**
+- [ ] `go test ./handlers -v -run Logout` で全テスト成功
+- [ ] ログアウト後、同じトークンで認証が拒否される
+- [ ] Redis にブラックリストが登録される
+
+---
+
 ### Issue: ユーザー情報取得API実装（Go） — GET /api/users/me
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/9
 **優先度**: 🟡 Medium | **工数**: 1h | **担当**: 個人 | **テスト駆動**: TDD
