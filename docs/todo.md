@@ -466,7 +466,7 @@ POST /api/suggestions
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/visit_test.go` を作成
+- [x] `handlers/visit_test.go` を作成
 
 ```go
 func TestCreateVisit(t *testing.T) {
@@ -477,7 +477,7 @@ func TestCreateVisit(t *testing.T) {
 ```
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/visit.go` に CreateVisit ハンドラー実装
+- [x] `handlers/visit.go` に CreateVisit ハンドラー実装
 
 ```
 POST /api/visits
@@ -491,16 +491,16 @@ POST /api/visits
 }
 ```
 
-- [ ] バリデーション: place_id, place_name, lat/lng, visited_at
-- [ ] JWT から UserID を取得して DB に保存
-- [ ] 201 Created で返す
+- [x] バリデーション: place_id, place_name, lat/lng, visited_at
+- [x] JWT から UserID を取得して DB に保存
+- [x] 201 Created で返す
 
 **🔵 REFACTOR PHASE**
-- [ ] 完了
+- [x] 完了
 
 **受け入れ基準**
-- [ ] 訪問記録が DB に正しく保存される
-- [ ] 同じユーザーが同じ place_id を複数回登録できる
+- [x] 訪問記録が DB に正しく保存される
+- [x] 同じユーザーが同じ place_id を複数回登録できる
 
 ---
 
