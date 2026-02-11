@@ -2,12 +2,15 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
 	_ "github.com/Hiru-ge/roamble/docs"
 	"github.com/Hiru-ge/roamble/handlers"
 	"github.com/Hiru-ge/roamble/middleware"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -41,6 +44,19 @@ func main() {
 		}
 	}()
 
+	// Redis初期化
+	redisClient, err := database.InitRedis()
+	if err != nil {
+		log.Printf("Warning: Failed to initialize Redis: %v (caching disabled)", err)
+	} else {
+		log.Println("Redis connected successfully")
+		defer func() {
+			if err := database.CloseRedis(); err != nil {
+				log.Printf("Error closing Redis: %v", err)
+			}
+		}()
+	}
+
 	jwtCfg, err := config.LoadJWTConfig()
 	if err != nil {
 		log.Fatalf("Failed to load JWT config: %v", err)
@@ -52,8 +68,27 @@ func main() {
 	}
 	userHandler := &handlers.UserHandler{DB: db}
 
+	// Google Places APIクライアント初期化
+	var suggestionHandler *handlers.SuggestionHandler
+	placesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
+	if placesAPIKey != "" {
+		placesClient, err := handlers.NewGooglePlacesClient(placesAPIKey)
+		if err != nil {
+			log.Fatalf("Failed to create Google Places client: %v", err)
+		}
+		suggestionHandler = &handlers.SuggestionHandler{
+			DB:          db,
+			RedisClient: redisClient,
+			Places:      placesClient,
+		}
+		log.Println("Google Places API client initialized")
+	} else {
+		log.Println("Warning: GOOGLE_PLACES_API_KEY not set, suggestions endpoint disabled")
+	}
+
 	router := gin.Default()
 	router.GET("/health", handlers.HealthCheck)
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	auth := router.Group("/api/auth")
 	auth.POST("/signup", authHandler.SignUp)
@@ -62,6 +97,9 @@ func main() {
 	api := router.Group("/api")
 	api.Use(middleware.JWTAuth(jwtCfg.Secret))
 	api.GET("/users/me", userHandler.GetMe)
+	if suggestionHandler != nil {
+		api.POST("/suggestions", suggestionHandler.Suggest)
+	}
 
 	router.Run(":8000")
 }

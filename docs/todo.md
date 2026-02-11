@@ -417,7 +417,7 @@ Phase 0 では最小限のロジック（パーソナライズなし）で実装
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/suggestion_test.go` を作成
+- [x] `handlers/suggestion_test.go` を作成
 
 ```go
 func TestGetSuggestion(t *testing.T) {
@@ -429,8 +429,8 @@ func TestGetSuggestion(t *testing.T) {
 ```
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/suggestion.go` に Suggest ハンドラー実装
-- [ ] Google Places API でリクエスト
+- [x] `handlers/suggestion.go` に Suggest ハンドラー実装
+- [x] Google Places API でリクエスト
 
 ```
 POST /api/suggestions
@@ -441,18 +441,18 @@ POST /api/suggestions
 }
 ```
 
-- [ ] 訪問済みの場所を除外（visit_history 照合）
-- [ ] ランダムに1件を選出
-- [ ] Redis キャッシュ（TTL 24h）
-- [ ] 200 OK で提案を返す
+- [x] 訪問済みの場所を除外（visit_history 照合）
+- [x] ランダムに1件を選出
+- [x] Redis キャッシュ（TTL 24h）
+- [x] 200 OK で提案を返す
 
 **🔵 REFACTOR PHASE**
-- [ ] キャッシュ戦略改善
+- [x] キャッシュ戦略改善
 
 **受け入れ基準**
-- [ ] Google Places API キー設定後、実際の提案が返される
-- [ ] 同じ訪問済み施設は提案されない
-- [ ] Redis キャッシュが効いている
+- [x] Google Places API キー設定後、実際の提案が返される
+- [x] 同じ訪問済み施設は提案されない
+- [x] Redis キャッシュが効いている
 
 ---
 
