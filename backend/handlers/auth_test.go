@@ -7,11 +7,13 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/testutil"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -63,6 +65,7 @@ func setupRouter() *gin.Engine {
 	r := gin.New()
 	r.POST("/api/auth/signup", testAuthHandler.SignUp)
 	r.POST("/api/auth/login", testAuthHandler.Login)
+	r.POST("/api/auth/refresh", testAuthHandler.RefreshToken)
 	return r
 }
 
@@ -300,6 +303,139 @@ func TestLogin(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/api/auth/login", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestRefreshToken(t *testing.T) {
+	router := setupRouter()
+
+	t.Run("有効なリフレッシュトークンで新しいアクセストークン発行", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "refresh@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Refresh User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "refresh@example.com").First(&user)
+
+		refreshToken, _ := utils.GenerateRefreshToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.RefreshExpiry,
+		)
+
+		body := map[string]string{
+			"refresh_token": refreshToken,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/refresh", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp["access_token"] == nil || resp["access_token"] == "" {
+			t.Error("Expected access_token in response")
+		}
+	})
+
+	t.Run("期限切れリフレッシュトークンで401 Unauthorized", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "expired@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Expired User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "expired@example.com").First(&user)
+
+		// 期限切れトークン（-1時間）
+		expiredToken, _ := utils.GenerateRefreshToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			-1*time.Hour,
+		)
+
+		body := map[string]string{
+			"refresh_token": expiredToken,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/refresh", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("無効なトークンで401 Unauthorized", func(t *testing.T) {
+		body := map[string]string{
+			"refresh_token": "invalid.token.string",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/refresh", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("アクセストークンをリフレッシュに使用で401 Unauthorized", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "access@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Access User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "access@example.com").First(&user)
+
+		// アクセストークンをリフレッシュとして送信
+		accessToken, _ := utils.GenerateAccessToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.AccessExpiry,
+		)
+
+		body := map[string]string{
+			"refresh_token": accessToken,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/refresh", bytes.NewBuffer(jsonBody))
 		req.Header.Set("Content-Type", "application/json")
 		router.ServeHTTP(w, req)
 
