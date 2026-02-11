@@ -17,7 +17,7 @@ import (
 // @title           Roamble API
 // @version         1.0
 // @description     RoambleのバックエンドAPIドキュメント
-// @host            localhost:8080
+// @host            localhost:8000
 // @BasePath        /
 func main() {
 	// .envファイルから環境変数を読み込む

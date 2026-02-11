@@ -1,11 +1,253 @@
 basePath: /
-host: localhost:8080
+definitions:
+  handlers.createVisitRequest:
+    properties:
+      lat:
+        type: number
+      lng:
+        type: number
+      place_id:
+        type: string
+      place_name:
+        type: string
+      rating:
+        type: number
+      visited_at:
+        type: string
+    required:
+    - lat
+    - lng
+    - place_id
+    - place_name
+    - visited_at
+    type: object
+  handlers.loginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.signUpRequest:
+    properties:
+      display_name:
+        type: string
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - display_name
+    - email
+    - password
+    type: object
+  models.User:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.Visit:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_comfort_zone:
+        type: boolean
+      lat:
+        type: number
+      lng:
+        type: number
+      memo:
+        type: string
+      place_id:
+        type: string
+      place_name:
+        type: string
+      rating:
+        type: number
+      user_id:
+        type: integer
+      visited_at:
+        type: string
+    type: object
+  utils.TokenPair:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+host: localhost:8000
 info:
   contact: {}
   description: RoambleのバックエンドAPIドキュメント
   title: Roamble API
   version: "1.0"
 paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: メールとパスワードで認証し、トークンペアを返す
+      parameters:
+      - description: ログイン情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.loginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.TokenPair'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ログイン
+      tags:
+      - Auth
+  /api/auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: 新しいユーザーを登録し、トークンペアを返す
+      parameters:
+      - description: 登録情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.signUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.TokenPair'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー登録
+      tags:
+      - Auth
+  /api/users/me:
+    get:
+      description: JWT認証済みユーザーの情報を返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー情報取得
+      tags:
+      - Users
+  /api/visits:
+    get:
+      description: ユーザーの訪問履歴を一覧取得する（visited_at降順）
+      parameters:
+      - description: 取得件数（デフォルト20）
+        in: query
+        name: limit
+        type: integer
+      - description: オフセット（デフォルト0）
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 訪問履歴取得
+      tags:
+      - Visits
+    post:
+      consumes:
+      - application/json
+      description: ユーザーの訪問記録を作成する
+      parameters:
+      - description: 訪問記録データ
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createVisitRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Visit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 訪問記録作成
+      tags:
+      - Visits
   /health:
     get:
       description: サーバーのヘルスチェック用エンドポイント
