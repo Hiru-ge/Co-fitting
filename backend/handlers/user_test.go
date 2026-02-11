@@ -18,7 +18,7 @@ func setupUserRouter() *gin.Engine {
 	userHandler := &UserHandler{DB: testDB}
 
 	r := gin.New()
-	r.GET("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret), userHandler.GetMe)
+	r.GET("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.GetMe)
 	return r
 }
 

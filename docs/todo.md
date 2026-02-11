@@ -86,7 +86,7 @@ POST /api/auth/refresh
 
 ---
 
-### Issue: ログアウトAPI実装（Go） — POST /api/auth/logout
+### Issue: ログアウトAPI実装（Go） — POST /api/auth/logout ✅ 完了
 **GitHub Issue**:　https://github.com/Hiru-ge/Roamble/issues/39
 **優先度**: 🟡 Medium | **工数**: 1h | **担当**: 個人 | **テスト駆動**: TDD
 
@@ -96,7 +96,7 @@ POST /api/auth/refresh
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/auth_test.go` に Logout テストを追加
+- [x] `handlers/auth_test.go` に Logout テストを追加
 
 ```go
 func TestLogout(t *testing.T) {
@@ -107,23 +107,23 @@ func TestLogout(t *testing.T) {
 ```
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/auth.go` に Logout ハンドラー実装
+- [x] `handlers/auth.go` に Logout ハンドラー実装
 
 ```
 POST /api/auth/logout
 ```
 
-- [ ] JWT ミドルウェアで保護
-- [ ] Redis にトークンをブラックリスト登録（TTL: トークン有効期限）
-- [ ] 200 OK で返す
+- [x] JWT ミドルウェアで保護
+- [x] Redis にトークンをブラックリスト登録（TTL: トークン有効期限）
+- [x] 200 OK で返す
 
 **🔵 REFACTOR PHASE**
-- [ ] ブラックリスト管理の最適化
+- [x] ブラックリスト管理の最適化
 
 **受け入れ基準**
-- [ ] `go test ./handlers -v -run Logout` で全テスト成功
-- [ ] ログアウト後、同じトークンで認証が拒否される
-- [ ] Redis にブラックリストが登録される
+- [x] `go test ./handlers -v -run Logout` で全テスト成功
+- [x] ログアウト後、同じトークンで認証が拒否される
+- [x] Redis にブラックリストが登録される
 
 ---
 

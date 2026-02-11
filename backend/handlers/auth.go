@@ -1,21 +1,26 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type AuthHandler struct {
-	DB     *gorm.DB
-	JWTCfg *config.JWTConfig
+	DB          *gorm.DB
+	JWTCfg      *config.JWTConfig
+	RedisClient *redis.Client
 }
 
 type signUpRequest struct {
@@ -183,4 +188,45 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
+}
+
+// Logout godoc
+// @Summary      ログアウト
+// @Description  トークンをブラックリストに登録して無効化する
+// @Tags         Auth
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/auth/logout [post]
+func (h *AuthHandler) Logout(c *gin.Context) {
+	// Authorization ヘッダーからトークンを取得
+	authHeader := c.GetHeader("Authorization")
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header"})
+		return
+	}
+	token := parts[1]
+
+	// トークンの Claims を取得してTTLを算出
+	claims, err := utils.ValidateToken(token, h.JWTCfg.Secret)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		return
+	}
+
+	// Redis にブラックリスト登録（TTL: トークンの残り有効期限）
+	ttl := time.Until(claims.ExpiresAt.Time)
+	if ttl > 0 {
+		ctx := context.Background()
+		key := fmt.Sprintf("blacklist:%s", token)
+		if err := h.RedisClient.Set(ctx, key, "1", ttl).Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke token"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }

@@ -45,15 +45,14 @@ func main() {
 	// Redis初期化
 	redisClient, err := database.InitRedis()
 	if err != nil {
-		log.Printf("Warning: Failed to initialize Redis: %v (caching disabled)", err)
-	} else {
-		log.Println("Redis connected successfully")
-		defer func() {
-			if err := database.CloseRedis(); err != nil {
-				log.Printf("Error closing Redis: %v", err)
-			}
-		}()
+		log.Fatalf("Failed to initialize Redis: %v", err)
 	}
+	log.Println("Redis connected successfully")
+	defer func() {
+		if err := database.CloseRedis(); err != nil {
+			log.Printf("Error closing Redis: %v", err)
+		}
+	}()
 
 	jwtCfg, err := config.LoadJWTConfig()
 	if err != nil {
@@ -61,8 +60,9 @@ func main() {
 	}
 
 	authHandler := &handlers.AuthHandler{
-		DB:     db,
-		JWTCfg: jwtCfg,
+		DB:          db,
+		JWTCfg:      jwtCfg,
+		RedisClient: redisClient,
 	}
 	userHandler := &handlers.UserHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db}
@@ -92,6 +92,7 @@ func main() {
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
 		JWTSecret:         jwtCfg.Secret,
+		RedisClient:       redisClient,
 	})
 
 	router.Run(":8000")

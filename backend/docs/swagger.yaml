@@ -31,6 +31,13 @@ definitions:
     - email
     - password
     type: object
+  handlers.refreshRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
   handlers.signUpRequest:
     properties:
       display_name:
@@ -125,6 +132,65 @@ paths:
               type: string
             type: object
       summary: ログイン
+      tags:
+      - Auth
+  /api/auth/logout:
+    post:
+      description: トークンをブラックリストに登録して無効化する
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: ログアウト
+      tags:
+      - Auth
+  /api/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: リフレッシュトークンを使用して新しいアクセストークンを取得する
+      parameters:
+      - description: リフレッシュトークン
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.refreshRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: トークンリフレッシュ
       tags:
       - Auth
   /api/auth/signup:

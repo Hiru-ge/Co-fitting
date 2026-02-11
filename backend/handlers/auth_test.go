@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -11,16 +12,19 @@ import (
 
 	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
+	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/testutil"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 var testDB *gorm.DB
 var testAuthHandler *AuthHandler
+var testRedisClient *redis.Client
 
 func TestMain(m *testing.M) {
 	testutil.LoadTestEnv()
@@ -41,9 +45,18 @@ func TestMain(m *testing.M) {
 		panic("Failed to load JWT config: " + err.Error())
 	}
 
+	// Redis初期化（テスト用にlocalhost接続）
+	os.Setenv("REDIS_HOST", "localhost")
+	redisClient, err := database.InitRedis()
+	if err != nil {
+		log.Printf("Warning: Redis not available for tests: %v", err)
+	}
+	testRedisClient = redisClient
+
 	testAuthHandler = &AuthHandler{
-		DB:     testDB,
-		JWTCfg: jwtCfg,
+		DB:          testDB,
+		JWTCfg:      jwtCfg,
+		RedisClient: testRedisClient,
 	}
 
 	gin.SetMode(gin.TestMode)
@@ -66,6 +79,19 @@ func setupRouter() *gin.Engine {
 	r.POST("/api/auth/signup", testAuthHandler.SignUp)
 	r.POST("/api/auth/login", testAuthHandler.Login)
 	r.POST("/api/auth/refresh", testAuthHandler.RefreshToken)
+
+	// JWT保護付きルート（ログアウトテスト用）
+	authProtected := r.Group("/api/auth")
+	authProtected.Use(middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient))
+	authProtected.POST("/logout", testAuthHandler.Logout)
+
+	// 保護されたテスト用エンドポイント
+	api := r.Group("/api")
+	api.Use(middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient))
+	api.GET("/protected", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
 	return r
 }
 
@@ -441,6 +467,101 @@ func TestRefreshToken(t *testing.T) {
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestLogout(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available, skipping logout tests")
+	}
+
+	router := setupRouter()
+
+	t.Run("有効なトークンで200 OK", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "logout@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Logout User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "logout@example.com").First(&user)
+
+		accessToken, _ := utils.GenerateAccessToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.AccessExpiry,
+		)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/logout", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+		if resp["message"] == nil {
+			t.Error("Expected message in response")
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/logout", nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("ログアウト後、古いトークンでアクセス → 401 Unauthorized", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "revoked@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Revoked User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "revoked@example.com").First(&user)
+
+		accessToken, _ := utils.GenerateAccessToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.AccessExpiry,
+		)
+
+		// まずログアウト
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/logout", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Logout failed: status %d, body %s", w.Code, w.Body.String())
+		}
+
+		// ログアウト後、同じトークンで保護されたエンドポイントにアクセス
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("GET", "/api/protected", nil)
+		req2.Header.Set("Authorization", "Bearer "+accessToken)
+		router.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d after logout, got %d. Body: %s", http.StatusUnauthorized, w2.Code, w2.Body.String())
 		}
 	})
 }

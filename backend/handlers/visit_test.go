@@ -19,8 +19,8 @@ func setupVisitRouter() *gin.Engine {
 	visitHandler := &VisitHandler{DB: testDB}
 
 	r := gin.New()
-	r.POST("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret), visitHandler.CreateVisit)
-	r.GET("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret), visitHandler.ListVisits)
+	r.POST("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.CreateVisit)
+	r.GET("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.ListVisits)
 	return r
 }
 

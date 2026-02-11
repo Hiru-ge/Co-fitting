@@ -1,16 +1,19 @@
 package middleware
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 )
 
 const ContextKeyUserID = "userID"
 
-func JWTAuth(secret string) gin.HandlerFunc {
+func JWTAuth(secret string, redisClient *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -24,7 +27,9 @@ func JWTAuth(secret string) gin.HandlerFunc {
 			return
 		}
 
-		claims, err := utils.ValidateToken(parts[1], secret)
+		tokenString := parts[1]
+
+		claims, err := utils.ValidateToken(tokenString, secret)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired token"})
 			return
@@ -32,6 +37,15 @@ func JWTAuth(secret string) gin.HandlerFunc {
 
 		if claims.TokenType != "access" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token type"})
+			return
+		}
+
+		// Redis ブラックリストチェック
+		ctx := context.Background()
+		key := fmt.Sprintf("blacklist:%s", tokenString)
+		_, err = redisClient.Get(ctx, key).Result()
+		if err == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token has been revoked"})
 			return
 		}
 
