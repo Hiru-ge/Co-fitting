@@ -514,7 +514,7 @@ POST /api/visits
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/visit_test.go` に追加
+- [x] `handlers/visit_test.go` に追加
 
 ```go
 func TestListVisits(t *testing.T) {
@@ -525,23 +525,23 @@ func TestListVisits(t *testing.T) {
 ```
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/visit.go` に ListVisits ハンドラー実装
+- [x] `handlers/visit.go` に ListVisits ハンドラー実装
 
 ```
 GET /api/visits?limit=20&offset=0
 ```
 
-- [ ] JWT から UserID を取得
-- [ ] visited_at 降順でソート
-- [ ] ページネーション適用
+- [x] JWT から UserID を取得
+- [x] visited_at 降順でソート
+- [x] ページネーション適用
 
 **🔵 REFACTOR PHASE**
-- [ ] 完了
+- [x] 完了
 
 **受け入れ基準**
-- [ ] 訪問履歴が降順の時系列で返される
-- [ ] ページネーションが正常に機能
-- [ ] 自分のレコードのみ返される
+- [x] 訪問履歴が降順の時系列で返される
+- [x] ページネーションが正常に機能
+- [x] 自分のレコードのみ返される
 
 ---
 

@@ -20,6 +20,7 @@ func setupVisitRouter() *gin.Engine {
 
 	r := gin.New()
 	r.POST("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret), visitHandler.CreateVisit)
+	r.GET("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret), visitHandler.ListVisits)
 	return r
 }
 
@@ -296,6 +297,257 @@ func TestCreateVisit(t *testing.T) {
 		}
 		if !respTime.Equal(expectedTime) {
 			t.Errorf("Expected visited_at '%s', got '%s'", expectedTime, respTime)
+		}
+	})
+}
+
+// createVisitsForUser はテスト用の訪問記録を複数件作成するヘルパー
+func createVisitsForUser(t *testing.T, userID uint64, count int) []models.Visit {
+	t.Helper()
+	visits := make([]models.Visit, count)
+	for i := 0; i < count; i++ {
+		visits[i] = models.Visit{
+			UserID:    userID,
+			PlaceID:   fmt.Sprintf("ChIJl_list_%d", i),
+			PlaceName: fmt.Sprintf("テスト場所 %d", i),
+			Latitude:  35.677 + float64(i)*0.001,
+			Longitude: 139.650 + float64(i)*0.001,
+			VisitedAt: time.Date(2024, 2, 10-i, 12, 0, 0, 0, time.UTC),
+		}
+		if err := testDB.Create(&visits[i]).Error; err != nil {
+			t.Fatalf("Failed to create test visit %d: %v", i, err)
+		}
+	}
+	return visits
+}
+
+func TestListVisits(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("訪問履歴が降順で返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 3)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 3 {
+			t.Fatalf("Expected 3 visits, got %d", len(resp.Visits))
+		}
+
+		// visited_at 降順であることを確認
+		for i := 0; i < len(resp.Visits)-1; i++ {
+			if resp.Visits[i].VisitedAt.Before(resp.Visits[i+1].VisitedAt) {
+				t.Errorf("Visits not in descending order: [%d] %v < [%d] %v",
+					i, resp.Visits[i].VisitedAt, i+1, resp.Visits[i+1].VisitedAt)
+			}
+		}
+
+		if resp.Total != 3 {
+			t.Errorf("Expected total 3, got %d", resp.Total)
+		}
+	})
+
+	t.Run("ページネーションが正常に機能する", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 5)
+
+		// limit=2, offset=0 → 最初の2件
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?limit=2&offset=0", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp1 struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp1); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp1.Visits) != 2 {
+			t.Errorf("Expected 2 visits, got %d", len(resp1.Visits))
+		}
+		if resp1.Total != 5 {
+			t.Errorf("Expected total 5, got %d", resp1.Total)
+		}
+
+		// limit=2, offset=2 → 次の2件
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("GET", "/api/visits?limit=2&offset=2", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		var resp2 struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp2); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp2.Visits) != 2 {
+			t.Errorf("Expected 2 visits, got %d", len(resp2.Visits))
+		}
+
+		// 1ページ目と2ページ目のデータが重複しないことを確認
+		for _, v1 := range resp1.Visits {
+			for _, v2 := range resp2.Visits {
+				if v1.ID == v2.ID {
+					t.Errorf("Duplicate visit ID %d found across pages", v1.ID)
+				}
+			}
+		}
+	})
+
+	t.Run("自分のレコードのみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// ユーザー1を作成
+		user1 := createTestUserForVisit(t)
+		token1 := generateTestToken(user1.ID)
+		createVisitsForUser(t, user1.ID, 2)
+
+		// ユーザー2を作成（別メールで）
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user2 := models.User{
+			Email:        "visit-other@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Other User",
+		}
+		testDB.Create(&user2)
+		createVisitsForUser(t, user2.ID, 3)
+
+		// ユーザー1でリクエスト → 自分の2件のみ
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token1))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp.Total != 2 {
+			t.Errorf("Expected total 2 (user1's visits only), got %d", resp.Total)
+		}
+		if len(resp.Visits) != 2 {
+			t.Errorf("Expected 2 visits, got %d", len(resp.Visits))
+		}
+
+		for _, v := range resp.Visits {
+			if v.UserID != user1.ID {
+				t.Errorf("Expected user_id %d, got %d", user1.ID, v.UserID)
+			}
+		}
+	})
+
+	t.Run("訪問履歴がない場合は空配列で返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp.Visits == nil {
+			t.Error("Expected empty array, got nil")
+		}
+		if len(resp.Visits) != 0 {
+			t.Errorf("Expected 0 visits, got %d", len(resp.Visits))
+		}
+		if resp.Total != 0 {
+			t.Errorf("Expected total 0, got %d", resp.Total)
+		}
+	})
+
+	t.Run("デフォルトのlimitは20", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 25)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 20 {
+			t.Errorf("Expected 20 visits (default limit), got %d", len(resp.Visits))
+		}
+		if resp.Total != 25 {
+			t.Errorf("Expected total 25, got %d", resp.Total)
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits", nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 		}
 	})
 }
