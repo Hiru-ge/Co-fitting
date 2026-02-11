@@ -29,6 +29,10 @@ type loginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type refreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
 // SignUp godoc
 // @Summary      ユーザー登録
 // @Description  新しいユーザーを登録し、トークンペアを返す
@@ -135,4 +139,48 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, tokenPair)
+}
+
+// RefreshToken godoc
+// @Summary      トークンリフレッシュ
+// @Description  リフレッシュトークンを使用して新しいアクセストークンを取得する
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body  refreshRequest  true  "リフレッシュトークン"
+// @Success      200  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Router       /api/auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var req refreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh_token is required"})
+		return
+	}
+
+	// リフレッシュトークンを検証
+	claims, err := utils.ValidateToken(req.RefreshToken, h.JWTCfg.Secret)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired refresh token"})
+		return
+	}
+
+	// トークンタイプが "refresh" であることを確認
+	if claims.TokenType != "refresh" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token type"})
+		return
+	}
+
+	// 新しいアクセストークンを生成
+	accessToken, err := utils.GenerateAccessToken(
+		claims.UserID,
+		h.JWTCfg.Secret,
+		h.JWTCfg.AccessExpiry,
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate access token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
 }

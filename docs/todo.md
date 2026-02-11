@@ -51,7 +51,7 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
 **TDD プロセス**
 
 **🔴 RED PHASE**
-- [ ] `handlers/auth_test.go` に RefreshToken テストを追加
+- [x] `handlers/auth_test.go` に RefreshToken テストを追加
 
 ```go
 func TestRefreshToken(t *testing.T) {
@@ -62,7 +62,7 @@ func TestRefreshToken(t *testing.T) {
 ```
 
 **🟢 GREEN PHASE**
-- [ ] `handlers/auth.go` に RefreshToken ハンドラー実装
+- [x] `handlers/auth.go` に RefreshToken ハンドラー実装
 
 ```
 POST /api/auth/refresh
@@ -71,18 +71,18 @@ POST /api/auth/refresh
 }
 ```
 
-- [ ] リフレッシュトークンの期限チェック
-- [ ] JWT Claims から UserID を取得
-- [ ] 新しいアクセストークン生成（15分有効）
-- [ ] 200 OK で新しいアクセストークンを返す
+- [x] リフレッシュトークンの期限チェック
+- [x] JWT Claims から UserID を取得
+- [x] 新しいアクセストークン生成（15分有効）
+- [x] 200 OK で新しいアクセストークンを返す
 
 **🔵 REFACTOR PHASE**
-- [ ] トークン生成ロジックの共通化
+- [x] トークン生成ロジックの共通化
 
 **受け入れ基準**
-- [ ] `go test ./handlers -v -run RefreshToken` で全テスト成功
-- [ ] 有効なリフレッシュトークンで新しいアクセストークンが発行される
-- [ ] 期限切れのリフレッシュトークンでエラーが返される
+- [x] `go test ./handlers -v -run RefreshToken` で全テスト成功
+- [x] 有効なリフレッシュトークンで新しいアクセストークンが発行される
+- [x] 期限切れのリフレッシュトークンでエラーが返される
 
 ---
 

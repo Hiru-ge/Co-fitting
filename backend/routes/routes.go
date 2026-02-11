@@ -32,6 +32,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	auth := router.Group("/api/auth")
 	auth.POST("/signup", deps.AuthHandler.SignUp)
 	auth.POST("/login", deps.AuthHandler.Login)
+	auth.POST("/refresh", deps.AuthHandler.RefreshToken)
 
 	// JWT保護付きAPI
 	api := router.Group("/api")
