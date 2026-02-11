@@ -8,9 +8,7 @@ import (
 	"github.com/Hiru-ge/roamble/database"
 	_ "github.com/Hiru-ge/roamble/docs"
 	"github.com/Hiru-ge/roamble/handlers"
-	"github.com/Hiru-ge/roamble/middleware"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/Hiru-ge/roamble/routes"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -88,21 +86,13 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.GET("/health", handlers.HealthCheck)
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	auth := router.Group("/api/auth")
-	auth.POST("/signup", authHandler.SignUp)
-	auth.POST("/login", authHandler.Login)
-
-	api := router.Group("/api")
-	api.Use(middleware.JWTAuth(jwtCfg.Secret))
-	api.GET("/users/me", userHandler.GetMe)
-	if suggestionHandler != nil {
-		api.POST("/suggestions", suggestionHandler.Suggest)
-	}
-	api.POST("/visits", visitHandler.CreateVisit)
-	api.GET("/visits", visitHandler.ListVisits)
+	routes.Setup(router, routes.Deps{
+		AuthHandler:       authHandler,
+		UserHandler:       userHandler,
+		VisitHandler:      visitHandler,
+		SuggestionHandler: suggestionHandler,
+		JWTSecret:         jwtCfg.Secret,
+	})
 
 	router.Run(":8000")
 }
