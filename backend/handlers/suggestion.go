@@ -1,0 +1,220 @@
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"math/rand/v2"
+	"net/http"
+	"time"
+
+	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/Hiru-ge/roamble/models"
+	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
+	"googlemaps.github.io/maps"
+	"gorm.io/gorm"
+)
+
+type PlaceResult struct {
+	PlaceID  string   `json:"place_id"`
+	Name     string   `json:"name"`
+	Vicinity string   `json:"vicinity"`
+	Lat      float64  `json:"lat"`
+	Lng      float64  `json:"lng"`
+	Rating   float32  `json:"rating"`
+	Types    []string `json:"types"`
+}
+
+type PlacesSearcher interface {
+	NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error)
+}
+
+type GooglePlacesClient struct {
+	Client *maps.Client
+}
+
+func NewGooglePlacesClient(apiKey string) (*GooglePlacesClient, error) {
+	client, err := maps.NewClient(maps.WithAPIKey(apiKey))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Google Maps client: %w", err)
+	}
+	return &GooglePlacesClient{Client: client}, nil
+}
+
+func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error) {
+	req := &maps.NearbySearchRequest{
+		Location: &maps.LatLng{Lat: lat, Lng: lng},
+		Radius:   radius,
+	}
+	resp, err := g.Client.NearbySearch(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("nearby search failed: %w", err)
+	}
+
+	results := make([]PlaceResult, 0, len(resp.Results))
+	for _, r := range resp.Results {
+		results = append(results, PlaceResult{
+			PlaceID:  r.PlaceID,
+			Name:     r.Name,
+			Vicinity: r.Vicinity,
+			Lat:      r.Geometry.Location.Lat,
+			Lng:      r.Geometry.Location.Lng,
+			Rating:   r.Rating,
+			Types:    r.Types,
+		})
+	}
+	return results, nil
+}
+
+// 訪れるのに適した場所のタイプ（許可リスト）
+var visitableTypes = map[string]bool{
+	// グルメ
+	"restaurant":    true,
+	"cafe":          true,
+	"bar":           true,
+	"bakery":        true,
+	"meal_takeaway": true,
+	// エンタメ
+	"amusement_park": true,
+	"aquarium":       true,
+	"bowling_alley":  true,
+	"movie_theater":  true,
+	"night_club":     true,
+	// 文化・アート
+	"art_gallery":      true,
+	"museum":           true,
+	"library":          true,
+	"book_store":       true,
+	"place_of_worship": true,
+	// 自然・アウトドア
+	"park":       true,
+	"campground": true,
+	"zoo":        true,
+	// ショッピング
+	"shopping_mall":    true,
+	"clothing_store":   true,
+	"department_store": true,
+	"home_goods_store": true,
+	// 観光
+	"tourist_attraction": true,
+	"church":             true,
+	"hindu_temple":       true,
+	"mosque":             true,
+	"synagogue":          true,
+	// 健康・リラクゼーション
+	"spa": true,
+	"gym": true,
+	// その他
+	"stadium":   true,
+	"university": true,
+}
+
+func isVisitablePlace(types []string) bool {
+	for _, t := range types {
+		if visitableTypes[t] {
+			return true
+		}
+	}
+	return false
+}
+
+type SuggestionHandler struct {
+	DB          *gorm.DB
+	RedisClient *redis.Client
+	Places      PlacesSearcher
+}
+
+type suggestionRequest struct {
+	Lat    float64 `json:"lat" binding:"required"`
+	Lng    float64 `json:"lng" binding:"required"`
+	Radius uint    `json:"radius"`
+}
+
+func (h *SuggestionHandler) Suggest(c *gin.Context) {
+	var req suggestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.Radius == 0 {
+		req.Radius = 3000
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	// Redisキャッシュを確認
+	cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
+	var places []PlaceResult
+	if h.RedisClient != nil {
+		cached, err := h.RedisClient.Get(ctx, cacheKey).Result()
+		if err == nil {
+			json.Unmarshal([]byte(cached), &places)
+		}
+	}
+
+	// キャッシュがなければPlaces APIを呼び出し
+	if len(places) == 0 {
+		var err error
+		places, err = h.Places.NearbySearch(ctx, req.Lat, req.Lng, req.Radius)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places"})
+			return
+		}
+
+		// 訪れるのに適した場所のみにフィルタリング
+		filtered := make([]PlaceResult, 0, len(places))
+		for _, p := range places {
+			if isVisitablePlace(p.Types) {
+				filtered = append(filtered, p)
+			}
+		}
+		places = filtered
+
+		// Redisにキャッシュ（TTL 24h）— フィルタ済みの結果を保存
+		if h.RedisClient != nil && len(places) > 0 {
+			data, _ := json.Marshal(places)
+			h.RedisClient.Set(ctx, cacheKey, string(data), 24*time.Hour)
+		}
+	}
+
+	if len(places) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found"})
+		return
+	}
+
+	// 訪問済みのplace IDを取得
+	var visitedPlaceIDs []string
+	h.DB.Model(&models.Visit{}).
+		Where("user_id = ?", userID).
+		Pluck("place_id", &visitedPlaceIDs)
+
+	visitedSet := make(map[string]bool, len(visitedPlaceIDs))
+	for _, id := range visitedPlaceIDs {
+		visitedSet[id] = true
+	}
+
+	// 訪問済みを除外
+	var unvisited []PlaceResult
+	for _, p := range places {
+		if !visitedSet[p.PlaceID] {
+			unvisited = append(unvisited, p)
+		}
+	}
+
+	if len(unvisited) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited"})
+		return
+	}
+
+	// ランダムに1件選出
+	selected := unvisited[rand.IntN(len(unvisited))]
+	c.JSON(http.StatusOK, selected)
+}
