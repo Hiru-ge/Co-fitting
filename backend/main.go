@@ -67,6 +67,7 @@ func main() {
 		JWTCfg: jwtCfg,
 	}
 	userHandler := &handlers.UserHandler{DB: db}
+	visitHandler := &handlers.VisitHandler{DB: db}
 
 	// Google Places APIクライアント初期化
 	var suggestionHandler *handlers.SuggestionHandler
@@ -100,6 +101,7 @@ func main() {
 	if suggestionHandler != nil {
 		api.POST("/suggestions", suggestionHandler.Suggest)
 	}
+	api.POST("/visits", visitHandler.CreateVisit)
 
 	router.Run(":8000")
 }

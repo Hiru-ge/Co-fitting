@@ -1,0 +1,72 @@
+package handlers
+
+import (
+	"net/http"
+	"time"
+
+	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/Hiru-ge/roamble/models"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+type VisitHandler struct {
+	DB *gorm.DB
+}
+
+type createVisitRequest struct {
+	PlaceID   string   `json:"place_id" binding:"required"`
+	PlaceName string   `json:"place_name" binding:"required"`
+	Lat       float64  `json:"lat" binding:"required"`
+	Lng       float64  `json:"lng" binding:"required"`
+	Rating    *float32 `json:"rating"`
+	VisitedAt string   `json:"visited_at" binding:"required"`
+}
+
+// CreateVisit godoc
+// @Summary      訪問記録作成
+// @Description  ユーザーの訪問記録を作成する
+// @Tags         Visits
+// @Accept       json
+// @Produce      json
+// @Param        body  body  createVisitRequest  true  "訪問記録データ"
+// @Success      201  {object}  models.Visit
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Router       /api/visits [post]
+func (h *VisitHandler) CreateVisit(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	var req createVisitRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	visitedAt, err := time.Parse(time.RFC3339, req.VisitedAt)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid visited_at format, expected RFC3339"})
+		return
+	}
+
+	visit := models.Visit{
+		UserID:    userID,
+		PlaceID:   req.PlaceID,
+		PlaceName: req.PlaceName,
+		Latitude:  req.Lat,
+		Longitude: req.Lng,
+		Rating:    req.Rating,
+		VisitedAt: visitedAt,
+	}
+
+	if err := h.DB.Create(&visit).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create visit record"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, visit)
+}
