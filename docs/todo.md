@@ -1,7 +1,7 @@
 # TODO — GitHub Issue 化ガイド
 
 > 以下の各セクションをGitHub Issueとして作成してください。
-> ラベル: `Phase-0`, `Phase-1`, `infra`, `backend`, `frontend`, `blocked`, `high-priority` を適宜付与
+> ラベル: `Phase0`, `Phase1`, `backend`, `frontend` を適宜付与
 
 ---
 
@@ -41,91 +41,13 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/8
 **タスク**: ユーザー登録・ログイン API 実装
 
-### Issue: トークンリフレッシュAPI実装（Go） — POST /api/auth/refresh
+### Issue: トークンリフレッシュAPI実装（Go） — POST /api/auth/refresh ✅ 完了
 **GitHub Issue**:　https://github.com/Hiru-ge/Roamble/issues/38
-**優先度**: 🔴 High | **工数**: 1h | **担当**: 個人 | **テスト駆動**: TDD
-
-**タスク概要**
-リフレッシュトークンを使用して新しいアクセストークンを取得する API を実装。
-
-**TDD プロセス**
-
-**🔴 RED PHASE**
-- [x] `handlers/auth_test.go` に RefreshToken テストを追加
-
-```go
-func TestRefreshToken(t *testing.T) {
-  // 有効なリフレッシュトークン → 新しいアクセストークン生成
-  // 期限切れリフレッシュトークン → 401 Unauthorized
-  // 無効なトークン → 401 Unauthorized
-}
-```
-
-**🟢 GREEN PHASE**
-- [x] `handlers/auth.go` に RefreshToken ハンドラー実装
-
-```
-POST /api/auth/refresh
-{
-  "refresh_token": "eyJ..."
-}
-```
-
-- [x] リフレッシュトークンの期限チェック
-- [x] JWT Claims から UserID を取得
-- [x] 新しいアクセストークン生成（15分有効）
-- [x] 200 OK で新しいアクセストークンを返す
-
-**🔵 REFACTOR PHASE**
-- [x] トークン生成ロジックの共通化
-
-**受け入れ基準**
-- [x] `go test ./handlers -v -run RefreshToken` で全テスト成功
-- [x] 有効なリフレッシュトークンで新しいアクセストークンが発行される
-- [x] 期限切れのリフレッシュトークンでエラーが返される
-
----
+**タスク**: リフレッシュトークンを使用して新しいアクセストークンを取得する API を実装。
 
 ### Issue: ログアウトAPI実装（Go） — POST /api/auth/logout ✅ 完了
 **GitHub Issue**:　https://github.com/Hiru-ge/Roamble/issues/39
-**優先度**: 🟡 Medium | **工数**: 1h | **担当**: 個人 | **テスト駆動**: TDD
-
-**タスク概要**
-ユーザーのログアウト処理を実装。トークンを無効化する。
-
-**TDD プロセス**
-
-**🔴 RED PHASE**
-- [x] `handlers/auth_test.go` に Logout テストを追加
-
-```go
-func TestLogout(t *testing.T) {
-  // 有効なトークン → 200 OK
-  // JWT なし → 401 Unauthorized
-  // ログアウト後、古いトークンでアクセス → 401 Unauthorized
-}
-```
-
-**🟢 GREEN PHASE**
-- [x] `handlers/auth.go` に Logout ハンドラー実装
-
-```
-POST /api/auth/logout
-```
-
-- [x] JWT ミドルウェアで保護
-- [x] Redis にトークンをブラックリスト登録（TTL: トークン有効期限）
-- [x] 200 OK で返す
-
-**🔵 REFACTOR PHASE**
-- [x] ブラックリスト管理の最適化
-
-**受け入れ基準**
-- [x] `go test ./handlers -v -run Logout` で全テスト成功
-- [x] ログアウト後、同じトークンで認証が拒否される
-- [x] Redis にブラックリストが登録される
-
----
+**タスク**: ユーザーのログアウト処理を実装。トークンを無効化する。
 
 ### Issue: ユーザー情報取得API実装 ✅ 完了
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/9
