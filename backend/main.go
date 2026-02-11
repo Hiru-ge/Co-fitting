@@ -102,6 +102,7 @@ func main() {
 		api.POST("/suggestions", suggestionHandler.Suggest)
 	}
 	api.POST("/visits", visitHandler.CreateVisit)
+	api.GET("/visits", visitHandler.ListVisits)
 
 	router.Run(":8000")
 }

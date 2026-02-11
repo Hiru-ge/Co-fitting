@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Hiru-ge/roamble/middleware"
@@ -69,4 +70,51 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, visit)
+}
+
+// ListVisits godoc
+// @Summary      訪問履歴取得
+// @Description  ユーザーの訪問履歴を一覧取得する（visited_at降順）
+// @Tags         Visits
+// @Produce      json
+// @Param        limit   query  int  false  "取得件数（デフォルト20）"
+// @Param        offset  query  int  false  "オフセット（デフォルト0）"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]string
+// @Router       /api/visits [get]
+func (h *VisitHandler) ListVisits(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	limit := 20
+	offset := 0
+
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+		}
+	}
+	if o := c.Query("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	visits := make([]models.Visit, 0)
+	h.DB.Where("user_id = ?", userID).
+		Order("visited_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&visits)
+
+	var total int64
+	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&total)
+
+	c.JSON(http.StatusOK, gin.H{
+		"visits": visits,
+		"total":  total,
+	})
 }
