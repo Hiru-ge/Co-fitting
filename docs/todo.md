@@ -557,35 +557,9 @@ XP / レベルは Phase 1 で拡張予定。
 
 ---
 
-### Issue: Tailwind CSS カラーパレット・レスポンシブ設定
+### Issue: Tailwind CSS カラーパレット・レスポンシブ設定　✅完了
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/32
-**優先度**: 🟡 Medium | **工数**: 1h | **担当**: 個人
-
-**タスク概要**
-Tailwind CSS を screen-design のデザインに合わせて設定。カラーパレット・タイポグラフィ・ブレークポイントを定義。
-
-**実装内容**
-
-**tailwind.config.js 設定**
-- [ ] **Primary Color**: #13ecec （シアン）- メイン発見画面の primary
-- [ ] **Primary Color**: #8c25f4 （紫）- 履歴画面の primary（統一検討）
-- [ ] **Background**: Light #f6f8f8 / Dark #102222
-- [ ] フォントファミリー
-  - メイン発見画面: Plus Jakarta Sans
-  - 履歴画面: Space Grotesk
-  - フォールバック: Noto Sans JP
-- [ ] Border Radius: デフォルト 1rem, lg 2rem
-- [ ] Breakpoints: md / lg / xl
-
-**CSS 設定**
-- [ ] `src/index.css` に @tailwind ディレクティブ
-- [ ] グローバルスタイル定義（フォント・背景色）
-- [ ] ダークモード対応（class 切り替え）
-
-**受け入れ基準**
-- [ ] `npm run build` でエラーなし
-- [ ] screen-design のカラースキームが正確に適用されている
-- [ ] レスポンシブ表示確認（モバイル / タブレット / デスクトップ）
+**タスク**　Tailwind CSS を screen-design のデザインに合わせて設定。カラーパレット・タイポグラフィ・ブレークポイントを定義。
 
 ---
 
