@@ -1,6 +1,7 @@
-import { apiCall } from './client';
+import { apiCall } from "./client";
+import type { CreateVisitRequest } from "~/types/visit";
 
-export async function createVisit(token: string, visitData: any) {
+export async function createVisit(token: string, visitData: CreateVisitRequest) {
   return apiCall('/api/visits', token, {
     method: 'POST',
     body: JSON.stringify(visitData),

@@ -1,4 +1,6 @@
 import { apiCall } from "~/api/client";
+import { API_BASE_URL } from "~/utils/constants";
+import type { User } from "~/types/auth";
 
 const TOKEN_KEY = "roamble_token";
 const REFRESH_TOKEN_KEY = "roamble_refresh_token";
@@ -23,7 +25,7 @@ export async function logout(): Promise<void> {
   const token = getToken();
   if (token) {
     try {
-      await fetch("http://localhost:8000/api/auth/logout", {
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,7 +42,7 @@ export async function logout(): Promise<void> {
 export async function refreshToken(): Promise<void> {
   const refresh = localStorage.getItem(REFRESH_TOKEN_KEY);
 
-  const res = await fetch("http://localhost:8000/api/auth/refresh", {
+  const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: refresh }),
@@ -54,8 +56,6 @@ export async function refreshToken(): Promise<void> {
   setToken(access_token, refresh_token);
 }
 
-export async function getUser(
-  token: string
-): Promise<{ id: number; email: string; display_name: string }> {
+export async function getUser(token: string): Promise<User> {
   return apiCall("/api/users/me", token);
 }
