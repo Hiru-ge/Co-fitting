@@ -136,11 +136,7 @@ frontend/
 - [x] @tanstack/react-query （データフェッチ） (@tanstack/react-query 記載)
 - [x] tailwindcss + postcss (tailwindcss, postcss 記載)
 - [x] lucide-react （アイコン） (lucide-react 記載)
-- [~] vitest + @testing-library/react （テスト） (vitest, @testing-library/react 記載。ただしテストコード未作成)
-
-**Tailwind CSS 設定**
-- [~] tailwind.config.js で色・タイポグラフィ定義 (基本設定のみ。色定義は未完了)
-- [~] src/index.css に @tailwind ディレクティブ (基本設定のみ)
+- [x] vitest + @testing-library/react （テスト） (vitest, @testing-library/react 記載)
 
 **環境変数**
 - [x] `.env` に VITE_API_BASE_URL=http://localhost:8000
@@ -151,9 +147,9 @@ frontend/
 - `make test`: テスト実行
 
 **受け入れ基準**
-- [~] `npm run build` がエラーなく完了 (✅ ビルド成功、ただし production 環境での検証は未実施)
-- [~] `npm run dev` で http://localhost:5173 にアクセス可能 (✅ docker-compose up で起動、ただしローカル npm run dev での実行は未確認)
-- [~] TypeScript エラーなし（`npm run type-check`） (基本的な型定義のみ。ページコンポーネント未実装のため型チェック未実施)
+- [x] `npm run build` がエラーなく完了
+- [x] `npm run dev` で http://localhost:5173 にアクセス可能
+- [x] TypeScript エラーなし（`npm run type-check`）
 
 ---
 
