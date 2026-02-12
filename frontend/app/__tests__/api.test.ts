@@ -95,7 +95,13 @@ describe("visits API", () => {
       json: () => Promise.resolve({ id: 1 }),
     });
 
-    const visitData = { place_id: "ChIJ...", place_name: "テストカフェ" };
+    const visitData = {
+      place_id: "ChIJ...",
+      place_name: "テストカフェ",
+      lat: 35.6762,
+      lng: 139.6503,
+      visited_at: "2024-02-15T10:00:00Z",
+    };
     const result = await createVisit("my-token", visitData);
 
     expect(fetch).toHaveBeenCalledWith(

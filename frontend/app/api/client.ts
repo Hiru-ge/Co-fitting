@@ -1,9 +1,11 @@
+import { API_BASE_URL } from "~/utils/constants";
+
 export async function apiCall(
   endpoint: string,
   token: string,
   options: RequestInit = {}
 ) {
-  const res = await fetch(`http://localhost:8000${endpoint}`, {
+  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
