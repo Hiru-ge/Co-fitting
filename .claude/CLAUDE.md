@@ -72,7 +72,8 @@ Phase 0で**やらないもの**: Google OAuth、XP/レベル/ゲーミフィケ
 
 ## プロジェクトドキュメント
 
-- `docs/requirements.md` — 要件定義書
+- `docs/requirements.md` — 要件定義書（機能要件・非機能要件・技術スタック・データモデル・API設計）
+- `docs/product-strategy.md` — プロダクト戦略書（ビジョン・ターゲット・競合分析・検証計画・KPI・リテンション）
 - `docs/validation-strategy.md` — ニーズ検証・プレローンチ戦略（Makers Guild折衷案）
 - `docs/todo.md` — TODO（プレローンチ・実装・ローンチのタスク一覧）
 
