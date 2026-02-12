@@ -205,26 +205,7 @@ export default function Root() {
 }
 ```
 
-**各ルートファイル作成**
-
-- [ ] app/routes/index.tsx （ランディングページ）
-- [ ] app/routes/signup.tsx （新規登録）
-- [ ] app/routes/login.tsx （ログイン）
-- [~] app/routes/home.tsx （ホーム） (✅ 簡易実装のみ、業務ロジック未実装)
-- [ ] app/routes/history.tsx （履歴）
-
-**レイアウトコンポーネント作成**
-
-- [ ] app/layouts/auth-layout.tsx （認証画面用。シンプルな中央配置フォーム）
-  
-- [ ] app/layouts/app-layout.tsx （アプリ画面用。ナビゲーション + ボトムタブ）
-
-- [ ] app/components/protected-route.tsx （認証保護。React Router v7 loader で代替予定）
-
-**受け入れ基準**
-- [ ] `npm run dev` でアプリが起動可能
-- [ ] ページ遷移がクライアントサイドで完結（リロードなし）
-- [ ] 保護されたルートに未認証でアクセス → ログインページへリダイレクト
+※　各ルートファイル(`index.tsx`, `signup.tsx`, `login.tsx`, `home.tsx`, `history.tsx`)や各レイアウトコンポーネントは一旦は空でOK（後続Issueで実装）
 
 ---
 
