@@ -32,6 +32,13 @@ Phase 0のスコープ:
 
 Phase 0で**やらないもの**: Google OAuth、XP/レベル/ゲーミフィケーション、興味タグ/パーソナライズ提案、オンボーディング、脱却モード、マップ可視化、バッジ、ストリーク、気分選択、感想メモ、検索半径設定
 
+## フロントエンド注意事項
+
+- **SPAモード**（`react-router.config.ts` で `ssr: false`）で動作。サーバーサイド専用の `loader` / `action` は使用不可。必ず `clientLoader` / `clientAction` を使うこと
+- 認証トークン管理は `app/lib/auth.ts` に集約。`getToken` / `setToken` / `clearToken` / `logout` / `getUser`
+- 認証保護が必要なルートは各ルートファイルに `clientLoader` を定義し、`getToken()` → `redirect("/login")` パターンを使う
+- API呼び出しは `app/api/client.ts` の `apiCall()` ヘルパー経由で行う
+
 ## アーキテクチャ方針
 
 - フロントエンドは表示に徹し、ビジネスロジックはバックエンドに集約
