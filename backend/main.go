@@ -85,14 +85,27 @@ func main() {
 		log.Println("Warning: GOOGLE_PLACES_API_KEY not set, suggestions endpoint disabled")
 	}
 
+	// 環境変数の読み取り
+	environment := os.Getenv("ENVIRONMENT")
+	if environment == "" {
+		environment = "development"
+	}
+
+	// 開発用ハンドラー
+	devHandler := &handlers.DevHandler{
+		RedisClient: redisClient,
+	}
+
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{
 		AuthHandler:       authHandler,
 		UserHandler:       userHandler,
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
+		DevHandler:        devHandler,
 		JWTSecret:         jwtCfg.Secret,
 		RedisClient:       redisClient,
+		Environment:       environment,
 	})
 
 	router.Run(":8000")

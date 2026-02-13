@@ -15,8 +15,10 @@ type Deps struct {
 	UserHandler       *handlers.UserHandler
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
+	DevHandler        *handlers.DevHandler
 	JWTSecret         string
 	RedisClient       *redis.Client
+	Environment       string
 }
 
 func Setup(router *gin.Engine, deps Deps) {
@@ -50,4 +52,11 @@ func Setup(router *gin.Engine, deps Deps) {
 	}
 	api.POST("/visits", deps.VisitHandler.CreateVisit)
 	api.GET("/visits", deps.VisitHandler.ListVisits)
+
+	// 開発用エンドポイント（development環境のみ）
+	if deps.Environment == "development" && deps.DevHandler != nil {
+		dev := router.Group("/api/dev")
+		dev.DELETE("/suggestions/cache", deps.DevHandler.ResetSuggestionCache)
+		dev.GET("/suggestions/stats", deps.DevHandler.GetSuggestionStats)
+	}
 }
