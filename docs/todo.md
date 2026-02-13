@@ -69,6 +69,81 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/13
 **タスク**: Gin ルーターにエンドポイントを集約
 
+### Issue: Google Places Photo API 統合 — 施設画像取得エンドポイント実装
+**優先度**: 🔴 High | **工数**: 2h | **担当**: 個人 | **Phase**: Phase 0
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/52
+
+**タスク概要**
+Google Places Photo API を使用して、施設の写真URL を取得。バックエンド新規エンドポイントを実装し、メイン発見画面・履歴画面での画像表示に対応。
+
+**参考資料**
+- [Google Places Photo API ドキュメント](https://developers.google.com/maps/documentation/places/web-service/place-photos?hl=ja)
+- [Google Places API 概要](https://developers.google.com/maps/documentation/places/web-service/overview?hl=ja)
+
+**実装内容**
+
+**A. バックエンド（Go）実装**
+- [ ] `handlers/place_photo.go` 作成
+  - GET `/api/places/:placeId/photo` エンドポイント実装
+  - リクエスト: `placeId` をパラメータで受け取る、オプションで `maxWidth` / `maxHeight`
+  - レスポンス: 画像URL を JSON で返却
+    ```json
+    {
+      "photoUrl": "https://lh3.googleusercontent.com/..."
+    }
+    ```
+  - Google Places API Photo エンドポイントを呼び出し（APIキー認証）
+  - キャッシング機能（Redis）で同じ施設の重複取得を最適化（TTL: 24h）
+
+- [ ] `utils/google_places.go` 拡張
+  - 既存の `getSuggestions()` に並行して、`getPlacePhoto()` 関数を追加
+  - Google Places Photo API 呼び出しロジック実装
+  - エラーハンドリング（写真なし施設、API失敗時はデフォルト画像URL を返す）
+
+- [ ] `routes.go` 更新
+  - GET `/api/places/:placeId/photo` ルートを追加
+
+- [ ] テスト実装
+  - `handlers/place_photo_test.go` で単体テスト
+
+**B. フロントエンド（React）対応**
+- [ ] `app/api/places.ts` 作成
+  ```typescript
+  export async function getPlacePhoto(
+    placeId: string,
+    token: string,
+    maxWidth?: number,
+    maxHeight?: number
+  ) {
+    const query = new URLSearchParams();
+    if (maxWidth) query.append('maxWidth', maxWidth.toString());
+    if (maxHeight) query.append('maxHeight', maxHeight.toString());
+    return apiCall(
+      `/api/places/${placeId}/photo${query.toString() ? '?' + query.toString() : ''}`,
+      token
+    );
+  }
+  ```
+
+- [ ] `app/components/discovery-card.tsx` 更新
+  - 画像URL を取得 → `<img>` で表示
+  - 読み込み中: スケルトンローダー表示
+  - 取得失敗時: カテゴリ別グラデーション背景をフォールバック
+
+- [ ] `app/routes/history.tsx` 更新
+  - 訪問履歴アイテムに施設画像を表示
+  - 投稿済みデータをDB から取得時に画像URL も一緒に取得
+
+**受け入れ基準**
+- [ ] バックエンドの GET `/api/places/:placeId/photo` が実装される
+- [ ] Google Places Photo API から画像URL が取得される
+- [ ] 画像なし / API エラー時はグレースフルフォールバック
+- [ ] Redis キャッシュ機能で同一施設の重複呼び出しを削減
+- [ ] フロント: discovery-card / history で画像が表示される
+- [ ] テスト: バックエンド単体テスト 成功、フロントエンドスナップショット確認
+
+---
+
 ## 🎨 フロントエンド（React + TypeScript + React Router v7）— Phase 0
 
 > **フロント設計方針**: 
