@@ -146,7 +146,7 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
   - 「ログインはこちら」リンク（/login）
 
 **コンポーネント構成**
-- [ ] `app/routes/signup.tsx` 作成
+- [x] `app/routes/signup.tsx` 作成
   - フォーム構築（React Form Hook / useReducer）
   - バリデーション実装
     - メール形式チェック（簡易）
@@ -158,7 +158,7 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
   - 成功時は JWT を取得して localStorage 保存 → `/home` へリダイレクト
 
 **TDD プロセス**
-- [ ] `app/__tests__/routes/signup.test.tsx` を作成
+- [x] `app/__tests__/routes/signup.test.tsx` を作成
 - 🔴
   ```typescript
   test("フォーム送信 → SignUp API call → /home へ遷移", () => {});
@@ -169,10 +169,10 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
 - 🔵 エラーハンドリング改善
 
 **受け入れ基準**
-- [ ] フォーム入力 → 「サインアップ」ボタン → バックエンド SignUp API が実行される
-- [ ] バックエンダから JWT 返却 → トークン保存 → `/home` へリダイレクト
-- [ ] メール重複時 → 409 エラーメッセージ表示
-- [ ] バリデーションエラー → UI で示唆
+- [x] フォーム入力 → 「サインアップ」ボタン → バックエンド SignUp API が実行される
+- [x] バックエンダから JWT 返却 → トークン保存 → `/home` へリダイレクト
+- [x] メール重複時 → 409 エラーメッセージ表示
+- [x] バリデーションエラー → UI で示唆
 
 ---
 
