@@ -102,12 +102,6 @@ var visitableTypes = map[string]bool{
 	"hindu_temple":       true,
 	"mosque":             true,
 	"synagogue":          true,
-	// 健康・リラクゼーション
-	"spa": true,
-	"gym": true,
-	// その他
-	"stadium":    true,
-	"university": true,
 }
 
 func isVisitablePlace(types []string) bool {
