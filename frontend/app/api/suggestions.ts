@@ -6,7 +6,7 @@ export async function getSuggestion(
   lat: number,
   lng: number,
   radius?: number
-): Promise<Place[]> {
+): Promise<Place> {
   const body: Record<string, number> = { lat, lng };
   if (radius !== undefined) {
     body.radius = radius;
