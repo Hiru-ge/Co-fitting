@@ -66,6 +66,14 @@ func (h *PlacePhotoHandler) GetPhoto(c *gin.Context) {
 		return
 	}
 
+	maxWidth := 2000
+	if mw := c.Query("maxWidth"); mw != "" {
+		parsed := 0
+		if n, err := fmt.Sscanf(mw, "%d", &parsed); n > 0 && err == nil && parsed > 0 {
+			maxWidth = parsed
+		}
+	}
+
 	ctx := c.Request.Context()
 	cacheKey := fmt.Sprintf("photo:%s", placeID)
 	if h.RedisClient != nil {
@@ -76,7 +84,7 @@ func (h *PlacePhotoHandler) GetPhoto(c *gin.Context) {
 		}
 	}
 
-	photoURL, err := h.resolvePhotoURL(photoRef, 2000 /* = maxWidth */)
+	photoURL, err := h.resolvePhotoURL(photoRef, maxWidth)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to resolve photo URL"})
 		return
