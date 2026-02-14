@@ -18,7 +18,7 @@ export default function BottomNav() {
             <NavLink
               key={to}
               to={to}
-              className={`flex flex-col items-center gap-0.5 px-4 py-2 transition-colors ${
+              className={`flex flex-col items-center gap-0.5 py-2 flex-1 justify-center transition-colors ${
                 isActive ? "text-primary" : "text-gray-400"
               }`}
             >
