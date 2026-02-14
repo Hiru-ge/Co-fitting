@@ -17,13 +17,14 @@ import (
 )
 
 type PlaceResult struct {
-	PlaceID  string   `json:"place_id"`
-	Name     string   `json:"name"`
-	Vicinity string   `json:"vicinity"`
-	Lat      float64  `json:"lat"`
-	Lng      float64  `json:"lng"`
-	Rating   float32  `json:"rating"`
-	Types    []string `json:"types"`
+	PlaceID        string   `json:"place_id"`
+	Name           string   `json:"name"`
+	Vicinity       string   `json:"vicinity"`
+	Lat            float64  `json:"lat"`
+	Lng            float64  `json:"lng"`
+	Rating         float32  `json:"rating"`
+	Types          []string `json:"types"`
+	PhotoReference string   `json:"photo_reference,omitempty"`
 }
 
 type PlacesSearcher interface {
@@ -54,14 +55,19 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 
 	results := make([]PlaceResult, 0, len(resp.Results))
 	for _, r := range resp.Results {
+		var photoRef string
+		if len(r.Photos) > 0 {
+			photoRef = r.Photos[0].PhotoReference
+		}
 		results = append(results, PlaceResult{
-			PlaceID:  r.PlaceID,
-			Name:     r.Name,
-			Vicinity: r.Vicinity,
-			Lat:      r.Geometry.Location.Lat,
-			Lng:      r.Geometry.Location.Lng,
-			Rating:   r.Rating,
-			Types:    r.Types,
+			PlaceID:        r.PlaceID,
+			Name:           r.Name,
+			Vicinity:       r.Vicinity,
+			Lat:            r.Geometry.Location.Lat,
+			Lng:            r.Geometry.Location.Lng,
+			Rating:         r.Rating,
+			Types:          r.Types,
+			PhotoReference: photoRef,
 		})
 	}
 	return results, nil

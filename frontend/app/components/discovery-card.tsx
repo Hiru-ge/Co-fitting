@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import type { Place } from "~/types/suggestion";
 import { getCategoryInfo } from "~/utils/category-map";
 import { calcDistance } from "~/utils/geolocation";
@@ -9,6 +9,7 @@ interface DiscoveryCardProps {
   isVisited: boolean;
   userLat: number;
   userLng: number;
+  photoUrl?: string;
   onSwipe?: () => void;
 }
 
@@ -21,10 +22,17 @@ export default function DiscoveryCard({
   isVisited,
   userLat,
   userLng,
+  photoUrl,
   onSwipe,
 }: DiscoveryCardProps) {
   const category = getCategoryInfo(place.types);
   const distance = calcDistance(userLat, userLng, place.lat, place.lng);
+  const [imgError, setImgError] = useState(false);
+  const showPhoto = photoUrl && !imgError;
+
+  useEffect(() => {
+    setImgError(false);
+  }, [photoUrl]);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const startX = useRef(0);
@@ -86,7 +94,7 @@ export default function DiscoveryCard({
       {/* カード本体 */}
       <div
         ref={cardRef}
-        className={`absolute inset-0 rounded-3xl overflow-hidden bg-gradient-to-br ${category.gradient} shadow-xl select-none touch-none cursor-grab active:cursor-grabbing`}
+        className={`absolute inset-0 rounded-3xl overflow-hidden ${showPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none cursor-grab active:cursor-grabbing`}
         style={{
           transform: `translateX(${offsetX}px) rotate(${rotation}deg)`,
           opacity,
@@ -97,12 +105,22 @@ export default function DiscoveryCard({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-      {/* カテゴリアイコン大表示 */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-10">
-        <span className="material-symbols-outlined text-white" style={{ fontSize: "12rem" }}>
-          {category.icon}
-        </span>
-      </div>
+      {/* 背景: 写真 or グラデーション+アイコン */}
+      {showPhoto ? (
+        <img
+          src={photoUrl}
+          alt={place.name}
+          draggable={false}
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center opacity-10">
+          <span className="material-symbols-outlined text-white" style={{ fontSize: "12rem" }}>
+            {category.icon}
+          </span>
+        </div>
+      )}
 
       {/* バッジ */}
       <div className="absolute top-4 left-4 flex gap-2">

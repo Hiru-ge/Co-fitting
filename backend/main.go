@@ -69,6 +69,7 @@ func main() {
 
 	// Google Places APIクライアント初期化
 	var suggestionHandler *handlers.SuggestionHandler
+	var placePhotoHandler *handlers.PlacePhotoHandler
 	placesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
 	if placesAPIKey != "" {
 		placesClient, err := handlers.NewGooglePlacesClient(placesAPIKey)
@@ -79,6 +80,10 @@ func main() {
 			DB:          db,
 			RedisClient: redisClient,
 			Places:      placesClient,
+		}
+		placePhotoHandler = &handlers.PlacePhotoHandler{
+			RedisClient: redisClient,
+			APIKey:      placesAPIKey,
 		}
 		log.Println("Google Places API client initialized")
 	} else {
@@ -102,6 +107,7 @@ func main() {
 		UserHandler:       userHandler,
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
+		PlacePhotoHandler: placePhotoHandler,
 		DevHandler:        devHandler,
 		JWTSecret:         jwtCfg.Secret,
 		RedisClient:       redisClient,
