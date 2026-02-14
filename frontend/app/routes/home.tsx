@@ -28,12 +28,12 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
   const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
+  const [originalOrder, setOriginalOrder] = useState<string[]>([]);
 
   const loadSuggestions = useCallback(async () => {
     setIsLoading(true);
@@ -74,7 +74,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           })
         );
         setPlaces(placesWithPhotos);
-        setCurrentIndex(0);
+        setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
       }
     } catch {
       setError("スポットの取得に失敗しました");
@@ -88,12 +88,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }, [loadSuggestions]);
 
   function handleSkip() {
-    if (places.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % places.length);
+    if (places.length <= 1) return;
+    setPlaces((prev) => [...prev.slice(1), prev[0]]);
   }
 
   async function handleCheckIn() {
-    const place = places[currentIndex];
+    const place = places[0];
     if (!place || visitedIds.has(place.place_id) || checkingIn) return;
 
     setCheckingIn(true);
@@ -121,15 +121,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     return vicinity.slice(0, MAX_LENGTH - 3) + "...";
   }
 
-  const currentPlace = places[currentIndex];
+  const currentPlace = places[0];
   const isCurrentVisited = currentPlace ? visitedIds.has(currentPlace.place_id) : false;
+  const currentIndex = currentPlace
+    ? originalOrder.indexOf(currentPlace.place_id)
+    : 0;
 
   if (isLoading) {
     return (
       <div className="min-h-max bg-background flex flex-col">
         <AppHeader />
         <div className="flex-1 flex items-center justify-center px-6">
-          <div className="w-full aspect-[3/4] rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+          <div className="w-full aspect-[3/5] rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
         </div>
       </div>
     );
@@ -158,15 +161,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace.vicinity)} />
 
       <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
-        {currentPlace && (
-          <DiscoveryCard
-            place={currentPlace}
-            isVisited={isCurrentVisited}
-            userLat={userPos.lat}
-            userLng={userPos.lng}
-            photoUrl={currentPlace.photoUrl}
-            onSwipe={handleSkip}
-          />
+        {places.length > 0 && (
+          <div className="relative w-full aspect-[3/5]">
+            {places.slice(0, 3).map((place, i) => (
+              <DiscoveryCard
+                key={place.place_id}
+                place={place}
+                isVisited={visitedIds.has(place.place_id)}
+                userLat={userPos.lat}
+                userLng={userPos.lng}
+                photoUrl={place.photoUrl}
+                stackIndex={i}
+                onSwipe={handleSkip}
+              />
+            ))}
+          </div>
         )}
 
         {places.length > 1 && (

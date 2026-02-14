@@ -10,12 +10,15 @@ interface DiscoveryCardProps {
   userLat: number;
   userLng: number;
   photoUrl?: string;
+  /** スタック内の位置 (0 = 最前面) */
+  stackIndex: number;
   onSwipe?: () => void;
 }
 
-const SWIPE_THRESHOLD = 100;
-const SWIPE_OUT_DISTANCE = 600;
-const ROTATION_FACTOR = 0.1;
+const SWIPE_THRESHOLD = 120;
+const SWIPE_OUT_DISTANCE = 800;
+const ROTATION_FACTOR = 0.08;
+const STACK_SCALE_STEP = 0.05;
 
 export default function DiscoveryCard({
   place,
@@ -23,6 +26,7 @@ export default function DiscoveryCard({
   userLat,
   userLng,
   photoUrl,
+  stackIndex,
   onSwipe,
 }: DiscoveryCardProps) {
   const category = getCategoryInfo(place.types);
@@ -35,77 +39,87 @@ export default function DiscoveryCard({
   }, [photoUrl]);
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const startX = useRef(0);
+  const startPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
-  const [offsetX, setOffsetX] = useState(0);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isSwiping, setIsSwiping] = useState(false);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (isSwiping) return;
-    dragging.current = true;
-    startX.current = e.clientX;
-    setOffsetX(0);
-    cardRef.current?.setPointerCapture(e.pointerId);
-  }, [isSwiping]);
+  const isTopCard = stackIndex === 0;
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isTopCard || isSwiping) return;
+      dragging.current = true;
+      startPos.current = { x: e.clientX, y: e.clientY };
+      setOffset({ x: 0, y: 0 });
+      cardRef.current?.setPointerCapture(e.pointerId);
+    },
+    [isTopCard, isSwiping]
+  );
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging.current) return;
-    setOffsetX(e.clientX - startX.current);
+    setOffset({
+      x: e.clientX - startPos.current.x,
+      y: e.clientY - startPos.current.y,
+    });
   }, []);
 
   const handlePointerUp = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = false;
 
-    if (Math.abs(offsetX) > SWIPE_THRESHOLD) {
-      const dir = offsetX > 0 ? 1 : -1;
+    const dist = Math.sqrt(offset.x ** 2 + offset.y ** 2);
+
+    if (dist > SWIPE_THRESHOLD) {
+      const angle = Math.atan2(offset.y, offset.x);
       setIsSwiping(true);
-      setOffsetX(dir * SWIPE_OUT_DISTANCE);
+      setOffset({
+        x: Math.cos(angle) * SWIPE_OUT_DISTANCE,
+        y: Math.sin(angle) * SWIPE_OUT_DISTANCE,
+      });
       setTimeout(() => {
         onSwipe?.();
-        resetCard();
-      }, 250);
+        setOffset({ x: 0, y: 0 });
+        setIsSwiping(false);
+      }, 300);
     } else {
-      setOffsetX(0);
+      setOffset({ x: 0, y: 0 });
     }
-  }, [offsetX, onSwipe]);
+  }, [offset, onSwipe]);
 
-  function resetCard() {
-    setOffsetX(0);
-    setIsSwiping(false);
-  }
+  const rotation = offset.x * ROTATION_FACTOR;
 
-  const rotation = offsetX * ROTATION_FACTOR;
-  const opacity = isSwiping ? 0 : 1;
+  // スタック位置による変形
+  const stackScale = 1 - stackIndex * STACK_SCALE_STEP;
 
-  const skipOpacity = Math.min(Math.abs(offsetX) / SWIPE_THRESHOLD, 1);
+  const cardTransform = isTopCard
+    ? `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg)`
+    : `scale(${stackScale})`;
+
+  const cardTransition = dragging.current
+    ? "none"
+    : "transform 0.3s ease-out, opacity 0.3s ease-out";
+
+  const cardOpacity = isSwiping ? 0 : 1;
+  const cardZIndex = 10 - stackIndex;
 
   return (
-    <div className="relative w-full aspect-[3/5] overflow-hidden">
-      {/* 背景SKIPヒント — カードの後ろに常駐 */}
-      <div
-        className="absolute inset-0 rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-2"
-        style={{ opacity: skipOpacity }}
-      >
-        <span className="material-symbols-outlined text-5xl text-gray-400">swipe</span>
-        <span className="text-lg font-bold text-gray-400 tracking-widest">SKIP</span>
-      </div>
-
-      {/* カード本体 */}
-      <div
-        ref={cardRef}
-        className={`absolute inset-0 rounded-3xl overflow-hidden ${showPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none cursor-grab active:cursor-grabbing`}
-        style={{
-          transform: `translateX(${offsetX}px) rotate(${rotation}deg)`,
-          opacity,
-          transition: dragging.current ? "none" : "transform 0.25s ease-out, opacity 0.25s ease-out",
-        }}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-      {/* 背景: 写真 or グラデーション+アイコン */}
+    <div
+      ref={cardRef}
+      className={`absolute inset-0 rounded-3xl overflow-hidden pb-10 ${showPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
+      style={{
+        transform: cardTransform,
+        opacity: cardOpacity,
+        transition: cardTransition,
+        zIndex: cardZIndex,
+        transformOrigin: "center center",
+      }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+    >
       {showPhoto ? (
         <img
           src={photoUrl}
@@ -116,7 +130,10 @@ export default function DiscoveryCard({
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
-          <span className="material-symbols-outlined text-white" style={{ fontSize: "12rem" }}>
+          <span
+            className="material-symbols-outlined text-white"
+            style={{ fontSize: "12rem" }}
+          >
             {category.icon}
           </span>
         </div>
@@ -139,16 +156,22 @@ export default function DiscoveryCard({
         </h2>
         <div className="flex items-center gap-3 text-white/80 text-sm">
           <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-base">{category.icon}</span>
+            <span className="material-symbols-outlined text-base">
+              {category.icon}
+            </span>
             {category.label}
           </span>
           <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-base">distance</span>
+            <span className="material-symbols-outlined text-base">
+              distance
+            </span>
             {formatDistance(distance)}
           </span>
           {place.rating > 0 && (
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-base text-yellow-400">star</span>
+              <span className="material-symbols-outlined text-base text-yellow-400">
+                star
+              </span>
               {place.rating.toFixed(1)}
             </span>
           )}
@@ -159,11 +182,12 @@ export default function DiscoveryCard({
       {isVisited && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white/20 backdrop-blur-md rounded-full p-4">
-            <span className="material-symbols-outlined text-white text-5xl">check_circle</span>
+            <span className="material-symbols-outlined text-white text-5xl">
+              check_circle
+            </span>
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
