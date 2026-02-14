@@ -15,6 +15,7 @@ type Deps struct {
 	UserHandler       *handlers.UserHandler
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
+	PlacePhotoHandler *handlers.PlacePhotoHandler
 	DevHandler        *handlers.DevHandler
 	JWTSecret         string
 	RedisClient       *redis.Client
@@ -49,6 +50,9 @@ func Setup(router *gin.Engine, deps Deps) {
 	api.GET("/users/me", deps.UserHandler.GetMe)
 	if deps.SuggestionHandler != nil {
 		api.POST("/suggestions", deps.SuggestionHandler.Suggest)
+	}
+	if deps.PlacePhotoHandler != nil {
+		api.GET("/places/:placeId/photo", deps.PlacePhotoHandler.GetPhoto)
 	}
 	api.POST("/visits", deps.VisitHandler.CreateVisit)
 	api.GET("/visits", deps.VisitHandler.ListVisits)

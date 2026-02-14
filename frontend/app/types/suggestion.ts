@@ -6,4 +6,5 @@ export interface Place {
   lng: number;
   rating: number;
   types: string[];
+  photo_reference?: string;
 }

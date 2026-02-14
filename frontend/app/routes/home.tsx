@@ -3,6 +3,7 @@ import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
 import { getSuggestion } from "~/api/suggestions";
+import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
 import { getPositionWithFallback } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
@@ -11,6 +12,8 @@ import AppHeader from "~/components/app-header";
 import DiscoveryCard from "~/components/discovery-card";
 import CardIndicator from "~/components/card-indicator";
 import ActionButtons from "~/components/action-buttons";
+
+type PlaceWithPhoto = Place & { photoUrl?: string };
 
 const CARD_COUNT = 3;
 const MAX_ATTEMPTS = 10;
@@ -24,7 +27,7 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
-  const [places, setPlaces] = useState<Place[]>([]);
+  const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +62,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       if (collected.length === 0) {
         setError("近くのスポットが見つかりませんでした");
       } else {
-        setPlaces(collected);
+        const placesWithPhotos: PlaceWithPhoto[] = await Promise.all(
+          collected.map(async (place) => {
+            if (!place.photo_reference) return place;
+            try {
+              const photoUrl = await getPlacePhoto(token, place.place_id, place.photo_reference);
+              return { ...place, photoUrl };
+            } catch {
+              return place;
+            }
+          })
+        );
+        setPlaces(placesWithPhotos);
         setCurrentIndex(0);
       }
     } catch {
@@ -150,6 +164,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             isVisited={isCurrentVisited}
             userLat={userPos.lat}
             userLng={userPos.lng}
+            photoUrl={currentPlace.photoUrl}
             onSwipe={handleSkip}
           />
         )}
