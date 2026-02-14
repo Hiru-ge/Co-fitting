@@ -81,7 +81,7 @@ export default function DiscoveryCard({
   const skipOpacity = Math.min(Math.abs(offsetX) / SWIPE_THRESHOLD, 1);
 
   return (
-    <div className="relative w-full aspect-[3/5]">
+    <div className="relative w-full aspect-[3/5] overflow-hidden">
       {/* 背景SKIPヒント — カードの後ろに常駐 */}
       <div
         className="absolute inset-0 rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-2"

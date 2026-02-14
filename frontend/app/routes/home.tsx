@@ -157,7 +157,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <div className="min-h-max bg-background flex flex-col">
       <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace.vicinity)} />
 
-      <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4">
+      <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
         {currentPlace && (
           <DiscoveryCard
             place={currentPlace}
