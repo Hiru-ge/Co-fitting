@@ -23,14 +23,23 @@ export function clearToken(): void {
 
 export async function logout(): Promise<void> {
   const token = getToken();
+  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  
   if (token) {
     try {
+      // リクエストボディにリフレッシュトークンを含める（セキュリティ向上のため）
+      const requestBody: { refresh_token?: string } = {};
+      if (refreshToken) {
+        requestBody.refresh_token = refreshToken;
+      }
+
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(requestBody),
       });
     } catch {
       // API失敗してもローカルトークンは必ず削除する

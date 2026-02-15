@@ -612,3 +612,149 @@ func TestLogout(t *testing.T) {
 		}
 	})
 }
+
+func TestLogoutWithRefreshToken(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available, skipping refresh token logout tests")
+	}
+
+	router := setupRouter()
+
+	t.Run("リフレッシュトークンを含むログアウトリクエスト", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "refresh-logout@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Refresh Logout User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "refresh-logout@example.com").First(&user)
+
+		accessToken, _ := utils.GenerateAccessToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.AccessExpiry,
+		)
+
+		refreshToken, _ := utils.GenerateRefreshToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.RefreshExpiry,
+		)
+
+		// リクエストボディにリフレッシュトークンを含める
+		reqBody := map[string]string{
+			"refresh_token": refreshToken,
+		}
+		bodyBytes, _ := json.Marshal(reqBody)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/logout", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+		if resp["message"] == nil {
+			t.Error("Expected message in response")
+		}
+	})
+
+	t.Run("ログアウト後のリフレッシュトークン無効化テスト", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "refresh-invalid@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Refresh Invalid User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "refresh-invalid@example.com").First(&user)
+
+		accessToken, _ := utils.GenerateAccessToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.AccessExpiry,
+		)
+
+		refreshToken, _ := utils.GenerateRefreshToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.RefreshExpiry,
+		)
+
+		// ログアウトにリフレッシュトークンを含める
+		reqBody := map[string]string{
+			"refresh_token": refreshToken,
+		}
+		bodyBytes, _ := json.Marshal(reqBody)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/logout", bytes.NewBuffer(bodyBytes))
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Logout failed: status %d, body %s", w.Code, w.Body.String())
+		}
+
+		// ログアウト後、リフレッシュトークンで新しいアクセストークンを取得しようとする
+		refreshReqBody := map[string]string{
+			"refresh_token": refreshToken,
+		}
+		refreshBodyBytes, _ := json.Marshal(refreshReqBody)
+
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/auth/refresh", bytes.NewBuffer(refreshBodyBytes))
+		req2.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w2, req2)
+
+		// リフレッシュトークンがブラックリスト化されているため401を期待
+		if w2.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d after logout (refresh token should be invalid), got %d. Body: %s", http.StatusUnauthorized, w2.Code, w2.Body.String())
+		}
+	})
+
+	t.Run("リフレッシュトークンなしのログアウトでも正常動作", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		testDB.Create(&models.User{
+			Email:        "no-refresh@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "No Refresh User",
+		})
+
+		var user models.User
+		testDB.Where("email = ?", "no-refresh@example.com").First(&user)
+
+		accessToken, _ := utils.GenerateAccessToken(
+			user.ID,
+			testAuthHandler.JWTCfg.Secret,
+			testAuthHandler.JWTCfg.AccessExpiry,
+		)
+
+		// リフレッシュトークンなしでログアウト（従来の動作）
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/logout", nil)
+		req.Header.Set("Authorization", "Bearer "+accessToken)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+	})
+}
