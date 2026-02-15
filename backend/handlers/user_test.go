@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -29,6 +30,15 @@ func generateTestToken(userID uint64) string {
 		testAuthHandler.JWTCfg.AccessExpiry,
 	)
 	return token
+}
+
+func setupUserRouterWithPatch() *gin.Engine {
+	userHandler := &UserHandler{DB: testDB}
+
+	r := gin.New()
+	r.GET("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.GetMe)
+	r.PATCH("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.UpdateMe)
+	return r
 }
 
 func TestGetMe(t *testing.T) {
@@ -94,6 +104,306 @@ func TestGetMe(t *testing.T) {
 
 		if w.Code != http.StatusNotFound {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestUpdateMe(t *testing.T) {
+	router := setupUserRouterWithPatch()
+
+	t.Run("表示名を更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "update@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Old Name",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"display_name": "New Name",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp["display_name"] != "New Name" {
+			t.Errorf("Expected display_name 'New Name', got '%v'", resp["display_name"])
+		}
+
+		// DBに反映されていることを確認
+		var updated models.User
+		testDB.First(&updated, user.ID)
+		if updated.DisplayName != "New Name" {
+			t.Errorf("Expected DB display_name 'New Name', got '%s'", updated.DisplayName)
+		}
+	})
+
+	t.Run("空の表示名で400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "empty@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Original",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"display_name": "",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("表示名の前後空白がトリムされる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "trim@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Original",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"display_name": "  Trimmed Name  ",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["display_name"] != "Trimmed Name" {
+			t.Errorf("Expected display_name 'Trimmed Name', got '%v'", resp["display_name"])
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		body := map[string]string{
+			"display_name": "New Name",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("ユーザーが存在しない場合404 Not Found", func(t *testing.T) {
+		cleanupUsers(t)
+
+		token := generateTestToken(99999)
+
+		body := map[string]string{
+			"display_name": "Ghost",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestChangePassword(t *testing.T) {
+	router := gin.New()
+	authProtected := router.Group("/api/auth")
+	authProtected.Use(middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient))
+	authProtected.POST("/change-password", testAuthHandler.ChangePassword)
+
+	t.Run("有効なパスワード変更で200 OK", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("oldpassword123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "changepw@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "ChangePass User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"current_password": "oldpassword123",
+			"new_password":     "newpassword456",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		// 新しいパスワードでログインできることを確認
+		var updated models.User
+		testDB.First(&updated, user.ID)
+		if err := bcrypt.CompareHashAndPassword([]byte(updated.PasswordHash), []byte("newpassword456")); err != nil {
+			t.Error("New password was not saved correctly")
+		}
+	})
+
+	t.Run("現在のパスワードが不正で401 Unauthorized", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("correctpassword"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "wrongpw@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "WrongPW User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"current_password": "wrongpassword",
+			"new_password":     "newpassword456",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("短い新パスワードで400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("oldpassword123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "shortpw@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "ShortPW User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"current_password": "oldpassword123",
+			"new_password":     "short",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("必須フィールド欠損で400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("oldpassword123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "missing@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Missing Fields",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]string{
+			"current_password": "oldpassword123",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		body := map[string]string{
+			"current_password": "oldpassword123",
+			"new_password":     "newpassword456",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 		}
 	})
 }

@@ -8,6 +8,8 @@ definitions:
         type: number
       name:
         type: string
+      photo_reference:
+        type: string
       place_id:
         type: string
       rating:
@@ -19,8 +21,21 @@ definitions:
       vicinity:
         type: string
     type: object
+  handlers.changePasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - current_password
+    - new_password
+    type: object
   handlers.createVisitRequest:
     properties:
+      category:
+        type: string
       lat:
         type: number
       lng:
@@ -36,6 +51,7 @@ definitions:
       visited_at:
         type: string
     required:
+    - category
     - lat
     - lng
     - place_id
@@ -85,6 +101,13 @@ definitions:
     - lat
     - lng
     type: object
+  handlers.updateMeRequest:
+    properties:
+      display_name:
+        type: string
+    required:
+    - display_name
+    type: object
   models.User:
     properties:
       avatar_url:
@@ -102,6 +125,8 @@ definitions:
     type: object
   models.Visit:
     properties:
+      category:
+        type: string
       created_at:
         type: string
       id:
@@ -141,6 +166,50 @@ info:
   title: Roamble API
   version: "1.0"
 paths:
+  /api/auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: 現在のパスワードを確認し、新しいパスワードに変更する
+      parameters:
+      - description: パスワード変更情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.changePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: パスワード変更
+      tags:
+      - Auth
   /api/auth/login:
     post:
       consumes:
@@ -266,7 +335,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: 指定した位置情報の周辺から、訪れたことのない場所をランダムに1件提案する
+      description: 指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
       parameters:
       - description: 位置情報と半径
         in: body
@@ -280,7 +349,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/handlers.PlaceResult'
+            items:
+              $ref: '#/definitions/handlers.PlaceResult'
+            type: array
         "400":
           description: Bad Request
           schema:
@@ -329,6 +400,45 @@ paths:
       summary: ユーザー情報取得
       tags:
       - Users
+    patch:
+      consumes:
+      - application/json
+      description: JWT認証済みユーザーの表示名を更新する
+      parameters:
+      - description: 更新情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateMeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー情報更新
+      tags:
+      - Users
   /api/visits:
     get:
       description: ユーザーの訪問履歴を一覧取得する（visited_at降順）
@@ -361,7 +471,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: ユーザーの訪問記録を作成する
+      description: ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）
       parameters:
       - description: 訪問記録データ
         in: body
