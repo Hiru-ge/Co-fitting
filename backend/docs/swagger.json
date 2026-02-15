@@ -473,6 +473,9 @@
                 "rating": {
                     "type": "number"
                 },
+                "vicinity": {
+                    "type": "string"
+                },
                 "visited_at": {
                     "type": "string"
                 }
@@ -597,6 +600,9 @@
                 },
                 "user_id": {
                     "type": "integer"
+                },
+                "vicinity": {
+                    "type": "string"
                 },
                 "visited_at": {
                     "type": "string"

@@ -27,6 +27,7 @@ type Visit struct {
 	UserID        uint64    `gorm:"not null;index:idx_user_visited" json:"user_id"`
 	PlaceID       string    `gorm:"not null" json:"place_id"`
 	PlaceName     string    `gorm:"not null" json:"place_name"`
+	Vicinity      string    `gorm:"type:varchar(255)" json:"vicinity"`
 	Category      string    `gorm:"type:varchar(100)" json:"category"`
 	Latitude      float64   `gorm:"column:lat;type:decimal(10,8)" json:"lat"`
 	Longitude     float64   `gorm:"column:lng;type:decimal(11,8)" json:"lng"`

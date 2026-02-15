@@ -236,7 +236,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
           </p>
         </div>
         <p className="text-[#75608a] text-xs mt-0.5">
-          {visit.place_name}
+          {visit.vicinity}
         </p>
         <div className="flex items-center gap-1 mt-2 text-[#75608a]">
           <span className="material-symbols-outlined text-xs">

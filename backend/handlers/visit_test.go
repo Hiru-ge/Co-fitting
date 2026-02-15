@@ -48,6 +48,7 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_example123",
 			"place_name": "隠れ家カフェ MOON",
+			"vicinity":   "東京都渋谷区神南1丁目",
 			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
@@ -77,6 +78,9 @@ func TestCreateVisit(t *testing.T) {
 		if resp["place_name"] != "隠れ家カフェ MOON" {
 			t.Errorf("Expected place_name '隠れ家カフェ MOON', got '%v'", resp["place_name"])
 		}
+		if resp["vicinity"] != "東京都渋谷区神南1丁目" {
+			t.Errorf("Expected vicinity '東京都渋谷区神南1丁目', got '%v'", resp["vicinity"])
+		}
 		if resp["category"] != "cafe" {
 			t.Errorf("Expected category 'cafe', got '%v'", resp["category"])
 		}
@@ -91,6 +95,9 @@ func TestCreateVisit(t *testing.T) {
 		}
 		if visit.PlaceName != "隠れ家カフェ MOON" {
 			t.Errorf("Expected place_name '隠れ家カフェ MOON' in DB, got '%s'", visit.PlaceName)
+		}
+		if visit.Vicinity != "東京都渋谷区神南1丁目" {
+			t.Errorf("Expected vicinity '東京都渋谷区神南1丁目' in DB, got '%s'", visit.Vicinity)
 		}
 		if visit.Category != "cafe" {
 			t.Errorf("Expected category 'cafe' in DB, got '%s'", visit.Category)

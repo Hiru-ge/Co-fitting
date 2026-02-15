@@ -87,6 +87,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       await createVisit(token, {
         place_id: place.place_id,
         place_name: place.name,
+        vicinity: place.vicinity,
         category: category,
         lat: place.lat,
         lng: place.lng,

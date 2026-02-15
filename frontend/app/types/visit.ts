@@ -3,6 +3,7 @@ export interface Visit {
   user_id: number;
   place_id: string;
   place_name: string;
+  vicinity: string;
   category: string;
   lat: number;
   lng: number;
@@ -21,6 +22,7 @@ export interface VisitListResponse {
 export interface CreateVisitRequest {
   place_id: string;
   place_name: string;
+  vicinity?: string;
   category: string;
   lat: number;
   lng: number;

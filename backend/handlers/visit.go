@@ -18,6 +18,7 @@ type VisitHandler struct {
 type createVisitRequest struct {
 	PlaceID   string   `json:"place_id" binding:"required"`
 	PlaceName string   `json:"place_name" binding:"required"`
+	Vicinity  string   `json:"vicinity"`
 	Category  string   `json:"category" binding:"required"`
 	Lat       float64  `json:"lat" binding:"required"`
 	Lng       float64  `json:"lng" binding:"required"`
@@ -59,6 +60,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		UserID:    userID,
 		PlaceID:   req.PlaceID,
 		PlaceName: req.PlaceName,
+		Vicinity:  req.Vicinity,
 		Category:  req.Category,
 		Latitude:  req.Lat,
 		Longitude: req.Lng,

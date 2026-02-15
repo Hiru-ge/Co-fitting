@@ -31,6 +31,8 @@ definitions:
         type: string
       rating:
         type: number
+      vicinity:
+        type: string
       visited_at:
         type: string
     required:
@@ -120,6 +122,8 @@ definitions:
         type: number
       user_id:
         type: integer
+      vicinity:
+        type: string
       visited_at:
         type: string
     type: object
