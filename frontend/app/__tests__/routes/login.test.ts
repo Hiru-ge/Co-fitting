@@ -108,7 +108,7 @@ describe("login action", () => {
   });
 
   test("ネットワークエラー → エラーメッセージ返却", async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error("network error"));
+    global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
 
     const { clientAction } = await import("~/routes/login");
 
@@ -125,7 +125,7 @@ describe("login action", () => {
     const result = await clientAction({ request, params: {} } as any);
 
     expect(result).toEqual({
-      error: "ネットワークエラーが発生しました",
+      error: "ネットワークに接続できません。通信環境をご確認ください",
     });
     // トークンが保存されていないこと
     expect(localStorage.getItem("roamble_token")).toBeNull();

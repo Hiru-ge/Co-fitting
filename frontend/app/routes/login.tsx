@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import { setToken } from "~/lib/auth";
 import { API_BASE_URL } from "~/utils/constants";
+import { isNetworkError } from "~/utils/error";
 import type { Route } from "./+types/login";
 
 export async function clientAction({ request }: Route.ClientActionArgs) {
@@ -16,15 +17,24 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
     });
 
     if (!res.ok) {
-      return { error: "メールアドレスまたはパスワードが正しくありません" };
+      if (res.status === 401 || res.status === 400) {
+        return { error: "メールアドレスまたはパスワードが正しくありません" };
+      }
+      if (res.status === 500 || res.status === 502 || res.status === 503) {
+        return { error: "サーバーエラーが発生しました。時間をおいて再度お試しください" };
+      }
+      return { error: "ログインに失敗しました。もう一度お試しください" };
     }
 
     const { access_token, refresh_token } = await res.json();
     setToken(access_token, refresh_token);
 
     return redirect("/home");
-  } catch {
-    return { error: "ネットワークエラーが発生しました" };
+  } catch (err) {
+    if (isNetworkError(err)) {
+      return { error: "ネットワークに接続できません。通信環境をご確認ください" };
+    }
+    return { error: "予期しないエラーが発生しました" };
   }
 }
 

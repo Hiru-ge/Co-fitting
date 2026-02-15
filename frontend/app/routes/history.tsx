@@ -3,6 +3,8 @@ import type { Route } from "./+types/history";
 import { redirect, useNavigate } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
+import { toUserMessage } from "~/utils/error";
+import { useToast } from "~/components/toast";
 import type { Visit } from "~/types/visit";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
 import { getCategoryInfoByKey } from "~/utils/category-map";
@@ -22,6 +24,7 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
 export default function History({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [visits, setVisits] = useState<VisitWithPhoto[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,8 +58,8 @@ export default function History({ loaderData }: Route.ComponentProps) {
           setVisits(visitsWithPhotos);
         }
         setTotal(data.total);
-      } catch {
-        // エラー時は空のまま
+      } catch (err) {
+        showToast(toUserMessage(err));
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);

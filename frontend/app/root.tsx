@@ -6,6 +6,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { LinksFunction } from "react-router";
+import { ToastProvider } from "~/components/toast";
 import "./app.css";
 
 export const links: LinksFunction = () => [
@@ -43,7 +44,9 @@ export default function Root() {
         <Links />
       </head>
       <body>
-        <Outlet />
+        <ToastProvider>
+          <Outlet />
+        </ToastProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

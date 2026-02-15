@@ -26,15 +26,68 @@ describe("apiCall", () => {
     );
   });
 
-  test("レスポンスが ok でない場合エラーを throw する", async () => {
+  test("レスポンスが ok でない場合 ApiError を throw する", async () => {
     const { apiCall } = await import("~/api/client");
+    const { ApiError } = await import("~/utils/error");
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
+      json: () => Promise.resolve({ error: "Internal Server Error" }),
     });
 
-    await expect(apiCall("/api/test", "token")).rejects.toThrow("API Error: 500");
+    // localStorage モック（401 リフレッシュに影響しないようにする）
+    const storageMock: Record<string, string> = {};
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(
+      (key: string) => storageMock[key] ?? null
+    );
+
+    await expect(apiCall("/api/test", "token")).rejects.toThrow(ApiError);
+    await expect(apiCall("/api/test", "token")).rejects.toThrow("Internal Server Error");
+  });
+
+  test("401 レスポンスでリフレッシュトークンがなければトークンクリアされる", async () => {
+    const { apiCall } = await import("~/api/client");
+    const { ApiError } = await import("~/utils/error");
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: () => Promise.resolve({ error: "Unauthorized" }),
+    });
+
+    // localStorage モック
+    const store: Record<string, string> = {};
+    const mockStorage = {
+      getItem: vi.fn((key: string) => store[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      clear: vi.fn(),
+      length: 0,
+      key: vi.fn(),
+    };
+    Object.defineProperty(window, "localStorage", {
+      value: mockStorage,
+      writable: true,
+      configurable: true,
+    });
+
+    // window.location.href への代入をモック
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      value: { ...originalLocation, href: "" },
+      writable: true,
+      configurable: true,
+    });
+
+    await expect(apiCall("/api/test", "token")).rejects.toThrow(ApiError);
+    expect(mockStorage.removeItem).toHaveBeenCalledWith("roamble_token");
+
+    Object.defineProperty(window, "location", {
+      value: originalLocation,
+      writable: true,
+      configurable: true,
+    });
   });
 });
 

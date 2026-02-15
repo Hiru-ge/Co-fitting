@@ -2,6 +2,11 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const mockShowToast = vi.fn();
+vi.mock("~/components/toast", () => ({
+  useToast: () => ({ showToast: mockShowToast }),
+}));
+
 const mockPlaces = [
   {
     place_id: "place_1",

@@ -7,6 +7,8 @@ import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
 import { getPositionWithFallback } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
+import { toUserMessage } from "~/utils/error";
+import { useToast } from "~/components/toast";
 import type { Place } from "~/types/suggestion";
 import AppHeader from "~/components/app-header";
 import DiscoveryCard from "~/components/discovery-card";
@@ -24,6 +26,7 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
+  const { showToast } = useToast();
   const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -59,8 +62,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         setPlaces(placesWithPhotos);
         setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
       }
-    } catch {
+    } catch (err) {
       setError("スポットの取得に失敗しました");
+      showToast(toUserMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +101,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       // 訪問済みカードを即座にリストから削除
       setPlaces((prev) => prev.filter((p) => p.place_id !== place.place_id));
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
-    } catch {
-      // エラー時は何もしない（UIは変化しない）
+    } catch (err) {
+      showToast(toUserMessage(err));
     } finally {
       setCheckingIn(false);
     }
