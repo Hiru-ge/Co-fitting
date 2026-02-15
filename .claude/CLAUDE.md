@@ -22,13 +22,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 開発は全てt-wadaのTDDに従って、「RED→GREEN→REFACTOR」のサイクルで進行。
 ブランチはmain/masterと、機能ごとのfeatureブランチ(feat/xxx)を使用。PRベースでコードレビュー・マージ。
-現在のフェーズ: **Phase 0（最小公開・簡易版）** — コアループ「提案→行動→記録」のみ実装。2月中完成目標。
+現在のフェーズ: **Phase 0（完了）** — コアループ「提案→行動→記録」実装完了。Phase 1に向けた準備段階。
 
-Phase 0のスコープ:
+Phase 0のスコープ（すべて完了）:
 - 提案機能（位置情報 + Google Places API。パーソナライズなし）
 - 訪問記録（「行った！」ボタン + 履歴リスト）
 - メール+パスワード認証（JWT）
-- 3画面構成: `/`(LP+ログイン), `/home`(コア画面), `/history`
+- 画面構成: `/`(LP), `/signup`, `/login`, `/home`(コア画面), `/history`, `/profile`, `/settings`
 
 Phase 0で**やらないもの**: Google OAuth、XP/レベル/ゲーミフィケーション、興味タグ/パーソナライズ提案、オンボーディング、脱却モード、マップ可視化、バッジ、ストリーク、気分選択、感想メモ、検索半径設定
 

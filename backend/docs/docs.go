@@ -134,7 +134,10 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "トークンをブラックリストに登録して無効化する",
+                "description": "アクセストークンとリフレッシュトークンをブラックリストに登録して無効化する",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -142,6 +145,16 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "ログアウト",
+                "parameters": [
+                    {
+                        "description": "リフレッシュトークン（オプション）",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.logoutRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -600,6 +613,7 @@ const docTemplate = `{
                 },
                 "new_password": {
                     "type": "string",
+                    "maxLength": 72,
                     "minLength": 8
                 }
             }
@@ -656,6 +670,15 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.logoutRequest": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "description": "オプション（下位互換性のため）",
+                    "type": "string"
+                }
+            }
+        },
         "handlers.refreshRequest": {
             "type": "object",
             "required": [
@@ -683,6 +706,7 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string",
+                    "maxLength": 72,
                     "minLength": 8
                 }
             }

@@ -20,7 +20,7 @@ export default function AppHeader({ locationLabel }: AppHeaderProps) {
         )}
       </div>
       <div className="flex-1" />
-      <h1 className="text-xl font-extrabold tracking-tighter mr-2 mr-3">Roamble</h1>
+      <h1 className="text-xl font-extrabold tracking-tighter mr-3">Roamble</h1>
       <Link
         to="/profile"
         className="size-10 flex items-center justify-center bg-white dark:bg-white/10 rounded-full shadow-sm"

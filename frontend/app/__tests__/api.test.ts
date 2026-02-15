@@ -151,6 +151,7 @@ describe("visits API", () => {
     const visitData = {
       place_id: "ChIJ...",
       place_name: "テストカフェ",
+      category: "cafe",
       lat: 35.6762,
       lng: 139.6503,
       visited_at: "2024-02-15T10:00:00Z",
