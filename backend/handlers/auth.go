@@ -26,7 +26,7 @@ type AuthHandler struct {
 
 type signUpRequest struct {
 	Email       string `json:"email" binding:"required,email"`
-	Password    string `json:"password" binding:"required,min=8"`
+	Password    string `json:"password" binding:"required,min=8,max=72"`
 	DisplayName string `json:"display_name" binding:"required"`
 }
 
@@ -234,7 +234,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 type changePasswordRequest struct {
 	CurrentPassword string `json:"current_password" binding:"required"`
-	NewPassword     string `json:"new_password" binding:"required,min=8"`
+	NewPassword     string `json:"new_password" binding:"required,min=8,max=72"`
 }
 
 // ChangePassword godoc

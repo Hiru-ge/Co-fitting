@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Hiru-ge/roamble/middleware"
@@ -404,6 +405,79 @@ func TestChangePassword(t *testing.T) {
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("73文字新パスワードで400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("oldpassword123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "longpw@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "LongPW User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		// 73文字のパスワードを生成
+		longPassword := strings.Repeat("a", 73)
+
+		body := map[string]string{
+			"current_password": "oldpassword123",
+			"new_password":     longPassword,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("72文字新パスワードで200 OK（境界値テスト）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("oldpassword123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "maxpw@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "MaxPW User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		// 72文字のパスワードを生成
+		maxPassword := strings.Repeat("a", 72)
+
+		body := map[string]string{
+			"current_password": "oldpassword123",
+			"new_password":     maxPassword,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/change-password", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		// 新しいパスワードでログインできることを確認
+		var updated models.User
+		testDB.First(&updated, user.ID)
+		if err := bcrypt.CompareHashAndPassword([]byte(updated.PasswordHash), []byte(maxPassword)); err != nil {
+			t.Error("New long password was not saved correctly")
 		}
 	})
 }
