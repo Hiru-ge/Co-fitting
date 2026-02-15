@@ -98,9 +98,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
     setCheckingIn(true);
     try {
+      // types 配列から最初のカテゴリを取得（例: "cafe", "park"等）
+      const category = place.types && place.types.length > 0 ? place.types[0] : "other";
+      
       await createVisit(token, {
         place_id: place.place_id,
         place_name: place.name,
+        category: category,
         lat: place.lat,
         lng: place.lng,
         visited_at: new Date().toISOString(),

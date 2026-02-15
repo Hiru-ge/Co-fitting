@@ -1,22 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Route } from "./+types/history";
 import { redirect, useNavigate } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
 import type { Visit } from "~/types/visit";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
+import { getCategoryInfoByKey } from "~/utils/category-map";
 import { API_BASE_URL } from "~/utils/constants";
 
 const ITEMS_PER_PAGE = 20;
-
-const FILTER_CATEGORIES = [
-  { key: "all", label: "すべて", icon: null },
-  { key: "cafe", label: "カフェ", icon: "coffee" },
-  { key: "park", label: "公園", icon: "park" },
-  { key: "tourist_attraction", label: "観光", icon: "photo_camera" },
-  { key: "restaurant", label: "飲食店", icon: "restaurant" },
-  { key: "store", label: "ショップ", icon: "storefront" },
-] as const;
 
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
@@ -35,6 +27,18 @@ export default function History({ loaderData }: Route.ComponentProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
+
+  // DBから取得した訪問履歴からユニークなカテゴリーを抽出
+  const availableCategories = useMemo(() => {
+    const categories = new Set<string>();
+    visits.forEach((visit) => {
+      if (visit.category) {
+        categories.add(visit.category);
+      }
+    });
+    // 配列に変換してソート（表示順序を安定化）
+    return Array.from(categories).sort();
+  }, [visits]);
 
   const loadVisits = useCallback(
     async (offset = 0, append = false) => {
@@ -73,9 +77,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
   const filteredVisits =
     activeFilter === "all"
       ? visits
-      : visits.filter((v) =>
-          v.place_name.toLowerCase().includes(activeFilter)
-        );
+      : visits.filter((v) => v.category === activeFilter);
 
   const grouped = groupByMonth(filteredVisits, (v) => v.visited_at);
 
@@ -106,24 +108,36 @@ export default function History({ loaderData }: Route.ComponentProps) {
 
         {/* ── Filter tabs ── */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-          {FILTER_CATEGORIES.map(({ key, label, icon }) => {
-            const isActive = activeFilter === key;
+          {/* "すべて" ボタン */}
+          <button
+            onClick={() => setActiveFilter("all")}
+            className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
+              activeFilter === "all"
+                ? "bg-primary-purple text-white"
+                : "bg-bg-light-purple text-text-main-purple"
+            }`}
+          >
+            <span className="text-sm font-medium">すべて</span>
+          </button>
+
+          {/* 動的カテゴリーボタン */}
+          {availableCategories.map((categoryKey) => {
+            const categoryInfo = getCategoryInfoByKey(categoryKey);
+            const isActive = activeFilter === categoryKey;
             return (
               <button
-                key={key}
-                onClick={() => setActiveFilter(key)}
+                key={categoryKey}
+                onClick={() => setActiveFilter(categoryKey)}
                 className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
                   isActive
                     ? "bg-primary-purple text-white"
                     : "bg-bg-light-purple text-text-main-purple"
                 }`}
               >
-                {icon && (
-                  <span className="material-symbols-outlined text-lg">
-                    {icon}
-                  </span>
-                )}
-                <span className="text-sm font-medium">{label}</span>
+                <span className="material-symbols-outlined text-lg">
+                  {categoryInfo.icon}
+                </span>
+                <span className="text-sm font-medium">{categoryInfo.label}</span>
               </button>
             );
           })}
@@ -222,8 +236,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
           </p>
         </div>
         <p className="text-[#75608a] text-xs mt-0.5">
-          {/* エリア表示 */}
-          {latLngToArea(visit.lat, visit.lng)}
+          {visit.place_name}
         </p>
         <div className="flex items-center gap-1 mt-2 text-[#75608a]">
           <span className="material-symbols-outlined text-xs">
@@ -238,14 +251,6 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
   );
 }
 
-/**
- * 緯度・経度から簡易的なエリア表示を生成する。
- * Phase 1 で逆ジオコーディングに置き換え予定。
- */
-function latLngToArea(lat: number, lng: number): string {
-  if (lat === 0 && lng === 0) return "";
-  return `${lat.toFixed(2)}°N, ${lng.toFixed(2)}°E`;
-}
 
 async function loadPhotos(
   visits: Visit[],
