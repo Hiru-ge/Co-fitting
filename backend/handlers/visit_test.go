@@ -599,4 +599,100 @@ func TestListVisits(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 		}
 	})
+
+	t.Run("limit=101で最大100件返却される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 120) // 120件作成
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?limit=101", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 100 {
+			t.Errorf("Expected 100 visits (limited from 101), got %d", len(resp.Visits))
+		}
+		if resp.Total != 120 {
+			t.Errorf("Expected total 120, got %d", resp.Total)
+		}
+	})
+
+	t.Run("limit=50で50件返却される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 80) // 80件作成
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?limit=50", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 50 {
+			t.Errorf("Expected 50 visits, got %d", len(resp.Visits))
+		}
+		if resp.Total != 80 {
+			t.Errorf("Expected total 80, got %d", resp.Total)
+		}
+	})
+
+	t.Run("limit=1000で最大100件に制限される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 150) // 150件作成
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?limit=1000", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 100 {
+			t.Errorf("Expected 100 visits (limited from 1000), got %d", len(resp.Visits))
+		}
+		if resp.Total != 150 {
+			t.Errorf("Expected total 150, got %d", resp.Total)
+		}
+	})
 }

@@ -11,6 +11,13 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	// MaxListLimit は ListVisits API の limit パラメータ上限
+	MaxListLimit = 100
+	// DefaultListLimit は ListVisits API の limit パラメータデフォルト値
+	DefaultListLimit = 20
+)
+
 type VisitHandler struct {
 	DB *gorm.DB
 }
@@ -93,12 +100,15 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 		return
 	}
 
-	limit := 20
+	limit := DefaultListLimit
 	offset := 0
 
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
 			limit = parsed
+			if limit > MaxListLimit {
+				limit = MaxListLimit
+			}
 		}
 	}
 	if o := c.Query("offset"); o != "" {
