@@ -11,6 +11,10 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fontsource/material-symbols-outlined": "^5.2.35",
+    "@fontsource/noto-sans-jp": "^5.2.9",
+    "@fontsource/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/space-grotesk": "^5.2.10",
     "@react-router/node": "7.12.0",
     "@react-router/serve": "7.12.0",
     "@tanstack/react-query": "^5.90.21",

@@ -5,34 +5,15 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import type { LinksFunction } from "react-router";
 import { ToastProvider } from "~/components/toast";
-import "./app.css";
 
-export const links: LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap",
-  },
-];
+// ── Local font imports (@fontsource) ──
+import "@fontsource/plus-jakarta-sans";
+import "@fontsource/space-grotesk";
+import "@fontsource/noto-sans-jp";
+import "@fontsource/material-symbols-outlined";
+
+import "./app.css";
 
 export default function Root() {
   return (
