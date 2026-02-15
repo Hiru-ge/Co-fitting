@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -37,4 +38,57 @@ func CloseRedis() error {
 		return nil
 	}
 	return RedisClient.Close()
+}
+
+// --- 日次提案キャッシュ ---
+
+// DailySuggestionCacheKey は日次提案キャッシュのキーを生成する
+// フォーマット: suggestion:daily:{userID}:{date}:{lat}_{lng}
+func DailySuggestionCacheKey(userID string, date string, lat, lng float64) string {
+	return fmt.Sprintf("suggestion:daily:%s:%s:%.2f_%.2f", userID, date, lat, lng)
+}
+
+// GetDailySuggestions は日次提案キャッシュを取得する
+// キャッシュミスの場合は空文字列を返す
+func GetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64) (string, error) {
+	key := DailySuggestionCacheKey(userID, date, lat, lng)
+	result, err := client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to get daily suggestions cache: %w", err)
+	}
+	return result, nil
+}
+
+// SetDailySuggestions は日次提案キャッシュを保存する
+func SetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64, data string, ttl time.Duration) error {
+	key := DailySuggestionCacheKey(userID, date, lat, lng)
+	return client.Set(ctx, key, data, ttl).Err()
+}
+
+// ClearDailySuggestionsCache は指定ユーザーの日次提案キャッシュを全て削除する
+func ClearDailySuggestionsCache(ctx context.Context, client *redis.Client, userID string) (int64, error) {
+	pattern := fmt.Sprintf("suggestion:daily:%s:*", userID)
+	var deletedCount int64
+	var cursor uint64
+	for {
+		keys, nextCursor, err := client.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			return 0, fmt.Errorf("failed to scan daily suggestion cache keys: %w", err)
+		}
+		if len(keys) > 0 {
+			deleted, err := client.Del(ctx, keys...).Result()
+			if err != nil {
+				return deletedCount, fmt.Errorf("failed to delete daily suggestion cache keys: %w", err)
+			}
+			deletedCount += deleted
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return deletedCount, nil
 }

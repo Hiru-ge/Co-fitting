@@ -43,15 +43,15 @@ describe("suggestions API", () => {
     vi.restoreAllMocks();
   });
 
-  test("getSuggestion が正しいパラメータで POST する", async () => {
-    const { getSuggestion } = await import("~/api/suggestions");
+  test("getSuggestions が正しいパラメータで POST する", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ place: { name: "テストカフェ" } }),
+      json: () => Promise.resolve([{ place_id: "p1", name: "テストカフェ" }]),
     });
 
-    const result = await getSuggestion("my-token", 35.6762, 139.6503);
+    const result = await getSuggestions("my-token", 35.6762, 139.6503);
 
     expect(fetch).toHaveBeenCalledWith(
       "http://localhost:8000/api/suggestions",
@@ -60,18 +60,18 @@ describe("suggestions API", () => {
         body: JSON.stringify({ lat: 35.6762, lng: 139.6503 }),
       })
     );
-    expect(result).toEqual({ place: { name: "テストカフェ" } });
+    expect(result).toEqual([{ place_id: "p1", name: "テストカフェ" }]);
   });
 
-  test("getSuggestion に radius を指定できる", async () => {
-    const { getSuggestion } = await import("~/api/suggestions");
+  test("getSuggestions に radius を指定できる", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
 
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({}),
+      json: () => Promise.resolve([]),
     });
 
-    await getSuggestion("my-token", 35.6762, 139.6503, 5000);
+    await getSuggestions("my-token", 35.6762, 139.6503, 5000);
 
     expect(fetch).toHaveBeenCalledWith(
       "http://localhost:8000/api/suggestions",

@@ -39,10 +39,9 @@ vi.mock("~/utils/geolocation", () => ({
 
 let callCount = 0;
 vi.mock("~/api/suggestions", () => ({
-  getSuggestion: vi.fn().mockImplementation(() => {
-    const place = mockPlaces[callCount % mockPlaces.length];
+  getSuggestions: vi.fn().mockImplementation(() => {
     callCount++;
-    return Promise.resolve(place);
+    return Promise.resolve([...mockPlaces]);
   }),
 }));
 
@@ -135,7 +134,7 @@ describe("Home画面", () => {
     expect(screen.getByText("テストカフェ")).toBeInTheDocument();
   });
 
-  test("「行ってきた！」→ createVisit実行 → 記録済み表示", async () => {
+  test("「行ってきた！」→ createVisit実行 → カードが消えて次のカードが表示される", async () => {
     const { createVisit } = await import("~/api/visits");
     const user = userEvent.setup();
     renderHome();
@@ -151,12 +150,14 @@ describe("Home画面", () => {
       expect(createVisit).toHaveBeenCalled();
     });
 
+    // 訪問済みカードが消えて、次のカードが先頭になる
     await waitFor(() => {
-      expect(screen.getByText("記録済み")).toBeInTheDocument();
+      expect(screen.queryByText("テストカフェ")).not.toBeInTheDocument();
+      expect(screen.getByText("テスト公園")).toBeInTheDocument();
     });
   });
 
-  test("記録済みカードでは「行ってきた！」を押せない", async () => {
+  test("全カードを訪問するとスポット無し表示になる", async () => {
     const user = userEvent.setup();
     renderHome();
 
@@ -164,14 +165,18 @@ describe("Home画面", () => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
-    await user.click(checkInButton);
+    // 3枚全て訪問
+    for (let i = 0; i < 3; i++) {
+      const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
+      await user.click(checkInButton);
+      // 少し待つ
+      await waitFor(() => {
+        expect(checkInButton).not.toBeDisabled();
+      }, { timeout: 500 }).catch(() => {});
+    }
 
     await waitFor(() => {
-      expect(screen.getByText("記録済み")).toBeInTheDocument();
+      expect(screen.getByText("近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています")).toBeInTheDocument();
     });
-
-    const recordedButton = screen.getByRole("button", { name: /記録済み/ });
-    expect(recordedButton).toBeDisabled();
   });
 });

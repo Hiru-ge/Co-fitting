@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
-import { getSuggestion } from "~/api/suggestions";
+import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
 import { getPositionWithFallback } from "~/utils/geolocation";
@@ -14,9 +14,6 @@ import CardIndicator from "~/components/card-indicator";
 import ActionButtons from "~/components/action-buttons";
 
 type PlaceWithPhoto = Place & { photoUrl?: string };
-
-const CARD_COUNT = 3;
-const MAX_ATTEMPTS = 10;
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   const token = getToken();
@@ -42,22 +39,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       const pos = await getPositionWithFallback();
       setUserPos(pos);
 
-      const collected: Place[] = [];
-      const seenIds = new Set<string>();
-      let attempts = 0;
-
-      while (collected.length < CARD_COUNT && attempts < MAX_ATTEMPTS) {
-        attempts++;
-        try {
-          const place = await getSuggestion(token, pos.lat, pos.lng, DEFAULT_RADIUS);
-          if (!seenIds.has(place.place_id)) {
-            seenIds.add(place.place_id);
-            collected.push(place);
-          }
-        } catch {
-          // 個別の取得失敗はスキップ
-        }
-      }
+      // バックエンドの日次キャッシュにより、1回の呼び出しで最大3件取得
+      const collected = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS);
 
       if (collected.length === 0) {
         setError("近くのスポットが見つかりませんでした");
@@ -94,7 +77,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   async function handleCheckIn() {
     const place = places[0];
-    if (!place || visitedIds.has(place.place_id) || checkingIn) return;
+    if (!place || checkingIn) return;
 
     setCheckingIn(true);
     try {
@@ -109,6 +92,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         lng: place.lng,
         visited_at: new Date().toISOString(),
       });
+
+      // 訪問済みカードを即座にリストから削除
+      setPlaces((prev) => prev.filter((p) => p.place_id !== place.place_id));
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
     } catch {
       // エラー時は何もしない（UIは変化しない）
@@ -142,13 +128,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     );
   }
 
-  if (error) {
+  if (error || places.length === 0) {
     return (
       <div className="min-h-max bg-background flex flex-col">
         <AppHeader />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
           <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
-          <p className="text-gray-500 text-center">{error}</p>
+          <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています"}</p>
           <button
             onClick={loadSuggestions}
             className="px-6 py-2 bg-primary text-white rounded-full font-bold"

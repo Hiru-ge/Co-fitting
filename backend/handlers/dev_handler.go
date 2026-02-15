@@ -13,8 +13,8 @@ type DevHandler struct {
 }
 
 type cacheStatsResponse struct {
-	KeyCount int              `json:"key_count"`
-	Keys     []cacheKeyStats  `json:"keys"`
+	KeyCount int             `json:"key_count"`
+	Keys     []cacheKeyStats `json:"keys"`
 }
 
 type cacheKeyStats struct {
@@ -27,26 +27,31 @@ func (h *DevHandler) ResetSuggestionCache(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var deletedCount int64
-	var cursor uint64
-	for {
-		keys, nextCursor, err := h.RedisClient.Scan(ctx, cursor, "suggestions:*", 100).Result()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
-			return
-		}
 
-		if len(keys) > 0 {
-			deleted, err := h.RedisClient.Del(ctx, keys...).Result()
+	// suggestions:* パターンと suggestion:daily:* パターンの両方を削除
+	patterns := []string{"suggestions:*", "suggestion:daily:*"}
+	for _, pattern := range patterns {
+		var cursor uint64
+		for {
+			keys, nextCursor, err := h.RedisClient.Scan(ctx, cursor, pattern, 100).Result()
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete cache keys"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
 				return
 			}
-			deletedCount += deleted
-		}
 
-		cursor = nextCursor
-		if cursor == 0 {
-			break
+			if len(keys) > 0 {
+				deleted, err := h.RedisClient.Del(ctx, keys...).Result()
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete cache keys"})
+					return
+				}
+				deletedCount += deleted
+			}
+
+			cursor = nextCursor
+			if cursor == 0 {
+				break
+			}
 		}
 	}
 
@@ -60,17 +65,20 @@ func (h *DevHandler) GetSuggestionStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var allKeys []string
-	var cursor uint64
-	for {
-		keys, nextCursor, err := h.RedisClient.Scan(ctx, cursor, "suggestions:*", 100).Result()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
-			return
-		}
-		allKeys = append(allKeys, keys...)
-		cursor = nextCursor
-		if cursor == 0 {
-			break
+	patterns := []string{"suggestions:*", "suggestion:daily:*"}
+	for _, pattern := range patterns {
+		var cursor uint64
+		for {
+			keys, nextCursor, err := h.RedisClient.Scan(ctx, cursor, pattern, 100).Result()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
+				return
+			}
+			allKeys = append(allKeys, keys...)
+			cursor = nextCursor
+			if cursor == 0 {
+				break
+			}
 		}
 	}
 
