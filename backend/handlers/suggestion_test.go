@@ -27,13 +27,15 @@ func (m *mockPlacesClient) NearbySearch(ctx context.Context, lat, lng float64, r
 
 // trackingMockPlacesClient はAPI呼び出し回数を追跡するモック
 type trackingMockPlacesClient struct {
-	Results   []PlaceResult
-	Err       error
-	CallCount int
+	Results    []PlaceResult
+	Err        error
+	CallCount  int
+	LastRadius uint
 }
 
 func (m *trackingMockPlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error) {
 	m.CallCount++
+	m.LastRadius = radius
 	return m.Results, m.Err
 }
 
@@ -707,6 +709,140 @@ func TestSuggestDailyCache(t *testing.T) {
 		// 件数が減っている
 		if len(resp2) >= initialCount {
 			t.Errorf("Expected fewer places after visiting one (initial: %d, after: %d)", initialCount, len(resp2))
+		}
+	})
+}
+
+func TestSuggestRadiusLimit(t *testing.T) {
+	// ユーザー作成
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	user := models.User{
+		Email:        "radius-test@example.com",
+		PasswordHash: string(hashedPassword),
+		DisplayName:  "Radius Tester",
+	}
+	testDB.Create(&user)
+	defer testDB.Delete(&user)
+
+	token := generateTestToken(user.ID)
+
+	t.Run("radius=60000 should be limited to 50000", func(t *testing.T) {
+		mock := &trackingMockPlacesClient{
+			Results: []PlaceResult{
+				{PlaceID: "place1", Name: "Test Place 1", Types: []string{"restaurant"}},
+			},
+			Err: nil,
+		}
+
+		handler := &SuggestionHandler{
+			DB:          testDB,
+			RedisClient: nil,
+			Places:      mock,
+		}
+
+		r := gin.New()
+		r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), handler.Suggest)
+
+		reqBody := suggestionRequest{
+			Lat:    35.6762,
+			Lng:    139.6503,
+			Radius: 60000, // 超過値
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest("POST", "/api/suggestions", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != 200 {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		// 実際にAPIに渡された半径が50000に制限されているかチェック
+		if mock.LastRadius != 50000 {
+			t.Errorf("Expected radius to be limited to 50000, got %d", mock.LastRadius)
+		}
+	})
+
+	t.Run("radius=30000 should remain 30000", func(t *testing.T) {
+		mock := &trackingMockPlacesClient{
+			Results: []PlaceResult{
+				{PlaceID: "place2", Name: "Test Place 2", Types: []string{"cafe"}},
+			},
+			Err: nil,
+		}
+
+		handler := &SuggestionHandler{
+			DB:          testDB,
+			RedisClient: nil,
+			Places:      mock,
+		}
+
+		r := gin.New()
+		r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), handler.Suggest)
+
+		reqBody := suggestionRequest{
+			Lat:    35.6762,
+			Lng:    139.6503,
+			Radius: 30000, // 正常値
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest("POST", "/api/suggestions", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != 200 {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		// 実際にAPIに渡された半径が30000のまま維持されているかチェック
+		if mock.LastRadius != 30000 {
+			t.Errorf("Expected radius to remain 30000, got %d", mock.LastRadius)
+		}
+	})
+
+	t.Run("radius=0 should default to 3000", func(t *testing.T) {
+		mock := &trackingMockPlacesClient{
+			Results: []PlaceResult{
+				{PlaceID: "place3", Name: "Test Place 3", Types: []string{"park"}},
+			},
+			Err: nil,
+		}
+
+		handler := &SuggestionHandler{
+			DB:          testDB,
+			RedisClient: nil,
+			Places:      mock,
+		}
+
+		r := gin.New()
+		r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), handler.Suggest)
+
+		reqBody := suggestionRequest{
+			Lat: 35.6762,
+			Lng: 139.6503,
+			// Radius未指定（0になる）
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest("POST", "/api/suggestions", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+token)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != 200 {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		// デフォルト値3000が設定されているかチェック
+		if mock.LastRadius != 3000 {
+			t.Errorf("Expected default radius to be 3000, got %d", mock.LastRadius)
 		}
 	})
 }

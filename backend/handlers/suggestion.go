@@ -137,6 +137,12 @@ type suggestionRequest struct {
 // 日次キャッシュで返す最大施設数
 const maxDailySuggestions = 3
 
+// デフォルトの検索半径（メートル）
+const defaultSearchRadius uint = 3000
+
+// 最大検索半径（メートル）— API課金制御
+const maxSearchRadius uint = 50000
+
 // Suggest godoc
 // @Summary      場所の提案
 // @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
@@ -158,7 +164,10 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	}
 
 	if req.Radius == 0 {
-		req.Radius = 3000
+		req.Radius = defaultSearchRadius
+	}
+	if req.Radius > maxSearchRadius {
+		req.Radius = maxSearchRadius
 	}
 
 	userID, ok := middleware.GetUserIDFromContext(c)
