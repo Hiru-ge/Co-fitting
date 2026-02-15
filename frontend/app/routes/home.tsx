@@ -111,7 +111,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   // 場所が長すぎる場合は省略して表示
   function getTruncatedLocationLabel(vicinity: string) {
-    const MAX_LENGTH = 20;
+    const MAX_LENGTH = 12;
     if (vicinity.length <= MAX_LENGTH) return vicinity;
     return vicinity.slice(0, MAX_LENGTH - 3) + "...";
   }
