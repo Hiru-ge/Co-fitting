@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -37,6 +36,10 @@ type loginRequest struct {
 
 type refreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type logoutRequest struct {
+	RefreshToken string `json:"refresh_token"` // オプション（下位互換性のため）
 }
 
 // SignUp godoc
@@ -164,6 +167,19 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
+	ctx := context.Background()
+
+	// リフレッシュトークンがブラックリスト化されているかチェック
+	isBlacklisted, err := utils.IsTokenBlacklisted(ctx, h.RedisClient, req.RefreshToken)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check token blacklist"})
+		return
+	}
+	if isBlacklisted {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token has been revoked"})
+		return
+	}
+
 	// リフレッシュトークンを検証
 	claims, err := utils.ValidateToken(req.RefreshToken, h.JWTCfg.Secret)
 	if err != nil {
@@ -193,40 +209,55 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 // Logout godoc
 // @Summary      ログアウト
-// @Description  トークンをブラックリストに登録して無効化する
+// @Description  アクセストークンとリフレッシュトークンをブラックリストに登録して無効化する
 // @Tags         Auth
 // @Security     BearerAuth
+// @Accept       json
 // @Produce      json
+// @Param        body  body  logoutRequest  false  "リフレッシュトークン（オプション）"
 // @Success      200  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /api/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// Authorization ヘッダーからトークンを取得
+	// Authorization ヘッダーからアクセストークンを取得
 	authHeader := c.GetHeader("Authorization")
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 || parts[0] != "Bearer" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header"})
 		return
 	}
-	token := parts[1]
+	accessToken := parts[1]
 
-	// トークンの Claims を取得してTTLを算出
-	claims, err := utils.ValidateToken(token, h.JWTCfg.Secret)
+	// アクセストークンの Claims を取得してTTLを算出
+	accessClaims, err := utils.ValidateToken(accessToken, h.JWTCfg.Secret)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
 
-	// Redis にブラックリスト登録（TTL: トークンの残り有効期限）
-	ttl := time.Until(claims.ExpiresAt.Time)
-	if ttl > 0 {
-		ctx := context.Background()
-		key := fmt.Sprintf("blacklist:%s", token)
-		if err := h.RedisClient.Set(ctx, key, "1", ttl).Err(); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke token"})
-			return
+	ctx := context.Background()
+
+	// アクセストークンをブラックリスト登録（TTL: トークンの残り有効期限）
+	accessTTL := time.Until(accessClaims.ExpiresAt.Time)
+	if err := utils.AddTokenToBlacklist(ctx, h.RedisClient, accessToken, accessTTL); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke access token"})
+		return
+	}
+
+	// リクエストボディからリフレッシュトークンを取得（オプション）
+	var logoutReq logoutRequest
+	if err := c.ShouldBindJSON(&logoutReq); err == nil && logoutReq.RefreshToken != "" {
+		// リフレッシュトークンが提供された場合はブラックリスト化
+		refreshClaims, err := utils.ValidateToken(logoutReq.RefreshToken, h.JWTCfg.Secret)
+		if err == nil {
+			refreshTTL := time.Until(refreshClaims.ExpiresAt.Time)
+			if err := utils.AddTokenToBlacklist(ctx, h.RedisClient, logoutReq.RefreshToken, refreshTTL); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke refresh token"})
+				return
+			}
 		}
+		// リフレッシュトークンの検証失敗は無視（既に期限切れの可能性があるため）
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})

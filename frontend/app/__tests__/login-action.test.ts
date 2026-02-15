@@ -125,6 +125,10 @@ describe("logout", () => {
         method: "POST",
         headers: expect.objectContaining({
           Authorization: "Bearer some-token",
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({
+          refresh_token: "some-refresh",
         }),
       })
     );
@@ -145,6 +149,34 @@ describe("logout", () => {
     await logout();
 
     // API失敗してもローカルトークンは削除
+    expect(localStorage.getItem("roamble_token")).toBeNull();
+    expect(localStorage.getItem("roamble_refresh_token")).toBeNull();
+  });
+
+  test("リフレッシュトークンなしでのログアウト → 空のボディでAPI呼び出し", async () => {
+    localStorage.setItem("roamble_token", "some-token");
+    // リフレッシュトークンは保存されていない
+
+    global.fetch = vi.fn().mockResolvedValue({ ok: true });
+
+    const { logout } = await import("~/lib/auth");
+
+    await logout();
+
+    // リフレッシュトークンがない場合は空のボディでAPI呼び出し
+    expect(fetch).toHaveBeenCalledWith(
+      "http://localhost:8000/api/auth/logout",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer some-token",
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({}),
+      })
+    );
+
+    // ローカルのトークンも削除されたか
     expect(localStorage.getItem("roamble_token")).toBeNull();
     expect(localStorage.getItem("roamble_refresh_token")).toBeNull();
   });
