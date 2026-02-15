@@ -49,6 +49,7 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 	req := &maps.NearbySearchRequest{
 		Location: &maps.LatLng{Lat: lat, Lng: lng},
 		Radius:   radius,
+		Language: "ja",
 	}
 	resp, err := g.Client.NearbySearch(ctx, req)
 	if err != nil {
