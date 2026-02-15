@@ -539,6 +539,315 @@ material-symbols-outlined を採用したことで、`<span>` タグ内のアイ
 
 ---
 
+## 🔐 セキュリティ強化（Phase 0 Complete後のセキュリティハードニング）
+
+### Issue: CORS設定の環境変数化 — AllowOrigins: ["*"] の全開放を修正
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/72
+**優先度**: 🔴 Critical | **工数**: 1h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+CORS設定が `AllowOrigins: ["*"]` で全開放されており、本番デプロイ時にセキュリティリスクとなる。環境変数ベースの制御に変更する。
+
+**🔴 RED PHASE**
+- [ ] `backend/middleware/cors_test.go` 作成
+  - 環境変数 `ALLOWED_ORIGIN` が正しく適用されるテスト
+  - 未設定時のデフォルト挙動テスト
+  - 複数オリジン設定時のテスト
+
+**🟢 GREEN PHASE**
+- [ ] `backend/middleware/cors.go` 修正
+  - `AllowOrigins: []string{os.Getenv("ALLOWED_ORIGIN")}` に変更
+  - 環境変数未設定時のデフォルト値設定
+- [ ] `.env.example` に `ALLOWED_ORIGIN=http://localhost:5173` 追加
+
+**🔵 REFACTOR PHASE**
+- [ ] 複数オリジン対応（カンマ区切り）の実装検討
+- [ ] ログ出力の追加（設定値確認用）
+
+**受け入れ基準**
+- [ ] 本番環境で特定オリジンのみCORS許可される
+- [ ] 開発環境では `http://localhost:5173` が許可される
+- [ ] テスト全パス
+
+---
+
+### Issue: API_BASE_URL の環境変数化 — ハードコードされたURLを修正
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/73
+**優先度**: 🔴 Critical | **工数**: 0.5h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+`API_BASE_URL = "http://localhost:8000"` がハードコードされており、本番デプロイ時にビルドが壊れる。環境変数ベースに変更する。
+
+**🔴 RED PHASE**
+- [ ] `app/__tests__/utils/constants.test.ts` 作成
+  - `import.meta.env.VITE_API_BASE_URL` 設定時の挙動テスト
+  - 未設定時のデフォルト値テスト
+
+**🟢 GREEN PHASE**
+- [ ] `frontend/app/utils/constants.ts` 修正
+  ```typescript
+  export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  ```
+- [ ] `.env.example` に `VITE_API_BASE_URL=http://localhost:8000` 追加
+
+**🔵 REFACTOR PHASE**
+- [ ] 型安全性の追加（環境変数の型定義）
+
+**受け入れ基準**
+- [ ] 本番環境でAPIエンドポイントが正しく設定される
+- [ ] 開発環境では `http://localhost:8000` がデフォルト値として使用される
+- [ ] ビルドエラーが発生しない
+
+---
+
+### Issue: パスワード長上限チェック追加 — bcrypt制限対応とDoS防止
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/74
+**優先度**: 🟡 Important | **工数**: 1h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+パスワード長に上限がなく、bcryptの72バイト制限による切り詰めやDoS攻撃のリスクがある。最大128文字制限を追加する。
+
+**🔴 RED PHASE**
+- [ ] `backend/handlers/auth_test.go` にテスト追加
+  - 129文字パスワードでサインアップ失敗テスト
+  - パスワード変更時の上限チェックテスト
+  - バリデーションエラーメッセージ確認テスト
+
+**🟢 GREEN PHASE**
+- [ ] `backend/handlers/auth.go` 修正
+  ```go
+  Password string `json:"password" binding:"required,min=8,max=128"`
+  ```
+- [ ] `changePasswordRequest` の `NewPassword` に同様の制限追加
+
+**🔵 REFACTOR PHASE**
+- [ ] 共通バリデーション関数の抽出検討
+- [ ] エラーメッセージの国際化対応検討
+
+**受け入れ基準**
+- [ ] 128文字以上のパスワードが拒否される
+- [ ] 適切なエラーメッセージが返される
+- [ ] 既存の8文字以上制限は維持される
+
+---
+
+### Issue: リフレッシュトークンのログアウト時ブラックリスト化
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/75
+**優先度**: 🟡 Important | **工数**: 2h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+ログアウト時にアクセストークンのみブラックリスト化されており、リフレッシュトークンが残存するセキュリティリスクがある。
+
+**🔴 RED PHASE**
+- [ ] `backend/handlers/auth_test.go` にテスト追加
+  - ログアウト後のリフレッシュトークン無効化テスト
+  - ログアウト→リフレッシュ試行→失敗テスト
+  - リクエストボディにリフレッシュトークン含有テスト
+
+**🟢 GREEN PHASE**
+- [ ] `POST /api/auth/logout` リクエスト形式変更
+  - リクエストボディに `refresh_token` 追加
+- [ ] ログアウト処理でリフレッシュトークンもブラックリスト追加
+- [ ] フロントエンドの logout 処理更新
+
+**🔵 REFACTOR PHASE**
+- [ ] トークンブラックリスト管理の共通化
+- [ ] TTL管理の最適化
+
+**受け入れ基準**
+- [ ] ログアウト後、リフレッシュトークンが無効化される
+- [ ] 攻撃者がリフレッシュトークンを保持していても新規アクセストークン生成ができない
+- [ ] テスト全パス
+
+---
+
+### Issue: ListVisits APIの limit パラメータ上限設定**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/76**優先度**: 🟡 Important | **工数**: 0.5h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+`limit` クエリパラメータに上限がなく、`?limit=1000000` のような巨大リクエストによるリソース消費攻撃が可能。
+
+**🔴 RED PHASE**
+- [ ] `backend/handlers/visit_test.go` にテスト追加
+  - `limit=101` で最大100件返却テスト
+  - `limit=50` で50件返却テスト
+  - 上限超過時の挙動確認テスト
+
+**🟢 GREEN PHASE**
+- [ ] `backend/handlers/visit.go` の `ListVisits` 修正
+  ```go
+  if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+      limit = parsed
+      if limit > 100 {
+          limit = 100
+      }
+  }
+  ```
+
+**🔵 REFACTOR PHASE**
+- [ ] 上限値の定数化（config での管理）
+
+**受け入れ基準**
+- [ ] limit パラメータが100を超えた場合、100件で制限される
+- [ ] 通常の取得（100件以下）は正常に動作する
+- [ ] テスト全パス
+
+---
+
+### Issue: Suggest APIの Radius パラメータ上限設定 — API課金制御**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/77**優先度**: 🟡 Important | **工数**: 0.5h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+`radius` パラメータに上限がなく、大きな値によるGoogle Places API課金増大のリスクがある。
+
+**🔴 RED PHASE**
+- [ ] `backend/handlers/suggestion_test.go` にテスト追加
+  - `radius=60000` で50000に制限されるテスト
+  - `radius=30000` で30000のまま維持されるテスト
+  - デフォルト値3000の確認テスト
+
+**🟢 GREEN PHASE**
+- [ ] `backend/handlers/suggestion.go` 修正
+  ```go
+  if req.Radius == 0 {
+      req.Radius = 3000
+  }
+  if req.Radius > 50000 {
+      req.Radius = 50000
+  }
+  ```
+
+**🔵 REFACTOR PHASE**
+- [ ] 上限値の設定ファイル化
+- [ ] ログ出力の追加（制限適用時の記録）
+
+**受け入れ基準**
+- [ ] radius が 50000m を超えた場合、50000m で制限される
+- [ ] 通常の検索（50000m以下）は正常に動作する
+- [ ] デフォルト値 3000m は維持される
+
+---
+
+### Issue: 開発用エンドポイントへの認証追加
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/78
+**優先度**: 🟡 Important | **工数**: 1h | **担当**: 個人 | **Phase**: Phase 0 Security
+**TDD対応**: RED→GREEN→REFACTOR
+
+**タスク概要**
+`dev` エンドポイントが認証なしで公開されており、開発環境でも不正アクセスのリスクがある。
+
+**🔴 RED PHASE**
+- [ ] `backend/handlers/dev_handler_test.go` にテスト追加
+  - JWT認証なしでアクセス拒否テスト
+  - 有効なJWTでアクセス成功テスト
+  - 開発環境以外での非公開テスト
+
+**🟢 GREEN PHASE**
+- [ ] `backend/routes/routes.go` 修正
+  - dev エンドポイントに JWT ミドルウェア追加
+  ```go
+  if environment == "development" {
+      dev := e.Group("/dev")
+      dev.Use(JWTMiddleware()) // 認証追加
+      dev.POST("/reset-cache", handlers.ResetSuggestionCache)
+      dev.GET("/stats", handlers.GetSuggestionStats)
+  }
+  ```
+
+**🔵 REFACTOR PHASE**
+- [ ] 管理者権限チェックの検討
+- [ ] ローカルアクセス制限の検討
+
+**受け入れ基準**
+- [ ] 未認証でのdev エンドポイントアクセスが拒否される
+- [ ] 認証済みユーザーのみdev機能を利用できる
+- [ ] 本番環境では引き続きエンドポイント自体が非公開
+
+---
+
+## 🧪 テストカバレッジ改善（Phase 0 Complete後のテスト強化）
+
+### Issue: テスト未実装ファイルへのテスト追加 — カバレッジギャップ解消
+**GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/79
+**優先度**: 🟡 Medium | **工数**: 4h | **担当**: 個人 | **Phase**: Phase 0 Testing
+**テスト駆動**: TDD
+
+**タスク概要**
+コードレビューで特定されたテスト未実装ファイルに対してテストを追加し、テストカバレッジのギャップを解消する。
+
+**対象ファイル**
+
+**🔴 Critical（テストなし）**
+- [ ] `frontend/app/routes/history.tsx` — フィルタリング・ページネーション・写真読み込み・グルーピングなど複雑なロジック
+
+**🟡 Important（テストなし）**
+- [ ] `backend/middleware/cors.go` — CORS設定ミスで全壊リスク
+- [ ] `backend/middleware/error_handler.go` — エラーハンドリング統一処理
+- [ ] `frontend/app/api/places.ts` — Places API 連携処理
+- [ ] `frontend/app/api/users.ts` — ユーザー情報API 処理
+
+**実装内容**
+
+**A. Critical Priority**
+
+**🔴 `app/__tests__/routes/history.test.tsx` 作成**
+- [ ] 日付グループ化表示テスト
+- [ ] カテゴリーフィルター動作テスト
+- [ ] ページネーション（「もっと見る」）テスト
+- [ ] 写真URL読み込みテスト
+- [ ] 空の履歴表示テスト
+- [ ] エラーハンドリングテスト
+
+**B. Important Priority**
+
+**🟡 `backend/middleware/cors_test.go` 作成**
+- [ ] CORS設定の適用確認テスト
+- [ ] プリフライトリクエスト対応テスト
+- [ ] 不正オリジンの拒否テスト
+
+**🟡 `backend/middleware/error_handler_test.go` 作成**
+- [ ] 統一エラーレスポンス形式テスト
+- [ ] HTTP ステータスコード設定テスト
+- [ ] パニック時の処理テスト
+
+**🟡 `app/__tests__/api/places.test.ts` 作成**
+- [ ] `getPlacePhoto()` 呼び出しテスト
+- [ ] エラーレスポンス処理テスト
+- [ ] キャッシュ機能テスト
+
+**🟡 `app/__tests__/api/users.test.ts` 作成**
+- [ ] `getMe()` API 呼び出しテスト
+- [ ] `updateMe()` API 呼び出しテスト
+- [ ] エラーハンドリングテスト
+
+**TDD プロセス**
+
+**🔴 RED PHASE**
+- [ ] 各ファイルに対する失敗テストを作成
+- [ ] 期待される挙動を明確化
+
+**🟢 GREEN PHASE**
+- [ ] テストがパスするように既存コードを確認・必要に応じて修正
+- [ ] モック・スタブの適切な設定
+
+**🔵 REFACTOR PHASE**
+- [ ] テストコードの重複排除
+- [ ] テストヘルパー関数の抽出
+- [ ] テストデータの整理
+
+**受け入れ基準**
+- [ ] `routes/history.tsx` のテストが10件以上作成され、主要機能がカバーされる
+- [ ] middleware の統合テストが追加され、設定ミス検出が可能
+- [ ] API層のテストが追加され、外部依存の分離が確認される
+- [ ] 全テストパス: `go test ./...` および `npx vitest run`
+- [ ] テストカバレッジレポートで改善が確認される
+
+---
+
 ## フロントエンド実装チェックリスト（Phase 0 完了時）
 
 | タスク | 状態 |
