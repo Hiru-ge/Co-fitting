@@ -10,7 +10,7 @@ const DEFAULT_CATEGORY: CategoryInfo = {
   gradient: "from-gray-500 to-gray-700",
 };
 
-const CATEGORY_MAP: Record<string, CategoryInfo> = {
+export const CATEGORY_MAP: Record<string, CategoryInfo> = {
   cafe: { label: "カフェ", icon: "coffee", gradient: "from-amber-600 to-orange-800" },
   restaurant: { label: "レストラン", icon: "restaurant", gradient: "from-red-500 to-rose-700" },
   bar: { label: "バー", icon: "local_bar", gradient: "from-purple-600 to-indigo-800" },
@@ -43,4 +43,11 @@ export function getCategoryInfo(types: string[]): CategoryInfo {
     }
   }
   return DEFAULT_CATEGORY;
+}
+
+/**
+ * カテゴリーキーから直接カテゴリー情報を取得する（訪問履歴フィルター用）
+ */
+export function getCategoryInfoByKey(key: string): CategoryInfo {
+  return CATEGORY_MAP[key] || DEFAULT_CATEGORY;
 }

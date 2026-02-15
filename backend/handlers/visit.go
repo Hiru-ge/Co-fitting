@@ -18,6 +18,7 @@ type VisitHandler struct {
 type createVisitRequest struct {
 	PlaceID   string   `json:"place_id" binding:"required"`
 	PlaceName string   `json:"place_name" binding:"required"`
+	Category  string   `json:"category" binding:"required"`
 	Lat       float64  `json:"lat" binding:"required"`
 	Lng       float64  `json:"lng" binding:"required"`
 	Rating    *float32 `json:"rating"`
@@ -26,7 +27,7 @@ type createVisitRequest struct {
 
 // CreateVisit godoc
 // @Summary      訪問記録作成
-// @Description  ユーザーの訪問記録を作成する
+// @Description  ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）
 // @Tags         Visits
 // @Accept       json
 // @Produce      json
@@ -58,6 +59,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		UserID:    userID,
 		PlaceID:   req.PlaceID,
 		PlaceName: req.PlaceName,
+		Category:  req.Category,
 		Latitude:  req.Lat,
 		Longitude: req.Lng,
 		Rating:    req.Rating,

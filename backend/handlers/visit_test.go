@@ -48,6 +48,7 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_example123",
 			"place_name": "隠れ家カフェ MOON",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
 			"rating":     4.3,
@@ -76,6 +77,9 @@ func TestCreateVisit(t *testing.T) {
 		if resp["place_name"] != "隠れ家カフェ MOON" {
 			t.Errorf("Expected place_name '隠れ家カフェ MOON', got '%v'", resp["place_name"])
 		}
+		if resp["category"] != "cafe" {
+			t.Errorf("Expected category 'cafe', got '%v'", resp["category"])
+		}
 		if resp["user_id"] == nil {
 			t.Error("Expected user_id in response")
 		}
@@ -88,6 +92,9 @@ func TestCreateVisit(t *testing.T) {
 		if visit.PlaceName != "隠れ家カフェ MOON" {
 			t.Errorf("Expected place_name '隠れ家カフェ MOON' in DB, got '%s'", visit.PlaceName)
 		}
+		if visit.Category != "cafe" {
+			t.Errorf("Expected category 'cafe' in DB, got '%s'", visit.Category)
+		}
 	})
 
 	t.Run("ratingなしでも201 Created", func(t *testing.T) {
@@ -99,6 +106,7 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_no_rating",
 			"place_name": "公園 パーク",
+			"category":   "park",
 			"lat":        35.680,
 			"lng":        139.655,
 			"visited_at": "2024-02-08T10:00:00Z",
@@ -125,6 +133,7 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_duplicate",
 			"place_name": "お気に入りカフェ",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
 			"visited_at": "2024-02-07T15:30:00Z",
@@ -172,6 +181,7 @@ func TestCreateVisit(t *testing.T) {
 
 		body := map[string]interface{}{
 			"place_name": "カフェ",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
 			"visited_at": "2024-02-07T15:30:00Z",
@@ -197,6 +207,7 @@ func TestCreateVisit(t *testing.T) {
 
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_example",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
 			"visited_at": "2024-02-07T15:30:00Z",
@@ -223,8 +234,35 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_example",
 			"place_name": "カフェ",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("category欠落で400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJl_example",
+			"place_name": "カフェ",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-02-07T15:30:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -243,6 +281,7 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_example",
 			"place_name": "カフェ",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
 			"visited_at": "2024-02-07T15:30:00Z",
@@ -269,6 +308,7 @@ func TestCreateVisit(t *testing.T) {
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_time_check",
 			"place_name": "時間テストカフェ",
+			"category":   "cafe",
 			"lat":        35.677,
 			"lng":        139.650,
 			"visited_at": visitedAt,
@@ -305,11 +345,13 @@ func TestCreateVisit(t *testing.T) {
 func createVisitsForUser(t *testing.T, userID uint64, count int) []models.Visit {
 	t.Helper()
 	visits := make([]models.Visit, count)
+	categories := []string{"cafe", "park", "museum", "restaurant", "temple"}
 	for i := 0; i < count; i++ {
 		visits[i] = models.Visit{
 			UserID:    userID,
 			PlaceID:   fmt.Sprintf("ChIJl_list_%d", i),
 			PlaceName: fmt.Sprintf("テスト場所 %d", i),
+			Category:  categories[i%len(categories)],
 			Latitude:  35.677 + float64(i)*0.001,
 			Longitude: 139.650 + float64(i)*0.001,
 			VisitedAt: time.Date(2024, 2, 10-i, 12, 0, 0, 0, time.UTC),
