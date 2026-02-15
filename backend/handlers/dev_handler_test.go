@@ -8,8 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
+
+const testJWTSecret = "test-secret-key"
 
 func setupDevRouter(environment string) *gin.Engine {
 	handler := &DevHandler{
@@ -20,6 +24,21 @@ func setupDevRouter(environment string) *gin.Engine {
 	if environment == "development" {
 		r.DELETE("/api/dev/suggestions/cache", handler.ResetSuggestionCache)
 		r.GET("/api/dev/suggestions/stats", handler.GetSuggestionStats)
+	}
+	return r
+}
+
+func setupDevRouterWithAuth(environment string) *gin.Engine {
+	handler := &DevHandler{
+		RedisClient: testRedisClient,
+	}
+
+	r := gin.New()
+	if environment == "development" {
+		dev := r.Group("/api/dev")
+		dev.Use(middleware.JWTAuth(testJWTSecret, testRedisClient))
+		dev.DELETE("/suggestions/cache", handler.ResetSuggestionCache)
+		dev.GET("/suggestions/stats", handler.GetSuggestionStats)
 	}
 	return r
 }
@@ -204,6 +223,119 @@ func TestDevEndpointsNotRegisteredInProduction(t *testing.T) {
 
 		if w.Code != http.StatusNotFound {
 			t.Errorf("Expected status %d, got %d", http.StatusNotFound, w.Code)
+		}
+	})
+}
+
+func TestDevEndpointsAuthenticationRequired(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available")
+	}
+
+	t.Run("JWT認証なしでアクセス拒否されることの確認", func(t *testing.T) {
+		cleanupSuggestionCache(t)
+
+		// 実装後: JWT認証が必要になった
+		router := setupDevRouterWithAuth("development")
+
+		// ResetSuggestionCache
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/dev/suggestions/cache", nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp["error"] != "authorization header is required" {
+			t.Errorf("Expected authorization error, got %v", resp["error"])
+		}
+
+		// GetSuggestionStats
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("GET", "/api/dev/suggestions/stats", nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("有効なJWTでアクセス成功テスト", func(t *testing.T) {
+		cleanupSuggestionCache(t)
+
+		// テスト用トークンを生成
+		tokenPair, err := utils.GenerateTokenPair(1, testJWTSecret, time.Hour, 24*time.Hour)
+		if err != nil {
+			t.Fatalf("Failed to generate test token: %v", err)
+		}
+
+		router := setupDevRouterWithAuth("development")
+
+		// ResetSuggestionCache（認証付き）
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/dev/suggestions/cache", nil)
+		req.Header.Set("Authorization", "Bearer "+tokenPair.AccessToken)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if _, exists := resp["deleted_count"]; !exists {
+			t.Errorf("Expected deleted_count in response, got %+v", resp)
+		}
+
+		// GetSuggestionStats（認証付き）
+		w = httptest.NewRecorder()
+		req, _ = http.NewRequest("GET", "/api/dev/suggestions/stats", nil)
+		req.Header.Set("Authorization", "Bearer "+tokenPair.AccessToken)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var statsResp cacheStatsResponse
+		if err := json.Unmarshal(w.Body.Bytes(), &statsResp); err != nil {
+			t.Fatalf("Failed to parse stats response: %v", err)
+		}
+
+		if statsResp.KeyCount < 0 {
+			t.Errorf("Expected non-negative key count, got %d", statsResp.KeyCount)
+		}
+	})
+
+	t.Run("無効なJWTでアクセス拒否テスト", func(t *testing.T) {
+		router := setupDevRouterWithAuth("development")
+
+		// 無効なトークンでリクエスト
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/dev/suggestions/cache", nil)
+		req.Header.Set("Authorization", "Bearer invalid-token")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp["error"] != "invalid or expired token" {
+			t.Errorf("Expected invalid token error, got %v", resp["error"])
 		}
 	})
 }
