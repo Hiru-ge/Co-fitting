@@ -61,10 +61,6 @@ func (h *PlacePhotoHandler) resolvePhotoURL(photoRef string, maxWidth int) (stri
 func (h *PlacePhotoHandler) GetPhoto(c *gin.Context) {
 	placeID := c.Param("placeId")
 	photoRef := c.Query("photo_reference")
-	if photoRef == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "photo_reference is required"})
-		return
-	}
 
 	maxWidth := 2000
 	if mw := c.Query("maxWidth"); mw != "" {
@@ -82,6 +78,11 @@ func (h *PlacePhotoHandler) GetPhoto(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{"photo_url": cached})
 			return
 		}
+	}
+
+	if photoRef == "" {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no cached photo found"})
+		return
 	}
 
 	photoURL, err := h.resolvePhotoURL(photoRef, maxWidth)
