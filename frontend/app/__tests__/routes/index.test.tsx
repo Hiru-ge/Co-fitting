@@ -1,0 +1,115 @@
+import { describe, test, expect, beforeEach, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+
+// auth モジュールのモック
+vi.mock("~/lib/auth", () => ({
+  getToken: vi.fn(),
+}));
+
+import { getToken } from "~/lib/auth";
+
+describe("ランディングページ", () => {
+  beforeEach(() => {
+    vi.mocked(getToken).mockReturnValue(null);
+  });
+
+  test("Roamble のロゴ/タイトルが表示される", async () => {
+    const { default: Index } = await import("~/routes/index");
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText("Roamble")).toBeInTheDocument();
+  });
+
+  test("サブタイトル（価値提案）が表示される", async () => {
+    const { default: Index } = await import("~/routes/index");
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    expect(
+      screen.getByText(/いつもと違う場所/)
+    ).toBeInTheDocument();
+  });
+
+  test("利用フローのステップが表示される", async () => {
+    const { default: Index } = await import("~/routes/index");
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    // 3ステップの利用フロー（見出しテキストで検証）
+    expect(screen.getByText("提案")).toBeInTheDocument();
+    expect(screen.getByText("訪問")).toBeInTheDocument();
+    expect(screen.getByText("記録")).toBeInTheDocument();
+  });
+
+  test("「Roamble ってなに？」リンクが Notion LP へ遷移する", async () => {
+    const { default: Index } = await import("~/routes/index");
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    const aboutLink = screen.getByText(/Roamble ってなに/);
+    const anchor = aboutLink.closest("a");
+    expect(anchor).toHaveAttribute("href", "https://hiruge.notion.site/roamble-lp");
+    expect(anchor).toHaveAttribute("target", "_blank");
+  });
+
+  test("「さっそく始める」ボタンが /signup へのリンクである", async () => {
+    const { default: Index } = await import("~/routes/index");
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    const signupLink = screen.getByRole("link", { name: /さっそく始める/ });
+    expect(signupLink).toBeInTheDocument();
+    expect(signupLink).toHaveAttribute("href", "/signup");
+  });
+
+  test("「ログイン」ボタンが /login へのリンクである", async () => {
+    const { default: Index } = await import("~/routes/index");
+    render(
+      <MemoryRouter>
+        <Index />
+      </MemoryRouter>
+    );
+
+    const loginLink = screen.getByRole("link", { name: /ログイン/ });
+    expect(loginLink).toBeInTheDocument();
+    expect(loginLink).toHaveAttribute("href", "/login");
+  });
+
+  test("認証済みユーザーは /home へリダイレクトされる", async () => {
+    vi.mocked(getToken).mockReturnValue("valid-token");
+
+    const { clientLoader } = await import("~/routes/index");
+
+    const result = await clientLoader();
+    expect(result).toBeInstanceOf(Response);
+    const response = result as unknown as Response;
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/home");
+  });
+
+  test("未認証ユーザーは null が返される（リダイレクトなし）", async () => {
+    vi.mocked(getToken).mockReturnValue(null);
+
+    const { clientLoader } = await import("~/routes/index");
+
+    const result = await clientLoader();
+    expect(result).toBeNull();
+  });
+});
