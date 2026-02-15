@@ -541,7 +541,7 @@ material-symbols-outlined を採用したことで、`<span>` タグ内のアイ
 
 ## 🔐 セキュリティ強化（Phase 0 Complete後のセキュリティハードニング）
 
-### Issue: CORS設定の環境変数化 — AllowOrigins: ["*"] の全開放を修正
+### Issue: CORS設定の環境変数化 — AllowOrigins: ["*"] の全開放を修正 ✅ 完了
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/72
 **優先度**: 🔴 Critical | **工数**: 1h | **担当**: 個人 | **Phase**: Phase 0 Security
 **TDD対応**: RED→GREEN→REFACTOR
@@ -550,25 +550,24 @@ material-symbols-outlined を採用したことで、`<span>` タグ内のアイ
 CORS設定が `AllowOrigins: ["*"]` で全開放されており、本番デプロイ時にセキュリティリスクとなる。環境変数ベースの制御に変更する。
 
 **🔴 RED PHASE**
-- [ ] `backend/middleware/cors_test.go` 作成
+- [x] `backend/middleware/cors_test.go` 作成
   - 環境変数 `ALLOWED_ORIGIN` が正しく適用されるテスト
   - 未設定時のデフォルト挙動テスト
   - 複数オリジン設定時のテスト
 
 **🟢 GREEN PHASE**
-- [ ] `backend/middleware/cors.go` 修正
+- [x] `backend/middleware/cors.go` 修正
   - `AllowOrigins: []string{os.Getenv("ALLOWED_ORIGIN")}` に変更
   - 環境変数未設定時のデフォルト値設定
-- [ ] `.env.example` に `ALLOWED_ORIGIN=http://localhost:5173` 追加
 
 **🔵 REFACTOR PHASE**
-- [ ] 複数オリジン対応（カンマ区切り）の実装検討
-- [ ] ログ出力の追加（設定値確認用）
+- [x] 複数オリジン対応（カンマ区切り）の実装検討
+- [x] ログ出力の追加（設定値確認用）
 
 **受け入れ基準**
-- [ ] 本番環境で特定オリジンのみCORS許可される
-- [ ] 開発環境では `http://localhost:5173` が許可される
-- [ ] テスト全パス
+- [x] 本番環境で特定オリジンのみCORS許可される
+- [x] 開発環境では `http://localhost:5173` が許可される
+- [x] テスト全パス
 
 ---
 
