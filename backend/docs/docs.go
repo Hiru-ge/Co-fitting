@@ -15,6 +15,75 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/change-password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "現在のパスワードを確認し、新しいパスワードに変更する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "パスワード変更",
+                "parameters": [
+                    {
+                        "description": "パスワード変更情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.changePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "description": "メールとパスワードで認証し、トークンペアを返す",
@@ -209,7 +278,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "指定した位置情報の周辺から、訪れたことのない場所をランダムに1件提案する",
+                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）",
                 "consumes": [
                     "application/json"
                 ],
@@ -235,7 +304,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/handlers.PlaceResult"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.PlaceResult"
+                            }
                         }
                     },
                     "400": {
@@ -304,6 +376,65 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "JWT認証済みユーザーの表示名を更新する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ユーザー情報更新",
+                "parameters": [
+                    {
+                        "description": "更新情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateMeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/visits": {
@@ -350,7 +481,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "ユーザーの訪問記録を作成する",
+                "description": "ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）",
                 "consumes": [
                     "application/json"
                 ],
@@ -437,6 +568,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "photo_reference": {
+                    "type": "string"
+                },
                 "place_id": {
                     "type": "string"
                 },
@@ -454,9 +588,26 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.changePasswordRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
         "handlers.createVisitRequest": {
             "type": "object",
             "required": [
+                "category",
                 "lat",
                 "lng",
                 "place_id",
@@ -464,6 +615,9 @@ const docTemplate = `{
                 "visited_at"
             ],
             "properties": {
+                "category": {
+                    "type": "string"
+                },
                 "lat": {
                     "type": "number"
                 },
@@ -478,6 +632,9 @@ const docTemplate = `{
                 },
                 "rating": {
                     "type": "number"
+                },
+                "vicinity": {
+                    "type": "string"
                 },
                 "visited_at": {
                     "type": "string"
@@ -548,6 +705,17 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.updateMeRequest": {
+            "type": "object",
+            "required": [
+                "display_name"
+            ],
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.User": {
             "type": "object",
             "properties": {
@@ -574,6 +742,9 @@ const docTemplate = `{
         "models.Visit": {
             "type": "object",
             "properties": {
+                "category": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -603,6 +774,9 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                },
+                "vicinity": {
+                    "type": "string"
                 },
                 "visited_at": {
                     "type": "string"

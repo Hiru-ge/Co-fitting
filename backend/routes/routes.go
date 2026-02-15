@@ -43,11 +43,13 @@ func Setup(router *gin.Engine, deps Deps) {
 	authProtected := router.Group("/api/auth")
 	authProtected.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 	authProtected.POST("/logout", deps.AuthHandler.Logout)
+	authProtected.POST("/change-password", deps.AuthHandler.ChangePassword)
 
 	// JWT保護付きAPI
 	api := router.Group("/api")
 	api.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 	api.GET("/users/me", deps.UserHandler.GetMe)
+	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
 	if deps.SuggestionHandler != nil {
 		api.POST("/suggestions", deps.SuggestionHandler.Suggest)
 	}

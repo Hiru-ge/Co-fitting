@@ -59,7 +59,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => {/* TODO: 設定画面遷移 */}}
+            onClick={() => navigate("/settings")}
             className="flex size-10 items-center justify-center rounded-full bg-gray-100"
             aria-label="設定"
           >
