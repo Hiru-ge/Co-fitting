@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -246,6 +247,52 @@ func TestSignUp(t *testing.T) {
 
 		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 			t.Error("Password hash is not a valid bcrypt hash")
+		}
+	})
+
+	t.Run("73文字パスワードで400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// 73文字のパスワードを生成
+		longPassword := strings.Repeat("a", 73)
+
+		body := map[string]string{
+			"email":        "test@example.com",
+			"password":     longPassword,
+			"display_name": "Test User",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/signup", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("72文字パスワードで201 Created（境界値テスト）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// 72文字のパスワードを生成
+		maxPassword := strings.Repeat("a", 72)
+
+		body := map[string]string{
+			"email":        "test@example.com",
+			"password":     maxPassword,
+			"display_name": "Test User",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/signup", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
 		}
 	})
 }
