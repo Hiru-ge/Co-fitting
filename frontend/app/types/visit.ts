@@ -12,6 +12,11 @@ export interface Visit {
   created_at: string;
 }
 
+export interface VisitListResponse {
+  visits: Visit[];
+  total: number;
+}
+
 export interface CreateVisitRequest {
   place_id: string;
   place_name: string;

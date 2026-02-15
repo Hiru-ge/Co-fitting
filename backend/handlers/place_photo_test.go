@@ -35,27 +35,32 @@ func setupPhotoRouter(handler *PlacePhotoHandler) *gin.Engine {
 }
 
 func TestPlacePhoto(t *testing.T) {
-	t.Run("photo_referenceなしで400エラー", func(t *testing.T) {
+	t.Run("photo_referenceなし・キャッシュなしで404エラー", func(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			t.Fatal("API should not be called")
 		}))
 		defer mockServer.Close()
 
-		handler := newTestPhotoHandler(mockServer)
+		handler := &PlacePhotoHandler{
+			RedisClient: nil,
+			APIKey:      "test-api-key",
+			HTTPClient:  noRedirectClient(mockServer),
+			BaseURL:     mockServer.URL,
+		}
 		router := setupPhotoRouter(handler)
 
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/api/places/test_place/photo", nil)
 		router.ServeHTTP(w, req)
 
-		if w.Code != http.StatusBadRequest {
-			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
 		}
 
 		var resp map[string]string
 		json.Unmarshal(w.Body.Bytes(), &resp)
-		if resp["error"] != "photo_reference is required" {
-			t.Errorf("Expected error message 'photo_reference is required', got '%s'", resp["error"])
+		if resp["error"] != "no cached photo found" {
+			t.Errorf("Expected error message 'no cached photo found', got '%s'", resp["error"])
 		}
 	})
 
