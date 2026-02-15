@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -131,14 +133,17 @@ type suggestionRequest struct {
 	Radius uint    `json:"radius"`
 }
 
+// 日次キャッシュで返す最大施設数
+const maxDailySuggestions = 3
+
 // Suggest godoc
 // @Summary      場所の提案
-// @Description  指定した位置情報の周辺から、訪れたことのない場所をランダムに1件提案する
+// @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
 // @Tags         Suggestion
 // @Accept       json
 // @Produce      json
 // @Param        body  body  suggestionRequest  true  "位置情報と半径"
-// @Success      200  {object}  PlaceResult
+// @Success      200  {array}   PlaceResult
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -162,8 +167,27 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
+	today := time.Now().Format("2006-01-02")
+	userIDStr := strconv.FormatUint(userID, 10)
 
-	// Redisキャッシュを確認
+	// 1. 日次キャッシュを確認
+	if h.RedisClient != nil {
+		cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng)
+		if err == nil && cached != "" {
+			var dailyPlaces []PlaceResult
+			if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
+				// キャッシュヒットしても訪問済み施設を除外
+				filtered := filterOutVisited(h.DB, userID, dailyPlaces)
+				if len(filtered) > 0 {
+					c.JSON(http.StatusOK, filtered)
+					return
+				}
+				// 全て訪問済みならキャッシュを無効化して再取得へ
+			}
+		}
+	}
+
+	// 2. Places API結果のキャッシュを確認
 	cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
 	var places []PlaceResult
 	if h.RedisClient != nil {
@@ -173,7 +197,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		}
 	}
 
-	// キャッシュがなければPlaces APIを呼び出し
+	// 3. キャッシュがなければPlaces APIを呼び出し
 	if len(places) == 0 {
 		var err error
 		places, err = h.Places.NearbySearch(ctx, req.Lat, req.Lng, req.Radius)
@@ -203,9 +227,46 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	// 訪問済みのplace IDを取得
+	// 4. 訪問済みを除外
+	unvisited := filterOutVisited(h.DB, userID, places)
+
+	if len(unvisited) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited"})
+		return
+	}
+
+	// 5. ランダムに最大3件選出
+	selected := selectRandomPlaces(unvisited, maxDailySuggestions)
+
+	// 6. 日次キャッシュに保存
+	if h.RedisClient != nil {
+		data, _ := json.Marshal(selected)
+		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
+	}
+
+	c.JSON(http.StatusOK, selected)
+}
+
+// selectRandomPlaces は候補から最大n件をランダムに選出する
+func selectRandomPlaces(candidates []PlaceResult, n int) []PlaceResult {
+	if len(candidates) <= n {
+		return candidates
+	}
+
+	// Fisher-Yatesシャッフルで先頭n件を選出
+	shuffled := make([]PlaceResult, len(candidates))
+	copy(shuffled, candidates)
+	for i := len(shuffled) - 1; i > 0; i-- {
+		j := rand.IntN(i + 1)
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	}
+	return shuffled[:n]
+}
+
+// filterOutVisited は訪問済みの施設を除外する
+func filterOutVisited(db *gorm.DB, userID uint64, places []PlaceResult) []PlaceResult {
 	var visitedPlaceIDs []string
-	h.DB.Model(&models.Visit{}).
+	db.Model(&models.Visit{}).
 		Where("user_id = ?", userID).
 		Pluck("place_id", &visitedPlaceIDs)
 
@@ -214,20 +275,11 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		visitedSet[id] = true
 	}
 
-	// 訪問済みを除外
-	var unvisited []PlaceResult
+	var result []PlaceResult
 	for _, p := range places {
 		if !visitedSet[p.PlaceID] {
-			unvisited = append(unvisited, p)
+			result = append(result, p)
 		}
 	}
-
-	if len(unvisited) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited"})
-		return
-	}
-
-	// ランダムに1件選出
-	selected := unvisited[rand.IntN(len(unvisited))]
-	c.JSON(http.StatusOK, selected)
+	return result
 }

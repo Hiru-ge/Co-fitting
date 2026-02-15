@@ -30,18 +30,21 @@ func cleanupSuggestionCache(t *testing.T) {
 		t.Skip("Redis not available")
 	}
 	ctx := context.Background()
-	var cursor uint64
-	for {
-		keys, nextCursor, err := testRedisClient.Scan(ctx, cursor, "suggestions:*", 100).Result()
-		if err != nil {
-			break
-		}
-		if len(keys) > 0 {
-			testRedisClient.Del(ctx, keys...)
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
+	patterns := []string{"suggestions:*", "suggestion:daily:*"}
+	for _, pattern := range patterns {
+		var cursor uint64
+		for {
+			keys, nextCursor, err := testRedisClient.Scan(ctx, cursor, pattern, 100).Result()
+			if err != nil {
+				break
+			}
+			if len(keys) > 0 {
+				testRedisClient.Del(ctx, keys...)
+			}
+			cursor = nextCursor
+			if cursor == 0 {
+				break
+			}
 		}
 	}
 }
@@ -84,8 +87,15 @@ func TestDevResetSuggestionCache(t *testing.T) {
 		}
 	})
 
-	t.Run("キャッシュが空でもエラーにならない", func(t *testing.T) {
+	t.Run("日次キャッシュキーも削除される", func(t *testing.T) {
 		cleanupSuggestionCache(t)
+
+		ctx := context.Background()
+		// 旧キャッシュ
+		testRedisClient.Set(ctx, "suggestions:35.6762:139.6503:3000", `[{"place_id":"p1"}]`, 24*time.Hour)
+		// 日次キャッシュ
+		testRedisClient.Set(ctx, "suggestion:daily:1:2026-02-15:35.68_139.65", `[{"place_id":"p2"}]`, 24*time.Hour)
+		testRedisClient.Set(ctx, "suggestion:daily:2:2026-02-15:35.68_139.65", `[{"place_id":"p3"}]`, 24*time.Hour)
 
 		router := setupDevRouter("development")
 		w := httptest.NewRecorder()
@@ -98,9 +108,17 @@ func TestDevResetSuggestionCache(t *testing.T) {
 
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp)
+
 		deletedCount := int(resp["deleted_count"].(float64))
-		if deletedCount != 0 {
-			t.Errorf("Expected deleted_count 0, got %d", deletedCount)
+		if deletedCount != 3 {
+			t.Errorf("Expected deleted_count 3, got %d", deletedCount)
+		}
+
+		// 全キーが削除されていることを確認
+		keys1, _, _ := testRedisClient.Scan(ctx, 0, "suggestions:*", 100).Result()
+		keys2, _, _ := testRedisClient.Scan(ctx, 0, "suggestion:daily:*", 100).Result()
+		if len(keys1)+len(keys2) != 0 {
+			t.Errorf("Expected 0 remaining keys, got %d + %d", len(keys1), len(keys2))
 		}
 	})
 }

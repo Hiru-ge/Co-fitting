@@ -77,7 +77,7 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/53
 **タスク**　開発時に施設の提案キャッシュをリセット・管理するための開発者向けエンドポイントを実装。同じ提案が繰り返される状況を回避し、開発効率を向上させる。
 
-### Issue: 提案キャッシュの日次持続化 — 1日間同じ3施設を表示
+### Issue: 提案キャッシュの日次持続化 — 1日間同じ3施設を表示 ✅ 完了
 **優先度**: 🔴 High | **工数**: 2.5h | **担当**: 個人 | **Phase**: Phase 0
 **GitHub Issue**: https://github.com/Hiru-ge/Roamble/issues/55
 
@@ -85,71 +85,77 @@ MySQL スキーマを設計・実装。Phase 0 に必要な最小限のテーブ
 本来、1日の間は同じ3施設を提案する設計であったが、現在、ページをリロードすると異なる3施設が出てしまい、仕様通りの動作になっていない。
 これを修正し、1日の間は常に同じ3施設を提案するようにキャッシュ機構を改善する。
 Redis を活用して、ユーザー・日付・位置情報をキーにした日次キャッシュを実装する。
-
-**参考資料**
-- Redis キャッシュキーの設計
-- TTL（Time To Live）の活用
+また、訪問済みの施設はホーム画面に表示されないようにする（チェックイン直後の即時除去 + リロード時のDB照合）。
 
 **実装内容**
 
 **A. バックエンド（Go）実装**
 
-- [ ] `handlers/suggestion.go` 更新
-  - GET `/api/suggestions` エンドポイントを改良
-  - キャッシュの存在チェック → あれば返却、なければ取得
-  - 3施設取得時にそれを日次キャッシュに保存
+- [x] `database/redis.go` 拡張 — 日次キャッシュ関数群を追加
+  - `DailySuggestionCacheKey(userID, date string, lat, lng float64) string` — キャッシュキー生成関数
+    - キャッシュキー: `suggestion:daily:{userID}:{date}:{lat}_{lng}` （例：`suggestion:daily:1:2026-02-13:35.68_139.69`）
+  - `GetDailySuggestions(ctx, client, userID, date, lat, lng) (string, error)` — キャッシュ取得
+    - キャッシュミス時は空文字列を返す（呼び出し元でJSONデコードする設計）
+  - `SetDailySuggestions(ctx, client, userID, date, lat, lng, data, ttl) error` — キャッシュ保存
+    - JSON文字列をそのまま保存。TTL: 24時間
+  - `ClearDailySuggestionsCache(ctx, client, userID) (int64, error)` — ユーザー単位キャッシュ削除
+    - SCANパターン `suggestion:daily:{userID}:*` で対象キーを一括削除
 
-- [ ] `database/redis.go` 拡張
-  - `GetDailySuggestions(userID, date string, latitude, longitude float64) ([]Place, error)` 関数作成
-    - キャッシュキー: `suggestion:daily:{userID}:{date}:{lat}_{lng}` （例：`suggestion:daily:user123:2026-02-13:35.68_139.69`）
-    - キャッシュに存在 → []Place を返す
-    - キャッシュに未存在 → nil を返す
-  
-  - `SetDailySuggestions(userID, date string, latitude, longitude float64, places []Place, ttl time.Duration) error` 関数作成
-    - 3施設の配列を JSON 化してキャッシュに保存
-    - TTL: 24時間（次の日付に変わるまで）
-    
-  - `ClearDailySuggestionsCache(userID string) error` 関数作成（デバッグ用）
-    - ユーザー単位で日次キャッシュをクリア
+- [x] `handlers/suggestion.go` 更新 — レスポンス形式変更 + 日次キャッシュ統合 + 訪問済み除外
+  - POST `/api/suggestions` のレスポンスを単一 `PlaceResult` → `[]PlaceResult`（最大3件）に変更
+  - 処理フロー:
+    1. 日次キャッシュ確認 → ヒット時も `filterOutVisited()` で訪問済みを除外してから返却
+    2. 全て訪問済みならキャッシュを無視して再取得へフォールスルー
+    3. Places API結果キャッシュ確認 → なければAPI呼び出し
+    4. `filterOutVisited()` で訪問済みを除外
+    5. `selectRandomPlaces()` で最大3件をFisher-Yatesシャッフルで選出
+    6. 選出結果を日次キャッシュに保存（TTL 24h）
+  - `filterOutVisited(db, userID, places)` ヘルパー関数を抽出（キャッシュヒット・ミス共通で使用）
+  - `selectRandomPlaces(candidates, n)` ヘルパー関数を追加
 
-- [ ] キャッシュキーの論理
-  ```go
-  const DailySuggestionCacheKey = "suggestion:daily:%s:%s:%.2f_%.2f"
-  // userID, 日付(YYYY-MM-DD), 緯度, 経度
-  ```
-  
-- [ ] 日付取得の統一
-  - Go 側で常に `time.Now().Format("2006-01-02")` で日付を取得（時刻は考慮しない）
+- [x] 日付取得の統一
+  - Go 側で `time.Now().Format("2006-01-02")` で日付を取得
 
-- [ ] Google Places API 呼び出しロジックの最適化
-  - キャッシュの3施設が存在 → API 呼び出し スキップ
-  - キャッシュの3施設が未取得 → Google Places API から3施設を取得
-
-- [ ] テスト実装
-  - `database/redis_test.go` で キャッシュ READ / WRITE / CLEAR のテスト
-  - キャッシュヒット / ミスのシナリオ確認
+- [x] テスト実装（TDD: RED→GREEN→REFACTOR）
+  - `database/redis_test.go` 新規作成
+    - キャッシュキー形式テスト、キャッシュミス（空文字列）、キャッシュヒット、TTL検証、ユーザー単位削除
+  - `handlers/suggestion_test.go` 拡張
+    - `trackingMockPlacesClient` で API 呼び出し回数を追跡
+    - 日次キャッシュ: 配列レスポンス、2回目同一結果、API呼び出しスキップ、3件未満返却、訪問済み除外、キャッシュヒット後の訪問済み除外（計7テスト追加）
 
 **B. フロントエンド（React）対応**
 
-- [ ] `app/api/suggestions.ts` 更新
-  - getSuggestion() の呼び出し元では、複数呼び出しからの重複排除ロジックを簡略化可能
-  - バックエンドで日次キャッシュが担保されるため、フロント側での余分な重複チェックは削減
+- [x] `app/api/suggestions.ts` 更新
+  - `getSuggestions(token, lat, lng, radius?)` 新規作成 — `Place[]` を返す配列レスポンス対応
+  - `getSuggestion()` は `@deprecated` として残存（内部で `getSuggestions()[0]` にフォールバック）
+
+- [x] `app/routes/home.tsx` 簡素化
+  - 3回ループの重複排除ロジックを廃止 → 1回の `getSuggestions()` 呼び出しに統一
+  - チェックイン時、`setPlaces(prev => prev.filter(...))` で訪問済みカードを即座に除去
+  - 全カード訪問後は「スポットが見つかりませんでした」と再取得ボタンを表示
+
+- [x] テスト更新
+  - `app/__tests__/routes/home.test.tsx` — モック・テストを配列レスポンスに対応、カード除去動作テスト追加
+  - `app/__tests__/api.test.ts` — `getSuggestions()` の配列レスポンステスト
 
 **C. 開発者向け デバッグ**
 
-- [ ] DELETE `/api/dev/suggestions/cache` の拡張
-  - 既存: 全キャッシュ削除
-  - 改良: 日次キャッシュもクリア可能にする実装確認（既に対応していれば OK）
+- [x] `handlers/dev_handler.go` 拡張
+  - `ResetSuggestionCache` と `GetSuggestionStats` が `suggestions:*` と `suggestion:daily:*` の両パターンを処理
+- [x] `handlers/dev_handler_test.go` 拡張
+  - 日次キャッシュキーも削除されるテスト追加
 
 **受け入れ基準**
 
-- [ ] バックエンドで `GetDailySuggestions()` 関数が実装される
-- [ ] ページ初回訪問 → Google Places API から3施設取得 → Redis に日付キーで保存
-- [ ] ページリロード → Redis キャッシュから同じ3施設を取得（API 呼び出し スキップ）
-- [ ] 日付が変わった時点（00:00）→ キャッシュ有効期限切れ → 新しい3施設を取得
-- [ ] 位置情報が大きく変わった場合 → 新しいキャッシュキーで新施設取得
-- [ ] Redis キャッシュの TTL が正確に 24h で動作
-- [ ] テスト: `go test ./database -v` でキャッシュテスト成功
+- [x] バックエンドで `GetDailySuggestions()` / `SetDailySuggestions()` / `ClearDailySuggestionsCache()` が実装される
+- [x] ページ初回訪問 → Google Places API から最大3施設取得 → Redis に日付キーで保存
+- [x] ページリロード → Redis キャッシュから同じ施設を取得（API 呼び出しスキップ）、ただし訪問済みは除外
+- [x] 日付が変わった時点 → キャッシュ有効期限切れ → 新しい施設を取得
+- [x] 位置情報が大きく変わった場合 → 新しいキャッシュキーで新施設取得
+- [x] Redis キャッシュの TTL が 24h で動作
+- [x] 訪問済みチェックイン直後 → フロントエンドでカードが即座に消える
+- [x] リロード時 → バックエンドで訪問履歴DBを参照して訪問済み施設を除外
+- [x] テスト: `go test ./...` 全パッケージ成功、`npx vitest run` 全48テスト成功
 
 ### Issue: 訪問履歴テーブル設計見直し — ジャンル・地名カラムの追加
 **優先度**: 🔴 High | **工数**: 2h | **担当**: 個人 | **Phase**: Phase 0
