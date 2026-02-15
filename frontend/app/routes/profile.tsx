@@ -3,6 +3,8 @@ import type { Route } from "./+types/profile";
 import { redirect, useNavigate } from "react-router";
 import { getToken, getUser, logout } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
+import { toUserMessage } from "~/utils/error";
+import { useToast } from "~/components/toast";
 import { formatDate } from "~/utils/helpers";
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
@@ -15,6 +17,7 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
 export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user, token } = loaderData;
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [totalVisits, setTotalVisits] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -25,8 +28,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
     try {
       const data = await listVisits(token, 1, 0);
       setTotalVisits(data.total);
-    } catch {
+    } catch (err) {
       setTotalVisits(0);
+      showToast(toUserMessage(err));
     } finally {
       setIsLoading(false);
     }

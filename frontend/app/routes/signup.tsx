@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import { setToken } from "~/lib/auth";
 import { API_BASE_URL } from "~/utils/constants";
+import { isNetworkError } from "~/utils/error";
 import type { Route } from "./+types/signup";
 
 function validate(displayName: string, email: string, password: string) {
@@ -37,6 +38,16 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
       if (res.status === 409) {
         return { error: "このメールアドレスは既に使用されています。" };
       }
+      if (res.status === 500 || res.status === 502 || res.status === 503) {
+        return { error: "サーバーエラーが発生しました。時間をおいて再度お試しください。" };
+      }
+      // レスポンスボディからエラーメッセージを取得試行
+      try {
+        const body = await res.json();
+        if (body.error) return { error: body.error };
+      } catch {
+        // JSONパース失敗時はデフォルトメッセージ
+      }
       return { error: "サインアップに失敗しました。もう一度お試しください。" };
     }
 
@@ -44,8 +55,11 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
     setToken(access_token, refresh_token);
 
     return redirect("/home");
-  } catch {
-    return { error: "ネットワークエラーが発生しました。時間をおいて再度お試しください。" };
+  } catch (err) {
+    if (isNetworkError(err)) {
+      return { error: "ネットワークに接続できません。通信環境をご確認ください。" };
+    }
+    return { error: "予期しないエラーが発生しました。時間をおいて再度お試しください。" };
   }
 }
 

@@ -110,7 +110,7 @@ describe("signup action", () => {
   });
 
   test("ネットワークエラー → エラーメッセージ返却", async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error("network error"));
+    global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
 
     const { clientAction } = await import("~/routes/signup");
 
@@ -128,7 +128,7 @@ describe("signup action", () => {
     const result = await clientAction({ request, params: {} } as any);
 
     expect(result).toEqual({
-      error: "ネットワークエラーが発生しました。時間をおいて再度お試しください。",
+      error: "ネットワークに接続できません。通信環境をご確認ください。",
     });
     expect(localStorage.getItem("roamble_token")).toBeNull();
   });
