@@ -20,6 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 開発フェーズ
 
+タスク追加時はdocs/todo.mdのTODOリストに、優先度・工数・担当者・フェーズを明記して追加する。コードに変更が発生する場合はGitHub Issuesにもタスクを追加し、PRベースで実装・レビュー・マージを行う。
+GitHub Issuesにタスクを追加する際はghコマンドを用い、タスクタイトルと簡単なタスク概要のみを記載する。タスクの詳細はdocs/todo.mdにのみ記載する。
 開発は全てt-wadaのTDDに従って、「RED→GREEN→REFACTOR」のサイクルで進行。
 ブランチはmain/masterと、機能ごとのfeatureブランチ(feat/xxx)を使用。PRベースでコードレビュー・マージ。
 現在のフェーズ: **Phase 0（完了）** — コアループ「提案→行動→記録」実装完了。Phase 1に向けた準備段階。
