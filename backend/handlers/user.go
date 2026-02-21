@@ -185,6 +185,48 @@ func (h *UserHandler) GetProficiency(c *gin.Context) {
 	c.JSON(http.StatusOK, proficiencies)
 }
 
+type interestResponse struct {
+	GenreTagID uint64 `json:"genre_tag_id"`
+	Name       string `json:"name"`
+	Category   string `json:"category"`
+	Icon       string `json:"icon"`
+}
+
+// GetInterests godoc
+// @Summary      ユーザー興味タグ取得
+// @Description  JWT認証済みユーザーの興味タグ一覧を返す（ジャンル名昇順）
+// @Tags         Users
+// @Produce      json
+// @Success      200  {array}   interestResponse
+// @Failure      401  {object}  map[string]string
+// @Router       /api/users/me/interests [get]
+func (h *UserHandler) GetInterests(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var interests []interestResponse
+	result := h.DB.Table("user_interests").
+		Select("user_interests.genre_tag_id, genre_tags.name, genre_tags.category, genre_tags.icon").
+		Joins("JOIN genre_tags ON user_interests.genre_tag_id = genre_tags.id").
+		Where("user_interests.user_id = ?", userID).
+		Order("genre_tags.name ASC").
+		Scan(&interests)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if interests == nil {
+		interests = []interestResponse{}
+	}
+
+	c.JSON(http.StatusOK, interests)
+}
+
 type updateMeRequest struct {
 	DisplayName string `json:"display_name" binding:"required"`
 }
