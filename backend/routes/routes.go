@@ -12,6 +12,7 @@ import (
 
 type Deps struct {
 	AuthHandler       *handlers.AuthHandler
+	OAuthHandler      *handlers.OAuthHandler
 	UserHandler       *handlers.UserHandler
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
@@ -38,6 +39,9 @@ func Setup(router *gin.Engine, deps Deps) {
 	auth.POST("/signup", deps.AuthHandler.SignUp)
 	auth.POST("/login", deps.AuthHandler.Login)
 	auth.POST("/refresh", deps.AuthHandler.RefreshToken)
+	if deps.OAuthHandler != nil {
+		auth.POST("/oauth/google", deps.OAuthHandler.GoogleOAuth)
+	}
 
 	// 認証（JWT必要）
 	authProtected := router.Group("/api/auth")
