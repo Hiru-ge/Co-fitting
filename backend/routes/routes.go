@@ -15,6 +15,7 @@ type Deps struct {
 	OAuthHandler      *handlers.OAuthHandler
 	UserHandler       *handlers.UserHandler
 	BadgeHandler      *handlers.BadgeHandler
+	GenreHandler      *handlers.GenreHandler
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
 	PlacePhotoHandler *handlers.PlacePhotoHandler
@@ -59,6 +60,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	api.GET("/users/me/proficiency", deps.UserHandler.GetProficiency)
 	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
 	api.GET("/badges", deps.BadgeHandler.GetAllBadges)
+	api.GET("/genres", deps.GenreHandler.GetAllGenreTags)
 	if deps.SuggestionHandler != nil {
 		api.POST("/suggestions", deps.SuggestionHandler.Suggest)
 	}
