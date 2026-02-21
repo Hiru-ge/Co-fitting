@@ -56,6 +56,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	api.GET("/users/me", deps.UserHandler.GetMe)
 	api.GET("/users/me/stats", deps.UserHandler.GetStats)
 	api.GET("/users/me/badges", deps.UserHandler.GetBadges)
+	api.GET("/users/me/proficiency", deps.UserHandler.GetProficiency)
 	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
 	api.GET("/badges", deps.BadgeHandler.GetAllBadges)
 	if deps.SuggestionHandler != nil {

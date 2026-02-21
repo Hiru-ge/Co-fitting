@@ -141,6 +141,50 @@ func (h *UserHandler) GetBadges(c *gin.Context) {
 	c.JSON(http.StatusOK, badges)
 }
 
+type proficiencyResponse struct {
+	GenreTagID uint64 `json:"genre_tag_id"`
+	GenreName  string `json:"genre_name"`
+	Category   string `json:"category"`
+	Icon       string `json:"icon"`
+	XP         int    `json:"xp"`
+	Level      int    `json:"level"`
+}
+
+// GetProficiency godoc
+// @Summary      ジャンル別熟練度取得
+// @Description  JWT認証済みユーザーのジャンル別熟練度一覧を返す（XP降順）
+// @Tags         Users
+// @Produce      json
+// @Success      200  {array}   proficiencyResponse
+// @Failure      401  {object}  map[string]string
+// @Router       /api/users/me/proficiency [get]
+func (h *UserHandler) GetProficiency(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var proficiencies []proficiencyResponse
+	result := h.DB.Table("genre_proficiency").
+		Select("genre_proficiency.genre_tag_id, genre_tags.name AS genre_name, genre_tags.category, genre_tags.icon, genre_proficiency.xp, genre_proficiency.level").
+		Joins("JOIN genre_tags ON genre_proficiency.genre_tag_id = genre_tags.id").
+		Where("genre_proficiency.user_id = ?", userID).
+		Order("genre_proficiency.xp DESC").
+		Scan(&proficiencies)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if proficiencies == nil {
+		proficiencies = []proficiencyResponse{}
+	}
+
+	c.JSON(http.StatusOK, proficiencies)
+}
+
 type updateMeRequest struct {
 	DisplayName string `json:"display_name" binding:"required"`
 }
