@@ -88,24 +88,24 @@ Phase 1で必要なテーブル追加・既存テーブル拡張を行う。
 **実装内容**
 
 **A. 新規テーブル作成**
-- [ ] `genre_tags` テーブル（施設ジャンルマスタ）
-- [ ] `user_interests` テーブル（ユーザー興味タグ）
-- [ ] `genre_proficiency` テーブル（ジャンル別熟練度）
-- [ ] `badges` テーブル（バッジマスタ）
-- [ ] `user_badges` テーブル（ユーザー獲得バッジ）
+- [x] `genre_tags` テーブル（施設ジャンルマスタ）
+- [x] `user_interests` テーブル（ユーザー興味タグ）
+- [x] `genre_proficiency` テーブル（ジャンル別熟練度）
+- [x] `badges` テーブル（バッジマスタ）
+- [x] `user_badges` テーブル（ユーザー獲得バッジ）
 
 **B. 既存テーブル拡張**
-- [ ] `users` テーブル：display_name, avatar_url, level, total_xp, streak_count, streak_last, settings_json
-- [ ] `visit_history` テーブル：genre_tag_id, rating, memo, xp_earned, is_comfort_zone
+- [x] `users` テーブル：display_name, avatar_url, level, total_xp, streak_count, streak_last, settings_json
+- [x] `visit_history` テーブル：genre_tag_id, rating, memo, xp_earned, is_comfort_zone
 
 **C. インデックス・制約追加**
-- [ ] パフォーマンス最適化インデックス
-- [ ] 外部キー制約
-- [ ] ユニーク制約
+- [x] パフォーマンス最適化インデックス
+- [x] 外部キー制約
+- [x] ユニーク制約
 
 **D. マスタデータ投入**
-- [ ] 初期ジャンルタグデータ
-- [ ] 初期バッジデータ
+- [x] 初期ジャンルタグデータ
+- [x] 初期バッジデータ
 
 ### Issue: S3アバター画像保存設定
 **優先度**: 🟡 Medium | **工数**: 4h | **担当**: 個人 | **Phase**: Phase 1
