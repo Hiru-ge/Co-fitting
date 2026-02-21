@@ -65,6 +65,7 @@ func main() {
 		RedisClient: redisClient,
 	}
 	userHandler := &handlers.UserHandler{DB: db}
+	badgeHandler := &handlers.BadgeHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db}
 
 	// Google OAuth Handler
@@ -123,6 +124,7 @@ func main() {
 		AuthHandler:       authHandler,
 		OAuthHandler:      oauthHandler,
 		UserHandler:       userHandler,
+		BadgeHandler:      badgeHandler,
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
 		PlacePhotoHandler: placePhotoHandler,
