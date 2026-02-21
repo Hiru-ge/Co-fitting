@@ -53,6 +53,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	api := router.Group("/api")
 	api.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 	api.GET("/users/me", deps.UserHandler.GetMe)
+	api.GET("/users/me/stats", deps.UserHandler.GetStats)
 	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
 	if deps.SuggestionHandler != nil {
 		api.POST("/suggestions", deps.SuggestionHandler.Suggest)
