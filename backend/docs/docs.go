@@ -511,6 +511,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/me/badges": {
+            "get": {
+                "description": "JWT認証済みユーザーの獲得バッジ一覧を返す（獲得日時の降順）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "獲得バッジ一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.badgeResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users/me/stats": {
             "get": {
                 "description": "JWT認証済みユーザーのレベル・XP・ストリーク・訪問統計を返す",
@@ -696,6 +728,26 @@ const docTemplate = `{
                     }
                 },
                 "vicinity": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.badgeResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "earned_at": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }

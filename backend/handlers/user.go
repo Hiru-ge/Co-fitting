@@ -98,6 +98,49 @@ func (h *UserHandler) GetStats(c *gin.Context) {
 	})
 }
 
+type badgeResponse struct {
+	ID          uint64    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	IconURL     string    `json:"icon_url"`
+	EarnedAt    time.Time `json:"earned_at"`
+}
+
+// GetBadges godoc
+// @Summary      獲得バッジ一覧取得
+// @Description  JWT認証済みユーザーの獲得バッジ一覧を返す（獲得日時の降順）
+// @Tags         Users
+// @Produce      json
+// @Success      200  {array}   badgeResponse
+// @Failure      401  {object}  map[string]string
+// @Router       /api/users/me/badges [get]
+func (h *UserHandler) GetBadges(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var badges []badgeResponse
+	result := h.DB.Table("user_badges").
+		Select("badges.id, badges.name, badges.description, badges.icon_url, user_badges.earned_at").
+		Joins("JOIN badges ON user_badges.badge_id = badges.id").
+		Where("user_badges.user_id = ?", userID).
+		Order("user_badges.earned_at DESC").
+		Scan(&badges)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if badges == nil {
+		badges = []badgeResponse{}
+	}
+
+	c.JSON(http.StatusOK, badges)
+}
+
 type updateMeRequest struct {
 	DisplayName string `json:"display_name" binding:"required"`
 }
