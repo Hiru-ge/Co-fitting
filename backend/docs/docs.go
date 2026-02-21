@@ -186,6 +186,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/oauth/google": {
+            "post": {
+                "description": "Google IDトークンを検証し、ユーザー登録/ログインを行いJWTトークンペアを返す",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Google OAuth認証",
+                "parameters": [
+                    {
+                        "description": "Google IDトークン",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.googleOAuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.googleOAuthResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/refresh": {
             "post": {
                 "description": "リフレッシュトークンを使用して新しいアクセストークンを取得する",
@@ -450,6 +511,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/users/me/stats": {
+            "get": {
+                "description": "JWT認証済みユーザーのレベル・XP・ストリーク・訪問統計を返す",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ユーザー統計情報取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.userStatsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/visits": {
             "get": {
                 "description": "ユーザーの訪問履歴を一覧取得する（visited_at降順）",
@@ -655,6 +754,31 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.googleOAuthRequest": {
+            "type": "object",
+            "required": [
+                "id_token"
+            ],
+            "properties": {
+                "id_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.googleOAuthResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "is_new_user": {
+                    "type": "boolean"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.loginRequest": {
             "type": "object",
             "required": [
@@ -740,6 +864,32 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.userStatsResponse": {
+            "type": "object",
+            "properties": {
+                "challenge_visits": {
+                    "type": "integer"
+                },
+                "comfort_zone_visits": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "streak_count": {
+                    "type": "integer"
+                },
+                "streak_last": {
+                    "type": "string"
+                },
+                "total_visits": {
+                    "type": "integer"
+                },
+                "total_xp": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.User": {
             "type": "object",
             "properties": {
@@ -758,6 +908,21 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "level": {
+                    "type": "integer"
+                },
+                "settings_json": {
+                    "type": "string"
+                },
+                "streak_count": {
+                    "type": "integer"
+                },
+                "streak_last": {
+                    "type": "string"
+                },
+                "total_xp": {
+                    "type": "integer"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -771,6 +936,9 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "genre_tag_id": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -804,6 +972,9 @@ const docTemplate = `{
                 },
                 "visited_at": {
                     "type": "string"
+                },
+                "xp_earned": {
+                    "type": "integer"
                 }
             }
         },
