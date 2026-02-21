@@ -14,6 +14,7 @@ type Deps struct {
 	AuthHandler       *handlers.AuthHandler
 	OAuthHandler      *handlers.OAuthHandler
 	UserHandler       *handlers.UserHandler
+	BadgeHandler      *handlers.BadgeHandler
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
 	PlacePhotoHandler *handlers.PlacePhotoHandler
@@ -56,6 +57,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	api.GET("/users/me/stats", deps.UserHandler.GetStats)
 	api.GET("/users/me/badges", deps.UserHandler.GetBadges)
 	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
+	api.GET("/badges", deps.BadgeHandler.GetAllBadges)
 	if deps.SuggestionHandler != nil {
 		api.POST("/suggestions", deps.SuggestionHandler.Suggest)
 	}
