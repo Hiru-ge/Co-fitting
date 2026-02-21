@@ -66,6 +66,7 @@ func main() {
 	}
 	userHandler := &handlers.UserHandler{DB: db}
 	badgeHandler := &handlers.BadgeHandler{DB: db}
+	genreHandler := &handlers.GenreHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db}
 
 	// Google OAuth Handler
@@ -125,6 +126,7 @@ func main() {
 		OAuthHandler:      oauthHandler,
 		UserHandler:       userHandler,
 		BadgeHandler:      badgeHandler,
+		GenreHandler:      genreHandler,
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
 		PlacePhotoHandler: placePhotoHandler,
