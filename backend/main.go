@@ -67,6 +67,23 @@ func main() {
 	userHandler := &handlers.UserHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db}
 
+	// Google OAuth Handler
+	var oauthHandler *handlers.OAuthHandler
+	googleClientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
+	if googleClientID != "" {
+		oauthHandler = &handlers.OAuthHandler{
+			DB:          db,
+			JWTCfg:      jwtCfg,
+			RedisClient: redisClient,
+			GoogleVerifier: &handlers.GoogleHTTPVerifier{
+				ClientID: googleClientID,
+			},
+		}
+		log.Println("Google OAuth handler initialized")
+	} else {
+		log.Println("Warning: GOOGLE_OAUTH_CLIENT_ID not set, Google OAuth endpoint disabled")
+	}
+
 	// Google Places APIクライアント初期化
 	var suggestionHandler *handlers.SuggestionHandler
 	var placePhotoHandler *handlers.PlacePhotoHandler
@@ -104,6 +121,7 @@ func main() {
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{
 		AuthHandler:       authHandler,
+		OAuthHandler:      oauthHandler,
 		UserHandler:       userHandler,
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
