@@ -17,6 +17,10 @@ const (
 	MaxListLimit = 100
 	// DefaultListLimit は ListVisits API の limit パラメータデフォルト値
 	DefaultListLimit = 20
+	// MaxMapLimit は GetMapData API の limit パラメータ上限
+	MaxMapLimit = 2000
+	// DefaultMapLimit は GetMapData API の limit パラメータデフォルト値
+	DefaultMapLimit = 2000
 )
 
 type VisitHandler struct {
@@ -82,6 +86,83 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, visit)
+}
+
+// mapVisitItem はマップ表示に最適化された訪問記録の軽量表現
+type mapVisitItem struct {
+	ID         uint64   `json:"id"`
+	PlaceID    string   `json:"place_id"`
+	PlaceName  string   `json:"place_name"`
+	Lat        float64  `json:"lat"`
+	Lng        float64  `json:"lng"`
+	Category   string   `json:"category"`
+	GenreTagID *uint64  `json:"genre_tag_id"`
+	VisitedAt  string   `json:"visited_at"`
+}
+
+// GetMapData godoc
+// @Summary      マップ表示用訪問データ取得
+// @Description  マップ表示に必要な位置情報・ジャンル情報を最適化して取得する
+// @Tags         Visits
+// @Produce      json
+// @Param        limit   query  int  false  "取得件数（デフォルト・上限2000）"
+// @Param        offset  query  int  false  "オフセット（デフォルト0）"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]string
+// @Router       /api/visits/map [get]
+func (h *VisitHandler) GetMapData(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	limit := DefaultMapLimit
+	offset := 0
+
+	if l := c.Query("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
+			limit = parsed
+			if limit > MaxMapLimit {
+				limit = MaxMapLimit
+			}
+		}
+	}
+	if o := c.Query("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
+	visits := make([]models.Visit, 0)
+	h.DB.Select("id, place_id, place_name, lat, lng, category, genre_tag_id, visited_at").
+		Where("user_id = ?", userID).
+		Order("visited_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&visits)
+
+	var total int64
+	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&total)
+
+	items := make([]mapVisitItem, len(visits))
+	for i, v := range visits {
+		items[i] = mapVisitItem{
+			ID:         v.ID,
+			PlaceID:    v.PlaceID,
+			PlaceName:  v.PlaceName,
+			Lat:        v.Latitude,
+			Lng:        v.Longitude,
+			Category:   v.Category,
+			GenreTagID: v.GenreTagID,
+			VisitedAt:  v.VisitedAt.Format(time.RFC3339),
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"visits": items,
+		"total":  total,
+	})
 }
 
 // GetVisit godoc
