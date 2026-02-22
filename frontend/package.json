@@ -17,6 +17,7 @@
     "@fontsource/noto-sans-jp": "^5.2.9",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@fontsource/space-grotesk": "^5.2.10",
+    "@react-oauth/google": "^0.13.4",
     "@react-router/node": "7.12.0",
     "@react-router/serve": "7.12.0",
     "@tanstack/react-query": "^5.90.21",

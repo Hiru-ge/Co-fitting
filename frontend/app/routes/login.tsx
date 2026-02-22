@@ -1,5 +1,7 @@
-import { Form, Link, redirect, useNavigation } from "react-router";
-import { setToken } from "~/lib/auth";
+import { useState } from "react";
+import { Form, Link, redirect, useNavigation, useNavigate } from "react-router";
+import { GoogleLogin } from "@react-oauth/google";
+import { setToken, googleOAuth } from "~/lib/auth";
 import { API_BASE_URL } from "~/utils/constants";
 import { isNetworkError } from "~/utils/error";
 import type { Route } from "./+types/login";
@@ -40,7 +42,46 @@ export async function clientAction({ request }: Route.ClientActionArgs) {
 
 export default function Login({ actionData }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const navigate = useNavigate();
   const isSubmitting = navigation.state === "submitting";
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  async function handleGoogleSuccess(credentialResponse: {
+    credential?: string;
+  }) {
+    if (!credentialResponse.credential) {
+      setGoogleError("Googleログインに失敗しました。もう一度お試しください");
+      return;
+    }
+
+    setIsGoogleLoading(true);
+    setGoogleError(null);
+
+    try {
+      const { access_token, refresh_token } = await googleOAuth(
+        credentialResponse.credential
+      );
+      setToken(access_token, refresh_token);
+      navigate("/home");
+    } catch (err) {
+      if (isNetworkError(err)) {
+        setGoogleError("ネットワークに接続できません。通信環境をご確認ください");
+      } else if (err instanceof Error && err.message === "server_error") {
+        setGoogleError(
+          "サーバーエラーが発生しました。時間をおいて再度お試しください"
+        );
+      } else {
+        setGoogleError("Googleログインに失敗しました。もう一度お試しください");
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
+
+  function handleGoogleError() {
+    setGoogleError("Googleログインに失敗しました。もう一度お試しください");
+  }
 
   return (
     <div className="w-full space-y-6 bg-white/95 rounded-lg p-6 shadow-md">
@@ -102,6 +143,30 @@ export default function Login({ actionData }: Route.ComponentProps) {
           {isSubmitting ? "ログイン中..." : "ログイン"}
         </button>
       </Form>
+
+      <div className="relative flex items-center">
+        <div className="flex-grow border-t border-text-main/20" />
+        <span className="mx-3 text-sm text-text-main/40">または</span>
+        <div className="flex-grow border-t border-text-main/20" />
+      </div>
+
+      <div
+        className={`flex justify-center ${isGoogleLoading ? "opacity-50 pointer-events-none" : ""}`}
+      >
+        <GoogleLogin
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          text="signin_with"
+          shape="rectangular"
+          width="297"
+        />
+      </div>
+
+      {googleError && (
+        <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+          {googleError}
+        </p>
+      )}
 
       <p className="text-center text-sm text-text-main/60">
         アカウントをお持ちでないですか？{" "}
