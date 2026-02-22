@@ -138,7 +138,7 @@ test.describe("主要ユーザーフロー", () => {
   test("ログイン → /home へリダイレクト", async () => {
     await page.getByLabel("メールアドレス").fill(TEST_USER.email);
     await page.getByLabel("パスワード").fill(TEST_USER.password);
-    await page.getByRole("button", { name: "ログイン" }).click();
+    await page.getByRole("button", { name: "ログイン", exact: true }).click();
 
     await page.waitForURL("/home", { timeout: 15_000 });
     await expect(page).toHaveURL("/home");

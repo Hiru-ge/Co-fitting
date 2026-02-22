@@ -68,3 +68,24 @@ export async function refreshToken(): Promise<void> {
 export async function getUser(token: string): Promise<User> {
   return apiCall("/api/users/me", token);
 }
+
+export async function googleOAuth(idToken: string): Promise<{
+  access_token: string;
+  refresh_token: string;
+  is_new_user: boolean;
+}> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/oauth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_token: idToken }),
+  });
+
+  if (!res.ok) {
+    if (res.status === 500 || res.status === 502 || res.status === 503) {
+      throw new Error("server_error");
+    }
+    throw new Error("oauth_failed");
+  }
+
+  return res.json();
+}

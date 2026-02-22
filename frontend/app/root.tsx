@@ -5,6 +5,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ToastProvider } from "~/components/toast";
 
 // ── Local font imports (@fontsource) ──
@@ -25,9 +26,13 @@ export default function Root() {
         <Links />
       </head>
       <body>
-        <ToastProvider>
-          <Outlet />
-        </ToastProvider>
+        <GoogleOAuthProvider
+          clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}
+        >
+          <ToastProvider>
+            <Outlet />
+          </ToastProvider>
+        </GoogleOAuthProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
