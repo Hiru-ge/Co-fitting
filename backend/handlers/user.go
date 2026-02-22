@@ -9,6 +9,7 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -301,35 +302,66 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	c.JSON(http.StatusOK, interests)
 }
 
-// DeleteMe godoc
-// @Summary      アカウント削除
-// @Description  JWT認証済みユーザーのアカウントと関連データを物理削除する
+type updateEmailRequest struct {
+	NewEmail        string `json:"new_email" binding:"required,email"`
+	CurrentPassword string `json:"current_password" binding:"required"`
+}
+
+// UpdateEmail godoc
+// @Summary      メールアドレス変更
+// @Description  現在のパスワードで本人確認後、メールアドレスを変更する
 // @Tags         Users
 // @Security     BearerAuth
+// @Accept       json
 // @Produce      json
-// @Success      204
+// @Param        body  body  updateEmailRequest  true  "メールアドレス変更情報"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
-// @Failure      500  {object}  map[string]string
-// @Router       /api/users/me [delete]
-func (h *UserHandler) DeleteMe(c *gin.Context) {
+// @Failure      409  {object}  map[string]string
+// @Router       /api/users/me/email [patch]
+func (h *UserHandler) UpdateEmail(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	result := h.DB.Delete(&models.User{}, userID)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete account"})
-		return
-	}
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+	var req updateEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	var user models.User
+	if err := h.DB.First(&user, userID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "current password is incorrect"})
+		return
+	}
+
+	var existing models.User
+	if h.DB.Where("email = ? AND id != ?", req.NewEmail, userID).First(&existing).Error == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
+		return
+	}
+
+	user.Email = req.NewEmail
+	if err := h.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update email"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "email updated successfully"})
 }
 
 type updateMeRequest struct {
@@ -384,4 +416,35 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
+}
+
+// DeleteMe godoc
+// @Summary      アカウント削除
+// @Description  JWT認証済みユーザーのアカウントと関連データを物理削除する
+// @Tags         Users
+// @Security     BearerAuth
+// @Produce      json
+// @Success      204
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/users/me [delete]
+func (h *UserHandler) DeleteMe(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	result := h.DB.Delete(&models.User{}, userID)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete account"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

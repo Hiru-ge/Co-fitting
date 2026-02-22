@@ -62,6 +62,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	api.PUT("/users/me/interests", deps.UserHandler.UpdateInterests)
 	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
 	api.DELETE("/users/me", deps.UserHandler.DeleteMe)
+	api.PATCH("/users/me/email", deps.UserHandler.UpdateEmail)
 	api.GET("/badges", deps.BadgeHandler.GetAllBadges)
 	api.GET("/genres", deps.GenreHandler.GetAllGenreTags)
 	if deps.SuggestionHandler != nil {
