@@ -417,3 +417,34 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// DeleteMe godoc
+// @Summary      アカウント削除
+// @Description  JWT認証済みユーザーのアカウントと関連データを物理削除する
+// @Tags         Users
+// @Security     BearerAuth
+// @Produce      json
+// @Success      204
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/users/me [delete]
+func (h *UserHandler) DeleteMe(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	result := h.DB.Delete(&models.User{}, userID)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete account"})
+		return
+	}
+	if result.RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

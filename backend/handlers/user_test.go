@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
@@ -446,6 +447,113 @@ func TestUpdateEmail(t *testing.T) {
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+}
+
+func setupUserRouterWithDelete() *gin.Engine {
+	userHandler := &UserHandler{DB: testDB}
+
+	r := gin.New()
+	r.DELETE("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.DeleteMe)
+	return r
+}
+
+func TestDeleteMe(t *testing.T) {
+	router := setupUserRouterWithDelete()
+
+	t.Run("認証済みユーザーが自身のアカウントを削除できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "delete@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Delete Me",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/users/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNoContent {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNoContent, w.Code, w.Body.String())
+		}
+
+		// DBからユーザーが削除されていることを確認
+		var deleted models.User
+		result := testDB.First(&deleted, user.ID)
+		if result.Error == nil {
+			t.Error("Expected user to be deleted from DB")
+		}
+	})
+
+	t.Run("関連する訪問記録も削除される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user := models.User{
+			Email:        "delete_with_visits@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Delete With Visits",
+		}
+		testDB.Create(&user)
+
+		visit := models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_test_001",
+			PlaceName: "テスト場所",
+			Vicinity:  "テスト住所",
+			Category:  "cafe",
+			VisitedAt: time.Now(),
+		}
+		testDB.Create(&visit)
+
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/users/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNoContent {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNoContent, w.Code, w.Body.String())
+		}
+
+		// 訪問記録も削除されていることを確認
+		var count int64
+		testDB.Model(&models.Visit{}).Where("user_id = ?", user.ID).Count(&count)
+		if count != 0 {
+			t.Errorf("Expected all visits to be deleted, but found %d", count)
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/users/me", nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("存在しないユーザーIDで404 Not Found", func(t *testing.T) {
+		cleanupUsers(t)
+
+		token := generateTestToken(99999)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/users/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
 		}
 	})
 }
