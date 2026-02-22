@@ -227,6 +227,80 @@ func (h *UserHandler) GetInterests(c *gin.Context) {
 	c.JSON(http.StatusOK, interests)
 }
 
+type updateInterestsRequest struct {
+	GenreTagIDs []uint64 `json:"genre_tag_ids" binding:"required"`
+}
+
+// UpdateInterests godoc
+// @Summary      ユーザー興味タグ更新
+// @Description  JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        body  body  updateInterestsRequest  true  "興味タグIDリスト"
+// @Success      200  {array}   interestResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Router       /api/users/me/interests [put]
+func (h *UserHandler) UpdateInterests(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var req updateInterestsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "genre_tag_ids is required"})
+		return
+	}
+
+	if len(req.GenreTagIDs) < 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "at least 3 genre tags are required"})
+		return
+	}
+
+	err := h.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&models.UserInterest{}).Error; err != nil {
+			return err
+		}
+
+		newInterests := make([]models.UserInterest, 0, len(req.GenreTagIDs))
+		for _, tagID := range req.GenreTagIDs {
+			newInterests = append(newInterests, models.UserInterest{
+				UserID:     userID,
+				GenreTagID: tagID,
+			})
+		}
+
+		return tx.Create(&newInterests).Error
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update interests"})
+		return
+	}
+
+	var interests []interestResponse
+	result := h.DB.Table("user_interests").
+		Select("user_interests.genre_tag_id, genre_tags.name, genre_tags.category, genre_tags.icon").
+		Joins("JOIN genre_tags ON user_interests.genre_tag_id = genre_tags.id").
+		Where("user_interests.user_id = ?", userID).
+		Order("genre_tags.name ASC").
+		Scan(&interests)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if interests == nil {
+		interests = []interestResponse{}
+	}
+
+	c.JSON(http.StatusOK, interests)
+}
+
 type updateMeRequest struct {
 	DisplayName string `json:"display_name" binding:"required"`
 }
