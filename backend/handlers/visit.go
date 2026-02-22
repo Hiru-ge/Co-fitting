@@ -83,6 +83,40 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	c.JSON(http.StatusCreated, visit)
 }
 
+// GetVisit godoc
+// @Summary      訪問記録詳細取得
+// @Description  指定IDの訪問記録詳細を取得する（自分の記録のみ）
+// @Tags         Visits
+// @Produce      json
+// @Param        id   path  int  true  "訪問記録ID"
+// @Success      200  {object}  models.Visit
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /api/visits/{id} [get]
+func (h *VisitHandler) GetVisit(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid visit id"})
+		return
+	}
+
+	var visit models.Visit
+	if err := h.DB.Where("id = ? AND user_id = ?", id, userID).First(&visit).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "visit not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, visit)
+}
+
 // ListVisits godoc
 // @Summary      訪問履歴取得
 // @Description  ユーザーの訪問履歴を一覧取得する（visited_at降順）
