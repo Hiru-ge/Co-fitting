@@ -339,6 +339,70 @@
                 }
             }
         },
+        "/api/badges": {
+            "get": {
+                "description": "バッジマスタの全一覧を返す",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Badges"
+                ],
+                "summary": "全バッジ一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.allBadgeResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/genres": {
+            "get": {
+                "description": "ジャンルタグマスタの全一覧をカテゴリ順で返す",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Genres"
+                ],
+                "summary": "全ジャンルタグ一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.genreTagResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/suggestions": {
             "post": {
                 "security": [
@@ -445,6 +509,53 @@
                     }
                 }
             },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "JWT認証済みユーザーのアカウントと関連データを物理削除する",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "アカウント削除",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "JWT認証済みユーザーの表示名を更新する",
                 "consumes": [
@@ -522,6 +633,201 @@
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/handlers.badgeResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me/email": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "現在のパスワードで本人確認後、メールアドレスを変更する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "メールアドレス変更",
+                "parameters": [
+                    {
+                        "description": "メールアドレス変更情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me/interests": {
+            "get": {
+                "description": "JWT認証済みユーザーの興味タグ一覧を返す（ジャンル名昇順）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ユーザー興味タグ取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.interestResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ユーザー興味タグ更新",
+                "parameters": [
+                    {
+                        "description": "興味タグIDリスト",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateInterestsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.interestResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/users/me/proficiency": {
+            "get": {
+                "description": "JWT認証済みユーザーのジャンル別熟練度一覧を返す（XP降順）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ジャンル別熟練度取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.proficiencyResponse"
                             }
                         }
                     },
@@ -669,6 +975,181 @@
                 }
             }
         },
+        "/api/visits/map": {
+            "get": {
+                "description": "マップ表示に必要な位置情報・ジャンル情報を最適化して取得する",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Visits"
+                ],
+                "summary": "マップ表示用訪問データ取得",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "取得件数（デフォルト・上限2000）",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "オフセット（デフォルト0）",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/visits/{id}": {
+            "get": {
+                "description": "指定IDの訪問記録詳細を取得する（自分の記録のみ）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Visits"
+                ],
+                "summary": "訪問記録詳細取得",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "訪問記録ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Visit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "ユーザーの訪問記録の感想メモ・評価を部分更新する",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Visits"
+                ],
+                "summary": "訪問記録更新",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "訪問記録ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新データ",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateVisitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Visit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "サーバーのヘルスチェック用エンドポイント",
@@ -722,6 +1203,23 @@
                     }
                 },
                 "vicinity": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.allBadgeResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -800,6 +1298,23 @@
                 }
             }
         },
+        "handlers.genreTagResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.googleOAuthRequest": {
             "type": "object",
             "required": [
@@ -825,6 +1340,23 @@
                 }
             }
         },
+        "handlers.interestResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "genre_tag_id": {
+                    "type": "integer"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.loginRequest": {
             "type": "object",
             "required": [
@@ -846,6 +1378,29 @@
                 "refresh_token": {
                     "description": "オプション（下位互換性のため）",
                     "type": "string"
+                }
+            }
+        },
+        "handlers.proficiencyResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "genre_name": {
+                    "type": "string"
+                },
+                "genre_tag_id": {
+                    "type": "integer"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "xp": {
+                    "type": "integer"
                 }
             }
         },
@@ -899,6 +1454,35 @@
                 }
             }
         },
+        "handlers.updateEmailRequest": {
+            "type": "object",
+            "required": [
+                "current_password",
+                "new_email"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_email": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.updateInterestsRequest": {
+            "type": "object",
+            "required": [
+                "genre_tag_ids"
+            ],
+            "properties": {
+                "genre_tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "handlers.updateMeRequest": {
             "type": "object",
             "required": [
@@ -907,6 +1491,17 @@
             "properties": {
                 "display_name": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.updateVisitRequest": {
+            "type": "object",
+            "properties": {
+                "memo": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "number"
                 }
             }
         },

@@ -21,6 +21,17 @@ definitions:
       vicinity:
         type: string
     type: object
+  handlers.allBadgeResponse:
+    properties:
+      description:
+        type: string
+      icon_url:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   handlers.badgeResponse:
     properties:
       description:
@@ -72,6 +83,17 @@ definitions:
     - place_name
     - visited_at
     type: object
+  handlers.genreTagResponse:
+    properties:
+      category:
+        type: string
+      icon:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   handlers.googleOAuthRequest:
     properties:
       id_token:
@@ -86,6 +108,17 @@ definitions:
       is_new_user:
         type: boolean
       refresh_token:
+        type: string
+    type: object
+  handlers.interestResponse:
+    properties:
+      category:
+        type: string
+      genre_tag_id:
+        type: integer
+      icon:
+        type: string
+      name:
         type: string
     type: object
   handlers.loginRequest:
@@ -103,6 +136,21 @@ definitions:
       refresh_token:
         description: オプション（下位互換性のため）
         type: string
+    type: object
+  handlers.proficiencyResponse:
+    properties:
+      category:
+        type: string
+      genre_name:
+        type: string
+      genre_tag_id:
+        type: integer
+      icon:
+        type: string
+      level:
+        type: integer
+      xp:
+        type: integer
     type: object
   handlers.refreshRequest:
     properties:
@@ -138,12 +186,38 @@ definitions:
     - lat
     - lng
     type: object
+  handlers.updateEmailRequest:
+    properties:
+      current_password:
+        type: string
+      new_email:
+        type: string
+    required:
+    - current_password
+    - new_email
+    type: object
+  handlers.updateInterestsRequest:
+    properties:
+      genre_tag_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - genre_tag_ids
+    type: object
   handlers.updateMeRequest:
     properties:
       display_name:
         type: string
     required:
     - display_name
+    type: object
+  handlers.updateVisitRequest:
+    properties:
+      memo:
+        type: string
+      rating:
+        type: number
     type: object
   handlers.userStatsResponse:
     properties:
@@ -447,6 +521,48 @@ paths:
       summary: ユーザー登録
       tags:
       - Auth
+  /api/badges:
+    get:
+      description: バッジマスタの全一覧を返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.allBadgeResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 全バッジ一覧取得
+      tags:
+      - Badges
+  /api/genres:
+    get:
+      description: ジャンルタグマスタの全一覧をカテゴリ順で返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.genreTagResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 全ジャンルタグ一覧取得
+      tags:
+      - Genres
   /api/suggestions:
     post:
       consumes:
@@ -492,6 +608,36 @@ paths:
       tags:
       - Suggestion
   /api/users/me:
+    delete:
+      description: JWT認証済みユーザーのアカウントと関連データを物理削除する
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: アカウント削除
+      tags:
+      - Users
     get:
       description: JWT認証済みユーザーの情報を返す
       produces:
@@ -574,6 +720,133 @@ paths:
               type: string
             type: object
       summary: 獲得バッジ一覧取得
+      tags:
+      - Users
+  /api/users/me/email:
+    patch:
+      consumes:
+      - application/json
+      description: 現在のパスワードで本人確認後、メールアドレスを変更する
+      parameters:
+      - description: メールアドレス変更情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: メールアドレス変更
+      tags:
+      - Users
+  /api/users/me/interests:
+    get:
+      description: JWT認証済みユーザーの興味タグ一覧を返す（ジャンル名昇順）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.interestResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー興味タグ取得
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）
+      parameters:
+      - description: 興味タグIDリスト
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateInterestsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.interestResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ユーザー興味タグ更新
+      tags:
+      - Users
+  /api/users/me/proficiency:
+    get:
+      description: JWT認証済みユーザーのジャンル別熟練度一覧を返す（XP降順）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/handlers.proficiencyResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ジャンル別熟練度取得
       tags:
       - Users
   /api/users/me/stats:
@@ -661,6 +934,122 @@ paths:
               type: string
             type: object
       summary: 訪問記録作成
+      tags:
+      - Visits
+  /api/visits/{id}:
+    get:
+      description: 指定IDの訪問記録詳細を取得する（自分の記録のみ）
+      parameters:
+      - description: 訪問記録ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Visit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 訪問記録詳細取得
+      tags:
+      - Visits
+    patch:
+      consumes:
+      - application/json
+      description: ユーザーの訪問記録の感想メモ・評価を部分更新する
+      parameters:
+      - description: 訪問記録ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新データ
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateVisitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Visit'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 訪問記録更新
+      tags:
+      - Visits
+  /api/visits/map:
+    get:
+      description: マップ表示に必要な位置情報・ジャンル情報を最適化して取得する
+      parameters:
+      - description: 取得件数（デフォルト・上限2000）
+        in: query
+        name: limit
+        type: integer
+      - description: オフセット（デフォルト0）
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: マップ表示用訪問データ取得
       tags:
       - Visits
   /health:
