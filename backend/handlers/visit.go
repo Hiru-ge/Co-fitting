@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -165,4 +166,75 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 		"visits": visits,
 		"total":  total,
 	})
+}
+
+type updateVisitRequest struct {
+	Memo   *string  `json:"memo"`
+	Rating *float32 `json:"rating"`
+}
+
+// UpdateVisit godoc
+// @Summary      訪問記録更新
+// @Description  ユーザーの訪問記録の感想メモ・評価を部分更新する
+// @Tags         Visits
+// @Accept       json
+// @Produce      json
+// @Param        id    path  int                 true  "訪問記録ID"
+// @Param        body  body  updateVisitRequest  true  "更新データ"
+// @Success      200  {object}  models.Visit
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /api/visits/{id} [patch]
+func (h *VisitHandler) UpdateVisit(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	visitID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid visit id"})
+		return
+	}
+
+	var visit models.Visit
+	if err := h.DB.First(&visit, visitID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "visit not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if visit.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
+	}
+
+	var req updateVisitRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.Memo != nil {
+		updates["memo"] = req.Memo
+	}
+	if req.Rating != nil {
+		updates["rating"] = req.Rating
+	}
+
+	if len(updates) > 0 {
+		if err := h.DB.Model(&visit).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update visit record"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, visit)
 }
