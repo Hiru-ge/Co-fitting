@@ -26,7 +26,7 @@ describe("signup action", () => {
     vi.restoreAllMocks();
   });
 
-  test("フォーム送信 → SignUp API call → /home へ遷移", async () => {
+  test("フォーム送信 → SignUp API call → /onboarding へ遷移", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: () =>
@@ -71,11 +71,11 @@ describe("signup action", () => {
       "new-refresh-token"
     );
 
-    // /home へリダイレクト
+    // /onboarding へリダイレクト（新規ユーザーはオンボーディングへ）
     expect(result).toBeInstanceOf(Response);
     const response = result as unknown as Response;
     expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe("/home");
+    expect(response.headers.get("Location")).toBe("/onboarding");
   });
 
   test("メール重複 → エラーメッセージ表示", async () => {
