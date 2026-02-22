@@ -21,6 +21,7 @@ func setupVisitRouter() *gin.Engine {
 	r := gin.New()
 	r.POST("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.CreateVisit)
 	r.GET("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.ListVisits)
+	r.GET("/api/visits/:id", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.GetVisit)
 	return r
 }
 
@@ -693,6 +694,113 @@ func TestListVisits(t *testing.T) {
 		}
 		if resp.Total != 150 {
 			t.Errorf("Expected total 150, got %d", resp.Total)
+		}
+	})
+}
+
+func TestGetVisit(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("自分の訪問記録を正常取得できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		visits := createVisitsForUser(t, user.ID, 1)
+		visit := visits[0]
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/api/visits/%d", visit.ID), nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp models.Visit
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp.ID != visit.ID {
+			t.Errorf("Expected id %d, got %d", visit.ID, resp.ID)
+		}
+		if resp.PlaceName != visit.PlaceName {
+			t.Errorf("Expected place_name '%s', got '%s'", visit.PlaceName, resp.PlaceName)
+		}
+		if resp.UserID != user.ID {
+			t.Errorf("Expected user_id %d, got %d", user.ID, resp.UserID)
+		}
+	})
+
+	t.Run("他人の訪問記録は404 Not Found", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// ユーザー1の訪問記録を作成
+		user1 := createTestUserForVisit(t)
+		visits := createVisitsForUser(t, user1.ID, 1)
+		visit := visits[0]
+
+		// ユーザー2でアクセス
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user2 := models.User{
+			Email:        "other-get@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Other User",
+		}
+		testDB.Create(&user2)
+		token2 := generateTestToken(user2.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/api/visits/%d", visit.ID), nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token2))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("存在しないIDで404 Not Found", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits/999999", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("無効なIDで400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits/abc", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits/1", nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 		}
 	})
 }

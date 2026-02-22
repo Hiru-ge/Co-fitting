@@ -70,6 +70,7 @@ func Setup(router *gin.Engine, deps Deps) {
 	}
 	api.POST("/visits", deps.VisitHandler.CreateVisit)
 	api.GET("/visits", deps.VisitHandler.ListVisits)
+	api.GET("/visits/:id", deps.VisitHandler.GetVisit)
 
 	// 開発用エンドポイント（development環境のみ + JWT認証必須）
 	if deps.Environment == "development" && deps.DevHandler != nil {
