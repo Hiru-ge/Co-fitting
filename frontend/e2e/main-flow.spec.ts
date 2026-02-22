@@ -72,15 +72,30 @@ test.describe("主要ユーザーフロー", () => {
     await expect(page.getByLabel("パスワード")).toBeVisible();
   });
 
-  // 3. サインアップ実行 → ホーム画面リダイレクト
-  test("サインアップ → /home へリダイレクト", async () => {
+  // 3. サインアップ実行 → オンボーディング画面リダイレクト
+  test("サインアップ → /onboarding へリダイレクト", async () => {
     await page.goto("/signup");
     await page.getByLabel("表示名").fill(TEST_USER.displayName);
     await page.getByLabel("メールアドレス").fill(TEST_USER.email);
     await page.getByLabel("パスワード").fill(TEST_USER.password);
     await page.getByRole("button", { name: "サインアップ" }).click();
 
-    // ホーム画面ヘの遷移を待つ（位置情報取得等でやや時間がかかる場合あり）
+    await page.waitForURL("/onboarding", { timeout: 15_000 });
+    await expect(page).toHaveURL("/onboarding");
+  });
+
+  // 3.5. オンボーディング完了 → ホーム画面リダイレクト
+  test("オンボーディングで3つ以上選択して保存 → /home へリダイレクト", async () => {
+    await expect(page.getByRole("heading", { name: "興味のあるジャンルを選ぼう" })).toBeVisible();
+
+    // ジャンルタグを3つ選択（aria-pressed があるボタンがタグボタン）
+    const tagButtons = page.locator('[aria-pressed]');
+    await tagButtons.nth(0).click();
+    await tagButtons.nth(1).click();
+    await tagButtons.nth(2).click();
+
+    await page.getByRole("button", { name: /選択して始める/ }).click();
+
     await page.waitForURL("/home", { timeout: 15_000 });
     await expect(page).toHaveURL("/home");
   });

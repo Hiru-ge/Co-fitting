@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
+import { getInterests } from "~/api/genres";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
@@ -20,7 +21,11 @@ type PlaceWithPhoto = Place & { photoUrl?: string };
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   const token = getToken();
   if (!token) throw redirect("/login");
-  const user = await getUser(token);
+  const [user, interests] = await Promise.all([
+    getUser(token),
+    getInterests(token),
+  ]);
+  if (interests.length < 3) throw redirect("/onboarding");
   return { user, token };
 }
 

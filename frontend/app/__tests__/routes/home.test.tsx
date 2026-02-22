@@ -77,6 +77,14 @@ vi.mock("~/lib/auth", () => ({
   }),
 }));
 
+vi.mock("~/api/genres", () => ({
+  getInterests: vi.fn().mockResolvedValue([
+    { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
+    { genre_tag_id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
+    { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
+  ]),
+}));
+
 import Home from "~/routes/home";
 
 function renderHome() {

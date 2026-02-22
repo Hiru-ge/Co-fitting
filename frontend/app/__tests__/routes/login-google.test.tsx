@@ -123,6 +123,23 @@ describe("Login コンポーネント — Google OAuth", () => {
     });
   });
 
+  test("新規ユーザー（is_new_user: true）の場合 /onboarding にナビゲートされる", async () => {
+    const user = userEvent.setup();
+    vi.mocked(googleOAuth).mockResolvedValue({
+      access_token: "access-token",
+      refresh_token: "refresh-token",
+      is_new_user: true,
+    });
+
+    renderLogin();
+    await user.click(screen.getByText("Googleでログイン"));
+
+    await waitFor(() => {
+      expect(setToken).toHaveBeenCalledWith("access-token", "refresh-token");
+      expect(mockNavigate).toHaveBeenCalledWith("/onboarding");
+    });
+  });
+
   test("credentialが空の場合にエラーメッセージが表示される", async () => {
     const user = userEvent.setup();
 

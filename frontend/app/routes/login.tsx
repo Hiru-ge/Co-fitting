@@ -59,11 +59,11 @@ export default function Login({ actionData }: Route.ComponentProps) {
     setGoogleError(null);
 
     try {
-      const { access_token, refresh_token } = await googleOAuth(
+      const { access_token, refresh_token, is_new_user } = await googleOAuth(
         credentialResponse.credential
       );
       setToken(access_token, refresh_token);
-      navigate("/home");
+      navigate(is_new_user ? "/onboarding" : "/home");
     } catch (err) {
       if (isNetworkError(err)) {
         setGoogleError("ネットワークに接続できません。通信環境をご確認ください");
