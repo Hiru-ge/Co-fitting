@@ -21,6 +21,7 @@ func setupVisitRouter() *gin.Engine {
 	r := gin.New()
 	r.POST("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.CreateVisit)
 	r.GET("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.ListVisits)
+	r.PATCH("/api/visits/:id", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.UpdateVisit)
 	return r
 }
 
@@ -693,6 +694,218 @@ func TestListVisits(t *testing.T) {
 		}
 		if resp.Total != 150 {
 			t.Errorf("Expected total 150, got %d", resp.Total)
+		}
+	})
+}
+
+func TestUpdateVisit(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("感想メモを更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		visits := createVisitsForUser(t, user.ID, 1)
+		visitID := visits[0].ID
+
+		body := map[string]interface{}{
+			"memo": "素晴らしい体験でした！",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", fmt.Sprintf("/api/visits/%d", visitID), bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp["memo"] != "素晴らしい体験でした！" {
+			t.Errorf("Expected memo '素晴らしい体験でした！', got '%v'", resp["memo"])
+		}
+
+		// DBに反映されていることを確認
+		var updated models.Visit
+		testDB.First(&updated, visitID)
+		if updated.Memo == nil || *updated.Memo != "素晴らしい体験でした！" {
+			t.Errorf("Expected DB memo '素晴らしい体験でした！', got '%v'", updated.Memo)
+		}
+	})
+
+	t.Run("評価を更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		visits := createVisitsForUser(t, user.ID, 1)
+		visitID := visits[0].ID
+
+		body := map[string]interface{}{
+			"rating": 4.5,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", fmt.Sprintf("/api/visits/%d", visitID), bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp["rating"] == nil {
+			t.Error("Expected rating in response, got nil")
+		}
+
+		// DBに反映されていることを確認
+		var updated models.Visit
+		testDB.First(&updated, visitID)
+		if updated.Rating == nil || *updated.Rating != 4.5 {
+			t.Errorf("Expected DB rating 4.5, got '%v'", updated.Rating)
+		}
+	})
+
+	t.Run("メモと評価を同時に更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		visits := createVisitsForUser(t, user.ID, 1)
+		visitID := visits[0].ID
+
+		body := map[string]interface{}{
+			"memo":   "両方更新テスト",
+			"rating": 3.0,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", fmt.Sprintf("/api/visits/%d", visitID), bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var updated models.Visit
+		testDB.First(&updated, visitID)
+		if updated.Memo == nil || *updated.Memo != "両方更新テスト" {
+			t.Errorf("Expected DB memo '両方更新テスト', got '%v'", updated.Memo)
+		}
+		if updated.Rating == nil || *updated.Rating != 3.0 {
+			t.Errorf("Expected DB rating 3.0, got '%v'", updated.Rating)
+		}
+	})
+
+	t.Run("他ユーザーの訪問記録を更新しようとすると403 Forbidden", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// 訪問記録を持つユーザー1
+		user1 := createTestUserForVisit(t)
+		visits := createVisitsForUser(t, user1.ID, 1)
+		visitID := visits[0].ID
+
+		// 別のユーザー2のトークンで更新を試みる
+		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+		user2 := models.User{
+			Email:        "visit-other2@example.com",
+			PasswordHash: string(hash),
+			DisplayName:  "Other User2",
+		}
+		testDB.Create(&user2)
+		token2 := generateTestToken(user2.ID)
+
+		body := map[string]interface{}{
+			"memo": "不正アクセス",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", fmt.Sprintf("/api/visits/%d", visitID), bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token2))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusForbidden {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusForbidden, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("存在しない訪問記録で404 Not Found", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"memo": "存在しない",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/visits/99999999", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("不正なID形式で400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"memo": "テスト",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/visits/invalid-id", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("JWTなしで401 Unauthorized", func(t *testing.T) {
+		body := map[string]interface{}{
+			"memo": "テスト",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/visits/1", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 		}
 	})
 }
