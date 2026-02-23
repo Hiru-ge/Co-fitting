@@ -28,14 +28,15 @@ type VisitHandler struct {
 }
 
 type createVisitRequest struct {
-	PlaceID   string   `json:"place_id" binding:"required"`
-	PlaceName string   `json:"place_name" binding:"required"`
-	Vicinity  string   `json:"vicinity"`
-	Category  string   `json:"category" binding:"required"`
-	Lat       float64  `json:"lat" binding:"required"`
-	Lng       float64  `json:"lng" binding:"required"`
-	Rating    *float32 `json:"rating"`
-	VisitedAt string   `json:"visited_at" binding:"required"`
+	PlaceID    string   `json:"place_id" binding:"required"`
+	PlaceName  string   `json:"place_name" binding:"required"`
+	Vicinity   string   `json:"vicinity"`
+	Category   string   `json:"category" binding:"required"`
+	Lat        float64  `json:"lat" binding:"required"`
+	Lng        float64  `json:"lng" binding:"required"`
+	PlaceTypes []string `json:"place_types"` // 任意: is_comfort_zone自動判定に使用
+	Rating     *float32 `json:"rating"`
+	VisitedAt  string   `json:"visited_at" binding:"required"`
 }
 
 // CreateVisit godoc
@@ -68,16 +69,29 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
+	// is_comfort_zone の自動設定: place_typesとユーザー興味タグを照合
+	isComfortZone := false
+	if len(req.PlaceTypes) > 0 {
+		interestNames, err := getUserInterestGenreNames(h.DB, userID)
+		if err == nil && len(interestNames) > 0 {
+			genreName := getGenreNameFromTypes(req.PlaceTypes)
+			if genreName == "" || !interestNames[genreName] {
+				isComfortZone = true
+			}
+		}
+	}
+
 	visit := models.Visit{
-		UserID:    userID,
-		PlaceID:   req.PlaceID,
-		PlaceName: req.PlaceName,
-		Vicinity:  req.Vicinity,
-		Category:  req.Category,
-		Latitude:  req.Lat,
-		Longitude: req.Lng,
-		Rating:    req.Rating,
-		VisitedAt: visitedAt,
+		UserID:        userID,
+		PlaceID:       req.PlaceID,
+		PlaceName:     req.PlaceName,
+		Vicinity:      req.Vicinity,
+		Category:      req.Category,
+		Latitude:      req.Lat,
+		Longitude:     req.Lng,
+		Rating:        req.Rating,
+		IsComfortZone: isComfortZone,
+		VisitedAt:     visitedAt,
 	}
 
 	if err := h.DB.Create(&visit).Error; err != nil {
