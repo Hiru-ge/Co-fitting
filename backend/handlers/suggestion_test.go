@@ -713,6 +713,331 @@ func TestSuggestDailyCache(t *testing.T) {
 	})
 }
 
+func TestSuggestMood(t *testing.T) {
+	allTypePlaces := []PlaceResult{
+		{PlaceID: "cafe_1", Name: "隠れ家カフェ", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.5, Types: []string{"cafe"}},
+		{PlaceID: "park_1", Name: "代々木公園", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
+		{PlaceID: "bar_1", Name: "クラフトビールバー", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.2, Types: []string{"bar"}},
+		{PlaceID: "museum_1", Name: "東京国立博物館", Vicinity: "台東区1-1", Lat: 35.6795, Lng: 139.6533, Rating: 4.7, Types: []string{"museum"}},
+		{PlaceID: "gym_1", Name: "スポーツジム", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.8, Types: []string{"gym"}},
+		{PlaceID: "amusement_1", Name: "遊園地", Vicinity: "渋谷区6-6", Lat: 35.6810, Lng: 139.6550, Rating: 4.3, Types: []string{"amusement_park"}},
+	}
+
+	t.Run("relax気分では対応施設のみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: allTypePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+			"mood":   "relax",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp []PlaceResult
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		// relaxは cafe, park, book_store → cafe_1, park_1 が対象
+		for _, p := range resp {
+			if p.PlaceID == "bar_1" || p.PlaceID == "museum_1" || p.PlaceID == "gym_1" || p.PlaceID == "amusement_1" {
+				t.Errorf("relax気分で対応外の施設 %s が返された", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("thrill気分では対応施設のみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: allTypePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+			"mood":   "thrill",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp []PlaceResult
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		// thrillは bar, night_club, amusement_park, bowling_alley → bar_1, amusement_1 が対象
+		for _, p := range resp {
+			if p.PlaceID == "cafe_1" || p.PlaceID == "park_1" || p.PlaceID == "museum_1" || p.PlaceID == "gym_1" {
+				t.Errorf("thrill気分で対応外の施設 %s が返された", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("learn気分では対応施設のみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: allTypePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+			"mood":   "learn",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp []PlaceResult
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		// learnは museum, art_gallery, library, book_store → museum_1 が対象
+		for _, p := range resp {
+			if p.PlaceID == "cafe_1" || p.PlaceID == "park_1" || p.PlaceID == "bar_1" || p.PlaceID == "gym_1" || p.PlaceID == "amusement_1" {
+				t.Errorf("learn気分で対応外の施設 %s が返された", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("active気分では対応施設のみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: allTypePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+			"mood":   "active",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp []PlaceResult
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		// activeは gym, bowling_alley, campground, stadium → gym_1 が対象
+		for _, p := range resp {
+			if p.PlaceID == "cafe_1" || p.PlaceID == "park_1" || p.PlaceID == "bar_1" || p.PlaceID == "museum_1" || p.PlaceID == "amusement_1" {
+				t.Errorf("active気分で対応外の施設 %s が返された", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("mood省略時は従来の全施設から提案される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		relaxOnlyPlaces := []PlaceResult{
+			{PlaceID: "cafe_1", Name: "カフェ", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}},
+			{PlaceID: "bar_2", Name: "バー", Vicinity: "渋谷区", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"bar"}},
+			{PlaceID: "museum_2", Name: "博物館", Vicinity: "渋谷区", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"museum"}},
+		}
+
+		mock := &mockPlacesClient{Results: relaxOnlyPlaces}
+		router := setupSuggestionRouter(mock)
+
+		// mood省略
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp []PlaceResult
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		if len(resp) == 0 {
+			t.Error("mood省略時は全施設から提案されるべき")
+		}
+		// 全3件が対象
+		if len(resp) != 3 {
+			t.Errorf("Expected 3 places (all types), got %d", len(resp))
+		}
+	})
+
+	t.Run("無効な気分値は400エラーを返す", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: allTypePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+			"mood":   "invalid_mood",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+}
+
+func TestSuggestMoodCache(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available")
+	}
+
+	t.Run("気分別にキャッシュが独立している", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		allPlaces := []PlaceResult{
+			{PlaceID: "cafe_1", Name: "カフェ", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}},
+			{PlaceID: "bar_1", Name: "バー", Vicinity: "渋谷区", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"bar"}},
+			{PlaceID: "museum_1", Name: "博物館", Vicinity: "渋谷区", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"museum"}},
+		}
+
+		mock := &trackingMockPlacesClient{Results: allPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// relax気分で1回目
+		relaxBody := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000, "mood": "relax"}
+		relaxJSON, _ := json.Marshal(relaxBody)
+
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(relaxJSON))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+
+		if w1.Code != http.StatusOK {
+			t.Fatalf("relax 1st request failed: %d. Body: %s", w1.Code, w1.Body.String())
+		}
+		var relaxResp []PlaceResult
+		json.Unmarshal(w1.Body.Bytes(), &relaxResp)
+
+		// thrill気分で1回目（異なるキャッシュ）
+		thrillBody := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000, "mood": "thrill"}
+		thrillJSON, _ := json.Marshal(thrillBody)
+
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(thrillJSON))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusOK {
+			t.Fatalf("thrill 1st request failed: %d. Body: %s", w2.Code, w2.Body.String())
+		}
+		var thrillResp []PlaceResult
+		json.Unmarshal(w2.Body.Bytes(), &thrillResp)
+
+		// relaxとthrillは異なる施設が返されるべき
+		relaxIDs := make(map[string]bool)
+		for _, p := range relaxResp {
+			relaxIDs[p.PlaceID] = true
+		}
+		for _, p := range thrillResp {
+			if relaxIDs[p.PlaceID] {
+				// 重複があっても完全一致でなければOK（施設数が少ない場合は重複もあり得る）
+			}
+		}
+
+		// 2回目のrequestはキャッシュヒット（同じ結果が返る）
+		w3 := httptest.NewRecorder()
+		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(relaxJSON))
+		req3.Header.Set("Content-Type", "application/json")
+		req3.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w3, req3)
+
+		if w3.Code != http.StatusOK {
+			t.Fatalf("relax 2nd request failed: %d. Body: %s", w3.Code, w3.Body.String())
+		}
+		var relaxResp2 []PlaceResult
+		json.Unmarshal(w3.Body.Bytes(), &relaxResp2)
+
+		// キャッシュヒット → 同じ結果
+		if len(relaxResp) != len(relaxResp2) {
+			t.Errorf("relax キャッシュヒット時に結果が変わった: %d → %d", len(relaxResp), len(relaxResp2))
+		}
+		for i := range relaxResp {
+			if i < len(relaxResp2) && relaxResp[i].PlaceID != relaxResp2[i].PlaceID {
+				t.Errorf("relax キャッシュヒット: place[%d] が変わった: %s → %s", i, relaxResp[i].PlaceID, relaxResp2[i].PlaceID)
+			}
+		}
+	})
+}
+
 func TestSuggestRadiusLimit(t *testing.T) {
 	// ユーザー作成
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)

@@ -111,6 +111,44 @@ var visitableTypes = map[string]bool{
 	"hindu_temple":       true,
 	"mosque":             true,
 	"synagogue":          true,
+	// スポーツ・アクティブ
+	"gym":     true,
+	"stadium": true,
+}
+
+// 気分別に優先する施設タイプのマッピング
+var moodTypeMapping = map[string]map[string]bool{
+	"relax": {
+		"cafe":      true,
+		"park":      true,
+		"book_store": true,
+	},
+	"active": {
+		"gym":           true,
+		"stadium":       true,
+		"bowling_alley": true,
+		"campground":    true,
+	},
+	"thrill": {
+		"bar":            true,
+		"night_club":     true,
+		"amusement_park": true,
+		"bowling_alley":  true,
+	},
+	"learn": {
+		"museum":      true,
+		"art_gallery": true,
+		"library":     true,
+		"book_store":  true,
+	},
+}
+
+// 有効な気分値
+var validMoods = map[string]bool{
+	"relax":  true,
+	"active": true,
+	"thrill": true,
+	"learn":  true,
 }
 
 func isVisitablePlace(types []string) bool {
@@ -132,6 +170,7 @@ type suggestionRequest struct {
 	Lat    float64 `json:"lat" binding:"required"`
 	Lng    float64 `json:"lng" binding:"required"`
 	Radius uint    `json:"radius"`
+	Mood   string  `json:"mood"`
 }
 
 // 日次キャッシュで返す最大施設数
@@ -170,6 +209,12 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		req.Radius = maxSearchRadius
 	}
 
+	// 気分バリデーション（指定がある場合のみ）
+	if req.Mood != "" && !validMoods[req.Mood] {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mood value. valid values: relax, active, thrill, learn"})
+		return
+	}
+
 	userID, ok := middleware.GetUserIDFromContext(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
@@ -180,9 +225,9 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	today := time.Now().Format("2006-01-02")
 	userIDStr := strconv.FormatUint(userID, 10)
 
-	// 1. 日次キャッシュを確認
+	// 1. 日次キャッシュを確認（気分別に独立したキャッシュ）
 	if h.RedisClient != nil {
-		cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng)
+		cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, req.Mood)
 		if err == nil && cached != "" {
 			var dailyPlaces []PlaceResult
 			if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
@@ -237,21 +282,30 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	// 4. 訪問済みを除外
-	unvisited := filterOutVisited(h.DB, userID, places)
+	// 4. 気分フィルタリング（気分指定がある場合のみ適用、結果が0件の場合は全施設にフォールバック）
+	candidates := places
+	if req.Mood != "" {
+		moodFiltered := filterByMood(places, moodTypeMapping[req.Mood])
+		if len(moodFiltered) > 0 {
+			candidates = moodFiltered
+		}
+	}
+
+	// 5. 訪問済みを除外
+	unvisited := filterOutVisited(h.DB, userID, candidates)
 
 	if len(unvisited) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited"})
 		return
 	}
 
-	// 5. ランダムに最大3件選出
+	// 6. ランダムに最大3件選出
 	selected := selectRandomPlaces(unvisited, maxDailySuggestions)
 
-	// 6. 日次キャッシュに保存
+	// 7. 日次キャッシュに保存（気分別に独立したキャッシュ）
 	if h.RedisClient != nil {
 		data, _ := json.Marshal(selected)
-		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
+		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour, req.Mood)
 	}
 
 	c.JSON(http.StatusOK, selected)
@@ -271,6 +325,20 @@ func selectRandomPlaces(candidates []PlaceResult, n int) []PlaceResult {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	}
 	return shuffled[:n]
+}
+
+// filterByMood は気分に対応する施設タイプのみを返す
+func filterByMood(places []PlaceResult, moodTypes map[string]bool) []PlaceResult {
+	var result []PlaceResult
+	for _, p := range places {
+		for _, t := range p.Types {
+			if moodTypes[t] {
+				result = append(result, p)
+				break
+			}
+		}
+	}
+	return result
 }
 
 // filterOutVisited は訪問済みの施設を除外する
