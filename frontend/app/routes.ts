@@ -16,6 +16,7 @@ export default [
   layout("layouts/app-layout.tsx", [
     route("home", "routes/home.tsx"),
     route("history", "routes/history.tsx"),
+    route("history/:id", "routes/history-detail.tsx"),
     route("profile", "routes/profile.tsx"),
     route("settings", "routes/settings.tsx"),
   ]),

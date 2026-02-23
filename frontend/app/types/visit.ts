@@ -9,9 +9,15 @@ export interface Visit {
   lng: number;
   rating: number | null;
   memo: string | null;
+  xp_earned: number;
   is_comfort_zone: boolean;
   visited_at: string;
   created_at: string;
+}
+
+export interface UpdateVisitRequest {
+  memo?: string | null;
+  rating?: number | null;
 }
 
 export interface VisitListResponse {

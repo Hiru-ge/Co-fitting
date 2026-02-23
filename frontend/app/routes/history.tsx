@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Route } from "./+types/history";
-import { redirect, useNavigate } from "react-router";
+import { redirect, useNavigate, Link } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
@@ -212,7 +212,10 @@ export default function History({ loaderData }: Route.ComponentProps) {
 
 function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
   return (
-    <div className="flex items-center gap-4 bg-white p-3 rounded-lg border border-gray-100 shadow-sm transition-transform active:scale-[0.98]">
+    <Link
+      to={`/history/${visit.id}`}
+      className="flex items-center gap-4 bg-white p-3 rounded-lg border border-gray-100 shadow-sm transition-transform active:scale-[0.98]"
+    >
       {/* サムネイル */}
       <div
         className="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-20 shrink-0 bg-gray-200"
@@ -250,7 +253,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
           </p>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
