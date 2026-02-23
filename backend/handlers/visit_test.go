@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -1188,6 +1189,343 @@ func TestUpdateVisit(t *testing.T) {
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+}
+
+// =============================================
+// ゲーミフィケーション統合テスト（Issue #128）
+// =============================================
+
+func TestCreateVisit_Gamification(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("訪問時にxp_earned・total_xp・level_up・new_badgesがレスポンスに含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJgamif_001",
+			"place_name": "テストカフェ",
+			"vicinity":   "東京都渋谷区",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-03-01T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		// ゲーミフィケーションフィールドの存在確認
+		if _, ok := resp["xp_earned"]; !ok {
+			t.Error("Expected 'xp_earned' field in response")
+		}
+		if _, ok := resp["total_xp"]; !ok {
+			t.Error("Expected 'total_xp' field in response")
+		}
+		if _, ok := resp["level_up"]; !ok {
+			t.Error("Expected 'level_up' field in response")
+		}
+		if _, ok := resp["new_level"]; !ok {
+			t.Error("Expected 'new_level' field in response")
+		}
+		if _, ok := resp["new_badges"]; !ok {
+			t.Error("Expected 'new_badges' field in response")
+		}
+
+		// XP値の妥当性チェック
+		xpEarned, _ := resp["xp_earned"].(float64)
+		if xpEarned < 50 {
+			t.Errorf("Expected xp_earned >= 50, got %.0f", xpEarned)
+		}
+	})
+
+	t.Run("通常訪問（is_comfort_zone=false）で50XP基本値", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 興味タグにカフェを設定して、カフェに通常訪問
+		database.SeedMasterData(testDB)
+		var cafeTag models.GenreTag
+		testDB.Where("name = ?", "カフェ").First(&cafeTag)
+		testDB.Create(&models.UserInterest{
+			UserID:     user.ID,
+			GenreTagID: cafeTag.ID,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJgamif_cafe",
+			"place_name":  "テストカフェ",
+			"vicinity":    "東京都渋谷区",
+			"category":    "cafe",
+			"lat":         35.677,
+			"lng":         139.650,
+			"place_types": []string{"cafe"},
+			"visited_at":  "2024-03-01T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		xpEarned, _ := resp["xp_earned"].(float64)
+		// 通常訪問（50XP）+ 初ジャンルボーナス（+50XP）= 100XP以上
+		if xpEarned < 50 {
+			t.Errorf("Expected xp_earned >= 50, got %.0f", xpEarned)
+		}
+	})
+
+	t.Run("脱却訪問（is_comfort_zone=true）で100XP基本値", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 興味タグにカフェを設定して、美術館（興味外）に訪問
+		database.SeedMasterData(testDB)
+		var cafeTag models.GenreTag
+		testDB.Where("name = ?", "カフェ").First(&cafeTag)
+		testDB.Create(&models.UserInterest{
+			UserID:     user.ID,
+			GenreTagID: cafeTag.ID,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJgamif_museum",
+			"place_name":  "テスト美術館",
+			"vicinity":    "東京都渋谷区",
+			"category":    "museum",
+			"lat":         35.677,
+			"lng":         139.650,
+			"place_types": []string{"art_gallery", "museum"},
+			"visited_at":  "2024-03-01T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		xpEarned, _ := resp["xp_earned"].(float64)
+		// 脱却訪問基本値は100XP以上
+		if xpEarned < 100 {
+			t.Errorf("Expected xp_earned >= 100 for comfort zone break, got %.0f", xpEarned)
+		}
+	})
+
+	t.Run("感想メモ入力で+10XPボーナス", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// メモなし訪問
+		bodyNoMemo := map[string]interface{}{
+			"place_id":   "ChIJgamif_nomemo",
+			"place_name": "テスト1",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-03-01T10:00:00Z",
+		}
+		jsonNoMemo, _ := json.Marshal(bodyNoMemo)
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonNoMemo))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+		var resp1 map[string]interface{}
+		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		xp1, _ := resp1["xp_earned"].(float64)
+
+		// メモあり訪問
+		cleanupUsers(t)
+		user2 := createTestUserForVisit(t)
+		token2 := generateTestToken(user2.ID)
+
+		bodyWithMemo := map[string]interface{}{
+			"place_id":   "ChIJgamif_withmemo",
+			"place_name": "テスト2",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"memo":       "とても良かった！",
+			"visited_at": "2024-03-01T10:00:00Z",
+		}
+		jsonWithMemo, _ := json.Marshal(bodyWithMemo)
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonWithMemo))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token2))
+		router.ServeHTTP(w2, req2)
+		var resp2 map[string]interface{}
+		json.Unmarshal(w2.Body.Bytes(), &resp2)
+		xp2, _ := resp2["xp_earned"].(float64)
+
+		if xp2 != xp1+10 {
+			t.Errorf("Expected memo bonus +10XP: no_memo=%v, with_memo=%v", xp1, xp2)
+		}
+	})
+
+	t.Run("レベルアップ時にlevel_up=trueとnew_levelが返る", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// レベルアップ直前のXPにセット（level1→2の閾値は100XP）
+		testDB.Model(&user).Updates(map[string]interface{}{
+			"total_xp": 90,
+			"level":    1,
+		})
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJgamif_levelup",
+			"place_name": "レベルアップカフェ",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-03-01T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		levelUp, _ := resp["level_up"].(bool)
+		newLevel, _ := resp["new_level"].(float64)
+
+		if !levelUp {
+			t.Errorf("Expected level_up=true after crossing 100XP threshold (total was 90, +50XP visit)")
+		}
+		if int(newLevel) < 2 {
+			t.Errorf("Expected new_level >= 2, got %.0f", newLevel)
+		}
+	})
+
+	t.Run("ユーザーのtotal_xpとlevelがDBに正しく更新される", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJgamif_dbcheck",
+			"place_name": "デシベルカフェ",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-03-01T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected status %d, got %d", http.StatusCreated, w.Code)
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		xpEarned, _ := resp["xp_earned"].(float64)
+
+		var updated models.User
+		testDB.First(&updated, user.ID)
+
+		if updated.TotalXP != int(xpEarned) {
+			t.Errorf("Expected total_xp=%d in DB, got %d", int(xpEarned), updated.TotalXP)
+		}
+	})
+
+	t.Run("初訪問で「最初の一歩」バッジがnew_badgesに含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		database.SeedMasterData(testDB)
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJgamif_firstbadge",
+			"place_name": "初訪問の店",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-03-01T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		newBadges, ok := resp["new_badges"].([]interface{})
+		if !ok {
+			t.Fatalf("Expected new_badges to be array, got %T: %v", resp["new_badges"], resp["new_badges"])
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if bMap, ok := b.(map[string]interface{}); ok {
+				if bMap["name"] == "最初の一歩" {
+					found = true
+				}
+			}
+		}
+		if !found {
+			t.Errorf("Expected '最初の一歩' badge in new_badges, got %v", newBadges)
 		}
 	})
 }

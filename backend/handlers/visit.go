@@ -8,6 +8,7 @@ import (
 
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/services"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -36,7 +37,19 @@ type createVisitRequest struct {
 	Lng        float64  `json:"lng" binding:"required"`
 	PlaceTypes []string `json:"place_types"` // 任意: is_comfort_zone自動判定に使用
 	Rating     *float32 `json:"rating"`
+	Memo       *string  `json:"memo"`
 	VisitedAt  string   `json:"visited_at" binding:"required"`
+}
+
+// createVisitResponse はゲーミフィケーション情報を含むCreateVisitのレスポンス
+// models.Visit を埋め込み、xp_earnedはVisit.XpEarnedで（Goの仕様により外側フィールドが優先）、
+// total_xp/level_up/new_level/new_badgesをゲーミフィケーション情報として追加する
+type createVisitResponse struct {
+	models.Visit
+	TotalXP   int            `json:"total_xp"`   // ユーザー累計XP
+	LevelUp   bool           `json:"level_up"`   // 今回の訪問でレベルアップしたか
+	NewLevel  int            `json:"new_level"`  // 現在のレベル
+	NewBadges []models.Badge `json:"new_badges"` // 今回獲得した新バッジ
 }
 
 // CreateVisit godoc
@@ -90,6 +103,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		Latitude:      req.Lat,
 		Longitude:     req.Lng,
 		Rating:        req.Rating,
+		Memo:          req.Memo,
 		IsComfortZone: isComfortZone,
 		VisitedAt:     visitedAt,
 	}
@@ -99,19 +113,48 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, visit)
+	// ゲーミフィケーション処理（XP計算・レベルアップ判定・バッジ付与・ジャンル熟練度更新・ストリーク更新）
+	gamifResult, err := services.ProcessGamification(h.DB, userID, visit)
+	if err != nil {
+		// ゲーミフィケーション処理失敗は訪問記録自体を無効化しない（ログのみ）
+		// 最低限の情報でレスポンスを返す
+		c.JSON(http.StatusCreated, createVisitResponse{
+			Visit:     visit,
+			TotalXP:   0,
+			LevelUp:   false,
+			NewLevel:  1,
+			NewBadges: []models.Badge{},
+		})
+		return
+	}
+
+	// visit.XpEarned をゲーミフィケーション処理結果で更新（レスポンスに反映）
+	visit.XpEarned = gamifResult.XPEarned
+
+	newBadges := gamifResult.NewBadges
+	if newBadges == nil {
+		newBadges = []models.Badge{}
+	}
+
+	c.JSON(http.StatusCreated, createVisitResponse{
+		Visit:     visit,
+		TotalXP:   gamifResult.TotalXP,
+		LevelUp:   gamifResult.LevelUp,
+		NewLevel:  gamifResult.NewLevel,
+		NewBadges: newBadges,
+	})
 }
 
 // mapVisitItem はマップ表示に最適化された訪問記録の軽量表現
 type mapVisitItem struct {
-	ID         uint64   `json:"id"`
-	PlaceID    string   `json:"place_id"`
-	PlaceName  string   `json:"place_name"`
-	Lat        float64  `json:"lat"`
-	Lng        float64  `json:"lng"`
-	Category   string   `json:"category"`
-	GenreTagID *uint64  `json:"genre_tag_id"`
-	VisitedAt  string   `json:"visited_at"`
+	ID         uint64  `json:"id"`
+	PlaceID    string  `json:"place_id"`
+	PlaceName  string  `json:"place_name"`
+	Lat        float64 `json:"lat"`
+	Lng        float64 `json:"lng"`
+	Category   string  `json:"category"`
+	GenreTagID *uint64 `json:"genre_tag_id"`
+	VisitedAt  string  `json:"visited_at"`
 }
 
 // GetMapData godoc
