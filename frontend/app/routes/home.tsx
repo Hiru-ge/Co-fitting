@@ -11,12 +11,24 @@ import { DEFAULT_RADIUS } from "~/utils/constants";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import type { Place } from "~/types/suggestion";
+import type { BadgeInfo, CreateVisitResponse } from "~/types/visit";
 import AppHeader from "~/components/app-header";
 import DiscoveryCard from "~/components/discovery-card";
 import CardIndicator from "~/components/card-indicator";
 import ActionButtons from "~/components/action-buttons";
+import XpModal from "~/components/xp-modal";
+import BadgeToast from "~/components/badge-toast";
 
 type PlaceWithPhoto = Place & { photoUrl?: string };
+
+interface XpModalState {
+  xpEarned: number;
+  totalXp: number;
+  currentLevel: number;
+  levelUp: boolean;
+  newLevel: number;
+  newBadges: BadgeInfo[];
+}
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   const token = getToken();
@@ -39,6 +51,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [checkingIn, setCheckingIn] = useState(false);
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
   const [originalOrder, setOriginalOrder] = useState<string[]>([]);
+  const [xpModalState, setXpModalState] = useState<XpModalState | null>(null);
+  const [badgeQueue, setBadgeQueue] = useState<BadgeInfo[]>([]);
 
   const loadSuggestions = useCallback(async () => {
     setIsLoading(true);
@@ -92,8 +106,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     try {
       // types 配列から最初のカテゴリを取得（例: "cafe", "park"等）
       const category = place.types && place.types.length > 0 ? place.types[0] : "other";
-      
-      await createVisit(token, {
+
+      const result: CreateVisitResponse = await createVisit(token, {
         place_id: place.place_id,
         place_name: place.name,
         vicinity: place.vicinity,
@@ -106,11 +120,37 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       // 訪問済みカードを即座にリストから削除
       setPlaces((prev) => prev.filter((p) => p.place_id !== place.place_id));
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
+
+      // ゲーミフィケーションデータがある場合はXPモーダルを表示
+      if (result.xp_earned !== undefined) {
+        setXpModalState({
+          xpEarned: result.xp_earned,
+          totalXp: result.total_xp ?? 0,
+          currentLevel: result.new_level ?? 1,
+          levelUp: result.level_up ?? false,
+          newLevel: result.new_level ?? 1,
+          newBadges: result.new_badges ?? [],
+        });
+      }
     } catch (err) {
       showToast(toUserMessage(err));
     } finally {
       setCheckingIn(false);
     }
+  }
+
+  function handleXpModalClose() {
+    if (!xpModalState) return;
+    // モーダルに表示した最初のバッジ以外を追加バッジキューに入れる
+    const additionalBadges = xpModalState.newBadges.slice(1);
+    setXpModalState(null);
+    if (additionalBadges.length > 0) {
+      setBadgeQueue((prev) => [...prev, ...additionalBadges]);
+    }
+  }
+
+  function handleBadgeToastClose() {
+    setBadgeQueue((prev) => prev.slice(1));
   }
 
 
@@ -189,6 +229,29 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           isCheckingIn={checkingIn}
         />
       </main>
+
+      {/* XP獲得モーダル */}
+      {xpModalState && (
+        <XpModal
+          xpEarned={xpModalState.xpEarned}
+          totalXp={xpModalState.totalXp}
+          currentLevel={xpModalState.currentLevel}
+          levelUp={xpModalState.levelUp}
+          newLevel={xpModalState.newLevel}
+          newBadges={xpModalState.newBadges}
+          onClose={handleXpModalClose}
+        />
+      )}
+
+      {/* バッジトースト（追加バッジ表示用） */}
+      {badgeQueue.length > 0 && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4">
+          <BadgeToast
+            badge={badgeQueue[0]}
+            onClose={handleBadgeToastClose}
+          />
+        </div>
+      )}
     </div>
   );
 }
