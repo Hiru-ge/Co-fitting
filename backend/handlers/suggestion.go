@@ -76,6 +76,142 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 	return results, nil
 }
 
+// placeTypeToGenreName はGoogle Maps Place TypeからGenreTag名（日本語）へのマッピング
+var placeTypeToGenreName = map[string]string{
+	// 飲食
+	"cafe":          "カフェ",
+	"restaurant":    "レストラン",
+	"meal_takeaway": "レストラン",
+	"bar":           "居酒屋・バー",
+	"night_club":    "居酒屋・バー",
+	"bakery":        "スイーツ・ベーカリー",
+	// アウトドア
+	"park":      "公園・緑地",
+	"campground": "自然・ハイキング",
+	// 文化・芸術
+	"art_gallery": "美術館・ギャラリー",
+	"museum":      "博物館・科学館",
+	"library":     "図書館・書店",
+	"book_store":  "図書館・書店",
+	// エンタメ
+	"movie_theater": "映画館",
+	"bowling_alley": "スポーツ施設",
+	// ショッピング
+	"shopping_mall":    "ショッピングモール",
+	"clothing_store":   "雑貨・セレクトショップ",
+	"department_store": "ショッピングモール",
+	"home_goods_store": "雑貨・セレクトショップ",
+	// リラクゼーション
+	"spa": "マッサージ・スパ",
+	// 観光・文化
+	"place_of_worship":   "神社・寺",
+	"church":             "神社・寺",
+	"hindu_temple":       "神社・寺",
+	"mosque":             "神社・寺",
+	"synagogue":          "神社・寺",
+	"tourist_attraction": "観光スポット",
+	"aquarium":           "観光スポット",
+	"zoo":                "観光スポット",
+	"amusement_park":     "観光スポット",
+}
+
+// inInterestCount は提案3件中、興味内ジャンルから選ぶ件数
+const inInterestCount = 2
+
+// getGenreNameFromTypes はPlace TypesからGenreTag名を返す（最初にマッチしたもの）
+func getGenreNameFromTypes(types []string) string {
+	for _, t := range types {
+		if name, ok := placeTypeToGenreName[t]; ok {
+			return name
+		}
+	}
+	return ""
+}
+
+// getUserInterestGenreNames はユーザーの興味タグ名セットをDBから取得する
+func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, error) {
+	type interestWithTag struct {
+		GenreTagName string
+	}
+	var results []interestWithTag
+	if err := db.Table("user_interests").
+		Select("genre_tags.name as genre_tag_name").
+		Joins("JOIN genre_tags ON genre_tags.id = user_interests.genre_tag_id").
+		Where("user_interests.user_id = ?", userID).
+		Scan(&results).Error; err != nil {
+		return nil, err
+	}
+	names := make(map[string]bool, len(results))
+	for _, r := range results {
+		names[r.GenreTagName] = true
+	}
+	return names, nil
+}
+
+// classifyByInterest は候補を興味内・興味外に分類する
+func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool) (inInterest, outOfInterest []PlaceResult) {
+	for _, p := range places {
+		genreName := getGenreNameFromTypes(p.Types)
+		if genreName != "" && interestGenreNames[genreName] {
+			inInterest = append(inInterest, p)
+		} else {
+			outOfInterest = append(outOfInterest, p)
+		}
+	}
+	return
+}
+
+// selectPersonalizedPlaces は興味内を優先しつつ、興味外も混在させて最大maxDailySuggestions件を選出する
+// 比率: 興味内inInterestCount件 + 興味外(maxDailySuggestions-inInterestCount)件
+func selectPersonalizedPlaces(inInterest, outOfInterest []PlaceResult) []PlaceResult {
+	selected := make([]PlaceResult, 0, maxDailySuggestions)
+
+	// 興味内から最大inInterestCount件
+	inSelected := selectRandomPlaces(inInterest, inInterestCount)
+	selected = append(selected, inSelected...)
+
+	// 残り枠を興味外から補充
+	remaining := maxDailySuggestions - len(selected)
+	if remaining > 0 && len(outOfInterest) > 0 {
+		outSelected := selectRandomPlaces(outOfInterest, remaining)
+		selected = append(selected, outSelected...)
+	}
+
+	// まだ枠が残っていれば興味内から追加補充（興味外が足りない場合）
+	remaining = maxDailySuggestions - len(selected)
+	if remaining > 0 && len(inInterest) > len(inSelected) {
+		selectedIDs := make(map[string]bool, len(selected))
+		for _, p := range selected {
+			selectedIDs[p.PlaceID] = true
+		}
+		var moreCandidates []PlaceResult
+		for _, p := range inInterest {
+			if !selectedIDs[p.PlaceID] {
+				moreCandidates = append(moreCandidates, p)
+			}
+		}
+		selected = append(selected, selectRandomPlaces(moreCandidates, remaining)...)
+	}
+
+	// それでも枠が残れば興味外から追加補充（すでに選ばれたものを除く）
+	remaining = maxDailySuggestions - len(selected)
+	if remaining > 0 && len(outOfInterest) > 0 {
+		selectedIDs := make(map[string]bool, len(selected))
+		for _, p := range selected {
+			selectedIDs[p.PlaceID] = true
+		}
+		var moreCandidates []PlaceResult
+		for _, p := range outOfInterest {
+			if !selectedIDs[p.PlaceID] {
+				moreCandidates = append(moreCandidates, p)
+			}
+		}
+		selected = append(selected, selectRandomPlaces(moreCandidates, remaining)...)
+	}
+
+	return selected
+}
+
 // 訪れるのに適した場所のタイプ（許可リスト）
 var visitableTypes = map[string]bool{
 	// グルメ
@@ -299,8 +435,15 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	// 6. ランダムに最大3件選出
-	selected := selectRandomPlaces(unvisited, maxDailySuggestions)
+	// 5. ユーザーの興味タグを取得してパーソナライズ選出（タグなしはランダムにフォールバック）
+	var selected []PlaceResult
+	interestGenreNames, err := getUserInterestGenreNames(h.DB, userID)
+	if err != nil || len(interestGenreNames) == 0 {
+		selected = selectRandomPlaces(unvisited, maxDailySuggestions)
+	} else {
+		inInterest, outOfInterest := classifyByInterest(unvisited, interestGenreNames)
+		selected = selectPersonalizedPlaces(inInterest, outOfInterest)
+	}
 
 	// 7. 日次キャッシュに保存（気分別に独立したキャッシュ）
 	if h.RedisClient != nil {
