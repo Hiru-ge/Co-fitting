@@ -56,6 +56,38 @@ vi.mock("~/api/visits", () => ({
   }),
 }));
 
+vi.mock("~/api/users", () => ({
+  getUserStats: vi.fn().mockResolvedValue({
+    level: 5,
+    total_xp: 850,
+    streak_count: 3,
+    streak_last: "2025-12-01T10:00:00Z",
+    total_visits: 48,
+    comfort_zone_visits: 10,
+    challenge_visits: 38,
+  }),
+  getUserBadges: vi.fn().mockResolvedValue([
+    {
+      id: 1,
+      name: "最初の一歩",
+      description: "初めての訪問を記録した",
+      icon_url: "",
+      earned_at: "2025-07-01T10:00:00Z",
+    },
+    {
+      id: 2,
+      name: "コンフォートゾーン・ブレイカー",
+      description: "初めてコンフォートゾーンを脱却した",
+      icon_url: "",
+      earned_at: "2025-08-01T10:00:00Z",
+    },
+  ]),
+  getProficiency: vi.fn().mockResolvedValue([
+    { genre_tag_id: 1, genre_name: "カフェ", category: "飲食", icon: "local_cafe", xp: 300, level: 3 },
+    { genre_tag_id: 2, genre_name: "公園・緑地", category: "アウトドア", icon: "park", xp: 150, level: 2 },
+  ]),
+}));
+
 import Profile from "~/routes/profile";
 import { logout } from "~/lib/auth";
 
@@ -95,23 +127,13 @@ describe("プロフィール画面", () => {
     });
   });
 
-  test("訪問スポット数が表示される", async () => {
+  test("ローディング完了後にXPが表示される", async () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByText(/12/)).toBeInTheDocument();
+      // getUserStats.total_xp: 850
+      expect(screen.getByText(/850/)).toBeInTheDocument();
     });
-    expect(screen.getByText("訪問スポット")).toBeInTheDocument();
-  });
-
-  test("訪問開始日が表示される", async () => {
-    renderProfile();
-
-    await waitFor(() => {
-      // created_at: "2025-06-15T10:00:00Z" → 2025年6月
-      expect(screen.getByText(/2025年6月/)).toBeInTheDocument();
-    });
-    expect(screen.getByText("利用開始")).toBeInTheDocument();
   });
 
   test("ログアウトボタンが表示される", async () => {
@@ -181,7 +203,7 @@ describe("プロフィール画面", () => {
 
     // ローディング完了を待って act 警告を解消
     await waitFor(() => {
-      expect(screen.getByText(/12/)).toBeInTheDocument();
+      expect(screen.getByText(/850/)).toBeInTheDocument();
     });
   });
 
@@ -208,6 +230,67 @@ describe("プロフィール画面", () => {
 
     await waitFor(() => {
       expect(screen.getByText("探索を開始")).toBeInTheDocument();
+    });
+  });
+
+  test("レベルと称号が表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText(/LV\.5/)).toBeInTheDocument();
+      expect(screen.getByText(/シティエクスプローラー/)).toBeInTheDocument();
+    });
+  });
+
+  test("XPとプログレスバーが表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText(/850/)).toBeInTheDocument();
+      expect(screen.getByText(/1000\s*XP/)).toBeInTheDocument();
+    });
+  });
+
+  test("次のレベルまでのXPが表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      // total_xp: 850, level 4 → 次のレベル(1000XP)まで150XP
+      expect(screen.getByText(/次のレベルまであと/)).toBeInTheDocument();
+    });
+  });
+
+  test("獲得バッジが表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText("最初の一歩")).toBeInTheDocument();
+      expect(screen.getByText("コンフォートゾーン・ブレイカー")).toBeInTheDocument();
+    });
+  });
+
+  test("獲得バッジセクションタイトルが表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText("獲得バッジ")).toBeInTheDocument();
+    });
+  });
+
+  test("ジャンル熟練度トップが表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText("カフェ")).toBeInTheDocument();
+    });
+  });
+
+  test("統計情報（挑戦訪問数）が表示される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      // challenge_visits: 38
+      expect(screen.getByText(/38/)).toBeInTheDocument();
     });
   });
 });
