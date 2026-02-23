@@ -350,6 +350,180 @@ func TestCreateVisit(t *testing.T) {
 	})
 }
 
+func TestCreateVisitIsComfortZone(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("興味外ジャンル(museum)の訪問でis_comfort_zone=trueになる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// "カフェ" 興味タグを設定
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_museum_001",
+			"place_name":  "渋谷区立博物館",
+			"vicinity":    "東京都渋谷区",
+			"category":    "museum",
+			"place_types": []string{"museum", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-07T15:30:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		// DBのis_comfort_zoneがtrueであることを確認
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if !visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=true for out-of-interest genre (museum), got false")
+		}
+	})
+
+	t.Run("興味内ジャンル(cafe)の訪問でis_comfort_zone=falseになる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// "カフェ" 興味タグを設定
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_cafe_001",
+			"place_name":  "隠れ家カフェ",
+			"vicinity":    "東京都渋谷区",
+			"category":    "cafe",
+			"place_types": []string{"cafe", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-07T15:30:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false for in-interest genre (cafe), got true")
+		}
+	})
+
+	t.Run("興味タグ未設定ユーザーの訪問はis_comfort_zone=falseになる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		// 興味タグを設定しない
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_nointerest_001",
+			"place_name":  "テストカフェ",
+			"vicinity":    "東京都渋谷区",
+			"category":    "cafe",
+			"place_types": []string{"cafe"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-07T15:30:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_nointerest_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false for user without interest tags, got true")
+		}
+	})
+
+	t.Run("place_types未指定の訪問はis_comfort_zone=falseになる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJl_notypes_001",
+			"place_name": "タイプなし場所",
+			"vicinity":   "東京都渋谷区",
+			"category":   "cafe",
+			// place_types を送らない
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-02-07T15:30:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_notypes_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false when place_types not provided, got true")
+		}
+	})
+}
+
 // createVisitsForUser はテスト用の訪問記録を複数件作成するヘルパー
 func createVisitsForUser(t *testing.T, userID uint64, count int) []models.Visit {
 	t.Helper()
