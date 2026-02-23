@@ -1,6 +1,24 @@
 // レベルアップに必要な累計XP閾値（インデックス = レベル - 1）
 export const LEVEL_XP_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500];
 
+// レベル称号テーブル（インデックス = レベル - 1）
+export const LEVEL_TITLES = [
+  "ビギナーエクスプローラー",
+  "シティウォーカー",
+  "エリアハンター",
+  "タウンエクスプローラー",
+  "シティエクスプローラー",
+  "アドベンチャラー",
+  "ゾーンブレイカー",
+  "マスターエクスプローラー",
+  "レジェンドエクスプローラー",
+  "究極のローマー",
+];
+
+export function getLevelTitle(level: number): string {
+  return LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)] ?? LEVEL_TITLES[0];
+}
+
 export interface LevelInfo {
   level: number;
   xpInCurrentLevel: number;

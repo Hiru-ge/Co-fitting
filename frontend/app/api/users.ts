@@ -1,5 +1,5 @@
 import { apiCall } from "./client";
-import type { User } from "~/types/auth";
+import type { User, UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 
 export async function updateDisplayName(
   token: string,
@@ -43,4 +43,16 @@ export async function deleteAccount(token: string): Promise<void> {
   await apiCall("/api/users/me", token, {
     method: "DELETE",
   });
+}
+
+export async function getUserStats(token: string): Promise<UserStats> {
+  return apiCall("/api/users/me/stats", token);
+}
+
+export async function getUserBadges(token: string): Promise<EarnedBadge[]> {
+  return apiCall("/api/users/me/badges", token);
+}
+
+export async function getProficiency(token: string): Promise<Proficiency[]> {
+  return apiCall("/api/users/me/proficiency", token);
 }
