@@ -31,3 +31,19 @@ export interface CreateVisitRequest {
   is_comfort_zone?: boolean;
   visited_at: string;
 }
+
+export interface BadgeInfo {
+  id: number;
+  name: string;
+  description: string;
+  icon_url: string;
+}
+
+// Issue #128 実装後にバックエンドから返るゲーミフィケーションフィールド
+export interface CreateVisitResponse extends Visit {
+  xp_earned?: number;
+  total_xp?: number;
+  level_up?: boolean;
+  new_level?: number;
+  new_badges?: BadgeInfo[];
+}
