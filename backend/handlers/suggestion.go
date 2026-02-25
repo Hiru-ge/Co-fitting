@@ -316,7 +316,8 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	today := time.Now().Format("2006-01-02")
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+	today := time.Now().In(jst).Format("2006-01-02")
 	userIDStr := strconv.FormatUint(userID, 10)
 
 	// 1. 日次キャッシュを確認
@@ -331,7 +332,12 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 					c.JSON(http.StatusOK, filtered)
 					return
 				}
-				// 全て訪問済みならキャッシュを無効化して再取得へ
+				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
+				c.JSON(http.StatusTooManyRequests, gin.H{
+					"error": "本日の提案は全て訪問済みです。明日またお試しください。",
+					"code":  "daily_limit_reached",
+				})
+				return
 			}
 		}
 	}

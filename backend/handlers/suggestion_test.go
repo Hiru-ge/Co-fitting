@@ -708,6 +708,72 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Errorf("Expected fewer places after visiting one (initial: %d, after: %d)", initialCount, len(resp2))
 		}
 	})
+
+	t.Run("日次提案の全施設を訪問済みにした後に再リクエストすると429が返る", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		// 1回目: 日次提案を取得してキャッシュを作成
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+
+		if w1.Code != http.StatusOK {
+			t.Fatalf("1st request: Expected status %d, got %d. Body: %s", http.StatusOK, w1.Code, w1.Body.String())
+		}
+
+		var resp1 []PlaceResult
+		json.Unmarshal(w1.Body.Bytes(), &resp1)
+
+		if len(resp1) == 0 {
+			t.Fatal("Expected at least 1 place in initial response")
+		}
+
+		// 提案された全施設を訪問済みにする
+		for _, p := range resp1 {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   p.PlaceID,
+				PlaceName: p.Name,
+				Latitude:  p.Lat,
+				Longitude: p.Lng,
+				VisitedAt: time.Now(),
+			})
+		}
+
+		// 2回目: 日次提案が全て訪問済みなので拒否されるべき
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusTooManyRequests {
+			t.Errorf("Expected status %d (Too Many Requests) after all daily suggestions visited, got %d. Body: %s",
+				http.StatusTooManyRequests, w2.Code, w2.Body.String())
+		}
+
+		var errResp map[string]string
+		json.Unmarshal(w2.Body.Bytes(), &errResp)
+		if errResp["code"] != "daily_limit_reached" {
+			t.Errorf("Expected error code 'daily_limit_reached', got '%s'", errResp["code"])
+		}
+	})
 }
 
 func TestPersonalizedSuggest(t *testing.T) {
