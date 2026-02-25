@@ -1,4 +1,22 @@
 /**
+ * バックエンドが返すエラーコード定数
+ */
+export const API_ERROR_CODES = {
+  DAILY_LIMIT_REACHED: "DAILY_LIMIT_REACHED",
+  NO_NEARBY_PLACES: "NO_NEARBY_PLACES",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
+} as const;
+
+/**
+ * 提案API用のユーザー向けメッセージ定数
+ */
+export const SUGGESTION_MESSAGES = {
+  DAILY_LIMIT_REACHED: "今日の3件をコンプリートしました！明日また新しいスポットが見つかります",
+  NO_NEARBY_PLACES: "近くのスポットが見つかりませんでした",
+  FETCH_ERROR: "スポットの取得に失敗しました",
+} as const;
+
+/**
  * API エラーを表す型付きエラークラス
  */
 export class ApiError extends Error {
