@@ -49,14 +49,14 @@
 
 | 項目 | 詳細 |
 |------|------|
-| 認証方式 | メール+パスワード認証（JWT） |
-| パスワード保存 | bcryptでハッシュ化 |
+| 認証方式 | ~~メール+パスワード認証（JWT）~~ → **Google OAuth認証のみ**（Phase 1で移行済み） |
+| パスワード保存 | ~~bcryptでハッシュ化~~ → 不要（Google管理） |
 
 #### Phase 0で「やらない」もの
 
 | 機能 | 理由 | いつやるか |
 |------|------|-----------|
-| Google OAuth | 簡易認証で十分。Phase 0は自分のみの利用 | Phase 1 |
+| ~~Google OAuth~~ | ~~簡易認証で十分。Phase 0は自分のみの利用~~ → Phase 1でメール認証を廃止しGoogle OAuth認証に完全移行 | Phase 1 |
 | XP / レベル / プログレスバー | コアループ「提案→行動」の検証が先。ゲーミフィケーションは上に乗せる層 | Phase 1 |
 | 興味タグ選択 / パーソナライズ提案 | タグなしでも「近くの面白い場所」の提案価値は検証可能 | Phase 1 |
 | オンボーディング画面 | 興味タグ選択がなくなるため不要 | Phase 1 |
@@ -73,8 +73,8 @@
 | 画面 | パス | 認証 | 説明 |
 |------|------|------|------|
 | ランディングページ | `/` | 不要 | 1画面LP: 課題→解決→CTA（MakersGuild 2.4準拠） |
-| サインアップ | `/signup` | 不要 | メール+パスワードでユーザー登録 |
-| ログイン | `/login` | 不要 | メール+パスワードでログイン |
+| ~~サインアップ~~ | ~~`/signup`~~ | — | ~~メール+パスワードでユーザー登録~~ → Google OAuth認証のみに統合のため廃止 |
+| ログイン | `/login` | 不要 | ~~メール+パスワードでログイン~~ → **Google OAuth認証のみ** |
 | ホーム兼提案画面 | `/home` | **必要** | 提案カード + 「行った！」ボタン（**コア画面**） |
 | 履歴 | `/history` | **必要** | 訪問記録リスト |
 | プロフィール | `/profile` | **必要** | ユーザー情報表示・ログアウト（確認モーダル経由） |
@@ -186,12 +186,12 @@
 
 Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回しにしたゲーミフィケーション・パーソナライズ・OAuth をここで実装する。
 
-#### A. 認証の拡充
+#### A. 認証の移行
 
 | 項目 | 詳細 |
 |------|------|
-| Google OAuth | Phase 0のメール+パスワード認証に加えてOAuthを追加 |
-| プロフィール | 表示名、アバター画像 |
+| Google OAuth | ~~Phase 0のメール+パスワード認証に加えてOAuthを追加~~ → **メール+パスワード認証を廃止し、Google OAuth認証のみに統一** |
+| プロフィール | 表示名（変更可）、アバター画像（Googleプロフィール画像を自動使用） |
 
 #### B. ゲーミフィケーション（Phase 0から移動 + 強化）
 
@@ -228,7 +228,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 | 画面 | パス | 説明 |
 |------|------|------|
-| ログイン | `/login` | Google OAuthボタン + メール/パスワードログイン |
+| ログイン | `/login` | Google OAuthボタンのみ（メール/パスワードログイン廃止） |
 | オンボーディング | `/onboarding` | 興味タグ選択（1ステップ） |
 | マップ画面 | `/map` | 訪問済みピン表示 |
 | プロフィール | `/profile` | レベル・バッジ・統計・プログレスバー |
@@ -325,7 +325,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 |------|------|
 | 通信 | 全通信をHTTPS化 |
 | 認証トークン | JWT（アクセストークン + リフレッシュトークン） |
-| パスワード | bcryptでハッシュ化（Phase 0〜） |
+| パスワード | ~~bcryptでハッシュ化（Phase 0〜）~~ → Google OAuth移行により不要 |
 | 位置情報 | 明示的な同意のもと取得。精密な位置履歴はサーバーに保存しない（Place IDのみ） |
 | 個人情報保護 | 個人情報保護法に準拠。データエクスポート・削除機能を実装 |
 
@@ -433,7 +433,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 | テーブル | 説明 | Phase |
 |---------|------|-------|
-| `users` | ユーザー基本情報（メール、パスワードハッシュ）。レベル・XP・ストリーク列はPhase 1で追加 | Phase 0 |
+| `users` | ユーザー基本情報（メール、Googleプロフィール画像URL）。~~パスワードハッシュはPhase 1で削除~~。レベル・XP・ストリーク列はPhase 1で追加 | Phase 0 |
 | `genre_tags` | 施設ジャンルのマスタ（カフェ、美術館、公園、ジム等） | Phase 1 |
 | `user_interests` | ユーザーが選択した興味タグ（多対多） | Phase 1 |
 | `visit_history` | 訪問記録。Google Place ID で場所を一意に特定 | Phase 0 |
@@ -449,23 +449,23 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 ### 5.1 認証
 
-| Method | Path | Phase |
-|--------|------|-------|
-| POST | `/api/auth/signup` | Phase 0 |
-| POST | `/api/auth/login` | Phase 0 |
-| POST | `/api/auth/refresh` | Phase 0 |
-| POST | `/api/auth/logout` | Phase 0 |
-| POST | `/api/auth/oauth/google` | Phase 1 |
+| Method | Path | Phase | 備考 |
+|--------|------|-------|------|
+| ~~POST~~ | ~~`/api/auth/signup`~~ | ~~Phase 0~~ | **廃止** — Google OAuth移行により削除 |
+| ~~POST~~ | ~~`/api/auth/login`~~ | ~~Phase 0~~ | **廃止** — Google OAuth移行により削除 |
+| POST | `/api/auth/refresh` | Phase 0 | |
+| POST | `/api/auth/logout` | Phase 0 | |
+| POST | `/api/auth/oauth/google` | Phase 1 | **認証の唯一のエントリポイント** |
 
 ### 5.2 ユーザー
 
 | Method | Path | Phase |
 |--------|------|-------|
-| GET | `/api/users/me` | Phase 0 |
-| PATCH | `/api/users/me` | Phase 1 |
-| PATCH | `/api/users/me/email` | Phase 1 |
-| GET | `/api/users/me/stats` | Phase 1 |
-| DELETE | `/api/users/me` | Phase 1 |
+| GET | `/api/users/me` | Phase 0 | |
+| PATCH | `/api/users/me` | Phase 1 | display_nameのみ更新可（avatar_urlはGoogle提供） |
+| ~~PATCH~~ | ~~`/api/users/me/email`~~ | ~~Phase 1~~ | **廃止** — Google OAuth移行により削除 |
+| GET | `/api/users/me/stats` | Phase 1 | |
+| DELETE | `/api/users/me` | Phase 1 | |
 
 ### 5.3 興味タグ
 
