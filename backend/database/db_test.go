@@ -56,7 +56,7 @@ func TestDatabaseConnection(t *testing.T) {
 			t.Fatal("User table was not created")
 		}
 
-		requiredColumns := []string{"id", "email", "password_hash", "display_name", "avatar_url", "created_at", "updated_at"}
+		requiredColumns := []string{"id", "email", "display_name", "avatar_url", "created_at", "updated_at"}
 		for _, col := range requiredColumns {
 			if !db.Migrator().HasColumn(&models.User{}, col) {
 				t.Fatalf("User table missing column: %s", col)

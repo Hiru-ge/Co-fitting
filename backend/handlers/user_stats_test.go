@@ -11,7 +11,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupStatsRouter() *gin.Engine {
@@ -28,14 +27,12 @@ func TestGetStats(t *testing.T) {
 	t.Run("認証済みユーザーの統計情報が取得できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "stats@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Stats User",
-			Level:        3,
-			TotalXP:      250,
-			StreakCount:  5,
+			Email:       "stats@example.com",
+			DisplayName: "Stats User",
+			Level:       3,
+			TotalXP:     250,
+			StreakCount: 5,
 		}
 		testDB.Create(&user)
 
@@ -97,11 +94,9 @@ func TestGetStats(t *testing.T) {
 	t.Run("訪問記録なしユーザーは初期値が返される", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "newuser@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "New User",
+			Email:       "newuser@example.com",
+			DisplayName: "New User",
 		}
 		testDB.Create(&user)
 

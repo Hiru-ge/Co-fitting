@@ -46,6 +46,11 @@ func Migrate(db *gorm.DB) error {
 		db.Migrator().DropColumn(&models.Visit{}, "longitude")
 	}
 
+	// Google OAuth移行に伴い password_hash カラムを削除
+	if db.Migrator().HasColumn(&models.User{}, "password_hash") {
+		db.Migrator().DropColumn(&models.User{}, "password_hash")
+	}
+
 	// マスタデータ投入
 	if err := SeedMasterData(db); err != nil {
 		return fmt.Errorf("failed to seed master data: %w", err)
