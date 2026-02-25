@@ -3,6 +3,7 @@ import { redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/onboarding";
 import { getToken } from "~/lib/auth";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
+import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
 import type { GenreTag } from "~/types/genre";
 
 export async function clientLoader(_: Route.ClientLoaderArgs) {
@@ -14,7 +15,7 @@ export async function clientLoader(_: Route.ClientLoaderArgs) {
     getInterests(token),
   ]);
 
-  if (interests.length >= 3) {
+  if (interests.length >= 3 || localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true") {
     throw redirect("/home");
   }
 
@@ -53,6 +54,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
   }
 
   function handleSkip() {
+    localStorage.setItem(ONBOARDING_SKIPPED_KEY, "true");
     navigate("/home");
   }
 

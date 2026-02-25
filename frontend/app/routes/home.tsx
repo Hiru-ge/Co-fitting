@@ -7,7 +7,7 @@ import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
 import { getPositionWithFallback } from "~/utils/geolocation";
-import { DEFAULT_RADIUS } from "~/utils/constants";
+import { DEFAULT_RADIUS, ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import type { Place } from "~/types/suggestion";
@@ -37,7 +37,8 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
     getUser(token),
     getInterests(token),
   ]);
-  if (interests.length < 3) throw redirect("/onboarding");
+  const onboardingSkipped = localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
+  if (interests.length < 3 && !onboardingSkipped) throw redirect("/onboarding");
   return { user, token };
 }
 
