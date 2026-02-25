@@ -282,4 +282,121 @@ describe("Home画面", () => {
     });
     expect(mockShowToast).toHaveBeenCalled();
   });
+
+  test("チェックイン時バッジがある場合、XPモーダルを閉じるとバッジモーダルが表示される", async () => {
+    const { createVisit } = await import("~/api/visits");
+    vi.mocked(createVisit).mockResolvedValueOnce({
+      id: 1,
+      xp_earned: 50,
+      total_xp: 150,
+      level_up: false,
+      new_level: 2,
+      new_badges: [{ id: 1, name: "最初の一歩", description: "初めての訪問！", icon_url: "" }],
+    } as any);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
+    await user.click(checkInButton);
+
+    // XPモーダルが表示される
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+
+    // XPモーダルを閉じる
+    await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
+
+    // バッジモーダルが表示される
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
+      expect(screen.getByText("最初の一歩")).toBeInTheDocument();
+    });
+  });
+
+  test("バッジがない場合、XPモーダルを閉じてもバッジモーダルは表示されない", async () => {
+    const { createVisit } = await import("~/api/visits");
+    vi.mocked(createVisit).mockResolvedValueOnce({
+      id: 1,
+      xp_earned: 50,
+      total_xp: 150,
+      level_up: false,
+      new_level: 2,
+      new_badges: [],
+    } as any);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
+    await user.click(checkInButton);
+
+    // XPモーダルが表示される
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+
+    // XPモーダルを閉じる
+    await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
+
+    // バッジモーダルは表示されない
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "バッジ獲得" })).not.toBeInTheDocument();
+    });
+  });
+
+  test("バッジモーダルを閉じると次のバッジが表示される", async () => {
+    const { createVisit } = await import("~/api/visits");
+    vi.mocked(createVisit).mockResolvedValueOnce({
+      id: 1,
+      xp_earned: 100,
+      total_xp: 200,
+      level_up: false,
+      new_level: 2,
+      new_badges: [
+        { id: 1, name: "最初の一歩", description: "初めての訪問！", icon_url: "" },
+        { id: 2, name: "コンフォートゾーン・ブレイカー", description: "脱却訪問を達成！", icon_url: "" },
+      ],
+    } as any);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
+    await user.click(checkInButton);
+
+    // XPモーダルを閉じる
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
+
+    // 1枚目バッジモーダル
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
+      expect(screen.getByText("最初の一歩")).toBeInTheDocument();
+    });
+
+    // 1枚目を閉じる
+    await user.click(screen.getByRole("button", { name: /バッジを獲得/ }));
+
+    // 2枚目バッジモーダル
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
+      expect(screen.getByText("コンフォートゾーン・ブレイカー")).toBeInTheDocument();
+    });
+  });
 });

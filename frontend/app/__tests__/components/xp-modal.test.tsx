@@ -1,7 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import XpModal from "~/components/xp-modal";
-import type { BadgeInfo } from "~/types/visit";
 
 const defaultProps = {
   xpEarned: 50,
@@ -9,7 +8,6 @@ const defaultProps = {
   currentLevel: 2,
   levelUp: false,
   newLevel: 2,
-  newBadges: [] as BadgeInfo[],
   onClose: vi.fn(),
 };
 
@@ -42,29 +40,9 @@ describe("XpModal", () => {
     expect(screen.getByText(/LEVEL 3/i)).toBeInTheDocument();
   });
 
-  test("バッジなし時はバッジセクションが表示されない", () => {
-    render(<XpModal {...defaultProps} newBadges={[]} />);
-    expect(screen.queryByRole("img", { name: /バッジ/ })).not.toBeInTheDocument();
-  });
-
-  test("バッジがある場合はバッジ名が表示される", () => {
-    const badge: BadgeInfo = {
-      id: 1,
-      name: "初めの一歩",
-      description: "初めての訪問を達成！",
-      icon_url: "",
-    };
-    render(<XpModal {...defaultProps} newBadges={[badge]} />);
-    expect(screen.getByText("初めの一歩")).toBeInTheDocument();
-  });
-
-  test("複数バッジ獲得時に最初のバッジが表示される", () => {
-    const badges: BadgeInfo[] = [
-      { id: 1, name: "初めの一歩", description: "最初の訪問", icon_url: "" },
-      { id: 2, name: "探索者", description: "10か所訪問", icon_url: "" },
-    ];
-    render(<XpModal {...defaultProps} newBadges={badges} />);
-    expect(screen.getByText("初めの一歩")).toBeInTheDocument();
+  test("バッジ名はXPモーダルに表示されない（BadgeModalで別途表示）", () => {
+    render(<XpModal {...defaultProps} />);
+    expect(screen.queryByText("初めの一歩")).not.toBeInTheDocument();
   });
 
   test("ダイアログ role で表示される", () => {

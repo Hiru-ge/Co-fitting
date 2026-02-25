@@ -1,4 +1,3 @@
-import type { BadgeInfo } from "~/types/visit";
 import { getLevelInfo } from "~/utils/level";
 
 interface XpModalProps {
@@ -7,7 +6,6 @@ interface XpModalProps {
   currentLevel: number;
   levelUp: boolean;
   newLevel: number;
-  newBadges: BadgeInfo[];
   onClose: () => void;
 }
 
@@ -17,11 +15,9 @@ export default function XpModal({
   currentLevel,
   levelUp,
   newLevel,
-  newBadges,
   onClose,
 }: XpModalProps) {
   const { xpToNextLevel, progressPercent } = getLevelInfo(totalXp);
-  const firstBadge = newBadges[0] ?? null;
 
   return (
     <div
@@ -87,12 +83,6 @@ export default function XpModal({
               </span>
             </div>
 
-            {/* バッジ名ラベル（バッジがある場合） */}
-            {firstBadge && (
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white text-bg-dark-purple px-4 py-1 rounded-full text-xs font-bold whitespace-nowrap shadow-lg">
-                {firstBadge.name}
-              </div>
-            )}
           </div>
 
           {/* XP・テキスト */}
