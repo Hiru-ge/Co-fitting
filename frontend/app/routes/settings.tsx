@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Route } from "./+types/settings";
 import { redirect, useNavigate } from "react-router";
 import { getToken, getUser, clearToken } from "~/lib/auth";
-import { updateDisplayName, deleteAccount } from "~/api/users";
+import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
 
@@ -107,12 +107,18 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             token={token}
             genres={genres}
             initialInterests={interests}
+            initialRadius={user.search_radius ?? 5000}
           />
         )}
       </div>
     </div>
   );
 }
+
+// 提案半径スライダーの設定（メートル単位）
+const RADIUS_MIN = 1000;
+const RADIUS_MAX = 20000;
+const RADIUS_STEP = 1000;
 
 // === ユーザー情報タブ ===
 function UserInfoTab({
@@ -257,10 +263,12 @@ function SuggestionTab({
   token,
   genres,
   initialInterests,
+  initialRadius,
 }: {
   token: string;
   genres: GenreTag[];
   initialInterests: Interest[];
+  initialRadius: number;
 }) {
   const [selectedIds, setSelectedIds] = useState<number[]>(
     initialInterests.map((i) => i.genre_tag_id)
@@ -268,6 +276,11 @@ function SuggestionTab({
   const [interestMsg, setInterestMsg] = useState("");
   const [interestError, setInterestError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+
+  const [selectedRadius, setSelectedRadius] = useState<number>(initialRadius);
+  const [radiusMsg, setRadiusMsg] = useState("");
+  const [radiusError, setRadiusError] = useState("");
+  const [isSavingRadius, setIsSavingRadius] = useState(false);
 
   function toggleGenre(id: number) {
     setSelectedIds((prev) =>
@@ -291,8 +304,66 @@ function SuggestionTab({
     }
   }
 
+  async function handleSaveRadius(e: React.FormEvent) {
+    e.preventDefault();
+    setRadiusMsg("");
+    setRadiusError("");
+
+    setIsSavingRadius(true);
+    try {
+      await updateSearchRadius(token, selectedRadius);
+      setRadiusMsg("提案半径を保存しました");
+    } catch {
+      setRadiusError("提案半径の保存に失敗しました");
+    } finally {
+      setIsSavingRadius(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* 提案半径セクション */}
+      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-xl">
+            radar
+          </span>
+          提案半径
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          現在地からどの範囲の施設を提案するか設定します。
+        </p>
+        <form onSubmit={handleSaveRadius} className="space-y-4">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-400">{RADIUS_MIN / 1000}km</span>
+              <span className="text-lg font-bold text-primary">
+                {selectedRadius / 1000}km
+              </span>
+              <span className="text-xs text-gray-400">{RADIUS_MAX / 1000}km</span>
+            </div>
+            <input
+              type="range"
+              min={RADIUS_MIN}
+              max={RADIUS_MAX}
+              step={RADIUS_STEP}
+              value={selectedRadius}
+              onChange={(e) => setSelectedRadius(Number(e.target.value))}
+              className="w-full accent-primary"
+              aria-label="提案半径"
+            />
+          </div>
+          <FormMessage success={radiusMsg} error={radiusError} />
+          <button
+            type="submit"
+            disabled={isSavingRadius}
+            className={SUBMIT_CLASS}
+          >
+            {isSavingRadius ? "保存中..." : "半径を保存"}
+          </button>
+        </form>
+      </section>
+
       <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">

@@ -302,17 +302,23 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	if req.Radius == 0 {
-		req.Radius = defaultSearchRadius
-	}
-	if req.Radius > maxSearchRadius {
-		req.Radius = maxSearchRadius
-	}
-
 	userID, ok := middleware.GetUserIDFromContext(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
+	}
+
+	// radius未指定の場合はユーザーのsearch_radius設定値を使用
+	if req.Radius == 0 {
+		var user models.User
+		if err := h.DB.Select("search_radius").First(&user, userID).Error; err == nil && user.SearchRadius > 0 {
+			req.Radius = user.SearchRadius
+		} else {
+			req.Radius = defaultSearchRadius
+		}
+	}
+	if req.Radius > maxSearchRadius {
+		req.Radius = maxSearchRadius
 	}
 
 	ctx := c.Request.Context()

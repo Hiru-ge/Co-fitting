@@ -11,6 +11,16 @@ export async function updateDisplayName(
   });
 }
 
+export async function updateSearchRadius(
+  token: string,
+  searchRadius: number
+): Promise<User> {
+  return apiCall("/api/users/me", token, {
+    method: "PATCH",
+    body: JSON.stringify({ search_radius: searchRadius }),
+  });
+}
+
 export async function deleteAccount(token: string): Promise<void> {
   await apiCall("/api/users/me", token, {
     method: "DELETE",

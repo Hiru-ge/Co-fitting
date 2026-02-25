@@ -47,6 +47,15 @@ vi.mock("~/api/users", () => ({
     updated_at: "2025-12-01T10:00:00Z",
   }),
   deleteAccount: vi.fn().mockResolvedValue(undefined),
+  updateSearchRadius: vi.fn().mockResolvedValue({
+    id: 1,
+    email: "test@example.com",
+    display_name: "テストユーザー",
+    search_radius: 10000,
+    avatar_url: null,
+    created_at: "2025-06-15T10:00:00Z",
+    updated_at: "2025-12-01T10:00:00Z",
+  }),
 }));
 
 vi.mock("~/api/genres", () => ({
@@ -70,13 +79,14 @@ vi.mock("~/api/genres", () => ({
 }));
 
 import Settings from "~/routes/settings";
-import { updateDisplayName, deleteAccount } from "~/api/users";
+import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
 import { updateInterests } from "~/api/genres";
 
 const mockUser = {
   id: 1,
   email: "test@example.com",
   display_name: "テストユーザー",
+  search_radius: 5000,
   avatar_url: null,
   created_at: "2025-06-15T10:00:00Z",
   updated_at: "2025-12-01T10:00:00Z",
@@ -306,6 +316,41 @@ describe("設定画面", () => {
 
       const saveButton = screen.getByRole("button", { name: "興味タグを保存" });
       expect(saveButton).toBeDisabled();
+    });
+
+    test("提案半径のスライダーUIが表示される", async () => {
+      await switchToSuggestionTab();
+      expect(screen.getByRole("heading", { name: /提案半径/ })).toBeInTheDocument();
+      expect(screen.getByRole("slider", { name: "提案半径" })).toBeInTheDocument();
+    });
+
+    test("現在のsearch_radiusがスライダーの初期値として設定される", async () => {
+      await switchToSuggestionTab();
+      // mockUser の search_radius = 5000
+      const slider = screen.getByRole("slider", { name: "提案半径" }) as HTMLInputElement;
+      expect(slider.value).toBe("5000");
+    });
+
+    test("半径変更でupdateSearchRadiusが呼ばれる", async () => {
+      const user = await switchToSuggestionTab();
+
+      const slider = screen.getByRole("slider", { name: "提案半径" });
+      await user.type(slider, "{ArrowRight}".repeat(5));
+      await user.click(screen.getByRole("button", { name: "半径を保存" }));
+
+      await waitFor(() => {
+        expect(updateSearchRadius).toHaveBeenCalled();
+      });
+    });
+
+    test("半径保存成功でメッセージが表示される", async () => {
+      const user = await switchToSuggestionTab();
+
+      await user.click(screen.getByRole("button", { name: "半径を保存" }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/提案半径を保存しました/)).toBeInTheDocument();
+      });
     });
   });
 
