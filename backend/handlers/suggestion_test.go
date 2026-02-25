@@ -13,7 +13,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type mockPlacesClient struct {
@@ -101,11 +100,9 @@ func cleanupAllSuggestionCache(t *testing.T) {
 
 func createTestUser(t *testing.T) models.User {
 	t.Helper()
-	hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := models.User{
-		Email:        "suggest@example.com",
-		PasswordHash: string(hash),
-		DisplayName:  "Suggest User",
+		Email:       "suggest@example.com",
+		DisplayName: "Suggest User",
 	}
 	testDB.Create(&user)
 	return user
@@ -935,7 +932,6 @@ func TestPersonalizedSuggest(t *testing.T) {
 	})
 }
 
-
 func TestSuggestMood(t *testing.T) {
 	allTypePlaces := []PlaceResult{
 		{PlaceID: "cafe_1", Name: "隠れ家カフェ", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.5, Types: []string{"cafe"}},
@@ -1263,11 +1259,9 @@ func TestSuggestMoodCache(t *testing.T) {
 
 func TestSuggestRadiusLimit(t *testing.T) {
 	// ユーザー作成
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := models.User{
-		Email:        "radius-test@example.com",
-		PasswordHash: string(hashedPassword),
-		DisplayName:  "Radius Tester",
+		Email:       "radius-test@example.com",
+		DisplayName: "Radius Tester",
 	}
 	testDB.Create(&user)
 	defer testDB.Delete(&user)

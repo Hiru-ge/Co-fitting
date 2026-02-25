@@ -10,7 +10,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupProficiencyRouter() *gin.Engine {
@@ -27,11 +26,9 @@ func TestGetProficiency(t *testing.T) {
 	t.Run("認証済みユーザーのジャンル別熟練度一覧が取得できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "proficiency@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Proficiency User",
+			Email:       "proficiency@example.com",
+			DisplayName: "Proficiency User",
 		}
 		testDB.Create(&user)
 
@@ -110,11 +107,9 @@ func TestGetProficiency(t *testing.T) {
 	t.Run("熟練度データなしユーザーは空配列が返される", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "noprof@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "No Prof User",
+			Email:       "noprof@example.com",
+			DisplayName: "No Prof User",
 		}
 		testDB.Create(&user)
 

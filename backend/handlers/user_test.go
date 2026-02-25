@@ -13,7 +13,6 @@ import (
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupUserRouter() *gin.Engine {
@@ -48,11 +47,9 @@ func TestGetMe(t *testing.T) {
 	t.Run("JWTつきで自身の情報が返される", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "me@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Me User",
+			Email:       "me@example.com",
+			DisplayName: "Me User",
 		}
 		testDB.Create(&user)
 
@@ -77,9 +74,6 @@ func TestGetMe(t *testing.T) {
 		}
 		if resp["display_name"] != "Me User" {
 			t.Errorf("Expected display_name 'Me User', got '%v'", resp["display_name"])
-		}
-		if _, exists := resp["password_hash"]; exists {
-			t.Error("password_hash should not be exposed in response")
 		}
 	})
 
@@ -115,11 +109,9 @@ func TestUpdateMe(t *testing.T) {
 	t.Run("表示名を更新できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "update@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Old Name",
+			Email:       "update@example.com",
+			DisplayName: "Old Name",
 		}
 		testDB.Create(&user)
 
@@ -160,11 +152,9 @@ func TestUpdateMe(t *testing.T) {
 	t.Run("空の表示名で400 Bad Request", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "empty@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Original",
+			Email:       "empty@example.com",
+			DisplayName: "Original",
 		}
 		testDB.Create(&user)
 
@@ -189,11 +179,9 @@ func TestUpdateMe(t *testing.T) {
 	t.Run("表示名の前後空白がトリムされる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "trim@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Original",
+			Email:       "trim@example.com",
+			DisplayName: "Original",
 		}
 		testDB.Create(&user)
 
@@ -273,11 +261,9 @@ func TestDeleteMe(t *testing.T) {
 	t.Run("認証済みユーザーが自身のアカウントを削除できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "delete@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Delete Me",
+			Email:       "delete@example.com",
+			DisplayName: "Delete Me",
 		}
 		testDB.Create(&user)
 
@@ -303,11 +289,9 @@ func TestDeleteMe(t *testing.T) {
 	t.Run("関連する訪問記録も削除される", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "delete_with_visits@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Delete With Visits",
+			Email:       "delete_with_visits@example.com",
+			DisplayName: "Delete With Visits",
 		}
 		testDB.Create(&user)
 
@@ -365,4 +349,3 @@ func TestDeleteMe(t *testing.T) {
 		}
 	})
 }
-

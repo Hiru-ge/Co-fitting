@@ -6,7 +6,6 @@ import "time"
 type User struct {
 	ID           uint64     `gorm:"primaryKey" json:"id"`
 	Email        string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	PasswordHash string     `gorm:"not null" json:"-"`
 	DisplayName  string     `gorm:"not null" json:"display_name"`
 	AvatarURL    *string    `json:"avatar_url"`
 	Level        int        `gorm:"default:1;not null" json:"level"`

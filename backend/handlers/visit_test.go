@@ -13,7 +13,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupVisitRouter() *gin.Engine {
@@ -29,11 +28,9 @@ func setupVisitRouter() *gin.Engine {
 
 func createTestUserForVisit(t *testing.T) models.User {
 	t.Helper()
-	hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := models.User{
-		Email:        "visit@example.com",
-		PasswordHash: string(hash),
-		DisplayName:  "Visit User",
+		Email:       "visit@example.com",
+		DisplayName: "Visit User",
 	}
 	testDB.Create(&user)
 	return user
@@ -660,11 +657,9 @@ func TestListVisits(t *testing.T) {
 		createVisitsForUser(t, user1.ID, 2)
 
 		// ユーザー2を作成（別メールで）
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user2 := models.User{
-			Email:        "visit-other@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Other User",
+			Email:       "visit-other@example.com",
+			DisplayName: "Other User",
 		}
 		testDB.Create(&user2)
 		createVisitsForUser(t, user2.ID, 3)
@@ -919,11 +914,9 @@ func TestGetVisit(t *testing.T) {
 		visit := visits[0]
 
 		// ユーザー2でアクセス
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user2 := models.User{
-			Email:        "other-get@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Other User",
+			Email:       "other-get@example.com",
+			DisplayName: "Other User",
 		}
 		testDB.Create(&user2)
 		token2 := generateTestToken(user2.ID)
@@ -1107,11 +1100,9 @@ func TestUpdateVisit(t *testing.T) {
 		visitID := visits[0].ID
 
 		// 別のユーザー2のトークンで更新を試みる
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user2 := models.User{
-			Email:        "visit-other2@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Other User2",
+			Email:       "visit-other2@example.com",
+			DisplayName: "Other User2",
 		}
 		testDB.Create(&user2)
 		token2 := generateTestToken(user2.ID)

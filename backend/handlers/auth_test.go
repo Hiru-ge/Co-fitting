@@ -18,7 +18,6 @@ import (
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -99,11 +98,9 @@ func TestRefreshToken(t *testing.T) {
 	t.Run("有効なリフレッシュトークンで新しいアクセストークン発行", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "refresh@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Refresh User",
+			Email:       "refresh@example.com",
+			DisplayName: "Refresh User",
 		})
 
 		var user models.User
@@ -142,11 +139,9 @@ func TestRefreshToken(t *testing.T) {
 	t.Run("期限切れリフレッシュトークンで401 Unauthorized", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "expired@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Expired User",
+			Email:       "expired@example.com",
+			DisplayName: "Expired User",
 		})
 
 		var user models.User
@@ -193,11 +188,9 @@ func TestRefreshToken(t *testing.T) {
 	t.Run("アクセストークンをリフレッシュに使用で401 Unauthorized", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "access@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Access User",
+			Email:       "access@example.com",
+			DisplayName: "Access User",
 		})
 
 		var user models.User
@@ -236,11 +229,9 @@ func TestLogout(t *testing.T) {
 	t.Run("有効なトークンで200 OK", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "logout@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Logout User",
+			Email:       "logout@example.com",
+			DisplayName: "Logout User",
 		})
 
 		var user models.User
@@ -283,11 +274,9 @@ func TestLogout(t *testing.T) {
 	t.Run("ログアウト後、古いトークンでアクセス → 401 Unauthorized", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "revoked@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Revoked User",
+			Email:       "revoked@example.com",
+			DisplayName: "Revoked User",
 		})
 
 		var user models.User
@@ -331,11 +320,9 @@ func TestLogoutWithRefreshToken(t *testing.T) {
 	t.Run("リフレッシュトークンを含むログアウトリクエスト", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "refresh-logout@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Refresh Logout User",
+			Email:       "refresh-logout@example.com",
+			DisplayName: "Refresh Logout User",
 		})
 
 		var user models.User
@@ -381,11 +368,9 @@ func TestLogoutWithRefreshToken(t *testing.T) {
 	t.Run("ログアウト後のリフレッシュトークン無効化テスト", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "refresh-invalid@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Refresh Invalid User",
+			Email:       "refresh-invalid@example.com",
+			DisplayName: "Refresh Invalid User",
 		})
 
 		var user models.User
@@ -439,11 +424,9 @@ func TestLogoutWithRefreshToken(t *testing.T) {
 	t.Run("リフレッシュトークンなしのログアウトでも正常動作", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		testDB.Create(&models.User{
-			Email:        "no-refresh@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "No Refresh User",
+			Email:       "no-refresh@example.com",
+			DisplayName: "No Refresh User",
 		})
 
 		var user models.User

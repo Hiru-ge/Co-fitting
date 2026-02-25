@@ -11,7 +11,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupVisitMapRouter() *gin.Engine {
@@ -24,11 +23,9 @@ func setupVisitMapRouter() *gin.Engine {
 
 func createTestUserForMap(t *testing.T) models.User {
 	t.Helper()
-	hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := models.User{
-		Email:        "map@example.com",
-		PasswordHash: string(hash),
-		DisplayName:  "Map User",
+		Email:       "map@example.com",
+		DisplayName: "Map User",
 	}
 	testDB.Create(&user)
 	return user
@@ -174,11 +171,9 @@ func TestGetMapData(t *testing.T) {
 		token1 := generateTestToken(user1.ID)
 		createVisitsForMap(t, user1.ID, 2)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user2 := models.User{
-			Email:        "map-other@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Other Map User",
+			Email:       "map-other@example.com",
+			DisplayName: "Other Map User",
 		}
 		testDB.Create(&user2)
 		createVisitsForMap(t, user2.ID, 5)

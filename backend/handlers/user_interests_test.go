@@ -11,7 +11,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupInterestsRouter() *gin.Engine {
@@ -29,11 +28,9 @@ func TestGetInterests(t *testing.T) {
 	t.Run("認証済みユーザーの興味タグ一覧が取得できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "interests@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Interests User",
+			Email:       "interests@example.com",
+			DisplayName: "Interests User",
 		}
 		testDB.Create(&user)
 
@@ -100,11 +97,9 @@ func TestGetInterests(t *testing.T) {
 	t.Run("興味タグデータなしユーザーは空配列が返される", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "nointerests@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "No Interests User",
+			Email:       "nointerests@example.com",
+			DisplayName: "No Interests User",
 		}
 		testDB.Create(&user)
 
@@ -136,11 +131,9 @@ func TestUpdateInterests(t *testing.T) {
 	t.Run("新規設定パターン: 興味タグが登録されていない状態から設定できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "newinterests@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "New Interests User",
+			Email:       "newinterests@example.com",
+			DisplayName: "New Interests User",
 		}
 		testDB.Create(&user)
 
@@ -187,11 +180,9 @@ func TestUpdateInterests(t *testing.T) {
 	t.Run("既存更新パターン: 興味タグを別のものに更新できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "updateinterests@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Update Interests User",
+			Email:       "updateinterests@example.com",
+			DisplayName: "Update Interests User",
 		}
 		testDB.Create(&user)
 
@@ -241,11 +232,9 @@ func TestUpdateInterests(t *testing.T) {
 	t.Run("バリデーションエラー: 3つ未満で400 Bad Request", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "fewtags@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Few Tags User",
+			Email:       "fewtags@example.com",
+			DisplayName: "Few Tags User",
 		}
 		testDB.Create(&user)
 
@@ -276,11 +265,9 @@ func TestUpdateInterests(t *testing.T) {
 	t.Run("バリデーションエラー: 空配列で400 Bad Request", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "emptytags@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Empty Tags User",
+			Email:       "emptytags@example.com",
+			DisplayName: "Empty Tags User",
 		}
 		testDB.Create(&user)
 

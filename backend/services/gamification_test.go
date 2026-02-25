@@ -8,7 +8,6 @@ import (
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
 	"github.com/Hiru-ge/roamble/testutil"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -45,11 +44,9 @@ func cleanupUsers(t *testing.T) {
 
 func createUser(t *testing.T, email string) models.User {
 	t.Helper()
-	hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	user := models.User{
-		Email:        email,
-		PasswordHash: string(hash),
-		DisplayName:  "Test User",
+		Email:       email,
+		DisplayName: "Test User",
 	}
 	testDB.Create(&user)
 	return user

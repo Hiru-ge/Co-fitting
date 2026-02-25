@@ -11,7 +11,6 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func setupBadgesRouter() *gin.Engine {
@@ -28,11 +27,9 @@ func TestGetBadges(t *testing.T) {
 	t.Run("認証済みユーザーの獲得バッジ一覧が取得できる", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "badges@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "Badge User",
+			Email:       "badges@example.com",
+			DisplayName: "Badge User",
 		}
 		testDB.Create(&user)
 
@@ -115,11 +112,9 @@ func TestGetBadges(t *testing.T) {
 	t.Run("バッジ未獲得ユーザーは空配列が返される", func(t *testing.T) {
 		cleanupUsers(t)
 
-		hash, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 		user := models.User{
-			Email:        "nobadge@example.com",
-			PasswordHash: string(hash),
-			DisplayName:  "No Badge User",
+			Email:       "nobadge@example.com",
+			DisplayName: "No Badge User",
 		}
 		testDB.Create(&user)
 
