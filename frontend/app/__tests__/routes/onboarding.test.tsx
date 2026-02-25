@@ -2,6 +2,15 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const localStorageData: Record<string, string> = {};
+const localStorageMock = {
+  getItem: (key: string) => localStorageData[key] ?? null,
+  setItem: (key: string, value: string) => { localStorageData[key] = value; },
+  removeItem: (key: string) => { delete localStorageData[key]; },
+  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+};
+vi.stubGlobal("localStorage", localStorageMock);
+
 const mockNavigate = vi.fn();
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
@@ -59,6 +68,7 @@ describe("Onboarding画面", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockNavigate.mockReset();
+    localStorageMock.clear();
   });
 
   test("興味タグ一覧が表示される", async () => {
@@ -159,6 +169,16 @@ describe("Onboarding画面", () => {
     await user.click(skipButton);
 
     expect(mockNavigate).toHaveBeenCalledWith("/home");
+  });
+
+  test("スキップボタン押下でlocalStorageにonboarding_skippedフラグが設定される", async () => {
+    const user = userEvent.setup();
+    renderOnboarding();
+
+    const skipButton = screen.getByRole("button", { name: /スキップ/ });
+    await user.click(skipButton);
+
+    expect(localStorage.getItem("onboarding_skipped")).toBe("true");
   });
 
   test("updateInterests失敗時にエラーメッセージが表示される", async () => {

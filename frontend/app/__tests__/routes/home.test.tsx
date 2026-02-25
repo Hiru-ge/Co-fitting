@@ -3,6 +3,15 @@ import { ApiError } from "~/utils/error";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+const localStorageData: Record<string, string> = {};
+const localStorageMock = {
+  getItem: (key: string) => localStorageData[key] ?? null,
+  setItem: (key: string, value: string) => { localStorageData[key] = value; },
+  removeItem: (key: string) => { delete localStorageData[key]; },
+  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+};
+vi.stubGlobal("localStorage", localStorageMock);
+
 const mockShowToast = vi.fn();
 vi.mock("~/components/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
@@ -103,6 +112,45 @@ function renderHome() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return render(<Home loaderData={loaderData as any} params={{} as any} matches={[] as any} />);
 }
+
+describe("Home clientLoader", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorageMock.clear();
+  });
+
+  test("interests < 3 かつ onboarding_skipped フラグなしなら /onboarding にリダイレクトする", async () => {
+    const { getInterests } = await import("~/api/genres");
+    vi.mocked(getInterests).mockResolvedValueOnce([
+      { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
+    ]);
+    const { redirect } = await import("react-router");
+    const { clientLoader } = await import("~/routes/home");
+
+    try {
+      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    } catch {
+      // clientLoaderはthrow redirectを使う
+    }
+
+    expect(redirect).toHaveBeenCalledWith("/onboarding");
+  });
+
+  test("interests < 3 でも onboarding_skipped フラグがあれば /onboarding にリダイレクトしない", async () => {
+    localStorage.setItem("onboarding_skipped", "true");
+    const { getInterests } = await import("~/api/genres");
+    vi.mocked(getInterests).mockResolvedValueOnce([
+      { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
+    ]);
+    const { redirect } = await import("react-router");
+    const { clientLoader } = await import("~/routes/home");
+
+    const result = await clientLoader({} as Parameters<typeof clientLoader>[0]);
+
+    expect(redirect).not.toHaveBeenCalledWith("/onboarding");
+    expect(result).toHaveProperty("token", "test-token");
+  });
+});
 
 describe("Home画面", () => {
   beforeEach(() => {
