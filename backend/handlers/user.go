@@ -311,13 +311,18 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	c.JSON(http.StatusOK, interests)
 }
 
+// 提案半径の最小・最大値（メートル）
+const minSearchRadius uint = 500
+const maxSettingRadius uint = 20000
+
 type updateMeRequest struct {
-	DisplayName string `json:"display_name" binding:"required"`
+	DisplayName  *string `json:"display_name"`
+	SearchRadius *uint   `json:"search_radius"`
 }
 
 // UpdateMe godoc
 // @Summary      ユーザー情報更新
-// @Description  JWT認証済みユーザーの表示名を更新する
+// @Description  JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）
 // @Tags         Users
 // @Accept       json
 // @Produce      json
@@ -336,14 +341,33 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 
 	var req updateMeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "display_name is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
 		return
 	}
 
-	trimmed := strings.TrimSpace(req.DisplayName)
-	if trimmed == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "display_name is required"})
+	if req.DisplayName == nil && req.SearchRadius == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "display_name or search_radius is required"})
 		return
+	}
+
+	if req.DisplayName != nil {
+		trimmed := strings.TrimSpace(*req.DisplayName)
+		if trimmed == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "display_name is required"})
+			return
+		}
+		req.DisplayName = &trimmed
+	}
+
+	if req.SearchRadius != nil {
+		if *req.SearchRadius < minSearchRadius {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "search_radius must be at least 500m"})
+			return
+		}
+		if *req.SearchRadius > maxSettingRadius {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "search_radius must be at most 20000m"})
+			return
+		}
 	}
 
 	var user models.User
@@ -356,7 +380,13 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	user.DisplayName = trimmed
+	if req.DisplayName != nil {
+		user.DisplayName = *req.DisplayName
+	}
+	if req.SearchRadius != nil {
+		user.SearchRadius = *req.SearchRadius
+	}
+
 	if err := h.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
 		return

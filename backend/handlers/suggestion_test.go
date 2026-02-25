@@ -1193,7 +1193,57 @@ func TestSuggestRadiusLimit(t *testing.T) {
 		}
 	})
 
-	t.Run("radius=0 should default to 3000", func(t *testing.T) {
+	t.Run("ユーザーのsearch_radius設定値が提案APIのデフォルト半径として使われる", func(t *testing.T) {
+		// search_radius を 10000 に設定したユーザー
+		userWithRadius := models.User{
+			Email:        "radius-custom@example.com",
+			DisplayName:  "Custom Radius Tester",
+			SearchRadius: 10000,
+		}
+		testDB.Create(&userWithRadius)
+		defer testDB.Delete(&userWithRadius)
+
+		customToken := generateTestToken(userWithRadius.ID)
+
+		mock := &trackingMockPlacesClient{
+			Results: []PlaceResult{
+				{PlaceID: "place_r", Name: "Test Place R", Types: []string{"cafe"}},
+			},
+			Err: nil,
+		}
+
+		handler := &SuggestionHandler{
+			DB:          testDB,
+			RedisClient: nil,
+			Places:      mock,
+		}
+
+		r := gin.New()
+		r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), handler.Suggest)
+
+		reqBody := suggestionRequest{
+			Lat: 35.6762,
+			Lng: 139.6503,
+			// Radius未指定 → ユーザー設定値10000が使われるべき
+		}
+		body, _ := json.Marshal(reqBody)
+		req := httptest.NewRequest("POST", "/api/suggestions", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+customToken)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, req)
+
+		if w.Code != 200 {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+
+		if mock.LastRadius != 10000 {
+			t.Errorf("Expected radius 10000 from user setting, got %d", mock.LastRadius)
+		}
+	})
+
+	t.Run("radius=0 のときユーザーのsearch_radius設定値(デフォルト5000)が使われる", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
 			Results: []PlaceResult{
 				{PlaceID: "place3", Name: "Test Place 3", Types: []string{"park"}},
@@ -1213,7 +1263,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 		reqBody := suggestionRequest{
 			Lat: 35.6762,
 			Lng: 139.6503,
-			// Radius未指定（0になる）
+			// Radius未指定（0になる）→ ユーザーのsearch_radius（DB デフォルト 5000）が使われる
 		}
 		body, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest("POST", "/api/suggestions", bytes.NewReader(body))
@@ -1227,9 +1277,9 @@ func TestSuggestRadiusLimit(t *testing.T) {
 			t.Errorf("Expected status 200, got %d", w.Code)
 		}
 
-		// デフォルト値3000が設定されているかチェック
-		if mock.LastRadius != 3000 {
-			t.Errorf("Expected default radius to be 3000, got %d", mock.LastRadius)
+		// ユーザーのsearch_radius（DBデフォルト5000）が使われる
+		if mock.LastRadius != 5000 {
+			t.Errorf("Expected default radius to be 5000 (user's search_radius), got %d", mock.LastRadius)
 		}
 	})
 }

@@ -247,6 +247,151 @@ func TestUpdateMe(t *testing.T) {
 	})
 }
 
+func setupUserRouterWithPatchAndRadius() *gin.Engine {
+	userHandler := &UserHandler{DB: testDB}
+
+	r := gin.New()
+	r.GET("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.GetMe)
+	r.PATCH("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.UpdateMe)
+	return r
+}
+
+func TestUpdateSearchRadius(t *testing.T) {
+	router := setupUserRouterWithPatchAndRadius()
+
+	t.Run("search_radiusを更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "radius@example.com",
+			DisplayName: "Radius User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"search_radius": 10000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		if resp["search_radius"] != float64(10000) {
+			t.Errorf("Expected search_radius 10000, got '%v'", resp["search_radius"])
+		}
+
+		var updated models.User
+		testDB.First(&updated, user.ID)
+		if updated.SearchRadius != 10000 {
+			t.Errorf("Expected DB search_radius 10000, got %d", updated.SearchRadius)
+		}
+	})
+
+	t.Run("search_radiusが最小値500未満で400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "radius2@example.com",
+			DisplayName: "Radius User 2",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"search_radius": 499,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("search_radiusが最大値20000超で400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "radius3@example.com",
+			DisplayName: "Radius User 3",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"search_radius": 20001,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("display_nameとsearch_radiusを同時に更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "both@example.com",
+			DisplayName: "Old Name",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"display_name":  "New Name",
+			"search_radius": 7000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		if resp["display_name"] != "New Name" {
+			t.Errorf("Expected display_name 'New Name', got '%v'", resp["display_name"])
+		}
+		if resp["search_radius"] != float64(7000) {
+			t.Errorf("Expected search_radius 7000, got '%v'", resp["search_radius"])
+		}
+	})
+}
+
 func setupUserRouterWithDelete() *gin.Engine {
 	userHandler := &UserHandler{DB: testDB}
 
