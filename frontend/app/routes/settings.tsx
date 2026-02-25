@@ -6,7 +6,7 @@ import { updateDisplayName, deleteAccount } from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
 
-type TabId = "user" | "suggestion" | "account";
+type TabId = "user" | "suggestion";
 
 const INPUT_CLASS =
   "w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
@@ -34,9 +34,8 @@ function FormMessage({ success, error }: { success?: string; error?: string }) {
 }
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: "user", label: "ユーザ情報", icon: "person" },
+  { id: "user", label: "ユーザー情報", icon: "person" },
   { id: "suggestion", label: "提案設定", icon: "tune" },
-  { id: "account", label: "アカウント", icon: "shield" },
 ];
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
@@ -110,9 +109,6 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             initialInterests={interests}
           />
         )}
-        {activeTab === "account" && (
-          <AccountTab token={token} />
-        )}
       </div>
     </div>
   );
@@ -126,10 +122,13 @@ function UserInfoTab({
   token: string;
   user: { display_name: string };
 }) {
+  const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(user.display_name);
   const [displayNameMsg, setDisplayNameMsg] = useState("");
   const [displayNameError, setDisplayNameError] = useState("");
   const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleUpdateDisplayName(e: React.FormEvent) {
     e.preventDefault();
@@ -149,6 +148,18 @@ function UserInfoTab({
       setDisplayNameError("表示名の変更に失敗しました");
     } finally {
       setIsUpdatingName(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setIsDeleting(true);
+    try {
+      await deleteAccount(token);
+      clearToken();
+      navigate("/login", { replace: true });
+    } catch {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
     }
   }
 
@@ -189,6 +200,54 @@ function UserInfoTab({
           </button>
         </form>
       </section>
+
+      {/* アカウント削除セクション */}
+      <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-5">
+        <h2 className="text-base font-bold text-red-600 mb-2 flex items-center gap-2">
+          <span className="material-symbols-outlined text-red-500 text-xl">
+            warning
+          </span>
+          アカウントの削除
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          アカウントを削除すると、すべてのデータが完全に削除されます。この操作は取り消せません。
+        </p>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="w-full py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:scale-95 hover:bg-red-600"
+        >
+          アカウントを削除
+        </button>
+      </section>
+
+      {/* 削除確認モーダル */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold text-gray-800 mb-2">
+              本当にアカウントを削除しますか？
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">
+              すべての訪問記録・バッジ・設定が完全に削除されます。この操作は取り消せません。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-bold text-sm transition-colors active:scale-95"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:scale-95 hover:bg-red-600 disabled:opacity-50"
+              >
+                {isDeleting ? "削除中..." : "削除する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -279,74 +338,3 @@ function SuggestionTab({
   );
 }
 
-// === アカウントタブ ===
-function AccountTab({ token }: { token: string }) {
-  const navigate = useNavigate();
-
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  async function handleDeleteAccount() {
-    setIsDeleting(true);
-    try {
-      await deleteAccount(token);
-      clearToken();
-      navigate("/login", { replace: true });
-    } catch {
-      setIsDeleting(false);
-      setShowDeleteModal(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* アカウント削除セクション */}
-      <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-red-600 mb-2 flex items-center gap-2">
-          <span className="material-symbols-outlined text-red-500 text-xl">
-            warning
-          </span>
-          アカウントの削除
-        </h2>
-        <p className="text-sm text-gray-500 mb-4">
-          アカウントを削除すると、すべてのデータが完全に削除されます。この操作は取り消せません。
-        </p>
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className="w-full py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:scale-95 hover:bg-red-600"
-        >
-          アカウントを削除
-        </button>
-      </section>
-
-      {/* 削除確認モーダル */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">
-              本当にアカウントを削除しますか？
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              すべての訪問記録・バッジ・設定が完全に削除されます。この操作は取り消せません。
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-bold text-sm transition-colors active:scale-95"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={isDeleting}
-                className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:scale-95 hover:bg-red-600 disabled:opacity-50"
-              >
-                {isDeleting ? "削除中..." : "削除する"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}

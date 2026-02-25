@@ -120,16 +120,16 @@ describe("設定画面", () => {
       expect(screen.getByText("設定")).toBeInTheDocument();
     });
 
-    test("3つのタブが表示される", () => {
+    test("2つのタブが表示される", () => {
       renderSettings();
-      expect(screen.getByRole("tab", { name: "ユーザ情報" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "ユーザー情報" })).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "提案設定" })).toBeInTheDocument();
-      expect(screen.getByRole("tab", { name: "アカウント" })).toBeInTheDocument();
+      expect(screen.queryByRole("tab", { name: "アカウント" })).not.toBeInTheDocument();
     });
 
     test("初期状態ではユーザー情報タブが選択されている", () => {
       renderSettings();
-      const tab = screen.getByRole("tab", { name: "ユーザ情報" });
+      const tab = screen.getByRole("tab", { name: "ユーザー情報" });
       expect(tab).toHaveAttribute("aria-selected", "true");
     });
 
@@ -141,11 +141,6 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("tab", { name: "提案設定" }));
       expect(screen.getByRole("tab", { name: "提案設定" })).toHaveAttribute("aria-selected", "true");
       expect(screen.getByText("興味タグ")).toBeInTheDocument();
-
-      // アカウントタブに切り替え
-      await user.click(screen.getByRole("tab", { name: "アカウント" }));
-      expect(screen.getByRole("tab", { name: "アカウント" })).toHaveAttribute("aria-selected", "true");
-      expect(screen.getByText("アカウントの削除")).toBeInTheDocument();
     });
 
     test("戻るボタンが表示される", () => {
@@ -194,6 +189,46 @@ describe("設定画面", () => {
       await waitFor(() => {
         expect(screen.getByText(/表示名を変更しました/)).toBeInTheDocument();
       });
+    });
+
+    test("ユーザー情報タブにアカウント削除ボタンが表示される", () => {
+      renderSettings();
+      expect(screen.getByText("アカウントの削除")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "アカウントを削除" })).toBeInTheDocument();
+    });
+
+    test("アカウント削除ボタンで確認モーダルが表示される", async () => {
+      const user = userEvent.setup();
+      renderSettings();
+
+      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
+
+      expect(screen.getByText("本当にアカウントを削除しますか？")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "削除する" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
+    });
+
+    test("アカウント削除確認でAPIが呼ばれる", async () => {
+      const user = userEvent.setup();
+      renderSettings();
+
+      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
+      await user.click(screen.getByRole("button", { name: "削除する" }));
+
+      await waitFor(() => {
+        expect(deleteAccount).toHaveBeenCalledWith("test-token");
+      });
+    });
+
+    test("アカウント削除キャンセルでモーダルが閉じる", async () => {
+      const user = userEvent.setup();
+      renderSettings();
+
+      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
+      expect(screen.getByText("本当にアカウントを削除しますか？")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "キャンセル" }));
+      expect(screen.queryByText("本当にアカウントを削除しますか？")).not.toBeInTheDocument();
     });
 
   });
@@ -274,50 +309,4 @@ describe("設定画面", () => {
     });
   });
 
-  // === アカウントタブ ===
-  describe("アカウントタブ", () => {
-    async function switchToAccountTab() {
-      const user = userEvent.setup();
-      renderSettings();
-      await user.click(screen.getByRole("tab", { name: "アカウント" }));
-      return user;
-    }
-
-    test("アカウント削除セクションが表示される", async () => {
-      await switchToAccountTab();
-      expect(screen.getByText("アカウントの削除")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "アカウントを削除" })).toBeInTheDocument();
-    });
-
-    test("アカウント削除ボタンで確認モーダルが表示される", async () => {
-      const user = await switchToAccountTab();
-
-      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
-
-      expect(screen.getByText("本当にアカウントを削除しますか？")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "削除する" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
-    });
-
-    test("アカウント削除確認でAPIが呼ばれる", async () => {
-      const user = await switchToAccountTab();
-
-      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
-      await user.click(screen.getByRole("button", { name: "削除する" }));
-
-      await waitFor(() => {
-        expect(deleteAccount).toHaveBeenCalledWith("test-token");
-      });
-    });
-
-    test("アカウント削除キャンセルでモーダルが閉じる", async () => {
-      const user = await switchToAccountTab();
-
-      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
-      expect(screen.getByText("本当にアカウントを削除しますか？")).toBeInTheDocument();
-
-      await user.click(screen.getByRole("button", { name: "キャンセル" }));
-      expect(screen.queryByText("本当にアカウントを削除しますか？")).not.toBeInTheDocument();
-    });
-  });
 });
