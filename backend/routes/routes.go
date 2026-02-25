@@ -38,8 +38,6 @@ func Setup(router *gin.Engine, deps Deps) {
 
 	// 認証（JWT不要）
 	auth := router.Group("/api/auth")
-	auth.POST("/signup", deps.AuthHandler.SignUp)
-	auth.POST("/login", deps.AuthHandler.Login)
 	auth.POST("/refresh", deps.AuthHandler.RefreshToken)
 	if deps.OAuthHandler != nil {
 		auth.POST("/oauth/google", deps.OAuthHandler.GoogleOAuth)
@@ -49,7 +47,6 @@ func Setup(router *gin.Engine, deps Deps) {
 	authProtected := router.Group("/api/auth")
 	authProtected.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 	authProtected.POST("/logout", deps.AuthHandler.Logout)
-	authProtected.POST("/change-password", deps.AuthHandler.ChangePassword)
 
 	// JWT保護付きAPI
 	api := router.Group("/api")
@@ -62,7 +59,6 @@ func Setup(router *gin.Engine, deps Deps) {
 	api.PUT("/users/me/interests", deps.UserHandler.UpdateInterests)
 	api.PATCH("/users/me", deps.UserHandler.UpdateMe)
 	api.DELETE("/users/me", deps.UserHandler.DeleteMe)
-	api.PATCH("/users/me/email", deps.UserHandler.UpdateEmail)
 	api.GET("/badges", deps.BadgeHandler.GetAllBadges)
 	api.GET("/genres", deps.GenreHandler.GetAllGenreTags)
 	if deps.SuggestionHandler != nil {
