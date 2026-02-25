@@ -290,9 +290,93 @@ if deps.OAuthHandler != nil {
 
 ---
 
-## 6. 本番環境への展開時のチェックリスト
+## 6. Google Maps / Places API キー管理
+
+### 6-1. なぜAPIキーを2本に分けるのか
+
+Google APIキーには「アプリケーションの制限」として **HTTPリファラー制限**（ウェブサイト制限）を設定できる。
+しかしこの制限を有効にすると、**Goサーバーからのサーバー間リクエストがブロックされる**。
+
+| 呼び出し元 | Refererヘッダー | HTTPリファラー制限の結果 |
+|------------|----------------|------------------------|
+| ブラウザ（React） | 自動付与される（`http://localhost:5173/`） | ✅ 通過 |
+| Goサーバー（Places API呼び出し） | 付与されない | ❌ 403ブロック |
+
+1本のキーで両方の制限を満たすことはできないため、**用途別に2本に分ける**。
+
+### 6-2. キーの設計
+
+| キー | 用途 | アプリケーションの制限 | APIの制限 | 設定先環境変数 |
+|------|------|----------------------|-----------|---------------|
+| **フロントエンド用** | ブラウザからのMaps表示 | HTTPリファラー（ウェブサイト）制限 | Maps JavaScript API のみ | `VITE_GOOGLE_MAPS_API_KEY` |
+| **バックエンド用** | サーバーからのPlaces API呼び出し（施設提案・写真取得） | なし（本番ではIP制限推奨） | Places API / Places Aggregate API / Places API (New) | `GOOGLE_PLACES_API_KEY` |
+
+> **ポイント**: フロントエンド用キーはブラウザのソースコードに公開される前提。
+> HTTPリファラー制限で「自分のドメインからしか使えない」状態にすることでセキュリティを担保する。
+
+### 6-3. フロントエンド用キーの設定手順
+
+1. GCP コンソール → 「APIとサービス」→「認証情報」
+2. 「＋認証情報を作成」→「APIキー」
+3. 作成したキーの「編集」を開く
+4. **アプリケーションの制限** → 「HTTPリファラー（ウェブサイト）」を選択
+5. 以下のリファラーを追加:
+   ```
+   http://localhost:3000/*
+   http://localhost:5173/*
+   https://your-domain.com/*   ← 本番ドメイン
+   ```
+6. **APIの制限** → 「キーを制限」→ **Maps JavaScript API** のみ選択
+7. キーをコピーして `frontend/.env` に設定:
+   ```dotenv
+   VITE_GOOGLE_MAPS_API_KEY=AIzaSy...（フロントエンド用キー）
+   ```
+
+### 6-4. バックエンド用キーの設定手順
+
+1. GCP コンソール → 「APIとサービス」→「認証情報」
+2. 「＋認証情報を作成」→「APIキー」
+3. 作成したキーの「編集」を開く
+4. **アプリケーションの制限** → 開発中は「なし」、本番ではECS/EC2のIPアドレスを設定
+5. **APIの制限** → 「キーを制限」→ 以下をすべて選択:
+   - Places API
+   - Places Aggregate API
+   - Places API (New)
+6. キーをコピーして `.env`（ルート）に設定:
+   ```dotenv
+   GOOGLE_PLACES_API_KEY=AIzaSy...（バックエンド用キー）
+   ```
+
+### 6-5. 有効にすべきAPI一覧
+
+GCP コンソール → 「APIとサービス」→「ライブラリ」で以下をすべて有効化する:
+
+| API名 | 使用箇所 |
+|-------|---------|
+| Maps JavaScript API | フロント: 地図表示（`@vis.gl/react-google-maps`） |
+| Places API | バックエンド: 施設提案・写真取得 |
+| Places Aggregate API | バックエンド: 施設提案 |
+| Places API (New) | バックエンド: 施設提案（新版） |
+
+### 6-6. 環境変数まとめ（APIキー分）
+
+| 変数名 | ファイル | 説明 |
+|--------|---------|------|
+| `VITE_GOOGLE_MAPS_API_KEY` | `frontend/.env` | Maps JavaScript API用（ブラウザ公開前提） |
+| `GOOGLE_PLACES_API_KEY` | `.env`（ルート） | Places API用（サーバーのみ使用・公開しない） |
+
+> **注意**: `.env` ファイルはGitignoreされているため、新しい環境にcloneした際は
+> 既存メンバーからコピーするか、GCPコンソールでキーを再確認すること。
+
+---
+
+## 7. 本番環境への展開時のチェックリスト
 
 - [ ] Google Cloud Console の「承認済みの JavaScript 生成元」に本番ドメインを追加
 - [ ] OAuth 同意画面のステータスを「本番環境に公開」に変更（テスト用アカウント制限の解除）
 - [ ] 本番環境の `.env`（またはシークレットマネージャー）に `GOOGLE_OAUTH_CLIENT_ID` / `VITE_GOOGLE_CLIENT_ID` を設定
 - [ ] `VITE_GOOGLE_CLIENT_ID` はビルド時に静的に埋め込まれるため、本番ビルド前に設定が必要
+- [ ] フロントエンド用APIキーのHTTPリファラー制限に本番ドメイン（`https://your-domain.com/*`）を追加
+- [ ] バックエンド用APIキーのIP制限に本番サーバー（ECS/EC2）のIPアドレスを追加
+- [ ] `VITE_GOOGLE_MAPS_API_KEY`（フロントエンド用キー）を本番ビルド前に設定
+- [ ] `GOOGLE_PLACES_API_KEY`（バックエンド用キー）を本番環境の `.env` に設定
