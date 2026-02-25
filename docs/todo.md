@@ -31,13 +31,16 @@
 
 ---
 
-### Issue #153: fix: パーソナライズ提案が興味タグを反映しない問題を修正する
+### Issue #153: fix: パーソナライズ提案が興味タグを反映しない問題を修正する ✅
 
 どんな興味タグを設定していても同じ提案がされる。
 
-- [ ] 🔴 RED: 異なる興味タグのユーザーで、提案されるジャンルが異なることを確認するテストを書く
-- [ ] 🟢 GREEN: 提案生成ロジックで興味タグが正しく参照されるよう修正する
-- [ ] 🔵 REFACTOR: 提案アルゴリズムのパラメータ注入を整理する
+根本原因: UserHandlerにRedisClientがなく、UpdateInterests時にClearDailySuggestionsCacheが呼ばれていなかった。
+興味タグを変更しても日次キャッシュが残り、変更前の提案が当日中は返り続けていた。
+
+- [x] 🔴 RED: 異なる興味タグのユーザーで、提案されるジャンルが異なることを確認するテストを書く
+- [x] 🟢 GREEN: UserHandlerにRedisClientを追加し、UpdateInterests時にClearDailySuggestionsCacheを呼び出すよう修正する
+- [x] 🔵 REFACTOR: キャッシュ削除ロジックを整理（ClearDailySuggestionsCacheはredis.goに実装済みのものを活用）
 
 ---
 
