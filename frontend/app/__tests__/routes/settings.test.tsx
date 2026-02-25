@@ -46,12 +46,6 @@ vi.mock("~/api/users", () => ({
     created_at: "2025-06-15T10:00:00Z",
     updated_at: "2025-12-01T10:00:00Z",
   }),
-  changePassword: vi.fn().mockResolvedValue({
-    message: "password changed successfully",
-  }),
-  updateEmail: vi.fn().mockResolvedValue({
-    message: "email updated successfully",
-  }),
   deleteAccount: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -76,7 +70,7 @@ vi.mock("~/api/genres", () => ({
 }));
 
 import Settings from "~/routes/settings";
-import { updateDisplayName, changePassword, updateEmail, deleteAccount } from "~/api/users";
+import { updateDisplayName, deleteAccount } from "~/api/users";
 import { updateInterests } from "~/api/genres";
 
 const mockUser = {
@@ -151,7 +145,7 @@ describe("設定画面", () => {
       // アカウントタブに切り替え
       await user.click(screen.getByRole("tab", { name: "アカウント" }));
       expect(screen.getByRole("tab", { name: "アカウント" })).toHaveAttribute("aria-selected", "true");
-      expect(screen.getByText("パスワードの変更")).toBeInTheDocument();
+      expect(screen.getByText("アカウントの削除")).toBeInTheDocument();
     });
 
     test("戻るボタンが表示される", () => {
@@ -202,55 +196,6 @@ describe("設定画面", () => {
       });
     });
 
-    test("メールアドレス変更フォームが表示される", () => {
-      renderSettings();
-      expect(screen.getByText("メールアドレスの変更")).toBeInTheDocument();
-    });
-
-    test("現在のメールアドレスが表示される", () => {
-      renderSettings();
-      expect(screen.getByText("test@example.com")).toBeInTheDocument();
-    });
-
-    test("メールアドレス変更でAPIが呼ばれる", async () => {
-      const user = userEvent.setup();
-      renderSettings();
-
-      await user.type(screen.getByLabelText("新しいメールアドレス"), "new@example.com");
-      await user.type(screen.getByLabelText("現在のパスワード（確認用）"), "mypassword123");
-      await user.click(screen.getByRole("button", { name: "メールアドレスを変更" }));
-
-      await waitFor(() => {
-        expect(updateEmail).toHaveBeenCalledWith("test-token", "new@example.com", "mypassword123");
-      });
-    });
-
-    test("メールアドレス変更成功で成功メッセージが表示される", async () => {
-      const user = userEvent.setup();
-      renderSettings();
-
-      await user.type(screen.getByLabelText("新しいメールアドレス"), "new@example.com");
-      await user.type(screen.getByLabelText("現在のパスワード（確認用）"), "mypassword123");
-      await user.click(screen.getByRole("button", { name: "メールアドレスを変更" }));
-
-      await waitFor(() => {
-        expect(screen.getByText(/メールアドレスを変更しました/)).toBeInTheDocument();
-      });
-    });
-
-    test("メールアドレス変更失敗でエラーメッセージが表示される", async () => {
-      vi.mocked(updateEmail).mockRejectedValueOnce(new Error("API Error"));
-      const user = userEvent.setup();
-      renderSettings();
-
-      await user.type(screen.getByLabelText("新しいメールアドレス"), "new@example.com");
-      await user.type(screen.getByLabelText("現在のパスワード（確認用）"), "mypassword123");
-      await user.click(screen.getByRole("button", { name: "メールアドレスを変更" }));
-
-      await waitFor(() => {
-        expect(screen.getByText(/メールアドレスの変更に失敗しました/)).toBeInTheDocument();
-      });
-    });
   });
 
   // === 提案設定タブ ===
@@ -337,85 +282,6 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("tab", { name: "アカウント" }));
       return user;
     }
-
-    test("パスワード変更フォームが表示される", async () => {
-      await switchToAccountTab();
-      expect(screen.getByText("パスワードの変更")).toBeInTheDocument();
-      expect(screen.getByLabelText("現在のパスワード")).toBeInTheDocument();
-      expect(screen.getByLabelText("新しいパスワード")).toBeInTheDocument();
-      expect(screen.getByLabelText("新しいパスワード（確認）")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "パスワードを変更" })).toBeInTheDocument();
-    });
-
-    test("パスワード変更ボタン押下でAPIが呼ばれる", async () => {
-      const user = await switchToAccountTab();
-
-      await user.type(screen.getByLabelText("現在のパスワード"), "oldpassword123");
-      await user.type(screen.getByLabelText("新しいパスワード"), "newpassword456");
-      await user.type(screen.getByLabelText("新しいパスワード（確認）"), "newpassword456");
-      await user.click(screen.getByRole("button", { name: "パスワードを変更" }));
-
-      await waitFor(() => {
-        expect(changePassword).toHaveBeenCalledWith(
-          "test-token",
-          "oldpassword123",
-          "newpassword456"
-        );
-      });
-    });
-
-    test("パスワード変更成功で成功メッセージが表示される", async () => {
-      const user = await switchToAccountTab();
-
-      await user.type(screen.getByLabelText("現在のパスワード"), "oldpassword123");
-      await user.type(screen.getByLabelText("新しいパスワード"), "newpassword456");
-      await user.type(screen.getByLabelText("新しいパスワード（確認）"), "newpassword456");
-      await user.click(screen.getByRole("button", { name: "パスワードを変更" }));
-
-      await waitFor(() => {
-        expect(screen.getByText(/パスワードを変更しました/)).toBeInTheDocument();
-      });
-    });
-
-    test("パスワード確認が一致しない場合エラー表示", async () => {
-      const user = await switchToAccountTab();
-
-      await user.type(screen.getByLabelText("現在のパスワード"), "oldpassword123");
-      await user.type(screen.getByLabelText("新しいパスワード"), "newpassword456");
-      await user.type(screen.getByLabelText("新しいパスワード（確認）"), "different789");
-      await user.click(screen.getByRole("button", { name: "パスワードを変更" }));
-
-      expect(screen.getByText(/パスワードが一致しません/)).toBeInTheDocument();
-      expect(changePassword).not.toHaveBeenCalled();
-    });
-
-    test("新しいパスワードが8文字未満の場合エラー表示", async () => {
-      const user = await switchToAccountTab();
-
-      await user.type(screen.getByLabelText("現在のパスワード"), "oldpassword123");
-      await user.type(screen.getByLabelText("新しいパスワード"), "short");
-      await user.type(screen.getByLabelText("新しいパスワード（確認）"), "short");
-      await user.click(screen.getByRole("button", { name: "パスワードを変更" }));
-
-      expect(
-        screen.getByText(/パスワードは8文字以上で入力してください/)
-      ).toBeInTheDocument();
-      expect(changePassword).not.toHaveBeenCalled();
-    });
-
-    test("パスワード変更失敗でエラーメッセージが表示される", async () => {
-      vi.mocked(changePassword).mockRejectedValueOnce(new Error("API Error: 401"));
-      const user = await switchToAccountTab();
-
-      await user.type(screen.getByLabelText("現在のパスワード"), "wrongpassword");
-      await user.type(screen.getByLabelText("新しいパスワード"), "newpassword456");
-      await user.type(screen.getByLabelText("新しいパスワード（確認）"), "newpassword456");
-      await user.click(screen.getByRole("button", { name: "パスワードを変更" }));
-
-      await waitFor(() => {
-        expect(screen.getByText(/パスワードの変更に失敗しました/)).toBeInTheDocument();
-      });
-    });
 
     test("アカウント削除セクションが表示される", async () => {
       await switchToAccountTab();

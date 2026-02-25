@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Route } from "./+types/settings";
 import { redirect, useNavigate } from "react-router";
 import { getToken, getUser, clearToken } from "~/lib/auth";
-import { updateDisplayName, changePassword, updateEmail, deleteAccount } from "~/api/users";
+import { updateDisplayName, deleteAccount } from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
 
@@ -124,20 +124,12 @@ function UserInfoTab({
   user,
 }: {
   token: string;
-  user: { email: string; display_name: string };
+  user: { display_name: string };
 }) {
-  // 表示名変更
   const [displayName, setDisplayName] = useState(user.display_name);
   const [displayNameMsg, setDisplayNameMsg] = useState("");
   const [displayNameError, setDisplayNameError] = useState("");
   const [isUpdatingName, setIsUpdatingName] = useState(false);
-
-  // メールアドレス変更
-  const [newEmail, setNewEmail] = useState("");
-  const [emailPassword, setEmailPassword] = useState("");
-  const [emailMsg, setEmailMsg] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
 
   async function handleUpdateDisplayName(e: React.FormEvent) {
     e.preventDefault();
@@ -157,29 +149,6 @@ function UserInfoTab({
       setDisplayNameError("表示名の変更に失敗しました");
     } finally {
       setIsUpdatingName(false);
-    }
-  }
-
-  async function handleUpdateEmail(e: React.FormEvent) {
-    e.preventDefault();
-    setEmailMsg("");
-    setEmailError("");
-
-    if (!newEmail.trim()) {
-      setEmailError("メールアドレスを入力してください");
-      return;
-    }
-
-    setIsUpdatingEmail(true);
-    try {
-      await updateEmail(token, newEmail.trim(), emailPassword);
-      setEmailMsg("メールアドレスを変更しました");
-      setNewEmail("");
-      setEmailPassword("");
-    } catch {
-      setEmailError("メールアドレスの変更に失敗しました");
-    } finally {
-      setIsUpdatingEmail(false);
     }
   }
 
@@ -217,61 +186,6 @@ function UserInfoTab({
             className={SUBMIT_CLASS}
           >
             {isUpdatingName ? "変更中..." : "表示名を変更"}
-          </button>
-        </form>
-      </section>
-
-      {/* メールアドレス変更セクション */}
-      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            mail
-          </span>
-          メールアドレスの変更
-        </h2>
-        <p className="text-sm text-gray-500 mb-4">
-          現在: <span className="font-medium text-gray-700">{user.email}</span>
-        </p>
-        <form onSubmit={handleUpdateEmail} className="space-y-4">
-          <div>
-            <label
-              htmlFor="new-email"
-              className="block text-sm font-medium text-gray-600 mb-1"
-            >
-              新しいメールアドレス
-            </label>
-            <input
-              id="new-email"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              className={INPUT_CLASS}
-              placeholder="新しいメールアドレス"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="email-password"
-              className="block text-sm font-medium text-gray-600 mb-1"
-            >
-              現在のパスワード（確認用）
-            </label>
-            <input
-              id="email-password"
-              type="password"
-              value={emailPassword}
-              onChange={(e) => setEmailPassword(e.target.value)}
-              className={INPUT_CLASS}
-              placeholder="パスワードを入力"
-            />
-          </div>
-          <FormMessage success={emailMsg} error={emailError} />
-          <button
-            type="submit"
-            disabled={isUpdatingEmail}
-            className={SUBMIT_CLASS}
-          >
-            {isUpdatingEmail ? "変更中..." : "メールアドレスを変更"}
           </button>
         </form>
       </section>
@@ -369,46 +283,8 @@ function SuggestionTab({
 function AccountTab({ token }: { token: string }) {
   const navigate = useNavigate();
 
-  // パスワード変更
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordMsg, setPasswordMsg] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-
-  // アカウント削除
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  async function handleChangePassword(e: React.FormEvent) {
-    e.preventDefault();
-    setPasswordMsg("");
-    setPasswordError("");
-
-    if (newPassword.length < 8) {
-      setPasswordError("パスワードは8文字以上で入力してください");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError("パスワードが一致しません");
-      return;
-    }
-
-    setIsUpdatingPassword(true);
-    try {
-      await changePassword(token, currentPassword, newPassword);
-      setPasswordMsg("パスワードを変更しました");
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch {
-      setPasswordError("パスワードの変更に失敗しました");
-    } finally {
-      setIsUpdatingPassword(false);
-    }
-  }
 
   async function handleDeleteAccount() {
     setIsDeleting(true);
@@ -424,74 +300,6 @@ function AccountTab({ token }: { token: string }) {
 
   return (
     <div className="space-y-6">
-      {/* パスワード変更セクション */}
-      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            lock
-          </span>
-          パスワードの変更
-        </h2>
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <div>
-            <label
-              htmlFor="current-password"
-              className="block text-sm font-medium text-gray-600 mb-1"
-            >
-              現在のパスワード
-            </label>
-            <input
-              id="current-password"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className={INPUT_CLASS}
-              placeholder="現在のパスワード"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="new-password"
-              className="block text-sm font-medium text-gray-600 mb-1"
-            >
-              新しいパスワード
-            </label>
-            <input
-              id="new-password"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className={INPUT_CLASS}
-              placeholder="8文字以上"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="confirm-password"
-              className="block text-sm font-medium text-gray-600 mb-1"
-            >
-              新しいパスワード（確認）
-            </label>
-            <input
-              id="confirm-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={INPUT_CLASS}
-              placeholder="もう一度入力"
-            />
-          </div>
-          <FormMessage success={passwordMsg} error={passwordError} />
-          <button
-            type="submit"
-            disabled={isUpdatingPassword}
-            className={SUBMIT_CLASS}
-          >
-            {isUpdatingPassword ? "変更中..." : "パスワードを変更"}
-          </button>
-        </form>
-      </section>
-
       {/* アカウント削除セクション */}
       <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-5">
         <h2 className="text-base font-bold text-red-600 mb-2 flex items-center gap-2">
