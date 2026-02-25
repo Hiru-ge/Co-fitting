@@ -43,18 +43,15 @@ func CloseRedis() error {
 // --- 日次提案キャッシュ ---
 
 // DailySuggestionCacheKey は日次提案キャッシュのキーを生成する
-// フォーマット: suggestion:daily:{userID}:{date}:{lat}_{lng} または suggestion:daily:{userID}:{date}:{lat}_{lng}:{mood}
-func DailySuggestionCacheKey(userID string, date string, lat, lng float64, mood string) string {
-	if mood == "" {
-		return fmt.Sprintf("suggestion:daily:%s:%s:%.2f_%.2f", userID, date, lat, lng)
-	}
-	return fmt.Sprintf("suggestion:daily:%s:%s:%.2f_%.2f:%s", userID, date, lat, lng, mood)
+// フォーマット: suggestion:daily:{userID}:{date}:{lat}_{lng}
+func DailySuggestionCacheKey(userID string, date string, lat, lng float64) string {
+	return fmt.Sprintf("suggestion:daily:%s:%s:%.2f_%.2f", userID, date, lat, lng)
 }
 
 // GetDailySuggestions は日次提案キャッシュを取得する
 // キャッシュミスの場合は空文字列を返す
-func GetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64, mood string) (string, error) {
-	key := DailySuggestionCacheKey(userID, date, lat, lng, mood)
+func GetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64) (string, error) {
+	key := DailySuggestionCacheKey(userID, date, lat, lng)
 	result, err := client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return "", nil
@@ -66,8 +63,8 @@ func GetDailySuggestions(ctx context.Context, client *redis.Client, userID strin
 }
 
 // SetDailySuggestions は日次提案キャッシュを保存する
-func SetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64, data string, ttl time.Duration, mood string) error {
-	key := DailySuggestionCacheKey(userID, date, lat, lng, mood)
+func SetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64, data string, ttl time.Duration) error {
+	key := DailySuggestionCacheKey(userID, date, lat, lng)
 	return client.Set(ctx, key, data, ttl).Err()
 }
 

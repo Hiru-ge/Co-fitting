@@ -58,58 +58,35 @@ func cleanupDailySuggestionKeys(t *testing.T) {
 }
 
 func TestDailySuggestionCacheKey(t *testing.T) {
-	t.Run("キャッシュキーが正しいフォーマットで生成される（気分なし）", func(t *testing.T) {
-		key := DailySuggestionCacheKey("123", "2026-02-15", 35.6762, 139.6503, "")
+	t.Run("キャッシュキーが正しいフォーマットで生成される", func(t *testing.T) {
+		key := DailySuggestionCacheKey("123", "2026-02-15", 35.6762, 139.6503)
 		expected := "suggestion:daily:123:2026-02-15:35.68_139.65"
 		if key != expected {
 			t.Errorf("Expected key '%s', got '%s'", expected, key)
 		}
 	})
 
-	t.Run("キャッシュキーが正しいフォーマットで生成される（気分あり）", func(t *testing.T) {
-		key := DailySuggestionCacheKey("123", "2026-02-15", 35.6762, 139.6503, "relax")
-		expected := "suggestion:daily:123:2026-02-15:35.68_139.65:relax"
-		if key != expected {
-			t.Errorf("Expected key '%s', got '%s'", expected, key)
-		}
-	})
-
 	t.Run("異なるユーザーIDで異なるキーが生成される", func(t *testing.T) {
-		key1 := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65, "")
-		key2 := DailySuggestionCacheKey("user2", "2026-02-15", 35.68, 139.65, "")
+		key1 := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
+		key2 := DailySuggestionCacheKey("user2", "2026-02-15", 35.68, 139.65)
 		if key1 == key2 {
 			t.Errorf("Expected different keys for different users, got same: '%s'", key1)
 		}
 	})
 
 	t.Run("異なる日付で異なるキーが生成される", func(t *testing.T) {
-		key1 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65, "")
-		key2 := DailySuggestionCacheKey("123", "2026-02-16", 35.68, 139.65, "")
+		key1 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65)
+		key2 := DailySuggestionCacheKey("123", "2026-02-16", 35.68, 139.65)
 		if key1 == key2 {
 			t.Errorf("Expected different keys for different dates, got same: '%s'", key1)
 		}
 	})
 
 	t.Run("大きく異なる位置情報で異なるキーが生成される", func(t *testing.T) {
-		key1 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65, "")
-		key2 := DailySuggestionCacheKey("123", "2026-02-15", 36.00, 140.00, "")
+		key1 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65)
+		key2 := DailySuggestionCacheKey("123", "2026-02-15", 36.00, 140.00)
 		if key1 == key2 {
 			t.Errorf("Expected different keys for different locations, got same: '%s'", key1)
-		}
-	})
-
-	t.Run("異なる気分で異なるキーが生成される", func(t *testing.T) {
-		key1 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65, "relax")
-		key2 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65, "thrill")
-		key3 := DailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65, "")
-		if key1 == key2 {
-			t.Errorf("Expected different keys for different moods (relax vs thrill)")
-		}
-		if key1 == key3 {
-			t.Errorf("Expected different keys for mood vs no mood")
-		}
-		if key2 == key3 {
-			t.Errorf("Expected different keys for thrill vs no mood")
 		}
 	})
 }
@@ -119,7 +96,7 @@ func TestGetDailySuggestions(t *testing.T) {
 		cleanupDailySuggestionKeys(t)
 		ctx := context.Background()
 
-		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, "")
+		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -133,42 +110,15 @@ func TestGetDailySuggestions(t *testing.T) {
 		ctx := context.Background()
 
 		cachedData := `[{"place_id":"p1","name":"テストカフェ"},{"place_id":"p2","name":"テスト公園"},{"place_id":"p3","name":"テストバー"}]`
-		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65, "")
+		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
 		testRedisClient.Set(ctx, key, cachedData, 24*time.Hour)
 
-		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, "")
+		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 		if result != cachedData {
 			t.Errorf("Expected cached data '%s', got '%s'", cachedData, result)
-		}
-	})
-
-	t.Run("気分ありのキャッシュは気分なしと別キーになる", func(t *testing.T) {
-		cleanupDailySuggestionKeys(t)
-		ctx := context.Background()
-
-		relaxData := `[{"place_id":"p1","name":"カフェ"}]`
-		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65, "relax")
-		testRedisClient.Set(ctx, key, relaxData, 24*time.Hour)
-
-		// 気分なしでは取得できない
-		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, "")
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
-		}
-		if result != "" {
-			t.Errorf("Expected cache miss for no-mood query when only mood cache exists, got '%s'", result)
-		}
-
-		// 気分ありでは取得できる
-		result2, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, "relax")
-		if err != nil {
-			t.Fatalf("Unexpected error: %v", err)
-		}
-		if result2 != relaxData {
-			t.Errorf("Expected relax cached data '%s', got '%s'", relaxData, result2)
 		}
 	})
 }
@@ -179,13 +129,13 @@ func TestSetDailySuggestions(t *testing.T) {
 		ctx := context.Background()
 
 		data := `[{"place_id":"p1","name":"テストカフェ"}]`
-		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, data, 24*time.Hour, "")
+		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, data, 24*time.Hour)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 
 		// 保存されたデータを検証
-		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65, "")
+		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
 		result, err := testRedisClient.Get(ctx, key).Result()
 		if err != nil {
 			t.Fatalf("Failed to get cached data: %v", err)
@@ -201,12 +151,12 @@ func TestSetDailySuggestions(t *testing.T) {
 
 		data := `[{"place_id":"p1"}]`
 		ttl := 24 * time.Hour
-		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, data, ttl, "")
+		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, data, ttl)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 
-		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65, "")
+		key := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
 		remainingTTL, err := testRedisClient.TTL(ctx, key).Result()
 		if err != nil {
 			t.Fatalf("Failed to get TTL: %v", err)
@@ -224,11 +174,11 @@ func TestClearDailySuggestionsCache(t *testing.T) {
 		cleanupDailySuggestionKeys(t)
 		ctx := context.Background()
 
-		// user1のキャッシュを2つ作成（気分あり・なし両方）
-		key1 := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65, "")
-		key2 := DailySuggestionCacheKey("user1", "2026-02-14", 35.68, 139.65, "relax")
+		// user1のキャッシュを2つ作成（日付違い）
+		key1 := DailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
+		key2 := DailySuggestionCacheKey("user1", "2026-02-14", 35.68, 139.65)
 		// user2のキャッシュを1つ作成
-		key3 := DailySuggestionCacheKey("user2", "2026-02-15", 35.68, 139.65, "")
+		key3 := DailySuggestionCacheKey("user2", "2026-02-15", 35.68, 139.65)
 
 		testRedisClient.Set(ctx, key1, `[{"place_id":"p1"}]`, 24*time.Hour)
 		testRedisClient.Set(ctx, key2, `[{"place_id":"p2"}]`, 24*time.Hour)
