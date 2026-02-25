@@ -3,7 +3,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import History, { clientLoader } from "~/routes/history";
 import { getToken, getUser } from "~/lib/auth";
-import { listVisits } from "~/api/visits";
+import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import { getCategoryInfoByKey } from "~/utils/category-map";
@@ -18,6 +18,12 @@ vi.mock("~/utils/error");
 vi.mock("~/components/toast");
 vi.mock("~/utils/category-map");
 vi.mock("~/utils/helpers");
+// VisitMapコンポーネントをモック（Google Maps APIを使うため）
+vi.mock("~/components/visit-map", () => ({
+  default: ({ visits }: { visits: unknown[] }) => (
+    <div data-testid="visit-map">マップ表示 ({visits.length}件)</div>
+  ),
+}));
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
@@ -28,6 +34,7 @@ vi.mock("react-router", async () => {
 });
 
 // モックされた関数の型安全性のため
+const mockGetMapVisits = vi.mocked(getMapVisits);
 const mockGetToken = vi.mocked(getToken);
 const mockGetUser = vi.mocked(getUser);
 const mockListVisits = vi.mocked(listVisits);
@@ -60,6 +67,7 @@ const mockVisits: Visit[] = [
     lng: 139.6503,
     rating: null,
     memo: null,
+    xp_earned: 50,
     is_comfort_zone: false,
     visited_at: "2026-02-15T10:00:00Z",
     created_at: "2026-02-15T10:00:00Z",
@@ -75,6 +83,7 @@ const mockVisits: Visit[] = [
     lng: 139.7454,
     rating: null,
     memo: null,
+    xp_earned: 50,
     is_comfort_zone: false,
     visited_at: "2026-02-14T14:30:00Z",
     created_at: "2026-02-14T14:30:00Z",
@@ -90,6 +99,7 @@ const mockVisits: Visit[] = [
     lng: 139.7583,
     rating: null,
     memo: null,
+    xp_earned: 50,
     is_comfort_zone: false,
     visited_at: "2026-01-20T16:00:00Z",
     created_at: "2026-01-20T16:00:00Z",
@@ -444,6 +454,87 @@ describe("History", () => {
         // エラーに関係なく、訪問記録は表示される
         expect(screen.getByText("カフェA")).toBeInTheDocument();
         expect(screen.getByText("公園B")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("マップ/リストタブの切り替え", () => {
+    it("リストとマップのタブボタンが表示される", async () => {
+      mockListVisits.mockResolvedValue({ visits: [], total: 0 });
+      mockGetMapVisits.mockResolvedValue({ visits: [], total: 0 });
+
+      render(
+        <MemoryRouter>
+          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /リスト/ })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /マップ/ })).toBeInTheDocument();
+      });
+    });
+
+    it("初期表示はリストモード", async () => {
+      mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
+      mockGetMapVisits.mockResolvedValue({ visits: [], total: 0 });
+
+      render(
+        <MemoryRouter>
+          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("visit-map")).not.toBeInTheDocument();
+      });
+    });
+
+    it("マップタブクリックでVisitMapコンポーネントが表示される", async () => {
+      mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
+      mockGetMapVisits.mockResolvedValue({ visits: [], total: 0 });
+
+      render(
+        <MemoryRouter>
+          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /マップ/ })).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /マップ/ }));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("visit-map")).toBeInTheDocument();
+      });
+    });
+
+    it("リストタブクリックで訪問リストに戻る", async () => {
+      mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
+      mockGetMapVisits.mockResolvedValue({ visits: [], total: 0 });
+
+      render(
+        <MemoryRouter>
+          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /マップ/ })).toBeInTheDocument();
+      });
+
+      // マップタブをクリック
+      fireEvent.click(screen.getByRole("button", { name: /マップ/ }));
+      await waitFor(() => {
+        expect(screen.getByTestId("visit-map")).toBeInTheDocument();
+      });
+
+      // リストタブに戻る
+      fireEvent.click(screen.getByRole("button", { name: /リスト/ }));
+      await waitFor(() => {
+        expect(screen.queryByTestId("visit-map")).not.toBeInTheDocument();
       });
     });
   });

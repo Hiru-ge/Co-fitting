@@ -2,16 +2,18 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Route } from "./+types/history";
 import { redirect, useNavigate, Link } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
-import { listVisits } from "~/api/visits";
+import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
-import type { Visit } from "~/types/visit";
+import type { Visit, MapVisit } from "~/types/visit";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
 import { getCategoryInfoByKey } from "~/utils/category-map";
 import { API_BASE_URL } from "~/utils/constants";
+import VisitMap from "~/components/visit-map";
 
 const ITEMS_PER_PAGE = 20;
 
+type ViewMode = "list" | "map";
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
@@ -30,6 +32,9 @@ export default function History({ loaderData }: Route.ComponentProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [mapVisits, setMapVisits] = useState<MapVisit[]>([]);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   // DBから取得した訪問履歴からユニークなカテゴリーを抽出
   const availableCategories = useMemo(() => {
@@ -72,6 +77,20 @@ export default function History({ loaderData }: Route.ComponentProps) {
     loadVisits();
   }, [loadVisits]);
 
+  // マップタブ選択時に初回のみマップデータをロード
+  const handleSwitchToMap = useCallback(async () => {
+    setViewMode("map");
+    if (!isMapLoaded) {
+      try {
+        const data = await getMapVisits(token);
+        setMapVisits(data.visits);
+        setIsMapLoaded(true);
+      } catch (err) {
+        showToast(toUserMessage(err));
+      }
+    }
+  }, [token, isMapLoaded, showToast]);
+
   function handleLoadMore() {
     if (isLoadingMore || visits.length >= total) return;
     loadVisits(visits.length, true);
@@ -109,7 +128,36 @@ export default function History({ loaderData }: Route.ComponentProps) {
           </button>
         </div>
 
-        {/* ── Filter tabs ── */}
+        {/* ── View mode tab ── */}
+        <div className="flex gap-1 mb-2">
+          <button
+            onClick={() => setViewMode("list")}
+            aria-label="リスト表示"
+            className={`flex items-center gap-1.5 flex-1 justify-center h-9 rounded-full text-sm font-medium transition-colors ${
+              viewMode === "list"
+                ? "bg-primary-purple text-white"
+                : "bg-bg-light-purple text-text-main-purple"
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">list</span>
+            <span>リスト</span>
+          </button>
+          <button
+            onClick={handleSwitchToMap}
+            aria-label="マップ表示"
+            className={`flex items-center gap-1.5 flex-1 justify-center h-9 rounded-full text-sm font-medium transition-colors ${
+              viewMode === "map"
+                ? "bg-primary-purple text-white"
+                : "bg-bg-light-purple text-text-main-purple"
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">map</span>
+            <span>マップ</span>
+          </button>
+        </div>
+
+        {/* ── Filter tabs (リスト時のみ表示) ── */}
+        {viewMode === "list" && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {/* "すべて" ボタン */}
           <button
@@ -145,9 +193,19 @@ export default function History({ loaderData }: Route.ComponentProps) {
             );
           })}
         </div>
+        )}
       </header>
 
-      {/* ── Content ── */}
+      {/* ── Map view ── */}
+      {viewMode === "map" && (
+        <div className="flex-1">
+          <VisitMap visits={mapVisits} />
+        </div>
+      )}
+
+      {/* ── List view ── */}
+      {viewMode === "list" && (
+        <>
       {isLoading ? (
         <main className="px-4 pt-6 space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -205,6 +263,8 @@ export default function History({ loaderData }: Route.ComponentProps) {
           )}
           <div className="h-10" />
         </main>
+      )}
+      </>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { apiCall } from "./client";
-import type { CreateVisitRequest, CreateVisitResponse, UpdateVisitRequest, Visit, VisitListResponse } from "~/types/visit";
+import type { CreateVisitRequest, CreateVisitResponse, MapVisitResponse, UpdateVisitRequest, Visit, VisitListResponse } from "~/types/visit";
 
 export async function createVisit(token: string, visitData: CreateVisitRequest): Promise<CreateVisitResponse> {
   return apiCall('/api/visits', token, {
@@ -29,4 +29,8 @@ export async function listVisits(
   offset: number = 0
 ): Promise<VisitListResponse> {
   return apiCall(`/api/visits?limit=${limit}&offset=${offset}`, token);
+}
+
+export async function getMapVisits(token: string): Promise<MapVisitResponse> {
+  return apiCall("/api/visits/map", token);
 }
