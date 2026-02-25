@@ -351,7 +351,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		var err error
 		places, err = h.Places.NearbySearch(ctx, req.Lat, req.Lng, req.Radius)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
 			return
 		}
 
@@ -372,7 +372,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	}
 
 	if len(places) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found", "code": "NO_NEARBY_PLACES"})
 		return
 	}
 
@@ -380,7 +380,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	unvisited := filterOutVisited(h.DB, userID, places)
 
 	if len(unvisited) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited", "code": "DAILY_LIMIT_REACHED"})
 		return
 	}
 

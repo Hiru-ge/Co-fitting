@@ -402,6 +402,110 @@ func TestSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
 		}
 	})
+
+	t.Run("全施設訪問済みでcodeフィールドにDAILY_LIMIT_REACHEDが返る", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		for _, p := range mockPlaces {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   p.PlaceID,
+				PlaceName: p.Name,
+				Latitude:  p.Lat,
+				Longitude: p.Lng,
+				VisitedAt: time.Now(),
+			})
+		}
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		var result map[string]string
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response body: %v", err)
+		}
+		if result["code"] != "DAILY_LIMIT_REACHED" {
+			t.Errorf("Expected code 'DAILY_LIMIT_REACHED', got '%s'", result["code"])
+		}
+	})
+
+	t.Run("周辺施設なしでcodeフィールドにNO_NEARBY_PLACESが返る", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: []PlaceResult{}}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		var result map[string]string
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response body: %v", err)
+		}
+		if result["code"] != "NO_NEARBY_PLACES" {
+			t.Errorf("Expected code 'NO_NEARBY_PLACES', got '%s'", result["code"])
+		}
+	})
+
+	t.Run("APIエラー時にcodeフィールドにINTERNAL_ERRORが返る", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Err: fmt.Errorf("API key invalid")}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		var result map[string]string
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response body: %v", err)
+		}
+		if result["code"] != "INTERNAL_ERROR" {
+			t.Errorf("Expected code 'INTERNAL_ERROR', got '%s'", result["code"])
+		}
+	})
 }
 
 func TestSuggestDailyCache(t *testing.T) {

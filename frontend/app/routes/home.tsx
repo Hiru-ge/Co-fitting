@@ -8,7 +8,7 @@ import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
 import { getPositionWithFallback } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
-import { toUserMessage } from "~/utils/error";
+import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import type { Place } from "~/types/suggestion";
 import type { BadgeInfo, CreateVisitResponse } from "~/types/visit";
@@ -82,8 +82,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
       }
     } catch (err) {
-      setError("スポットの取得に失敗しました");
-      showToast(toUserMessage(err));
+      if (err instanceof ApiError && err.code === API_ERROR_CODES.DAILY_LIMIT_REACHED) {
+        setError(SUGGESTION_MESSAGES.DAILY_LIMIT_REACHED);
+      } else if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
+        setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
+      } else {
+        setError(SUGGESTION_MESSAGES.FETCH_ERROR);
+        showToast(toUserMessage(err));
+      }
     } finally {
       setIsLoading(false);
     }

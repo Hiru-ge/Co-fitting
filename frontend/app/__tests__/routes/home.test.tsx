@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
+import { ApiError } from "~/utils/error";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -191,5 +192,46 @@ describe("Home画面", () => {
     await waitFor(() => {
       expect(screen.getByText("近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています")).toBeInTheDocument();
     });
+  });
+
+  test("DAILY_LIMIT_REACHEDエラー時にコンプリートメッセージが表示される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockRejectedValueOnce(
+      new ApiError(404, "all nearby places have been visited", "DAILY_LIMIT_REACHED")
+    );
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("今日の3件をコンプリートしました！明日また新しいスポットが見つかります")).toBeInTheDocument();
+    });
+  });
+
+  test("DAILY_LIMIT_REACHEDエラー時にエラーメッセージはトーストに表示されない", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockRejectedValueOnce(
+      new ApiError(404, "all nearby places have been visited", "DAILY_LIMIT_REACHED")
+    );
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("今日の3件をコンプリートしました！明日また新しいスポットが見つかります")).toBeInTheDocument();
+    });
+    expect(mockShowToast).not.toHaveBeenCalled();
+  });
+
+  test("INTERNAL_ERRORエラー時にエラーメッセージが表示されトーストが出る", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockRejectedValueOnce(
+      new ApiError(500, "failed to search nearby places", "INTERNAL_ERROR")
+    );
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("スポットの取得に失敗しました")).toBeInTheDocument();
+    });
+    expect(mockShowToast).toHaveBeenCalled();
   });
 });
