@@ -34,17 +34,6 @@ export interface Proficiency {
   level: number;
 }
 
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface SignupRequest {
-  email: string;
-  password: string;
-  display_name: string;
-}
-
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;

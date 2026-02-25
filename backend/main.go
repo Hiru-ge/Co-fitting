@@ -118,6 +118,8 @@ func main() {
 	// 開発用ハンドラー
 	devHandler := &handlers.DevHandler{
 		RedisClient: redisClient,
+		DB:          db,
+		JWTCfg:      jwtCfg,
 	}
 
 	router := gin.Default()
