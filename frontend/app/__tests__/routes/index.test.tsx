@@ -66,7 +66,7 @@ describe("ランディングページ", () => {
     expect(anchor).toHaveAttribute("target", "_blank");
   });
 
-  test("「さっそく始める」ボタンが /signup へのリンクである", async () => {
+  test("「さっそく始める」ボタンが /login へのリンクである", async () => {
     const { default: Index } = await import("~/routes/index");
     render(
       <MemoryRouter>
@@ -74,22 +74,9 @@ describe("ランディングページ", () => {
       </MemoryRouter>
     );
 
-    const signupLink = screen.getByRole("link", { name: /さっそく始める/ });
-    expect(signupLink).toBeInTheDocument();
-    expect(signupLink).toHaveAttribute("href", "/signup");
-  });
-
-  test("「ログイン」ボタンが /login へのリンクである", async () => {
-    const { default: Index } = await import("~/routes/index");
-    render(
-      <MemoryRouter>
-        <Index />
-      </MemoryRouter>
-    );
-
-    const loginLink = screen.getByRole("link", { name: /ログイン/ });
-    expect(loginLink).toBeInTheDocument();
-    expect(loginLink).toHaveAttribute("href", "/login");
+    const startLink = screen.getByRole("link", { name: /さっそく始める/ });
+    expect(startLink).toBeInTheDocument();
+    expect(startLink).toHaveAttribute("href", "/login");
   });
 
   test("認証済みユーザーは /home へリダイレクトされる", async () => {

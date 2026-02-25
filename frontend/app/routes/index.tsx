@@ -91,18 +91,12 @@ export default function Index() {
 
       {/* ── CTA Buttons ── */}
       <section className="px-6 pb-10">
-        <div className="max-w-sm mx-auto space-y-3">
+        <div className="max-w-sm mx-auto">
           <Link
-            to="/signup"
+            to="/login"
             className="block w-full text-center py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
           >
             さっそく始める
-          </Link>
-          <Link
-            to="/login"
-            className="block w-full text-center py-3 rounded-lg border border-text-main/20 dark:border-white/20 text-text-main dark:text-white font-medium text-sm transition-colors hover:bg-text-main/10 dark:hover:bg-white/10"
-          >
-            ログイン
           </Link>
         </div>
       </section>
