@@ -17,7 +17,7 @@ import DiscoveryCard from "~/components/discovery-card";
 import CardIndicator from "~/components/card-indicator";
 import ActionButtons from "~/components/action-buttons";
 import XpModal from "~/components/xp-modal";
-import BadgeToast from "~/components/badge-toast";
+import BadgeModal from "~/components/badge-modal";
 
 type PlaceWithPhoto = Place & { photoUrl?: string };
 
@@ -147,15 +147,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   function handleXpModalClose() {
     if (!xpModalState) return;
-    // モーダルに表示した最初のバッジ以外を追加バッジキューに入れる
-    const additionalBadges = xpModalState.newBadges.slice(1);
+    const allBadges = xpModalState.newBadges;
     setXpModalState(null);
-    if (additionalBadges.length > 0) {
-      setBadgeQueue((prev) => [...prev, ...additionalBadges]);
+    if (allBadges.length > 0) {
+      setBadgeQueue((prev) => [...prev, ...allBadges]);
     }
   }
 
-  function handleBadgeToastClose() {
+  function handleBadgeModalClose() {
     setBadgeQueue((prev) => prev.slice(1));
   }
 
@@ -244,19 +243,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           currentLevel={xpModalState.currentLevel}
           levelUp={xpModalState.levelUp}
           newLevel={xpModalState.newLevel}
-          newBadges={xpModalState.newBadges}
           onClose={handleXpModalClose}
         />
       )}
 
-      {/* バッジトースト（追加バッジ表示用） */}
+      {/* バッジ獲得モーダル */}
       {badgeQueue.length > 0 && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4">
-          <BadgeToast
-            badge={badgeQueue[0]}
-            onClose={handleBadgeToastClose}
-          />
-        </div>
+        <BadgeModal
+          badge={badgeQueue[0]}
+          onClose={handleBadgeModalClose}
+        />
       )}
     </div>
   );
