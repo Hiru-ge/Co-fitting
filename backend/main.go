@@ -64,7 +64,7 @@ func main() {
 		JWTCfg:      jwtCfg,
 		RedisClient: redisClient,
 	}
-	userHandler := &handlers.UserHandler{DB: db}
+	userHandler := &handlers.UserHandler{DB: db, RedisClient: redisClient}
 	badgeHandler := &handlers.BadgeHandler{DB: db}
 	genreHandler := &handlers.GenreHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db}

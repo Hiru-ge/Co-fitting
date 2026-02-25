@@ -14,7 +14,7 @@ import (
 )
 
 func setupInterestsRouter() *gin.Engine {
-	userHandler := &UserHandler{DB: testDB}
+	userHandler := &UserHandler{DB: testDB, RedisClient: nil}
 
 	r := gin.New()
 	r.GET("/api/users/me/interests", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.GetInterests)
@@ -302,6 +302,229 @@ func TestUpdateInterests(t *testing.T) {
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+}
+
+// TestUpdateInterestsClearsDailyCache は興味タグ更新後に日次キャッシュが無効化されることを確認する
+func TestUpdateInterestsClearsDailyCache(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redisクライアントが設定されていません")
+	}
+
+	cafePlaces := []PlaceResult{
+		{PlaceID: "cache_cafe_1", Name: "キャッシュカフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "cache_cafe_2", Name: "キャッシュカフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
+		{PlaceID: "cache_cafe_3", Name: "キャッシュカフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+	}
+	museumPlaces := []PlaceResult{
+		{PlaceID: "cache_museum_1", Name: "キャッシュ博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
+		{PlaceID: "cache_museum_2", Name: "キャッシュ博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
+		{PlaceID: "cache_museum_3", Name: "キャッシュ博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
+		{PlaceID: "cache_museum_4", Name: "キャッシュ博物館D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"museum"}},
+	}
+	mixedPlaces := append(cafePlaces, museumPlaces...)
+
+	t.Run("興味タグ変更後の提案が新しいタグを反映する（日次キャッシュが無効化される）", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		var museumTag models.GenreTag
+		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
+			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		}
+
+		// 追加タグ（3つ以上必須）
+		var extraTags []models.GenreTag
+		testDB.Where("name != ? AND name != ?", "カフェ", "博物館・科学館").Limit(2).Find(&extraTags)
+		if len(extraTags) < 2 {
+			t.Skip("追加ジャンルタグが不足しています")
+		}
+
+		// ステップ1: カフェタグを設定（3つ必須）
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: extraTags[0].ID})
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: extraTags[1].ID})
+
+		mock := &mockPlacesClient{Results: mixedPlaces}
+		suggestionRouter := setupSuggestionRouterWithRedis(mock)
+		userHandler := &UserHandler{DB: testDB, RedisClient: testRedisClient}
+		interestsRouter := gin.New()
+		interestsRouter.PUT("/api/users/me/interests", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.UpdateInterests)
+
+		// ステップ2: 初回提案リクエスト（カフェタグで日次キャッシュが生成される）
+		body := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000}
+		jsonBody, _ := json.Marshal(body)
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		suggestionRouter.ServeHTTP(w1, req1)
+
+		if w1.Code != http.StatusOK {
+			t.Fatalf("初回提案リクエスト失敗: status %d, body: %s", w1.Code, w1.Body.String())
+		}
+
+		var firstResp []PlaceResult
+		json.Unmarshal(w1.Body.Bytes(), &firstResp)
+
+		// カフェが多いことを確認
+		firstCafeCount := 0
+		for _, p := range firstResp {
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					firstCafeCount++
+					break
+				}
+			}
+		}
+		if firstCafeCount < 2 {
+			t.Errorf("初回提案でカフェが2件以上であることを期待しましたが、%d件でした", firstCafeCount)
+		}
+
+		// ステップ3: 興味タグを博物館に変更
+		var otherTags []models.GenreTag
+		testDB.Where("name != ? AND name != ?", "カフェ", "博物館・科学館").Limit(2).Find(&otherTags)
+		if len(otherTags) < 2 {
+			t.Skip("追加ジャンルタグが不足しています")
+		}
+		updateBody := map[string]interface{}{
+			"genre_tag_ids": []uint64{museumTag.ID, otherTags[0].ID, otherTags[1].ID},
+		}
+		updateJSON, _ := json.Marshal(updateBody)
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("PUT", "/api/users/me/interests", bytes.NewBuffer(updateJSON))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		interestsRouter.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusOK {
+			t.Fatalf("興味タグ更新失敗: status %d, body: %s", w2.Code, w2.Body.String())
+		}
+
+		// ステップ4: 再度提案リクエスト（博物館タグで日次キャッシュが再生成されるべき）
+		jsonBody2, _ := json.Marshal(body)
+		w3 := httptest.NewRecorder()
+		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody2))
+		req3.Header.Set("Content-Type", "application/json")
+		req3.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		suggestionRouter.ServeHTTP(w3, req3)
+
+		if w3.Code != http.StatusOK {
+			t.Fatalf("タグ変更後の提案リクエスト失敗: status %d, body: %s", w3.Code, w3.Body.String())
+		}
+
+		var secondResp []PlaceResult
+		json.Unmarshal(w3.Body.Bytes(), &secondResp)
+
+		// 博物館が多いことを確認（タグ変更が反映されている）
+		secondMuseumCount := 0
+		for _, p := range secondResp {
+			for _, typ := range p.Types {
+				if typ == "museum" {
+					secondMuseumCount++
+					break
+				}
+			}
+		}
+		if secondMuseumCount < 2 {
+			t.Errorf("タグ変更後の提案で博物館が2件以上であることを期待しましたが、%d件でした（日次キャッシュが正しく無効化されていない可能性があります）", secondMuseumCount)
+		}
+	})
+
+	t.Run("異なる興味タグのユーザーで提案されるジャンルが異なる（Redis環境）", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		var museumTag models.GenreTag
+		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
+			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		}
+
+		// ユーザーA（カフェタグ）
+		userA := createTestUser(t)
+		tokenA := generateTestToken(userA.ID)
+		testDB.Create(&models.UserInterest{UserID: userA.ID, GenreTagID: cafeTag.ID})
+
+		// ユーザーB（博物館タグ）- 別のメールアドレスで作成
+		userB := models.User{Email: "suggest-museum@example.com", DisplayName: "Museum User"}
+		testDB.Create(&userB)
+		tokenB := generateTestToken(userB.ID)
+
+		testDB.Create(&models.UserInterest{UserID: userB.ID, GenreTagID: museumTag.ID})
+
+		mock := &mockPlacesClient{Results: mixedPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		body := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000}
+		jsonBody, _ := json.Marshal(body)
+
+		// ユーザーAへの提案
+		wA := httptest.NewRecorder()
+		reqA, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		reqA.Header.Set("Content-Type", "application/json")
+		reqA.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenA))
+		router.ServeHTTP(wA, reqA)
+
+		if wA.Code != http.StatusOK {
+			t.Fatalf("ユーザーAへの提案リクエスト失敗: status %d", wA.Code)
+		}
+
+		var respA []PlaceResult
+		json.Unmarshal(wA.Body.Bytes(), &respA)
+
+		// ユーザーBへの提案
+		jsonBodyB, _ := json.Marshal(body)
+		wB := httptest.NewRecorder()
+		reqB, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBodyB))
+		reqB.Header.Set("Content-Type", "application/json")
+		reqB.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenB))
+		router.ServeHTTP(wB, reqB)
+
+		if wB.Code != http.StatusOK {
+			t.Fatalf("ユーザーBへの提案リクエスト失敗: status %d", wB.Code)
+		}
+
+		var respB []PlaceResult
+		json.Unmarshal(wB.Body.Bytes(), &respB)
+
+		// ユーザーAはカフェが多い
+		cafeCountA := 0
+		for _, p := range respA {
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					cafeCountA++
+					break
+				}
+			}
+		}
+		// ユーザーBは博物館が多い
+		museumCountB := 0
+		for _, p := range respB {
+			for _, typ := range p.Types {
+				if typ == "museum" {
+					museumCountB++
+					break
+				}
+			}
+		}
+
+		if cafeCountA < 2 {
+			t.Errorf("ユーザーA（カフェタグ）の提案でカフェが2件以上であることを期待しましたが、%d件でした", cafeCountA)
+		}
+		if museumCountB < 2 {
+			t.Errorf("ユーザーB（博物館タグ）の提案で博物館が2件以上であることを期待しましたが、%d件でした", museumCountB)
 		}
 	})
 }
