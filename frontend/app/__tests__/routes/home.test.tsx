@@ -219,30 +219,7 @@ describe("Home画面", () => {
     });
   });
 
-  test("全カードを訪問するとスポット無し表示になる", async () => {
-    const user = userEvent.setup();
-    renderHome();
-
-    await waitFor(() => {
-      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
-    });
-
-    // 3枚全て訪問
-    for (let i = 0; i < 3; i++) {
-      const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
-      await user.click(checkInButton);
-      // 少し待つ
-      await waitFor(() => {
-        expect(checkInButton).not.toBeDisabled();
-      }, { timeout: 500 }).catch(() => {});
-    }
-
-    await waitFor(() => {
-      expect(screen.getByText("近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています")).toBeInTheDocument();
-    });
-  });
-
-  test("DAILY_LIMIT_REACHEDエラー時にコンプリートメッセージが表示される", async () => {
+  test("DAILY_LIMIT_REACHEDエラー時にコンプリートカードが表示される", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockRejectedValueOnce(
       new ApiError(404, "all nearby places have been visited", "DAILY_LIMIT_REACHED")
@@ -251,7 +228,7 @@ describe("Home画面", () => {
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByText("今日の3件をコンプリートしました！明日また新しいスポットが見つかります")).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
     });
   });
 
@@ -264,7 +241,7 @@ describe("Home画面", () => {
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByText("今日の3件をコンプリートしました！明日また新しいスポットが見つかります")).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
     });
     expect(mockShowToast).not.toHaveBeenCalled();
   });
@@ -398,6 +375,29 @@ describe("Home画面", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+  });
+
+  // === Issue #165: 3件完了時にコンプリートカードを表示する ===
+  test("全カードを訪問するとコンプリートカードが表示される", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // 3枚全て訪問
+    for (let i = 0; i < 3; i++) {
+      const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
+      await user.click(checkInButton);
+      await waitFor(() => {
+        expect(checkInButton).not.toBeDisabled();
+      }, { timeout: 500 }).catch(() => {});
+    }
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
     });
   });
 

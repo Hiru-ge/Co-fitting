@@ -9,9 +9,9 @@ export const API_ERROR_CODES = {
 
 /**
  * 提案API用のユーザー向けメッセージ定数
+ * DAILY_LIMIT_REACHED はコンプリートカードで表示するためここには含めない
  */
 export const SUGGESTION_MESSAGES = {
-  DAILY_LIMIT_REACHED: "今日の3件をコンプリートしました！明日また新しいスポットが見つかります",
   NO_NEARBY_PLACES: "近くのスポットが見つかりませんでした",
   FETCH_ERROR: "スポットの取得に失敗しました",
 } as const;
