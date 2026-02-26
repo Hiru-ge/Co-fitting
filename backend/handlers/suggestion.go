@@ -267,6 +267,13 @@ type SuggestionHandler struct {
 	Places      PlacesSearcher
 }
 
+// SuggestionResult は提案APIのレスポンス型
+// notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内に見つからなかったことを示す
+type SuggestionResult struct {
+	Places []PlaceResult `json:"places"`
+	Notice string        `json:"notice,omitempty"`
+}
+
 type suggestionRequest struct {
 	Lat    float64 `json:"lat" binding:"required"`
 	Lng    float64 `json:"lng" binding:"required"`
@@ -285,11 +292,12 @@ const maxSearchRadius uint = 50000
 // Suggest godoc
 // @Summary      場所の提案
 // @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
+// @Description  notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
 // @Tags         Suggestion
 // @Accept       json
 // @Produce      json
 // @Param        body  body  suggestionRequest  true  "位置情報と半径"
-// @Success      200  {array}   PlaceResult
+// @Success      200  {object}  SuggestionResult
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -335,7 +343,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 				// キャッシュヒットしても訪問済み施設を除外
 				filtered := filterOutVisited(h.DB, userID, dailyPlaces)
 				if len(filtered) > 0 {
-					c.JSON(http.StatusOK, filtered)
+					c.JSON(http.StatusOK, SuggestionResult{Places: filtered})
 					return
 				}
 				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
@@ -412,21 +420,26 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 
 	// 5. ユーザーの興味タグを取得してパーソナライズ選出（タグなしはランダムにフォールバック）
 	var selected []PlaceResult
+	var notice string
 	interestGenreNames, err := getUserInterestGenreNames(h.DB, userID)
 	if err != nil || len(interestGenreNames) == 0 {
 		selected = selectRandomPlaces(unvisited, maxDailySuggestions)
 	} else {
 		inInterest, outOfInterest := classifyByInterest(unvisited, interestGenreNames)
+		// 興味タグが設定されているが半径内に興味内施設が0件の場合はユーザーに通知
+		if len(inInterest) == 0 && len(outOfInterest) > 0 {
+			notice = "NO_INTEREST_PLACES"
+		}
 		selected = selectPersonalizedPlaces(inInterest, outOfInterest)
 	}
 
-	// 5. 日次キャッシュに保存（カウントは全提案訪問時にのみ設定。ここでは設定しない）
+	// 6. 日次キャッシュに保存（カウントは全提案訪問時にのみ設定。ここでは設定しない）
 	if h.RedisClient != nil {
 		data, _ := json.Marshal(selected)
 		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
 	}
 
-	c.JSON(http.StatusOK, selected)
+	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice})
 }
 
 // selectRandomPlaces は候補から最大n件をランダムに選出する

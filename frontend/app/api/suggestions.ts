@@ -2,7 +2,17 @@ import { apiCall } from "./client";
 import type { Place } from "~/types/suggestion";
 
 /**
- * 日次提案を取得する（配列レスポンス: 最大3件）
+ * 提案APIのレスポンス型
+ * places に提案施設リスト、notice に通知コードが含まれる場合がある
+ * notice === "NO_INTEREST_PLACES" のとき、興味タグに合致する施設が半径内に見つからなかったことを示す
+ */
+export interface SuggestionResult {
+  places: Place[];
+  notice?: string;
+}
+
+/**
+ * 日次提案を取得する（SuggestionResult: { places, notice? }）
  * バックエンドが日次キャッシュを担保するため、同一日・同一エリアでは同じ結果が返る
  */
 export async function getSuggestions(
@@ -10,7 +20,7 @@ export async function getSuggestions(
   lat: number,
   lng: number,
   radius?: number
-): Promise<Place[]> {
+): Promise<SuggestionResult> {
   const body: Record<string, number> = { lat, lng };
   if (radius !== undefined) {
     body.radius = radius;
@@ -30,6 +40,6 @@ export async function getSuggestion(
   lng: number,
   radius?: number
 ): Promise<Place> {
-  const places = await getSuggestions(token, lat, lng, radius);
-  return places[0];
+  const result = await getSuggestions(token, lat, lng, radius);
+  return result.places[0];
 }

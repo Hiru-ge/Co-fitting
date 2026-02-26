@@ -4,6 +4,7 @@
 export const API_ERROR_CODES = {
   DAILY_LIMIT_REACHED: "DAILY_LIMIT_REACHED",
   NO_NEARBY_PLACES: "NO_NEARBY_PLACES",
+  NO_INTEREST_PLACES: "NO_INTEREST_PLACES",
   INTERNAL_ERROR: "INTERNAL_ERROR",
 } as const;
 
@@ -13,6 +14,7 @@ export const API_ERROR_CODES = {
  */
 export const SUGGESTION_MESSAGES = {
   NO_NEARBY_PLACES: "近くのスポットが見つかりませんでした",
+  NO_INTEREST_PLACES: "興味タグに合う施設が近くにありませんでした。半径を広げるか、興味タグを見直してみてください",
   FETCH_ERROR: "スポットの取得に失敗しました",
 } as const;
 
