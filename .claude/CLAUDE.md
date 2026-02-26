@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 GitHub Issuesにタスクを追加する際はghコマンドを用い、タスクタイトルと簡単なタスク概要のみを記載する。タスクの詳細はdocs/todo.mdにのみ記載する。
 開発は全てt-wadaのTDDに従って、「RED→GREEN→REFACTOR」のサイクルで進行。
 ブランチはmain/masterと、機能ごとのfeatureブランチ(feat/xxx)を使用。
-**git操作について**: Issue作成（`gh issue create`）以外のgit操作（commit・push・PR作成など）は行わないこと。タスクが完了したら `docs/todo.md` の該当項目にチェックを入れること。
+**git操作について**: Issue作成（`gh issue create`）以外のgit操作（commit・push・PR作成など）は行わないこと。タスクが完了したら `docs/todo.md` の該当項目にチェックを入れること。Issue作成時は、`Phase0`, `Phase1`, `Phase2`, `Phase3`, `Phase4`, `frontend`, `backend` の中から適切なラベルを付与すること。
 現在のフェーズ: **Phase 1（ドッグフーディング中）** — ゲーミフィケーション（XP・レベル・バッジ）・Google OAuth・興味タグ/パーソナライズ提案などを実装済み。現在はPhase 1最終段階として自己利用（ドッグフーディング）による動作確認・品質改善中。
 
 Phase 1のスコープ（実装済み・ドッグフーディング中）:
