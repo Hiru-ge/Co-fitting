@@ -66,7 +66,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       setUserPos(pos);
 
       // バックエンドの日次キャッシュにより、1回の呼び出しで最大3件取得
-      const collected = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS);
+      const { places: collected, notice } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS);
+
+      // 興味タグに合致する施設が半径内になかった場合、infoトーストで通知
+      if (notice === API_ERROR_CODES.NO_INTEREST_PLACES) {
+        showToast(SUGGESTION_MESSAGES.NO_INTEREST_PLACES, "info");
+      }
 
       if (collected.length === 0) {
         setError("近くのスポットが見つかりませんでした");

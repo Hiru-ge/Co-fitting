@@ -372,8 +372,7 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 			t.Fatalf("初回提案リクエスト失敗: status %d, body: %s", w1.Code, w1.Body.String())
 		}
 
-		var firstResp []PlaceResult
-		json.Unmarshal(w1.Body.Bytes(), &firstResp)
+		firstResp := parseSuggestions(t, w1.Body.Bytes())
 
 		// カフェが多いことを確認
 		firstCafeCount := 0
@@ -421,8 +420,7 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 			t.Fatalf("タグ変更後の提案リクエスト失敗: status %d, body: %s", w3.Code, w3.Body.String())
 		}
 
-		var secondResp []PlaceResult
-		json.Unmarshal(w3.Body.Bytes(), &secondResp)
+		secondResp := parseSuggestions(t, w3.Body.Bytes())
 
 		// 博物館が多いことを確認（タグ変更が反映されている）
 		secondMuseumCount := 0
@@ -481,8 +479,7 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 			t.Fatalf("ユーザーAへの提案リクエスト失敗: status %d", wA.Code)
 		}
 
-		var respA []PlaceResult
-		json.Unmarshal(wA.Body.Bytes(), &respA)
+		respA := parseSuggestions(t, wA.Body.Bytes())
 
 		// ユーザーBへの提案
 		jsonBodyB, _ := json.Marshal(body)
@@ -496,8 +493,7 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 			t.Fatalf("ユーザーBへの提案リクエスト失敗: status %d", wB.Code)
 		}
 
-		var respB []PlaceResult
-		json.Unmarshal(wB.Body.Bytes(), &respB)
+		respB := parseSuggestions(t, wB.Body.Bytes())
 
 		// ユーザーAはカフェが多い
 		cafeCountA := 0

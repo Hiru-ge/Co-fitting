@@ -56,7 +56,7 @@ let callCount = 0;
 vi.mock("~/api/suggestions", () => ({
   getSuggestions: vi.fn().mockImplementation(() => {
     callCount++;
-    return Promise.resolve([...mockPlaces]);
+    return Promise.resolve({ places: [...mockPlaces] });
   }),
 }));
 
@@ -445,6 +445,37 @@ describe("Home画面", () => {
       expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
       expect(screen.getByText("コンフォートゾーン・ブレイカー")).toBeInTheDocument();
     });
+  });
+
+  // === Issue #167: 興味タグ施設が半径内に見つからない場合のトースト通知 ===
+  test("NO_INTEREST_PLACESのnoticeがある場合、infoトーストが表示される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: mockPlaces,
+      notice: "NO_INTEREST_PLACES",
+    });
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+    expect(mockShowToast).toHaveBeenCalledWith(
+      expect.stringContaining("興味タグ"),
+      "info"
+    );
+  });
+
+  test("noticeがない場合、興味タグ関連のinfoトーストは表示されない", async () => {
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+    expect(mockShowToast).not.toHaveBeenCalledWith(
+      expect.stringContaining("興味タグ"),
+      "info"
+    );
   });
 });
 

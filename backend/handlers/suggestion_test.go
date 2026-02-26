@@ -99,6 +99,18 @@ func cleanupAllSuggestionCache(t *testing.T) {
 	}
 }
 
+// parseSuggestions は SuggestionResult ラッパーから []PlaceResult を取り出すテストヘルパー
+func parseSuggestions(t *testing.T, body []byte) []PlaceResult {
+	t.Helper()
+	var result struct {
+		Places []PlaceResult `json:"places"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		t.Fatalf("Failed to parse suggestion response: %v. Body: %s", err, string(body))
+	}
+	return result.Places
+}
+
 func createTestUser(t *testing.T) models.User {
 	t.Helper()
 	user := models.User{
@@ -142,10 +154,7 @@ func TestSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) == 0 {
 			t.Error("Expected at least one place")
@@ -201,10 +210,7 @@ func TestSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) != 1 {
 			t.Fatalf("Expected 1 place, got %d", len(resp))
@@ -321,10 +327,7 @@ func TestSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) != 1 {
 			t.Fatalf("Expected 1 place, got %d", len(resp))
@@ -549,10 +552,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response as array: %v. Body: %s", err, w.Body.String())
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) == 0 || len(resp) > 3 {
 			t.Errorf("Expected 1-3 places, got %d", len(resp))
@@ -587,8 +587,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("1st request: Expected status %d, got %d. Body: %s", http.StatusOK, w1.Code, w1.Body.String())
 		}
 
-		var resp1 []PlaceResult
-		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		resp1 := parseSuggestions(t, w1.Body.Bytes())
 
 		// 2回目のリクエスト
 		w2 := httptest.NewRecorder()
@@ -601,8 +600,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("2nd request: Expected status %d, got %d. Body: %s", http.StatusOK, w2.Code, w2.Body.String())
 		}
 
-		var resp2 []PlaceResult
-		json.Unmarshal(w2.Body.Bytes(), &resp2)
+		resp2 := parseSuggestions(t, w2.Body.Bytes())
 
 		// 同じ結果が返ることを確認
 		if len(resp1) != len(resp2) {
@@ -685,8 +683,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) != 2 {
 			t.Errorf("Expected 2 places, got %d", len(resp))
@@ -730,8 +727,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		for _, p := range resp {
 			if p.PlaceID == "place_1" {
@@ -768,8 +764,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("1st request: Expected status %d, got %d. Body: %s", http.StatusOK, w1.Code, w1.Body.String())
 		}
 
-		var resp1 []PlaceResult
-		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		resp1 := parseSuggestions(t, w1.Body.Bytes())
 		initialCount := len(resp1)
 
 		if initialCount == 0 {
@@ -798,8 +793,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("2nd request: Expected status %d, got %d. Body: %s", http.StatusOK, w2.Code, w2.Body.String())
 		}
 
-		var resp2 []PlaceResult
-		json.Unmarshal(w2.Body.Bytes(), &resp2)
+		resp2 := parseSuggestions(t, w2.Body.Bytes())
 
 		// 訪問済み施設が除外されている
 		for _, p := range resp2 {
@@ -842,8 +836,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			t.Fatalf("1st request: Expected status %d, got %d. Body: %s", http.StatusOK, w1.Code, w1.Body.String())
 		}
 
-		var resp1 []PlaceResult
-		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		resp1 := parseSuggestions(t, w1.Body.Bytes())
 
 		if len(resp1) == 0 {
 			t.Fatal("Expected at least 1 place in initial response")
@@ -923,8 +916,7 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 			t.Fatalf("1st request: Expected status %d, got %d. Body: %s", http.StatusOK, w1.Code, w1.Body.String())
 		}
 
-		var resp1 []PlaceResult
-		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		resp1 := parseSuggestions(t, w1.Body.Bytes())
 		if len(resp1) == 0 {
 			t.Fatal("Expected at least 1 place in initial response")
 		}
@@ -1026,10 +1018,7 @@ func TestPersonalizedSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) == 0 {
 			t.Fatal("Expected at least 1 place")
@@ -1082,10 +1071,7 @@ func TestPersonalizedSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		// 3件返される
 		if len(resp) != 3 {
@@ -1134,10 +1120,7 @@ func TestPersonalizedSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		if len(resp) == 0 || len(resp) > 3 {
 			t.Errorf("Expected 1-3 places (fallback random), got %d", len(resp))
@@ -1176,10 +1159,7 @@ func TestPersonalizedSuggest(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []PlaceResult
-		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-			t.Fatalf("Failed to parse response: %v", err)
-		}
+		resp := parseSuggestions(t, w.Body.Bytes())
 
 		// 全3件がcafe（興味内のみ）
 		if len(resp) != 3 {
@@ -1196,6 +1176,58 @@ func TestPersonalizedSuggest(t *testing.T) {
 			if !isCafe {
 				t.Errorf("Expected all places to be cafe, but got %v", p.Types)
 			}
+		}
+	})
+
+	t.Run("興味タグありで半径内に興味内施設が0件の場合にNO_INTEREST_PLACESが返る", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// カフェに興味タグを設定するが、APIが返す施設はカフェ以外（博物館）のみ
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		mock := &mockPlacesClient{Results: museumPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var result struct {
+			Places []PlaceResult `json:"places"`
+			Notice string        `json:"notice"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
+		}
+
+		// 興味外からフォールバックして施設は返される
+		if len(result.Places) == 0 {
+			t.Error("Expected places to be returned (fallback to out-of-interest) even when no interest tag matches")
+		}
+
+		// NO_INTEREST_PLACES の notice が付いている
+		if result.Notice != "NO_INTEREST_PLACES" {
+			t.Errorf("Expected notice 'NO_INTEREST_PLACES', got '%s'", result.Notice)
 		}
 	})
 }
