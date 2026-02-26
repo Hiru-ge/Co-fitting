@@ -354,4 +354,13 @@ describe("設定画面", () => {
     });
   });
 
+  // === Issue #158: スクロール制御 ===
+  describe("レイアウト・スクロール制御", () => {
+    test("ルートコンテナに過剰な下部余白クラス(pb-32)がない", () => {
+      const { container } = renderSettings();
+      const rootDiv = container.firstChild as HTMLElement;
+      expect(rootDiv).not.toHaveClass("pb-32");
+    });
+  });
+
 });

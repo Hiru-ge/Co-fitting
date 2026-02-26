@@ -55,7 +55,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   const [activeTab, setActiveTab] = useState<TabId>("user");
 
   return (
-    <div className="flex flex-col pb-32">
+    <div className="flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
         <div className="flex items-center justify-between">

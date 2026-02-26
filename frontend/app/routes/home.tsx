@@ -175,7 +175,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-max bg-background flex flex-col">
+      <div className="bg-background flex flex-col">
         <AppHeader />
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="w-full aspect-3/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
@@ -186,7 +186,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   if (error || places.length === 0) {
     return (
-      <div className="min-h-max bg-background flex flex-col">
+      <div className="bg-background flex flex-col">
         <AppHeader />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
           <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
@@ -203,7 +203,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <div className="min-h-max bg-background flex flex-col">
+    <div className="bg-background flex flex-col">
       <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace.vicinity)} />
 
       <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
