@@ -63,7 +63,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   const levelTitle = stats ? getLevelTitle(stats.level) : null;
 
   return (
-    <div className="flex flex-col pb-32">
+    <div className="flex flex-col pb-12">
       {/* ── Header ── */}
       <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
         <div className="flex items-center justify-between">

@@ -400,3 +400,42 @@ describe("Home画面", () => {
     });
   });
 });
+
+// === Issue #158: レイアウト・スクロール制御 ===
+describe("ホームページ レイアウト・スクロール制御", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorageMock.clear();
+  });
+
+  test("ローディング中のルートコンテナにmin-h-maxクラスがない", () => {
+    const { container } = renderHome();
+    const rootDiv = container.firstChild as HTMLElement;
+    expect(rootDiv).not.toHaveClass("min-h-max");
+  });
+
+  test("エラー時のルートコンテナにmin-h-maxクラスがない", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockRejectedValueOnce(new Error("network error"));
+
+    const { container } = renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("スポットの取得に失敗しました")).toBeInTheDocument();
+    });
+
+    const rootDiv = container.firstChild as HTMLElement;
+    expect(rootDiv).not.toHaveClass("min-h-max");
+  });
+
+  test("スポット表示中のルートコンテナにmin-h-maxクラスがない", async () => {
+    const { container } = renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const rootDiv = container.firstChild as HTMLElement;
+    expect(rootDiv).not.toHaveClass("min-h-max");
+  });
+});
