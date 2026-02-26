@@ -216,6 +216,16 @@ describe("プロフィール画面", () => {
     });
   });
 
+  test("共有ボタンはdisabled状態でグレーアウト表示される（未実装）", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      const shareButton = screen.getByRole("button", { name: "共有" });
+      expect(shareButton).toBeDisabled();
+      expect(shareButton).toHaveClass("btn-unimplemented");
+    });
+  });
+
   test("探索履歴とランキングのメニューが表示される", async () => {
     renderProfile();
 

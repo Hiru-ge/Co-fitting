@@ -121,3 +121,9 @@ body {
 .animate-confetti-1 { animation: confetti-float-1 2s ease-in-out infinite; }
 .animate-confetti-2 { animation: confetti-float-2 2.5s ease-in-out infinite 0.3s; }
 .animate-confetti-3 { animation: confetti-float-3 1.8s ease-in-out infinite 0.6s; }
+
+/* ── 未実装ボタン共通スタイル ── */
+.btn-unimplemented {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
