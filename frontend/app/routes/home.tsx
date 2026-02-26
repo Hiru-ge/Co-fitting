@@ -173,70 +173,66 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     ? originalOrder.indexOf(currentPlace.place_id)
     : 0;
 
-  if (isLoading) {
-    return (
-      <div className="bg-background flex flex-col">
-        <AppHeader />
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="w-full aspect-3/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || places.length === 0) {
-    return (
-      <div className="bg-background flex flex-col">
-        <AppHeader />
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-          <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
-          <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています"}</p>
-          <button
-            onClick={loadSuggestions}
-            className="px-6 py-2 bg-primary text-white rounded-full font-bold"
-          >
-            再試行
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-background flex flex-col">
-      <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace.vicinity)} />
-
-      <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
-        {places.length > 0 && (
-          <div className="relative w-full aspect-3/5">
-            {places.slice(0, 3).map((place, i) => (
-              <DiscoveryCard
-                key={place.place_id}
-                place={place}
-                isVisited={visitedIds.has(place.place_id)}
-                userLat={userPos.lat}
-                userLng={userPos.lng}
-                photoUrl={place.photoUrl}
-                stackIndex={i}
-                onSwipe={handleSkip}
-              />
-            ))}
+      {isLoading ? (
+        <>
+          <AppHeader />
+          <div className="flex-1 flex items-center justify-center px-6">
+            <div className="w-full aspect-3/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
           </div>
-        )}
+        </>
+      ) : (error || places.length === 0) ? (
+        <>
+          <AppHeader />
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
+            <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
+            <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています"}</p>
+            <button
+              onClick={loadSuggestions}
+              className="px-6 py-2 bg-primary text-white rounded-full font-bold"
+            >
+              再試行
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace.vicinity)} />
 
-        {places.length > 1 && (
-          <CardIndicator total={places.length} currentIndex={currentIndex} />
-        )}
+          <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
+            {places.length > 0 && (
+              <div className="relative w-full aspect-3/5">
+                {places.slice(0, 3).map((place, i) => (
+                  <DiscoveryCard
+                    key={place.place_id}
+                    place={place}
+                    isVisited={visitedIds.has(place.place_id)}
+                    userLat={userPos.lat}
+                    userLng={userPos.lng}
+                    photoUrl={place.photoUrl}
+                    stackIndex={i}
+                    onSwipe={handleSkip}
+                  />
+                ))}
+              </div>
+            )}
 
-        <ActionButtons
-          onCheckIn={handleCheckIn}
-          onSkip={handleSkip}
-          isVisited={isCurrentVisited}
-          isCheckingIn={checkingIn}
-        />
-      </main>
+            {places.length > 1 && (
+              <CardIndicator total={places.length} currentIndex={currentIndex} />
+            )}
 
-      {/* XP獲得モーダル */}
+            <ActionButtons
+              onCheckIn={handleCheckIn}
+              onSkip={handleSkip}
+              isVisited={isCurrentVisited}
+              isCheckingIn={checkingIn}
+            />
+          </main>
+        </>
+      )}
+
+      {/* XP獲得モーダル: ローディング・エラー状態でも表示できるよう常にレンダリング対象 */}
       {xpModalState && (
         <XpModal
           xpEarned={xpModalState.xpEarned}
@@ -248,7 +244,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         />
       )}
 
-      {/* バッジ獲得モーダル */}
+      {/* バッジ獲得モーダル: 同上 */}
       {badgeQueue.length > 0 && (
         <BadgeModal
           badge={badgeQueue[0]}
