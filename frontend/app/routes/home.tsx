@@ -18,6 +18,7 @@ import CardIndicator from "~/components/card-indicator";
 import ActionButtons from "~/components/action-buttons";
 import XpModal from "~/components/xp-modal";
 import BadgeModal from "~/components/badge-modal";
+import CompleteCard from "~/components/complete-card";
 
 type PlaceWithPhoto = Place & { photoUrl?: string };
 
@@ -49,6 +50,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [checkingIn, setCheckingIn] = useState(false);
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
   const [originalOrder, setOriginalOrder] = useState<string[]>([]);
@@ -58,6 +60,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const loadSuggestions = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setIsCompleted(false);
     try {
       const pos = await getPositionWithFallback();
       setUserPos(pos);
@@ -84,7 +87,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       }
     } catch (err) {
       if (err instanceof ApiError && err.code === API_ERROR_CODES.DAILY_LIMIT_REACHED) {
-        setError(SUGGESTION_MESSAGES.DAILY_LIMIT_REACHED);
+        setIsCompleted(true);
       } else if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
         setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
       } else {
@@ -125,8 +128,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       });
 
       // 訪問済みカードを即座にリストから削除
-      setPlaces((prev) => prev.filter((p) => p.place_id !== place.place_id));
+      const remainingPlaces = places.filter((p) => p.place_id !== place.place_id);
+      setPlaces(remainingPlaces);
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
+
+      // 全件訪問完了したらコンプリート状態へ
+      if (remainingPlaces.length === 0) {
+        setIsCompleted(true);
+      }
 
       // ゲーミフィケーションデータがある場合はXPモーダルを表示
       if (result.xp_earned !== undefined) {
@@ -182,12 +191,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <div className="w-full aspect-3/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
           </div>
         </>
+      ) : isCompleted ? (
+        <>
+          <AppHeader />
+          <CompleteCard />
+        </>
       ) : (error || places.length === 0) ? (
         <>
           <AppHeader />
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
             <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
-            <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした。または、今日の3件をコンプリートしています"}</p>
+            <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした"}</p>
             <button
               onClick={loadSuggestions}
               className="px-6 py-2 bg-primary text-white rounded-full font-bold"
