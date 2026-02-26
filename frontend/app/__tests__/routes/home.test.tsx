@@ -354,6 +354,53 @@ describe("Home画面", () => {
     });
   });
 
+  // === Issue #164: 3件目完了時にXP獲得モーダルが表示されない問題 ===
+  test("3件目チェックイン完了時にXPモーダルが表示される", async () => {
+    const { createVisit } = await import("~/api/visits");
+    vi.mocked(createVisit).mockResolvedValue({
+      id: 1,
+      xp_earned: 50,
+      total_xp: 150,
+      level_up: false,
+      new_level: 2,
+      new_badges: [],
+    } as any);
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // 1件目チェックイン → XPモーダル → 閉じる
+    await user.click(screen.getByRole("button", { name: /行ってきた/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
+
+    // 2件目チェックイン → XPモーダル → 閉じる
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /行ってきた/ })).not.toBeDisabled();
+    });
+    await user.click(screen.getByRole("button", { name: /行ってきた/ }));
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
+
+    // 3件目チェックイン (最後の1件) → XPモーダルが表示されること
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /行ってきた/ })).not.toBeDisabled();
+    });
+    await user.click(screen.getByRole("button", { name: /行ってきた/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+    });
+  });
+
   test("バッジモーダルを閉じると次のバッジが表示される", async () => {
     const { createVisit } = await import("~/api/visits");
     vi.mocked(createVisit).mockResolvedValueOnce({
