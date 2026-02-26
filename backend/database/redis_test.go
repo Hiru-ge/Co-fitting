@@ -226,3 +226,110 @@ func TestClearDailySuggestionsCache(t *testing.T) {
 		}
 	})
 }
+
+func cleanupAllSuggestionKeys(t *testing.T) {
+	t.Helper()
+	ctx := context.Background()
+	var cursor uint64
+	for {
+		keys, nextCursor, err := testRedisClient.Scan(ctx, cursor, "suggestion:*", 100).Result()
+		if err != nil {
+			break
+		}
+		if len(keys) > 0 {
+			testRedisClient.Del(ctx, keys...)
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+}
+
+func TestDailyLimitReachedKey(t *testing.T) {
+	t.Run("上限到達フラグキーが正しいフォーマットで生成される", func(t *testing.T) {
+		key := DailyLimitReachedKey("123", "2026-02-26")
+		expected := "suggestion:count:123:2026-02-26"
+		if key != expected {
+			t.Errorf("Expected key '%s', got '%s'", expected, key)
+		}
+	})
+
+	t.Run("異なるユーザーIDで異なるキーが生成される", func(t *testing.T) {
+		key1 := DailyLimitReachedKey("user1", "2026-02-26")
+		key2 := DailyLimitReachedKey("user2", "2026-02-26")
+		if key1 == key2 {
+			t.Errorf("Expected different keys for different users, got same: '%s'", key1)
+		}
+	})
+}
+
+func TestIsDailyLimitReachedAndSet(t *testing.T) {
+	t.Run("SetDailyLimitReached後にIsDailyLimitReachedがtrueを返す", func(t *testing.T) {
+		cleanupAllSuggestionKeys(t)
+		ctx := context.Background()
+
+		err := SetDailyLimitReached(ctx, testRedisClient, "user1", "2026-02-26", 24*time.Hour)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		reached, err := IsDailyLimitReached(ctx, testRedisClient, "user1", "2026-02-26")
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !reached {
+			t.Error("Expected IsDailyLimitReached to return true after SetDailyLimitReached")
+		}
+	})
+
+	t.Run("未設定の場合はfalseが返る", func(t *testing.T) {
+		cleanupAllSuggestionKeys(t)
+		ctx := context.Background()
+
+		reached, err := IsDailyLimitReached(ctx, testRedisClient, "userX", "2026-02-26")
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if reached {
+			t.Error("Expected IsDailyLimitReached to return false for missing key")
+		}
+	})
+}
+
+func TestClearDailySuggestionsCacheDoesNotClearLimitReached(t *testing.T) {
+	t.Run("ClearDailySuggestionsCacheは上限到達フラグを削除しない", func(t *testing.T) {
+		cleanupAllSuggestionKeys(t)
+		ctx := context.Background()
+
+		// リストキャッシュと上限到達フラグを両方設定する
+		listKey := DailySuggestionCacheKey("user1", "2026-02-26", 35.68, 139.65)
+		testRedisClient.Set(ctx, listKey, `[{"place_id":"p1"}]`, 24*time.Hour)
+
+		err := SetDailyLimitReached(ctx, testRedisClient, "user1", "2026-02-26", 24*time.Hour)
+		if err != nil {
+			t.Fatalf("Failed to set limit reached: %v", err)
+		}
+
+		// リストキャッシュを削除
+		_, err = ClearDailySuggestionsCache(ctx, testRedisClient, "user1")
+		if err != nil {
+			t.Fatalf("Unexpected error from ClearDailySuggestionsCache: %v", err)
+		}
+
+		// リストキャッシュが削除されていることを確認
+		_, listErr := testRedisClient.Get(ctx, listKey).Result()
+		if listErr != redis.Nil {
+			t.Error("Expected list cache to be deleted")
+		}
+
+		// 上限到達フラグは残っていることを確認
+		reached, err := IsDailyLimitReached(ctx, testRedisClient, "user1", "2026-02-26")
+		if err != nil {
+			t.Fatalf("Unexpected error getting limit reached flag: %v", err)
+		}
+		if !reached {
+			t.Error("Expected daily limit reached flag to survive ClearDailySuggestionsCache")
+		}
+	})
+}

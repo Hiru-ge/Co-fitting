@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -874,6 +875,103 @@ func TestSuggestDailyCache(t *testing.T) {
 
 		var errResp map[string]string
 		json.Unmarshal(w2.Body.Bytes(), &errResp)
+		if errResp["code"] != "daily_limit_reached" {
+			t.Errorf("Expected error code 'daily_limit_reached', got '%s'", errResp["code"])
+		}
+	})
+}
+
+// TestInterestUpdateDoesNotResetDailyLimit は Issue #166 の回帰テスト
+// 全提案を使い切った後に興味タグを変更しても、3件提案の権利は復活しないことを確認する
+func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
+	mockPlaces := []PlaceResult{
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+		{PlaceID: "place_4", Name: "Bar Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 3.5, Types: []string{"bar"}},
+	}
+
+	t.Run("全提案を訪問済み後に興味タグ変更しても日次上限は復活しない", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		if testRedisClient == nil {
+			t.Skip("Redis not available")
+		}
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		// ステップ1: 日次提案を取得
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+
+		if w1.Code != http.StatusOK {
+			t.Fatalf("1st request: Expected status %d, got %d. Body: %s", http.StatusOK, w1.Code, w1.Body.String())
+		}
+
+		var resp1 []PlaceResult
+		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		if len(resp1) == 0 {
+			t.Fatal("Expected at least 1 place in initial response")
+		}
+
+		// ステップ2: 提案された全施設を訪問済みにする
+		for _, p := range resp1 {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   p.PlaceID,
+				PlaceName: p.Name,
+				Latitude:  p.Lat,
+				Longitude: p.Lng,
+				VisitedAt: time.Now(),
+			})
+		}
+
+		// ステップ3: 全訪問済みで再リクエスト → 429 + exhaustedフラグが立つ
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusTooManyRequests {
+			t.Fatalf("全訪問後は429が返るはず: Expected status %d, got %d. Body: %s",
+				http.StatusTooManyRequests, w2.Code, w2.Body.String())
+		}
+
+		// ステップ4: 興味タグ変更を模倣して提案リストキャッシュのみをクリアする
+		// （実際には UpdateInterests → ClearDailySuggestionsCache が呼ばれる。exhaustedフラグは消えない）
+		userIDStr := fmt.Sprintf("%d", user.ID)
+		database.ClearDailySuggestionsCache(context.Background(), testRedisClient, userIDStr)
+
+		// ステップ5: キャッシュクリア後に再リクエスト → 429 が引き続き返るべき
+		w3 := httptest.NewRecorder()
+		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req3.Header.Set("Content-Type", "application/json")
+		req3.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w3, req3)
+
+		if w3.Code != http.StatusTooManyRequests {
+			t.Errorf("興味タグ変更後も日次上限は有効なはず: Expected status %d, got %d. Body: %s",
+				http.StatusTooManyRequests, w3.Code, w3.Body.String())
+		}
+
+		var errResp map[string]string
+		json.Unmarshal(w3.Body.Bytes(), &errResp)
 		if errResp["code"] != "daily_limit_reached" {
 			t.Errorf("Expected error code 'daily_limit_reached', got '%s'", errResp["code"])
 		}

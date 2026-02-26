@@ -339,12 +339,26 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 					return
 				}
 				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
+				// 上限到達フラグを立てておく（リストキャッシュが削除されても復活しないよう）
+				database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
 				c.JSON(http.StatusTooManyRequests, gin.H{
 					"error": "本日の提案は全て訪問済みです。明日またお試しください。",
 					"code":  "daily_limit_reached",
 				})
 				return
 			}
+		}
+
+		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は拒否
+		// 「全提案を訪問した後に興呗タグを変更した」ケースをここで捉える
+		// 未訪問提案がある状態での興呗タグ変更（Issue #153）は上限到達フラグが立たないため通過する
+		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
+		if err == nil && reached {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "本日の提案は全て訪問済みです。明日またお試しください。",
+				"code":  "daily_limit_reached",
+			})
+			return
 		}
 	}
 
@@ -406,7 +420,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		selected = selectPersonalizedPlaces(inInterest, outOfInterest)
 	}
 
-	// 5. 日次キャッシュに保存
+	// 5. 日次キャッシュに保存（カウントは全提案訪問時にのみ設定。ここでは設定しない）
 	if h.RedisClient != nil {
 		data, _ := json.Marshal(selected)
 		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
