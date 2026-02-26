@@ -68,7 +68,8 @@ func SetDailySuggestions(ctx context.Context, client *redis.Client, userID strin
 	return client.Set(ctx, key, data, ttl).Err()
 }
 
-// ClearDailySuggestionsCache は指定ユーザーの日次提案キャッシュを全て削除する
+// ClearDailySuggestionsCache は指定ユーザーの日次提案リストキャッシュを全て削除する
+// 注意: 日次カウントキー（suggestion:count:*）は削除しない
 func ClearDailySuggestionsCache(ctx context.Context, client *redis.Client, userID string) (int64, error) {
 	pattern := fmt.Sprintf("suggestion:daily:%s:*", userID)
 	var deletedCount int64
@@ -91,4 +92,35 @@ func ClearDailySuggestionsCache(ctx context.Context, client *redis.Client, userI
 		}
 	}
 	return deletedCount, nil
+}
+
+// --- 日次提案上限到達フラグ ---
+// 上限到達フラグはリストキャッシュ(「suggest:daily:*」)とは独立したキーで管理される。
+// 「ClearDailySuggestionsCache」でリストキャッシュが削除されてもこのフラグは消えない。
+// これにより、「全提案を訪問後に興味タグを変更」しても当日の提案権利が復活しない。
+
+// DailyLimitReachedKey は日次提案上限到達フラグのキーを生成する
+// フォーマット: suggestion:count:{userID}:{date}
+func DailyLimitReachedKey(userID string, date string) string {
+	return fmt.Sprintf("suggestion:count:%s:%s", userID, date)
+}
+
+// IsDailyLimitReached は当日の提案上限に達しているかを返す
+// フラグが無ければ false を返す
+func IsDailyLimitReached(ctx context.Context, client *redis.Client, userID string, date string) (bool, error) {
+	key := DailyLimitReachedKey(userID, date)
+	_, err := client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check daily limit: %w", err)
+	}
+	return true, nil
+}
+
+// SetDailyLimitReached は当日の提案上限到達を記録する
+func SetDailyLimitReached(ctx context.Context, client *redis.Client, userID string, date string, ttl time.Duration) error {
+	key := DailyLimitReachedKey(userID, date)
+	return client.Set(ctx, key, 1, ttl).Err()
 }
