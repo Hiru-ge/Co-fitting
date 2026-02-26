@@ -79,8 +79,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <h1 className="text-lg font-bold text-center">マイページ</h1>
           <button
             onClick={() => {/* TODO: 共有機能 */}}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100"
+            className="flex size-10 items-center justify-center rounded-full bg-gray-100 btn-unimplemented"
             aria-label="共有"
+            disabled
           >
             <span className="material-symbols-outlined text-xl text-gray-600">
               share
@@ -181,7 +182,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         </a>
         <button
           onClick={() => {/* TODO: ランキング機能 */}}
-          className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-transform opacity-60"
+          className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-transform btn-unimplemented"
           disabled
         >
           <div className="size-10 rounded-full bg-amber-400/20 flex items-center justify-center">
