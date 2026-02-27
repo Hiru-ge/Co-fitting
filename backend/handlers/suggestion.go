@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"strconv"
@@ -436,7 +437,12 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	if h.RedisClient != nil {
 		cached, err := h.RedisClient.Get(ctx, cacheKey).Result()
 		if err == nil {
-			json.Unmarshal([]byte(cached), &places)
+			if unmarshalErr := json.Unmarshal([]byte(cached), &places); unmarshalErr != nil {
+				// キャッシュが破損している場合はキャッシュを無効化してAPI再取得へフォールバック
+				log.Printf("Warning: corrupted places cache for key %s, invalidating: %v", cacheKey, unmarshalErr)
+				h.RedisClient.Del(ctx, cacheKey)
+				places = nil
+			}
 		}
 	}
 
