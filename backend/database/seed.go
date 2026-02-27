@@ -21,39 +21,45 @@ func SeedMasterData(db *gorm.DB) error {
 func seedGenreTags(db *gorm.DB) error {
 	tags := []models.GenreTag{
 		// 飲食
-		{Name: "カフェ", Category: "飲食", Icon: "coffee"},
-		{Name: "レストラン", Category: "飲食", Icon: "utensils"},
-		{Name: "ラーメン・麺類", Category: "飲食", Icon: "bowl-food"},
-		{Name: "居酒屋・バー", Category: "飲食", Icon: "beer-mug-empty"},
-		{Name: "スイーツ・ベーカリー", Category: "飲食", Icon: "cookie-bite"},
+		{Name: "カフェ", Category: "飲食", Icon: "local_cafe"},
+		{Name: "レストラン", Category: "飲食", Icon: "restaurant"},
+		{Name: "ラーメン・麺類", Category: "飲食", Icon: "ramen_dining"},
+		{Name: "居酒屋・バー", Category: "飲食", Icon: "sports_bar"},
+		{Name: "スイーツ・ベーカリー", Category: "飲食", Icon: "bakery_dining"},
 		// アウトドア
-		{Name: "公園・緑地", Category: "アウトドア", Icon: "tree"},
-		{Name: "自然・ハイキング", Category: "アウトドア", Icon: "mountain"},
+		{Name: "公園・緑地", Category: "アウトドア", Icon: "park"},
+		{Name: "自然・ハイキング", Category: "アウトドア", Icon: "terrain"},
 		{Name: "海・川・湖", Category: "アウトドア", Icon: "water"},
 		// スポーツ
-		{Name: "スポーツジム", Category: "スポーツ", Icon: "dumbbell"},
-		{Name: "スポーツ施設", Category: "スポーツ", Icon: "person-running"},
+		{Name: "スポーツジム", Category: "スポーツ", Icon: "fitness_center"},
+		{Name: "スポーツ施設", Category: "スポーツ", Icon: "directions_run"},
 		// 文化・芸術
 		{Name: "美術館・ギャラリー", Category: "文化・芸術", Icon: "palette"},
-		{Name: "博物館・科学館", Category: "文化・芸術", Icon: "building-columns"},
-		{Name: "図書館・書店", Category: "文化・芸術", Icon: "book"},
+		{Name: "博物館・科学館", Category: "文化・芸術", Icon: "museum"},
+		{Name: "図書館・書店", Category: "文化・芸術", Icon: "menu_book"},
 		// エンタメ
-		{Name: "映画館", Category: "エンタメ", Icon: "film"},
-		{Name: "カラオケ", Category: "エンタメ", Icon: "microphone"},
-		{Name: "ゲームセンター", Category: "エンタメ", Icon: "gamepad"},
+		{Name: "映画館", Category: "エンタメ", Icon: "movie"},
+		{Name: "カラオケ", Category: "エンタメ", Icon: "mic"},
+		{Name: "ゲームセンター", Category: "エンタメ", Icon: "sports_esports"},
 		// ショッピング
-		{Name: "ショッピングモール", Category: "ショッピング", Icon: "bag-shopping"},
-		{Name: "雑貨・セレクトショップ", Category: "ショッピング", Icon: "store"},
+		{Name: "ショッピングモール", Category: "ショッピング", Icon: "shopping_bag"},
+		{Name: "雑貨・セレクトショップ", Category: "ショッピング", Icon: "storefront"},
 		// リラクゼーション
-		{Name: "温泉・銭湯", Category: "リラクゼーション", Icon: "hot-tub-person"},
+		{Name: "温泉・銭湯", Category: "リラクゼーション", Icon: "hot_tub"},
 		{Name: "マッサージ・スパ", Category: "リラクゼーション", Icon: "spa"},
 		// 観光・文化
-		{Name: "神社・寺", Category: "観光・文化", Icon: "torii-gate"},
-		{Name: "観光スポット", Category: "観光・文化", Icon: "camera"},
+		{Name: "神社・寺", Category: "観光・文化", Icon: "temple_buddhist"},
+		{Name: "観光スポット", Category: "観光・文化", Icon: "photo_camera"},
 	}
 
 	for _, tag := range tags {
-		if err := db.Where(models.GenreTag{Name: tag.Name}).FirstOrCreate(&tag).Error; err != nil {
+		t := tag
+		if err := db.Where(models.GenreTag{Name: t.Name}).
+			Assign(models.GenreTag{
+				Category: t.Category,
+				Icon:     t.Icon,
+			}).
+			FirstOrCreate(&t).Error; err != nil {
 			return err
 		}
 	}

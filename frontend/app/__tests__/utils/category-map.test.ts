@@ -5,7 +5,7 @@ describe("getCategoryInfo", () => {
   test("cafe → カフェのCategoryInfoが返る", () => {
     const info = getCategoryInfo(["cafe"]);
     expect(info.label).toBe("カフェ");
-    expect(info.icon).toBe("coffee");
+    expect(info.icon).toBe("local_cafe");
     expect(info.gradient).toContain("amber");
   });
 

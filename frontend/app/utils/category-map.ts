@@ -11,7 +11,7 @@ const DEFAULT_CATEGORY: CategoryInfo = {
 };
 
 export const CATEGORY_MAP: Record<string, CategoryInfo> = {
-  cafe: { label: "カフェ", icon: "coffee", gradient: "from-amber-600 to-orange-800" },
+  cafe: { label: "カフェ", icon: "local_cafe", gradient: "from-amber-600 to-orange-800" },
   restaurant: { label: "レストラン", icon: "restaurant", gradient: "from-red-500 to-rose-700" },
   bar: { label: "バー", icon: "local_bar", gradient: "from-purple-600 to-indigo-800" },
   park: { label: "公園", icon: "park", gradient: "from-green-500 to-emerald-700" },

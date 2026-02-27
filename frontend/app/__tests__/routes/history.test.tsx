@@ -116,7 +116,7 @@ describe("History", () => {
     mockUseToast.mockReturnValue({ showToast: mockShowToast });
     mockGetCategoryInfoByKey.mockImplementation((key) => ({
       label: key === "カフェ" ? "カフェ" : key === "公園" ? "公園" : "美術館・博物館",
-      icon: key === "カフェ" ? "coffee" : key === "公園" ? "park" : "museum",
+      icon: key === "カフェ" ? "local_cafe" : key === "公園" ? "park" : "museum",
       gradient: key === "カフェ" ? "from-amber-600 to-orange-800" : key === "公園" ? "from-green-500 to-green-700" : "from-purple-500 to-purple-700",
     }));
     mockFormatShortDate.mockImplementation((date) => "2月15日");
