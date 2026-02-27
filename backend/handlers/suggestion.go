@@ -99,6 +99,9 @@ var placeTypeToGenreName = map[string]string{
 	// エンタメ
 	"movie_theater": "映画館",
 	"bowling_alley": "スポーツ施設",
+	// スポーツ・アクティブ
+	"gym":            "スポーツジム",
+	"fitness_center": "スポーツジム",
 	// ショッピング
 	"shopping_mall":    "ショッピングモール",
 	"clothing_store":   "雑貨・セレクトショップ",
@@ -231,8 +234,9 @@ var visitableTypes = map[string]bool{
 	"mosque":             true,
 	"synagogue":          true,
 	// スポーツ・アクティブ
-	"gym":     true,
-	"stadium": true,
+	"gym":            true,
+	"fitness_center": true,
+	"stadium":        true,
 }
 
 func isVisitablePlace(types []string) bool {

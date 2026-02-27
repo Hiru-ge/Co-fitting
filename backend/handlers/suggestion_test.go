@@ -2246,3 +2246,71 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		}
 	})
 }
+
+// === Issue #195: スポーツジムのジャンルマッピングバグ修正テスト ===
+
+// TestGymGenreMapping は gym / fitness_center タイプが "スポーツジム" にマッピングされることを確認する
+func TestGymGenreMapping(t *testing.T) {
+	t.Run("gymタイプはスポーツジムにマッピングされる", func(t *testing.T) {
+		name := getGenreNameFromTypes([]string{"gym"})
+		if name != "スポーツジム" {
+			t.Errorf("expected 'スポーツジム', got '%s'", name)
+		}
+	})
+
+	t.Run("fitness_centerタイプはスポーツジムにマッピングされる", func(t *testing.T) {
+		name := getGenreNameFromTypes([]string{"fitness_center"})
+		if name != "スポーツジム" {
+			t.Errorf("expected 'スポーツジム', got '%s'", name)
+		}
+	})
+
+	t.Run("スポーツジム興味タグ設定ユーザーへのgym提案はis_interest_match=trueになる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		var gymTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツジム").First(&gymTag).Error; err != nil {
+			t.Skip("スポーツジムジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: gymTag.ID})
+
+		gymPlaces := []PlaceResult{
+			{PlaceID: "gym_195_1", Name: "フィットネスジムA", Vicinity: "渋谷区3-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"gym"}},
+			{PlaceID: "gym_195_2", Name: "フィットネスジムB", Vicinity: "渋谷区3-2", Lat: 35.6763, Lng: 139.6504, Rating: 3.8, Types: []string{"gym"}},
+			{PlaceID: "gym_195_3", Name: "フィットネスジムC", Vicinity: "渋谷区3-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.9, Types: []string{"fitness_center"}},
+		}
+		mock := &mockPlacesClient{Results: gymPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		if len(resp) == 0 {
+			t.Fatal("Expected at least 1 place")
+		}
+
+		for _, p := range resp {
+			if p.IsInterestMatch == nil || !*p.IsInterestMatch {
+				t.Errorf("gym/fitness_center place '%s' should have is_interest_match=true (スポーツジム interest set), got %v", p.PlaceID, p.IsInterestMatch)
+			}
+		}
+	})
+}
