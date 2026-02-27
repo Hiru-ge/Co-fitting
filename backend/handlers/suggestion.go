@@ -239,7 +239,6 @@ var placeTypeToGenreName = map[string]string{
 	"department_store": "ショッピングモール",
 	"home_goods_store": "雑貨・セレクトショップ",
 	// 観光・文化
-	"place_of_worship":   "神社・寺",
 	"church":             "神社・寺",
 	"hindu_temple":       "神社・寺",
 	"mosque":             "神社・寺",
@@ -350,7 +349,6 @@ var visitableTypes = map[string]bool{
 	"museum":           true,
 	"library":          true,
 	"book_store":       true,
-	"place_of_worship": true,
 	// 自然・アウトドア
 	"park":       true,
 	"campground": true,
@@ -582,6 +580,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		var err error
 		places, err = h.Places.NearbySearch(ctx, req.Lat, req.Lng, req.Radius)
 		if err != nil {
+			log.Printf("NearbySearch error: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
 			return
 		}

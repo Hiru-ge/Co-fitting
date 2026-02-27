@@ -30,6 +30,13 @@ func (h *PlacePhotoHandler) getBaseURL() string {
 	return "https://maps.googleapis.com"
 }
 
+func (h *PlacePhotoHandler) getNewAPIBaseURL() string {
+	if h.BaseURL != "" {
+		return h.BaseURL
+	}
+	return "https://places.googleapis.com"
+}
+
 func (h *PlacePhotoHandler) getHTTPClient() *http.Client {
 	if h.HTTPClient != nil {
 		return h.HTTPClient
@@ -60,7 +67,7 @@ func isNewAPIPhotoRef(ref string) bool {
 func (h *PlacePhotoHandler) resolveNewAPIPhotoURL(photoRef string, maxWidth int) (string, error) {
 	url := fmt.Sprintf(
 		"%s/v1/%s/media?maxWidthPx=%d&key=%s",
-		h.getBaseURL(), photoRef, maxWidth, h.APIKey,
+		h.getNewAPIBaseURL(), photoRef, maxWidth, h.APIKey,
 	)
 
 	client := h.getHTTPClient()
