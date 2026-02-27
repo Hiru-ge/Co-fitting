@@ -5,10 +5,12 @@ import type { Place } from "~/types/suggestion";
  * 提案APIのレスポンス型
  * places に提案施設リスト、notice に通知コードが含まれる場合がある
  * notice === "NO_INTEREST_PLACES" のとき、興味タグに合致する施設が半径内に見つからなかったことを示す
+ * completed === true のとき、本日の3件提案を全て訪問済みであることを示す
  */
 export interface SuggestionResult {
   places: Place[];
   notice?: string;
+  completed?: boolean;
 }
 
 /**
