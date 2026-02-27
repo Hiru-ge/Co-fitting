@@ -350,28 +350,43 @@ describe("History", () => {
   });
 
   describe("Photo loading", () => {
-    it("should load photos for visits with place_id", async () => {
+    it("should load photos for visits with place_id via apiCall", async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
-      
+
       render(
         <MemoryRouter>
           <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
         </MemoryRouter>
       );
-      
+
       await waitFor(() => {
-        // 各place_idに対してfetchが呼ばれることを確認
+        // apiCall 経由（Content-Type: application/json を含む）で各 place_id の写真を取得
         expect(global.fetch).toHaveBeenCalledWith(
           "http://localhost:8000/api/places/place1/photo",
-          { headers: { Authorization: `Bearer ${mockToken}` } }
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${mockToken}`,
+            }),
+          })
         );
         expect(global.fetch).toHaveBeenCalledWith(
           "http://localhost:8000/api/places/place2/photo",
-          { headers: { Authorization: `Bearer ${mockToken}` } }
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${mockToken}`,
+            }),
+          })
         );
         expect(global.fetch).toHaveBeenCalledWith(
           "http://localhost:8000/api/places/place3/photo",
-          { headers: { Authorization: `Bearer ${mockToken}` } }
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${mockToken}`,
+            }),
+          })
         );
       });
     });
@@ -400,17 +415,44 @@ describe("History", () => {
         json: () => Promise.resolve({ photo_url: photoUrl }),
       });
       mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
-      
+
       render(
         <MemoryRouter>
           <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
         </MemoryRouter>
       );
-      
+
       await waitFor(() => {
         // 背景画像としてphoto_urlが設定されることを確認
         const imageElement = document.querySelector('[style*="background-image"]');
         expect(imageElement).toBeInTheDocument();
+      });
+    });
+
+    it("写真取得が apiCall 経由であること（Content-Type ヘッダーを含む）", async () => {
+      const photoUrl = "https://example.com/photo.jpg";
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ photo_url: photoUrl }),
+      });
+      mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
+
+      render(
+        <MemoryRouter>
+          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        // apiCall 経由なら Content-Type: application/json ヘッダーが含まれる
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/api/places/place1/photo"),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              "Content-Type": "application/json",
+            }),
+          })
+        );
       });
     });
   });

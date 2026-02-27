@@ -8,7 +8,7 @@ import { useToast } from "~/components/toast";
 import type { Visit, MapVisit } from "~/types/visit";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
 import { getCategoryInfoByKey } from "~/utils/category-map";
-import { API_BASE_URL } from "~/utils/constants";
+import { apiCall } from "~/api/client";
 import VisitMap from "~/components/visit-map";
 
 const ITEMS_PER_PAGE = 20;
@@ -325,14 +325,8 @@ async function loadPhotos(
   return Promise.all(
     visits.map(async (visit) => {
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/places/${visit.place_id}/photo`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          return { ...visit, photoUrl: json.photo_url };
-        }
+        const json = await apiCall(`/api/places/${visit.place_id}/photo`, token);
+        return { ...visit, photoUrl: json.photo_url };
       } catch {
         // 写真取得失敗はスキップ
       }
