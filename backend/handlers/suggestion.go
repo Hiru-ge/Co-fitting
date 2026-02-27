@@ -19,15 +19,15 @@ import (
 )
 
 type PlaceResult struct {
-	PlaceID          string   `json:"place_id"`
-	Name             string   `json:"name"`
-	Vicinity         string   `json:"vicinity"`
-	Lat              float64  `json:"lat"`
-	Lng              float64  `json:"lng"`
-	Rating           float32  `json:"rating"`
-	Types            []string `json:"types"`
-	PhotoReference   string   `json:"photo_reference,omitempty"`
-	IsInterestMatch  bool     `json:"is_interest_match"`
+	PlaceID         string   `json:"place_id"`
+	Name            string   `json:"name"`
+	Vicinity        string   `json:"vicinity"`
+	Lat             float64  `json:"lat"`
+	Lng             float64  `json:"lng"`
+	Rating          float32  `json:"rating"`
+	Types           []string `json:"types"`
+	PhotoReference  string   `json:"photo_reference,omitempty"`
+	IsInterestMatch *bool    `json:"is_interest_match"`
 }
 
 type PlacesSearcher interface {
@@ -154,7 +154,7 @@ func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool
 	for _, p := range places {
 		genreName := getGenreNameFromTypes(p.Types)
 		if genreName != "" && interestGenreNames[genreName] {
-			p.IsInterestMatch = true
+			p.IsInterestMatch = boolPtr(true)
 			inInterest = append(inInterest, p)
 		} else {
 			outOfInterest = append(outOfInterest, p)
@@ -352,9 +352,10 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 					for i := range filtered {
 						if len(interestNames) > 0 {
 							genreName := getGenreNameFromTypes(filtered[i].Types)
-							filtered[i].IsInterestMatch = genreName != "" && interestNames[genreName]
+							match := genreName != "" && interestNames[genreName]
+							filtered[i].IsInterestMatch = &match
 						} else {
-							filtered[i].IsInterestMatch = false
+							filtered[i].IsInterestMatch = nil
 						}
 					}
 					c.JSON(http.StatusOK, SuggestionResult{Places: filtered})
@@ -443,8 +444,8 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		// is_interest_match フラグをセット（興味内/外を示す）
 		for i := range selected {
 			genreName := getGenreNameFromTypes(selected[i].Types)
-			isMatch := genreName != "" && interestGenreNames[genreName]
-			selected[i].IsInterestMatch = &isMatch
+			match := genreName != "" && interestGenreNames[genreName]
+			selected[i].IsInterestMatch = &match
 		}
 	}
 
@@ -492,4 +493,8 @@ func filterOutVisited(db *gorm.DB, userID uint64, places []PlaceResult) []PlaceR
 		}
 	}
 	return result
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

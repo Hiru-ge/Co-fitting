@@ -369,7 +369,6 @@ func TestSuggest(t *testing.T) {
 		}
 	})
 
-
 	t.Run("全施設訪問済みで200+completedフラグが返る", func(t *testing.T) {
 		cleanupUsers(t)
 
@@ -1463,10 +1462,10 @@ func TestInterestMatchFlag(t *testing.T) {
 					break
 				}
 			}
-			if isCafe && !p.IsInterestMatch {
-				t.Errorf("cafe place '%s' should have is_interest_match=true, got false", p.PlaceID)
+			if isCafe && (p.IsInterestMatch == nil || !*p.IsInterestMatch) {
+				t.Errorf("cafe place '%s' should have is_interest_match=true, got %v", p.PlaceID, p.IsInterestMatch)
 			}
-			if !isCafe && p.IsInterestMatch {
+			if !isCafe && p.IsInterestMatch != nil && *p.IsInterestMatch {
 				t.Errorf("museum place '%s' should have is_interest_match=false, got true", p.PlaceID)
 			}
 		}
@@ -1501,8 +1500,8 @@ func TestInterestMatchFlag(t *testing.T) {
 
 		resp := parseSuggestions(t, w.Body.Bytes())
 		for _, p := range resp {
-			if p.IsInterestMatch {
-				t.Errorf("place '%s' should have is_interest_match=false when no interests set, got true", p.PlaceID)
+			if p.IsInterestMatch != nil && *p.IsInterestMatch {
+				t.Errorf("place '%s' should have is_interest_match=nil or false when no interests set, got true", p.PlaceID)
 			}
 		}
 	})
@@ -1556,9 +1555,9 @@ func TestBreakoutModeSuggestion(t *testing.T) {
 		// is_interest_match フィールドを確認するために生のJSONをデコード
 		var result struct {
 			Places []struct {
-				PlaceID        string   `json:"place_id"`
-				Types          []string `json:"types"`
-				IsInterestMatch *bool   `json:"is_interest_match"`
+				PlaceID         string   `json:"place_id"`
+				Types           []string `json:"types"`
+				IsInterestMatch *bool    `json:"is_interest_match"`
 			} `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
@@ -1620,8 +1619,8 @@ func TestBreakoutModeSuggestion(t *testing.T) {
 
 		var result struct {
 			Places []struct {
-				PlaceID        string `json:"place_id"`
-				IsInterestMatch *bool `json:"is_interest_match"`
+				PlaceID         string `json:"place_id"`
+				IsInterestMatch *bool  `json:"is_interest_match"`
 			} `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
