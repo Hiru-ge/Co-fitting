@@ -22,7 +22,25 @@ const (
 	MaxMapLimit = 2000
 	// DefaultMapLimit は GetMapData API の limit パラメータデフォルト値
 	DefaultMapLimit = 2000
+	// MaxDailyVisits は1日の訪問記録上限
+	MaxDailyVisits = 3
 )
+
+// jst は日次訪問カウントのJST基準計算用タイムゾーン
+var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
+
+// countTodayVisitsJST はJST基準で当日の訪問件数を返す
+func countTodayVisitsJST(db *gorm.DB, userID uint64) (int64, error) {
+	now := time.Now().In(jst)
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+	todayEnd := todayStart.Add(24 * time.Hour)
+
+	var count int64
+	err := db.Model(&models.Visit{}).
+		Where("user_id = ? AND visited_at >= ? AND visited_at < ?", userID, todayStart, todayEnd).
+		Count(&count).Error
+	return count, err
+}
 
 type VisitHandler struct {
 	DB *gorm.DB
@@ -73,6 +91,17 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	var req createVisitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 日次訪問上限チェック（JST基準で当日3件まで）
+	todayCount, err := countTodayVisitsJST(h.DB, userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check daily visit count"})
+		return
+	}
+	if todayCount >= MaxDailyVisits {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily visit limit reached"})
 		return
 	}
 
