@@ -82,14 +82,17 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// is_comfort_zone の自動設定: place_typesとユーザー興味タグを照合
+	// is_comfort_zone の自動設定: 熟練度Lv.1（初回〜数回訪問）のジャンルへの訪問を脱却扱いとする
+	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
 	isComfortZone := false
+	var genreTagID *uint64
 	if len(req.PlaceTypes) > 0 {
-		interestNames, err := getUserInterestGenreNames(h.DB, userID)
-		if err == nil && len(interestNames) > 0 {
-			genreName := getGenreNameFromTypes(req.PlaceTypes)
-			if genreName == "" || !interestNames[genreName] {
-				isComfortZone = true
+		genreName := getGenreNameFromTypes(req.PlaceTypes)
+		isComfortZone = isComfortZoneVisit(h.DB, userID, genreName)
+		if genreName != "" {
+			var genreTag models.GenreTag
+			if err := h.DB.Where("name = ?", genreName).First(&genreTag).Error; err == nil {
+				genreTagID = &genreTag.ID
 			}
 		}
 	}
@@ -105,6 +108,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		Rating:        req.Rating,
 		Memo:          req.Memo,
 		IsComfortZone: isComfortZone,
+		GenreTagID:    genreTagID,
 		VisitedAt:     visitedAt,
 	}
 

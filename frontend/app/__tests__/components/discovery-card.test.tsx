@@ -67,3 +67,26 @@ describe("DiscoveryCard ジャンルバッジ", () => {
     expect(labels.length).toBeGreaterThan(0);
   });
 });
+
+// === Issue #198: 熟練度ベース脱却モードバッジテスト ===
+describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () => {
+  test("is_comfort_zone=true の場合に脱却モードバッジが表示される", () => {
+    renderCard({ is_comfort_zone: true });
+    expect(screen.getByText("脱却モード")).toBeTruthy();
+  });
+
+  test("is_comfort_zone=false の場合は脱却モードバッジが表示されない", () => {
+    renderCard({ is_comfort_zone: false });
+    expect(screen.queryByText("脱却モード")).toBeNull();
+  });
+
+  test("is_comfort_zone 未指定の場合は脱却モードバッジが表示されない", () => {
+    renderCard();
+    expect(screen.queryByText("脱却モード")).toBeNull();
+  });
+
+  test("is_interest_match=false でも is_comfort_zone が設定されていなければ脱却モードバッジは表示されない", () => {
+    renderCard({ is_interest_match: false });
+    expect(screen.queryByText("脱却モード")).toBeNull();
+  });
+});
