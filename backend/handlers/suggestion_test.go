@@ -1023,7 +1023,7 @@ func TestPersonalizedSuggest(t *testing.T) {
 		}
 	})
 
-	t.Run("興味外施設が3件中1件混在する（脱却提案）", func(t *testing.T) {
+	t.Run("興味外施設が含まれるミックス環境でも3件が提案される（強制挿入なし）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUser(t)
@@ -1061,19 +1061,11 @@ func TestPersonalizedSuggest(t *testing.T) {
 		if len(resp) != 3 {
 			t.Errorf("Expected 3 places, got %d", len(resp))
 		}
-
-		// museum（興味外）が少なくとも1件含まれる
-		museumCount := 0
+		// 強制挿入なし: is_interest_match フラグが設定されていること
 		for _, p := range resp {
-			for _, typ := range p.Types {
-				if typ == "museum" {
-					museumCount++
-					break
-				}
+			if p.IsInterestMatch == nil {
+				t.Errorf("Place %s: is_interest_match should be set (not nil) when interests are configured", p.PlaceID)
 			}
-		}
-		if museumCount < 1 {
-			t.Errorf("Expected at least 1 museum place (out-of-interest for comfort zone break), got %d", museumCount)
 		}
 	})
 
@@ -2097,6 +2089,160 @@ func TestCorruptedCacheHandling(t *testing.T) {
 		// キャッシュが正常に更新されていれば、2回目はPlaces APIを呼ばない
 		if trackingMock.CallCount != 0 {
 			t.Error("After cache recovery, Places API should not be called again (cache should be valid)")
+		}
+	})
+}
+
+// TestProficiencyBasedComfortZone は Issue #198 の熟練度ベース脱却判定テスト
+// 提案APIレスポンスに is_comfort_zone フラグが設定されることを確認する
+func TestProficiencyBasedComfortZone(t *testing.T) {
+	cafePlaces := []PlaceResult{
+		{PlaceID: "cafe_prof_1", Name: "カフェX", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "cafe_prof_2", Name: "カフェY", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
+		{PlaceID: "cafe_prof_3", Name: "カフェZ", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+	}
+
+	t.Run("初回訪問ユーザーへの提案にis_comfort_zone=trueが設定される（熟練度Lv.1）", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+		// 熟練度レコードなし（初回訪問想定）
+
+		mock := &mockPlacesClient{Results: cafePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		// is_comfort_zone フィールドを確認するために生のJSONをデコード
+		var result struct {
+			Places []struct {
+				PlaceID       string `json:"place_id"`
+				IsComfortZone *bool  `json:"is_comfort_zone"`
+			} `json:"places"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
+		}
+
+		if len(result.Places) == 0 {
+			t.Fatal("Expected at least 1 place")
+		}
+
+		// 全施設に is_comfort_zone が設定されており、熟練度Lv.1（初回）は true であること
+		for _, p := range result.Places {
+			if p.IsComfortZone == nil {
+				t.Errorf("Place %s: expected is_comfort_zone to be set (not nil) for first-time visitor", p.PlaceID)
+				continue
+			}
+			if !*p.IsComfortZone {
+				t.Errorf("Place %s: expected is_comfort_zone=true for first-time visitor (proficiency Lv.1), got false", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("熟練度Lv.2以上ジャンルの提案はis_comfort_zone=falseになる", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// カフェジャンルの熟練度をLv.2に設定
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: cafeTag.ID,
+			XP:         100,
+			Level:      2,
+		})
+
+		mock := &mockPlacesClient{Results: cafePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var result struct {
+			Places []struct {
+				PlaceID       string `json:"place_id"`
+				IsComfortZone *bool  `json:"is_comfort_zone"`
+			} `json:"places"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
+		}
+
+		for _, p := range result.Places {
+			if p.IsComfortZone == nil {
+				t.Errorf("Place %s: expected is_comfort_zone to be set (not nil)", p.PlaceID)
+				continue
+			}
+			if *p.IsComfortZone {
+				t.Errorf("Place %s: expected is_comfort_zone=false for cafe with proficiency Lv.2, got true", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("selectPersonalizedPlacesは強制挿入なし（全候補からランダム選出）", func(t *testing.T) {
+		// inInterest 3件のみ（outOfInterest無し）でも3件全て選出できる
+		inInterest := []PlaceResult{
+			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_3", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+		}
+		outOfInterest := []PlaceResult{}
+
+		selected := selectPersonalizedPlaces(inInterest, outOfInterest)
+
+		if len(selected) != 3 {
+			t.Errorf("Expected 3 selected places, got %d", len(selected))
+		}
+		// 全て inInterest から選ばれていること（強制挿入なし）
+		for _, p := range selected {
+			isCafe := false
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					isCafe = true
+					break
+				}
+			}
+			if !isCafe {
+				t.Errorf("Expected all places from inInterest (cafe), got non-cafe: %s", p.PlaceID)
+			}
 		}
 	})
 }

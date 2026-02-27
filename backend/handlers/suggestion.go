@@ -29,6 +29,7 @@ type PlaceResult struct {
 	Types           []string `json:"types"`
 	PhotoReference  string   `json:"photo_reference,omitempty"`
 	IsInterestMatch *bool    `json:"is_interest_match"`
+	IsComfortZone   *bool    `json:"is_comfort_zone"`
 }
 
 type PlacesSearcher interface {
@@ -117,9 +118,6 @@ var placeTypeToGenreName = map[string]string{
 	"amusement_park":     "観光スポット",
 }
 
-// inInterestCount は提案3件中、興味内ジャンルから選ぶ件数
-const inInterestCount = 2
-
 // getGenreNameFromTypes はPlace TypesからGenreTag名を返す（最初にマッチしたもの）
 func getGenreNameFromTypes(types []string) string {
 	for _, t := range types {
@@ -150,6 +148,24 @@ func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, err
 	return names, nil
 }
 
+// isComfortZoneVisit はジャンル熟練度に基づいて脱却訪問かどうかを判定する
+// 熟練度Lv.1（レコードなし or Level==1）なら脱却扱い（初回〜数回の訪問）
+// genreName が空の場合や genreTag が見つからない場合は false を返す
+func isComfortZoneVisit(db *gorm.DB, userID uint64, genreName string) bool {
+	if genreName == "" {
+		return false
+	}
+	var genreTag models.GenreTag
+	if err := db.Where("name = ?", genreName).First(&genreTag).Error; err != nil {
+		// ジャンルタグが見つからない場合は脱却扱い（未知のジャンル）
+		return true
+	}
+	var prof models.GenreProficiency
+	result := db.Where("user_id = ? AND genre_tag_id = ?", userID, genreTag.ID).First(&prof)
+	// レコードなし or Level < comfortZoneLevelThreshold → 脱却扱い
+	return result.Error != nil || prof.Level < comfortZoneLevelThreshold
+}
+
 // classifyByInterest は候補を興味内・興味外に分類し、興味内にはIsInterestMatch=trueを設定する
 func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool) (inInterest, outOfInterest []PlaceResult) {
 	for _, p := range places {
@@ -164,54 +180,18 @@ func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool
 	return
 }
 
-// selectPersonalizedPlaces は興味内を優先しつつ、興味外も混在させて最大maxDailySuggestions件を選出する
-// 比率: 興味内inInterestCount件 + 興味外(maxDailySuggestions-inInterestCount)件
+// selectPersonalizedPlaces は興味内を優先して最大maxDailySuggestions件を選出する
+// 興味内が3件以上あれば全て興味内から選出（旧来の強制挿入＝上限2件キャップを廃止）
+// 興味内が不足する場合のみ興味外から補充する
+// 脱却判定は訪問時の熟練度ベース（Issue #198）で自然に発生するため強制挿入は不要
 func selectPersonalizedPlaces(inInterest, outOfInterest []PlaceResult) []PlaceResult {
-	selected := make([]PlaceResult, 0, maxDailySuggestions)
-
-	// 興味内から最大inInterestCount件
-	inSelected := selectRandomPlaces(inInterest, inInterestCount)
-	selected = append(selected, inSelected...)
-
-	// 残り枠を興味外から補充
+	// 興味内から最大maxDailySuggestions件選出（強制上限なし）
+	selected := selectRandomPlaces(inInterest, maxDailySuggestions)
+	// 不足分を興味外から補充
 	remaining := maxDailySuggestions - len(selected)
 	if remaining > 0 && len(outOfInterest) > 0 {
-		outSelected := selectRandomPlaces(outOfInterest, remaining)
-		selected = append(selected, outSelected...)
+		selected = append(selected, selectRandomPlaces(outOfInterest, remaining)...)
 	}
-
-	// まだ枠が残っていれば興味内から追加補充（興味外が足りない場合）
-	remaining = maxDailySuggestions - len(selected)
-	if remaining > 0 && len(inInterest) > len(inSelected) {
-		selectedIDs := make(map[string]bool, len(selected))
-		for _, p := range selected {
-			selectedIDs[p.PlaceID] = true
-		}
-		var moreCandidates []PlaceResult
-		for _, p := range inInterest {
-			if !selectedIDs[p.PlaceID] {
-				moreCandidates = append(moreCandidates, p)
-			}
-		}
-		selected = append(selected, selectRandomPlaces(moreCandidates, remaining)...)
-	}
-
-	// それでも枠が残れば興味外から追加補充（すでに選ばれたものを除く）
-	remaining = maxDailySuggestions - len(selected)
-	if remaining > 0 && len(outOfInterest) > 0 {
-		selectedIDs := make(map[string]bool, len(selected))
-		for _, p := range selected {
-			selectedIDs[p.PlaceID] = true
-		}
-		var moreCandidates []PlaceResult
-		for _, p := range outOfInterest {
-			if !selectedIDs[p.PlaceID] {
-				moreCandidates = append(moreCandidates, p)
-			}
-		}
-		selected = append(selected, selectRandomPlaces(moreCandidates, remaining)...)
-	}
-
 	return selected
 }
 
@@ -289,6 +269,10 @@ type suggestionRequest struct {
 
 // 日次キャッシュで返す最大施設数
 const maxDailySuggestions = 3
+
+// comfortZoneLevelThreshold は脱却判定の熟練度閾値
+// ジャンル熟練度がこのレベル未満（Lv.1 = 0〜99XP）なら脱却扱い
+const comfortZoneLevelThreshold = 2
 
 // デフォルトの検索半径（メートル）
 const defaultSearchRadius uint = 3000
@@ -399,16 +383,19 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 				// キャッシュヒットしても訪問済み施設を除外
 				filtered := filterOutVisited(h.DB, userID, dailyPlaces)
 				if len(filtered) > 0 {
-					// 最新の興味タグでis_interest_matchを再設定
+					// 最新の興味タグでis_interest_matchを再設定、熟練度ベースis_comfort_zoneを設定
 					interestNames, _ := getUserInterestGenreNames(h.DB, userID)
 					for i := range filtered {
+						genreName := getGenreNameFromTypes(filtered[i].Types)
 						if len(interestNames) > 0 {
-							genreName := getGenreNameFromTypes(filtered[i].Types)
 							match := genreName != "" && interestNames[genreName]
 							filtered[i].IsInterestMatch = &match
 						} else {
 							filtered[i].IsInterestMatch = nil
 						}
+						// 熟練度ベース脱却判定を再設定
+						isComfort := isComfortZoneVisit(h.DB, userID, genreName)
+						filtered[i].IsComfortZone = &isComfort
 					}
 					c.JSON(http.StatusOK, SuggestionResult{Places: filtered, ReloadCountRemaining: &reloadRemaining})
 					return
@@ -504,6 +491,13 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 			match := genreName != "" && interestGenreNames[genreName]
 			selected[i].IsInterestMatch = &match
 		}
+	}
+
+	// 熟練度ベース脱却判定 is_comfort_zone を全選出施設にセット
+	for i := range selected {
+		genreName := getGenreNameFromTypes(selected[i].Types)
+		isComfort := isComfortZoneVisit(h.DB, userID, genreName)
+		selected[i].IsComfortZone = &isComfort
 	}
 
 	// 6. 日次キャッシュに保存（カウントは全提案訪問時にのみ設定。ここでは設定しない）

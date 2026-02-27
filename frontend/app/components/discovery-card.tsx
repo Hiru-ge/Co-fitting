@@ -150,7 +150,7 @@ export default function DiscoveryCard({
         >
           {category.label}
         </span>
-        {place.is_interest_match === false && (
+        {place.is_comfort_zone === true && (
           <span className="bg-amber-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
             脱却モード
           </span>
