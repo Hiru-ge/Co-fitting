@@ -43,6 +43,45 @@ func (h *PlacePhotoHandler) getHTTPClient() *http.Client {
 }
 
 func (h *PlacePhotoHandler) resolvePhotoURL(photoRef string, maxWidth int) (string, error) {
+	// New Places API (v1) の写真リソース名形式 (places/xxx/photos/yyy) かどうかを判定
+	if isNewAPIPhotoRef(photoRef) {
+		return h.resolveNewAPIPhotoURL(photoRef, maxWidth)
+	}
+	return h.resolveLegacyPhotoURL(photoRef, maxWidth)
+}
+
+// isNewAPIPhotoRef は New Places API 形式の写真リソース名かどうかを判定する
+func isNewAPIPhotoRef(ref string) bool {
+	// New API: "places/{placeId}/photos/{photoId}" 形式
+	return len(ref) > 7 && ref[:7] == "places/"
+}
+
+// resolveNewAPIPhotoURL は New Places API (v1) の写真URLを解決する
+func (h *PlacePhotoHandler) resolveNewAPIPhotoURL(photoRef string, maxWidth int) (string, error) {
+	url := fmt.Sprintf(
+		"%s/v1/%s/media?maxWidthPx=%d&key=%s",
+		h.getBaseURL(), photoRef, maxWidth, h.APIKey,
+	)
+
+	client := h.getHTTPClient()
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("failed to request photo URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusFound || resp.StatusCode == http.StatusMovedPermanently {
+		location := resp.Header.Get("Location")
+		if location != "" {
+			return location, nil
+		}
+	}
+
+	return "", fmt.Errorf("unexpected response status: %d", resp.StatusCode)
+}
+
+// resolveLegacyPhotoURL は旧 Places API の写真URLを解決する（既存キャッシュ互換）
+func (h *PlacePhotoHandler) resolveLegacyPhotoURL(photoRef string, maxWidth int) (string, error) {
 	url := fmt.Sprintf(
 		"%s/maps/api/place/photo?maxwidth=%d&photo_reference=%s&key=%s",
 		h.getBaseURL(), maxWidth, photoRef, h.APIKey,

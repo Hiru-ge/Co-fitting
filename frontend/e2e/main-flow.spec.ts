@@ -140,7 +140,6 @@ test.describe("主要ユーザーフロー", () => {
         .getByText("行ってきた！")
         .or(page.getByText("近くのスポットが見つかりませんでした"))
         .or(page.getByText("スポットの取得に失敗しました"))
-        .or(page.getByText("再試行"))
     ).toBeVisible({ timeout: 15_000 });
 
     // ボトムナビゲーションの確認

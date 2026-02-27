@@ -2314,3 +2314,243 @@ func TestGymGenreMapping(t *testing.T) {
 		}
 	})
 }
+
+func TestNewGenreTypeMapping(t *testing.T) {
+	tests := []struct {
+		placeType string
+		genre     string
+	}{
+		{"ramen_restaurant", "ラーメン・麺類"},
+		{"karaoke", "カラオケ"},
+		{"amusement_center", "ゲームセンター"},
+		{"video_arcade", "ゲームセンター"},
+		{"public_bath", "温泉・銭湯"},
+		{"sauna", "温泉・銭湯"},
+		{"gym", "スポーツジム"},
+		{"fitness_center", "スポーツジム"},
+		{"beach", "海・川・湖"},
+		{"lake", "海・川・湖"},
+		{"river", "海・川・湖"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.placeType+"→"+tt.genre, func(t *testing.T) {
+			name := getGenreNameFromTypes([]string{tt.placeType})
+			if name != tt.genre {
+				t.Errorf("expected '%s', got '%s'", tt.genre, name)
+			}
+		})
+	}
+
+	// visitableTypes にも含まれていることを確認
+	t.Run("新ジャンルタイプがvisitableTypesに含まれる", func(t *testing.T) {
+		newTypes := []string{
+			"ramen_restaurant", "karaoke", "amusement_center", "video_arcade",
+			"public_bath", "sauna", "beach", "lake", "river",
+		}
+		for _, tp := range newTypes {
+			if !visitableTypes[tp] {
+				t.Errorf("'%s' should be in visitableTypes", tp)
+			}
+		}
+	})
+}
+
+func TestNewPlacesAPINearbySearch(t *testing.T) {
+	t.Run("New API レスポンスが正しくPlaceResultに変換される", func(t *testing.T) {
+		// New Places API (v1) 形式のレスポンスを返すモックサーバー
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// リクエスト検証
+			if r.Method != "POST" {
+				t.Errorf("expected POST, got %s", r.Method)
+			}
+			if r.URL.Path != "/v1/places:searchNearby" {
+				t.Errorf("expected /v1/places:searchNearby, got %s", r.URL.Path)
+			}
+			if r.Header.Get("X-Goog-Api-Key") == "" {
+				t.Error("expected X-Goog-Api-Key header")
+			}
+			if r.Header.Get("X-Goog-FieldMask") == "" {
+				t.Error("expected X-Goog-FieldMask header")
+			}
+
+			// リクエストボディの検証
+			var reqBody map[string]interface{}
+			json.NewDecoder(r.Body).Decode(&reqBody)
+			if reqBody["rankPreference"] != "DISTANCE" {
+				t.Errorf("expected rankPreference=DISTANCE, got %v", reqBody["rankPreference"])
+			}
+			if reqBody["languageCode"] != "ja" {
+				t.Errorf("expected languageCode=ja, got %v", reqBody["languageCode"])
+			}
+
+			// New API 形式のレスポンス
+			resp := map[string]interface{}{
+				"places": []map[string]interface{}{
+					{
+						"id":    "ChIJN1t_tDeuEmsRUsoyG83frY4",
+						"types": []string{"cafe", "food", "point_of_interest", "establishment"},
+						"displayName": map[string]string{
+							"text":         "カフェ アルファ",
+							"languageCode": "ja",
+						},
+						"location": map[string]float64{
+							"latitude":  35.6762,
+							"longitude": 139.6503,
+						},
+						"rating": 4.2,
+						"photos": []map[string]interface{}{
+							{
+								"name":     "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/AUGGfZl",
+								"widthPx":  4032,
+								"heightPx": 3024,
+							},
+						},
+						"shortFormattedAddress": "渋谷区1-1",
+					},
+					{
+						"id":    "ChIJP3Sa8ziYEmsRUKgyFmh9AQM",
+						"types": []string{"park", "point_of_interest"},
+						"displayName": map[string]string{
+							"text":         "公園 ベータ",
+							"languageCode": "ja",
+						},
+						"location": map[string]float64{
+							"latitude":  35.6770,
+							"longitude": 139.6510,
+						},
+						"rating": 4.0,
+						"shortFormattedAddress": "渋谷区2-2",
+					},
+				},
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+		}))
+		defer server.Close()
+
+		client := &GooglePlacesClient{
+			APIKey:  "test-api-key",
+			BaseURL: server.URL,
+		}
+
+		results, err := client.NearbySearch(context.Background(), 35.6762, 139.6503, 3000)
+		if err != nil {
+			t.Fatalf("NearbySearch failed: %v", err)
+		}
+
+		if len(results) != 2 {
+			t.Fatalf("expected 2 results, got %d", len(results))
+		}
+
+		// 1件目の検証
+		r1 := results[0]
+		if r1.PlaceID != "ChIJN1t_tDeuEmsRUsoyG83frY4" {
+			t.Errorf("expected PlaceID 'ChIJN1t_tDeuEmsRUsoyG83frY4', got '%s'", r1.PlaceID)
+		}
+		if r1.Name != "カフェ アルファ" {
+			t.Errorf("expected Name 'カフェ アルファ', got '%s'", r1.Name)
+		}
+		if r1.Vicinity != "渋谷区1-1" {
+			t.Errorf("expected Vicinity '渋谷区1-1', got '%s'", r1.Vicinity)
+		}
+		if r1.Lat != 35.6762 {
+			t.Errorf("expected Lat 35.6762, got %f", r1.Lat)
+		}
+		if r1.Lng != 139.6503 {
+			t.Errorf("expected Lng 139.6503, got %f", r1.Lng)
+		}
+		if r1.Rating != 4.2 {
+			t.Errorf("expected Rating 4.2, got %f", r1.Rating)
+		}
+		if r1.PhotoReference != "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/AUGGfZl" {
+			t.Errorf("expected PhotoReference 'places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/AUGGfZl', got '%s'", r1.PhotoReference)
+		}
+		if len(r1.Types) != 4 || r1.Types[0] != "cafe" {
+			t.Errorf("expected Types starting with 'cafe', got %v", r1.Types)
+		}
+
+		// 2件目: 写真なしの場合
+		r2 := results[1]
+		if r2.PlaceID != "ChIJP3Sa8ziYEmsRUKgyFmh9AQM" {
+			t.Errorf("expected PlaceID 'ChIJP3Sa8ziYEmsRUKgyFmh9AQM', got '%s'", r2.PlaceID)
+		}
+		if r2.PhotoReference != "" {
+			t.Errorf("expected empty PhotoReference for place without photos, got '%s'", r2.PhotoReference)
+		}
+	})
+
+	t.Run("New API が空レスポンスを返した場合", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{}`))
+		}))
+		defer server.Close()
+
+		client := &GooglePlacesClient{
+			APIKey:  "test-api-key",
+			BaseURL: server.URL,
+		}
+
+		results, err := client.NearbySearch(context.Background(), 35.6762, 139.6503, 3000)
+		if err != nil {
+			t.Fatalf("NearbySearch should not fail on empty response: %v", err)
+		}
+		if len(results) != 0 {
+			t.Errorf("expected 0 results, got %d", len(results))
+		}
+	})
+
+	t.Run("New API がエラーステータスを返した場合", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error": {"message": "Invalid request"}}`))
+		}))
+		defer server.Close()
+
+		client := &GooglePlacesClient{
+			APIKey:  "test-api-key",
+			BaseURL: server.URL,
+		}
+
+		_, err := client.NearbySearch(context.Background(), 35.6762, 139.6503, 3000)
+		if err == nil {
+			t.Error("expected error for bad response status")
+		}
+	})
+
+	t.Run("includedTypesにvisitableTypesが指定される", func(t *testing.T) {
+		var receivedTypes []string
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var reqBody struct {
+				IncludedTypes []string `json:"includedTypes"`
+			}
+			json.NewDecoder(r.Body).Decode(&reqBody)
+			receivedTypes = reqBody.IncludedTypes
+
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{}`))
+		}))
+		defer server.Close()
+
+		client := &GooglePlacesClient{
+			APIKey:  "test-api-key",
+			BaseURL: server.URL,
+		}
+
+		client.NearbySearch(context.Background(), 35.6762, 139.6503, 3000)
+
+		if len(receivedTypes) == 0 {
+			t.Error("expected includedTypes to be sent in request")
+		}
+		// visitableTypes のキーがすべて含まれていることを確認
+		typeSet := make(map[string]bool)
+		for _, tp := range receivedTypes {
+			typeSet[tp] = true
+		}
+		for vt := range visitableTypes {
+			if !typeSet[vt] {
+				t.Errorf("visitableType '%s' not found in includedTypes", vt)
+			}
+		}
+	})
+}

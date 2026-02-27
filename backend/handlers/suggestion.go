@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/rand/v2"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Hiru-ge/roamble/database"
@@ -15,7 +18,6 @@ import (
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"googlemaps.github.io/maps"
 	"gorm.io/gorm"
 )
 
@@ -36,43 +38,161 @@ type PlacesSearcher interface {
 	NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error)
 }
 
+// GooglePlacesClient は New Places API (v1) を net/http で直接呼び出すクライアント
 type GooglePlacesClient struct {
-	Client *maps.Client
+	APIKey     string
+	HTTPClient *http.Client
+	BaseURL    string // テスト用。空の場合は本番エンドポイントを使用
 }
 
+const defaultPlacesAPIBaseURL = "https://places.googleapis.com"
+
+// fieldMask は New Places API のレスポンスに含めるフィールド
+const nearbySearchFieldMask = "places.id,places.displayName,places.location,places.types,places.photos,places.rating,places.shortFormattedAddress"
+
 func NewGooglePlacesClient(apiKey string) (*GooglePlacesClient, error) {
-	client, err := maps.NewClient(maps.WithAPIKey(apiKey))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Google Maps client: %w", err)
+	return &GooglePlacesClient{
+		APIKey: apiKey,
+		HTTPClient: &http.Client{
+			Timeout: 10 * time.Second,
+		},
+	}, nil
+}
+
+func (g *GooglePlacesClient) getBaseURL() string {
+	if g.BaseURL != "" {
+		return g.BaseURL
 	}
-	return &GooglePlacesClient{Client: client}, nil
+	return defaultPlacesAPIBaseURL
+}
+
+func (g *GooglePlacesClient) getHTTPClient() *http.Client {
+	if g.HTTPClient != nil {
+		return g.HTTPClient
+	}
+	return &http.Client{Timeout: 10 * time.Second}
+}
+
+// nearbySearchRequest は New Places API (v1) searchNearby のリクエストボディ
+type nearbySearchAPIRequest struct {
+	IncludedTypes       []string                   `json:"includedTypes"`
+	LocationRestriction nearbySearchLocationRestrict `json:"locationRestriction"`
+	RankPreference      string                     `json:"rankPreference"`
+	LanguageCode        string                     `json:"languageCode"`
+	MaxResultCount      int                        `json:"maxResultCount"`
+}
+
+type nearbySearchLocationRestrict struct {
+	Circle nearbySearchCircle `json:"circle"`
+}
+
+type nearbySearchCircle struct {
+	Center nearbySearchLatLng `json:"center"`
+	Radius float64            `json:"radius"`
+}
+
+type nearbySearchLatLng struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
+// nearbySearchAPIResponse は New Places API (v1) searchNearby のレスポンス
+type nearbySearchAPIResponse struct {
+	Places []nearbySearchPlace `json:"places"`
+}
+
+type nearbySearchPlace struct {
+	ID          string                    `json:"id"`
+	Types       []string                  `json:"types"`
+	DisplayName nearbySearchDisplayName   `json:"displayName"`
+	Location    nearbySearchLatLng        `json:"location"`
+	Rating      float32                   `json:"rating"`
+	Photos      []nearbySearchPhoto       `json:"photos"`
+	ShortFormattedAddress string          `json:"shortFormattedAddress"`
+}
+
+type nearbySearchDisplayName struct {
+	Text         string `json:"text"`
+	LanguageCode string `json:"languageCode"`
+}
+
+type nearbySearchPhoto struct {
+	Name     string `json:"name"`
+	WidthPx  int    `json:"widthPx"`
+	HeightPx int    `json:"heightPx"`
 }
 
 func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error) {
-	req := &maps.NearbySearchRequest{
-		Location: &maps.LatLng{Lat: lat, Lng: lng},
-		Radius:   radius,
-		Language: "ja",
-	}
-	resp, err := g.Client.NearbySearch(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("nearby search failed: %w", err)
+	// visitableTypes からリクエスト用の includedTypes を構築
+	includedTypes := make([]string, 0, len(visitableTypes))
+	for t := range visitableTypes {
+		includedTypes = append(includedTypes, t)
 	}
 
-	results := make([]PlaceResult, 0, len(resp.Results))
-	for _, r := range resp.Results {
+	apiReq := nearbySearchAPIRequest{
+		IncludedTypes: includedTypes,
+		LocationRestriction: nearbySearchLocationRestrict{
+			Circle: nearbySearchCircle{
+				Center: nearbySearchLatLng{
+					Latitude:  lat,
+					Longitude: lng,
+				},
+				Radius: float64(radius),
+			},
+		},
+		RankPreference: "DISTANCE",
+		LanguageCode:   "ja",
+		MaxResultCount: 20,
+	}
+
+	body, err := json.Marshal(apiReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	url := g.getBaseURL() + "/v1/places:searchNearby"
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("X-Goog-Api-Key", g.APIKey)
+	httpReq.Header.Set("X-Goog-FieldMask", nearbySearchFieldMask)
+
+	resp, err := g.getHTTPClient().Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("nearby search request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("nearby search failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(respBody)))
+	}
+
+	var apiResp nearbySearchAPIResponse
+	if err := json.Unmarshal(respBody, &apiResp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	results := make([]PlaceResult, 0, len(apiResp.Places))
+	for _, p := range apiResp.Places {
 		var photoRef string
-		if len(r.Photos) > 0 {
-			photoRef = r.Photos[0].PhotoReference
+		if len(p.Photos) > 0 {
+			photoRef = p.Photos[0].Name
 		}
 		results = append(results, PlaceResult{
-			PlaceID:        r.PlaceID,
-			Name:           r.Name,
-			Vicinity:       r.Vicinity,
-			Lat:            r.Geometry.Location.Lat,
-			Lng:            r.Geometry.Location.Lng,
-			Rating:         r.Rating,
-			Types:          r.Types,
+			PlaceID:        p.ID,
+			Name:           p.DisplayName.Text,
+			Vicinity:       p.ShortFormattedAddress,
+			Lat:            p.Location.Latitude,
+			Lng:            p.Location.Longitude,
+			Rating:         p.Rating,
+			Types:          p.Types,
 			PhotoReference: photoRef,
 		})
 	}
@@ -82,33 +202,42 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 // placeTypeToGenreName はGoogle Maps Place TypeからGenreTag名（日本語）へのマッピング
 var placeTypeToGenreName = map[string]string{
 	// 飲食
-	"cafe":          "カフェ",
-	"restaurant":    "レストラン",
-	"meal_takeaway": "レストラン",
-	"bar":           "居酒屋・バー",
-	"night_club":    "居酒屋・バー",
-	"bakery":        "スイーツ・ベーカリー",
-	// アウトドア
+	"cafe":              "カフェ",
+	"restaurant":        "レストラン",
+	"meal_takeaway":     "レストラン",
+	"bar":               "居酒屋・バー",
+	"night_club":        "居酒屋・バー",
+	"bakery":            "スイーツ・ベーカリー",
+	"ramen_restaurant":  "ラーメン・麺類",
+	// アウトドア・自然
 	"park":       "公園・緑地",
 	"campground": "自然・ハイキング",
+	"beach":      "海・川・湖",
+	"lake":       "海・川・湖",
+	"river":      "海・川・湖",
 	// 文化・芸術
 	"art_gallery": "美術館・ギャラリー",
 	"museum":      "博物館・科学館",
 	"library":     "図書館・書店",
 	"book_store":  "図書館・書店",
 	// エンタメ
-	"movie_theater": "映画館",
-	"bowling_alley": "スポーツ施設",
+	"movie_theater":   "映画館",
+	"bowling_alley":   "スポーツ施設",
+	"karaoke":         "カラオケ",
+	"amusement_center": "ゲームセンター",
+	"video_arcade":    "ゲームセンター",
 	// スポーツ・アクティブ
 	"gym":            "スポーツジム",
 	"fitness_center": "スポーツジム",
+	// リラクゼーション
+	"spa":         "マッサージ・スパ",
+	"public_bath": "温泉・銭湯",
+	"sauna":       "温泉・銭湯",
 	// ショッピング
 	"shopping_mall":    "ショッピングモール",
 	"clothing_store":   "雑貨・セレクトショップ",
 	"department_store": "ショッピングモール",
 	"home_goods_store": "雑貨・セレクトショップ",
-	// リラクゼーション
-	"spa": "マッサージ・スパ",
 	// 観光・文化
 	"place_of_worship":   "神社・寺",
 	"church":             "神社・寺",
@@ -201,17 +330,21 @@ func selectPersonalizedPlaces(inInterest, outOfInterest []PlaceResult) []PlaceRe
 // 訪れるのに適した場所のタイプ（許可リスト）
 var visitableTypes = map[string]bool{
 	// グルメ
-	"restaurant":    true,
-	"cafe":          true,
-	"bar":           true,
-	"bakery":        true,
-	"meal_takeaway": true,
+	"restaurant":       true,
+	"cafe":             true,
+	"bar":              true,
+	"bakery":           true,
+	"meal_takeaway":    true,
+	"ramen_restaurant": true,
 	// エンタメ
-	"amusement_park": true,
-	"aquarium":       true,
-	"bowling_alley":  true,
-	"movie_theater":  true,
-	"night_club":     true,
+	"amusement_park":   true,
+	"aquarium":         true,
+	"bowling_alley":    true,
+	"movie_theater":    true,
+	"night_club":       true,
+	"karaoke":          true,
+	"amusement_center": true,
+	"video_arcade":     true,
 	// 文化・アート
 	"art_gallery":      true,
 	"museum":           true,
@@ -222,6 +355,9 @@ var visitableTypes = map[string]bool{
 	"park":       true,
 	"campground": true,
 	"zoo":        true,
+	"beach":      true,
+	"lake":       true,
+	"river":      true,
 	// ショッピング
 	"shopping_mall":    true,
 	"clothing_store":   true,
@@ -237,6 +373,10 @@ var visitableTypes = map[string]bool{
 	"gym":            true,
 	"fitness_center": true,
 	"stadium":        true,
+	// リラクゼーション
+	"spa":         true,
+	"public_bath": true,
+	"sauna":       true,
 }
 
 func isVisitablePlace(types []string) bool {
