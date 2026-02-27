@@ -123,6 +123,15 @@ func UpdateStreak(db *gorm.DB, userID uint64, visitedAt time.Time) error {
 	}
 }
 
+// jst はJSTタイムゾーン
+var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
+
+// isNightVisitJST はJST時刻で深夜帯（23:00〜翌5:00未満）かどうかを返す
+func isNightVisitJST(t time.Time) bool {
+	h := t.In(jst).Hour()
+	return h >= 23 || h < 5
+}
+
 // weekStart は指定時刻が属する週の月曜日（0時0分0秒UTC）を返す
 func weekStart(t time.Time) time.Time {
 	t = t.UTC()
@@ -170,7 +179,8 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 // CheckAndAwardBadges はバッジ条件をチェックして未獲得バッジを付与し、新規獲得バッジを返す
 // isComfortZone: 今回の訪問が脱却訪問かどうか
 // visitCount: 現在の総訪問数（今回の訪問含む）
-func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCount int) ([]models.Badge, error) {
+// visitedAt: 今回の訪問日時
+func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCount int, visitedAt time.Time) ([]models.Badge, error) {
 	// 既獲得バッジIDを取得
 	var existingBadgeIDs []uint64
 	db.Model(&models.UserBadge{}).
@@ -234,9 +244,9 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 			// エリア判定は今回の訪問がnew_area=trueの場合（後から追加可能）
 			// 現時点では skip（フォールバック実装）
 		case "night_visit":
-			// 夜間（20時以降）判定 - ProcessGamificationから渡される
+			earned = isNightVisitJST(visitedAt)
 		case "weekend_visits":
-			// 週末訪問数判定 - ProcessGamificationから渡される
+			// 週末訪問数判定 - 未実装
 		}
 
 		if earned {
@@ -316,7 +326,7 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		// バッジチェック
 		var visitCount int64
 		tx.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&visitCount)
-		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsComfortZone, int(visitCount))
+		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsComfortZone, int(visitCount), visit.VisitedAt)
 		if err != nil {
 			return err
 		}
