@@ -9,6 +9,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// PlacePhotoHandler は施設写真URLの解決とキャッシュを担う。
+//
+// セキュリティ注意: APIキー（APIKey フィールド）はサーバーサイドでのみ使用し、
+// フロントエンドには露出しない。
+// 運用対策として Google Cloud Console で以下の制限を推奨:
+//   - 「APIの制限」でこのキーが使用できるAPIをPlaces APIのみに制限する
+//   - 「アプリケーションの制限」でIPアドレス制限（サーバーIPのみ許可）を設定する
 type PlacePhotoHandler struct {
 	RedisClient *redis.Client
 	APIKey      string

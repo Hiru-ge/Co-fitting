@@ -2017,3 +2017,86 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 	})
 }
+
+// TestCorruptedCacheHandling はキャッシュに破損したJSONが入っている場合に
+// パニックせず、Places APIを再取得して正常な提案を返すことを確認する (Issue #203)
+func TestCorruptedCacheHandling(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available")
+	}
+
+	mockPlaces := []PlaceResult{
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+	}
+
+	t.Run("Redisキャッシュに破損JSONがある場合でもPlaces APIを呼び出して正常に提案を返す", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// Redisに破損したJSONを設定
+		ctx := context.Background()
+		cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", 35.6762, 139.6503, 3000)
+		testRedisClient.Set(ctx, cacheKey, "this is not valid JSON{{{", 24*60*60*1000000000)
+
+		trackingMock := &trackingMockPlacesClient{Results: mockPlaces}
+		handler := &SuggestionHandler{
+			DB:          testDB,
+			RedisClient: testRedisClient,
+			Places:      trackingMock,
+		}
+
+		r := gin.New()
+		r.POST("/api/suggestions", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), handler.Suggest)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		r.ServeHTTP(w, req)
+
+		// パニックせず正常なレスポンスが返ること
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		// Places APIが呼び出されていること（キャッシュ破損時の再取得）
+		if trackingMock.CallCount == 0 {
+			t.Error("Expected Places API to be called when cache is corrupted, but it was not called")
+		}
+
+		// 正常な提案が返されること
+		resp := parseSuggestions(t, w.Body.Bytes())
+		if len(resp) == 0 {
+			t.Error("Expected at least one place to be returned after corrupted cache fallback")
+		}
+
+		// キャッシュが有効なJSONで更新（または削除）されていること
+		// → 次のリクエストでPlaces APIが再呼び出しされないことを確認
+		trackingMock.CallCount = 0
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		r.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusOK {
+			t.Errorf("Second request: Expected status %d, got %d. Body: %s", http.StatusOK, w2.Code, w2.Body.String())
+		}
+		// キャッシュが正常に更新されていれば、2回目はPlaces APIを呼ばない
+		if trackingMock.CallCount != 0 {
+			t.Error("After cache recovery, Places API should not be called again (cache should be valid)")
+		}
+	})
+}
