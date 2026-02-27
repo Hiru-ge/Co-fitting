@@ -269,9 +269,11 @@ type SuggestionHandler struct {
 
 // SuggestionResult は提案APIのレスポンス型
 // notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内に見つからなかったことを示す
+// completed が true の場合、本日の3件提案を全て訪問済みであることを示す
 type SuggestionResult struct {
-	Places []PlaceResult `json:"places"`
-	Notice string        `json:"notice,omitempty"`
+	Places    []PlaceResult `json:"places"`
+	Notice    string        `json:"notice,omitempty"`
+	Completed bool          `json:"completed,omitempty"`
 }
 
 type suggestionRequest struct {
@@ -349,23 +351,17 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
 				// 上限到達フラグを立てておく（リストキャッシュが削除されても復活しないよう）
 				database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
-				c.JSON(http.StatusTooManyRequests, gin.H{
-					"error": "本日の提案は全て訪問済みです。明日またお試しください。",
-					"code":  "daily_limit_reached",
-				})
+				c.JSON(http.StatusOK, SuggestionResult{Completed: true})
 				return
 			}
 		}
 
-		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は拒否
+		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は完了として返す
 		// 「全提案を訪問した後に興呗タグを変更した」ケースをここで捉える
 		// 未訪問提案がある状態での興呗タグ変更（Issue #153）は上限到達フラグが立たないため通過する
 		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
 		if err == nil && reached {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": "本日の提案は全て訪問済みです。明日またお試しください。",
-				"code":  "daily_limit_reached",
-			})
+			c.JSON(http.StatusOK, SuggestionResult{Completed: true})
 			return
 		}
 	}
@@ -414,7 +410,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	unvisited := filterOutVisited(h.DB, userID, places)
 
 	if len(unvisited) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited", "code": "DAILY_LIMIT_REACHED"})
+		c.JSON(http.StatusOK, SuggestionResult{Completed: true})
 		return
 	}
 
