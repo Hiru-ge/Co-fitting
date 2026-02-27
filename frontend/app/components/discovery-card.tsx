@@ -144,7 +144,10 @@ export default function DiscoveryCard({
         <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
           NEW SPOT
         </span>
-        <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
+        <span
+          data-testid="genre-badge"
+          className={`${place.is_interest_match ? "bg-brand/80" : "bg-white/20"} backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full`}
+        >
           {category.label}
         </span>
       </div>
