@@ -273,15 +273,17 @@ type SuggestionHandler struct {
 // notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内に見つからなかったことを示す
 // completed が true の場合、本日の3件提案を全て訪問済みであることを示す
 type SuggestionResult struct {
-	Places    []PlaceResult `json:"places"`
-	Notice    string        `json:"notice,omitempty"`
-	Completed bool          `json:"completed,omitempty"`
+	Places               []PlaceResult `json:"places"`
+	Notice               string        `json:"notice,omitempty"`
+	Completed            bool          `json:"completed,omitempty"`
+	ReloadCountRemaining *int          `json:"reload_count_remaining,omitempty"`
 }
 
 type suggestionRequest struct {
-	Lat    float64 `json:"lat" binding:"required"`
-	Lng    float64 `json:"lng" binding:"required"`
-	Radius uint    `json:"radius"`
+	Lat         float64 `json:"lat" binding:"required"`
+	Lng         float64 `json:"lng" binding:"required"`
+	Radius      uint    `json:"radius"`
+	ForceReload bool    `json:"force_reload"`
 }
 
 // 日次キャッシュで返す最大施設数
@@ -338,6 +340,55 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	today := time.Now().In(jst).Format("2006-01-02")
 	userIDStr := strconv.FormatUint(userID, 10)
 
+	// 0. リロードカウントの取得（レスポンスに含めるため）
+	var reloadCount int
+	if h.RedisClient != nil {
+		rc, err := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
+		if err == nil {
+			reloadCount = rc
+		}
+	}
+
+	// 0.5 force_reload の場合: リロード上限チェック → キャッシュクリア
+	if req.ForceReload && h.RedisClient != nil {
+		// 日次上限到達済みの場合はリロード不可
+		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
+		if err == nil && reached {
+			c.JSON(http.StatusOK, SuggestionResult{Completed: true})
+			return
+		}
+
+		// リロード回数の上限チェック
+		if reloadCount >= database.MaxDailyReloads {
+			remaining := 0
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error":                  "今日のリロードは使い切りました。明日また使えます",
+				"code":                   "RELOAD_LIMIT_REACHED",
+				"reload_count_remaining": remaining,
+			})
+			return
+		}
+
+		// リロードカウントをインクリメント
+		newCount, err := database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
+		if err == nil {
+			reloadCount = newCount
+		}
+
+		// 日次提案キャッシュをクリア（新しい提案を生成するため）
+		database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr)
+
+		// Places APIキャッシュもクリア（完全に新しい候補を取得するため）
+		placeCacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
+		h.RedisClient.Del(ctx, placeCacheKey)
+	}
+
+	// リロード残り回数を計算
+	reloadRemaining := database.MaxDailyReloads - reloadCount
+	if reloadRemaining < 0 {
+		reloadRemaining = 0
+	}
+
 	// 1. 日次キャッシュを確認
 	if h.RedisClient != nil {
 		cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng)
@@ -358,7 +409,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 							filtered[i].IsInterestMatch = nil
 						}
 					}
-					c.JSON(http.StatusOK, SuggestionResult{Places: filtered})
+					c.JSON(http.StatusOK, SuggestionResult{Places: filtered, ReloadCountRemaining: &reloadRemaining})
 					return
 				}
 				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
@@ -370,8 +421,8 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		}
 
 		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は完了として返す
-		// 「全提案を訪問した後に興呗タグを変更した」ケースをここで捉える
-		// 未訪問提案がある状態での興呗タグ変更（Issue #153）は上限到達フラグが立たないため通過する
+		// 「全提案を訪問した後に興味タグを変更した」ケースをここで捉える
+		// 未訪問提案がある状態での興味タグ変更（Issue #153）は上限到達フラグが立たないため通過する
 		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
 		if err == nil && reached {
 			c.JSON(http.StatusOK, SuggestionResult{Completed: true})
@@ -455,7 +506,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
 	}
 
-	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice})
+	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice, ReloadCountRemaining: &reloadRemaining})
 }
 
 // selectRandomPlaces は候補から最大n件をランダムに選出する

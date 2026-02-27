@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -929,12 +928,10 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 			t.Fatalf("全訪問後はcompleted=trueが返るはず. Body: %s", w2.Body.String())
 		}
 
-		// ステップ4: 興味タグ変更を模倣して提案リストキャッシュのみをクリアする
-		// （実際には UpdateInterests → ClearDailySuggestionsCache が呼ばれる。exhaustedフラグは消えない）
-		userIDStr := fmt.Sprintf("%d", user.ID)
-		database.ClearDailySuggestionsCache(context.Background(), testRedisClient, userIDStr)
+		// ステップ4: 興味タグ変更を模倣（UpdateInterestsはキャッシュをクリアしない）
+		// 興味タグの変更はDBレベルのみ。キャッシュは残るが、exhaustedフラグで日次上限が管理される
 
-		// ステップ5: キャッシュクリア後に再リクエスト → completed:true が引き続き返るべき（日次上限は復活しない）
+		// ステップ5: タグ変更後に再リクエスト → completed:true が引き続き返るべき（日次上限は復活しない）
 		w3 := httptest.NewRecorder()
 		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req3.Header.Set("Content-Type", "application/json")
@@ -1631,6 +1628,392 @@ func TestBreakoutModeSuggestion(t *testing.T) {
 			if p.IsInterestMatch != nil {
 				t.Errorf("Place %s: expected is_interest_match=nil (no interest tags), got %v", p.PlaceID, *p.IsInterestMatch)
 			}
+		}
+	})
+}
+
+// === Issue #184: 提案リロード機能テスト ===
+
+func TestSuggestForceReload(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available")
+	}
+
+	mockPlaces := []PlaceResult{
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+		{PlaceID: "place_4", Name: "Museum Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 4.5, Types: []string{"museum"}},
+		{PlaceID: "place_5", Name: "Bar Epsilon", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.5, Types: []string{"bar"}},
+	}
+
+	t.Run("force_reload=trueで3回を超えるリクエストは429を返す", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// 初回通常リクエスト（リロードカウントを消費しない）
+		body := map[string]interface{}{
+			"lat": 35.6762,
+			"lng": 139.6503,
+		}
+		jsonBody, _ := json.Marshal(body)
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("Initial request: Expected 200, got %d. Body: %s", w.Code, w.Body.String())
+		}
+
+		// force_reload=true で3回リロード（すべて成功するはず）
+		for i := 1; i <= 3; i++ {
+			reloadBody := map[string]interface{}{
+				"lat":          35.6762,
+				"lng":          139.6503,
+				"force_reload": true,
+			}
+			reloadJSON, _ := json.Marshal(reloadBody)
+			rw := httptest.NewRecorder()
+			rr, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+			rr.Header.Set("Content-Type", "application/json")
+			rr.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			router.ServeHTTP(rw, rr)
+			if rw.Code != http.StatusOK {
+				t.Fatalf("Reload %d: Expected 200, got %d. Body: %s", i, rw.Code, rw.Body.String())
+			}
+		}
+
+		// 4回目のリロードは429を返すべき
+		reloadBody := map[string]interface{}{
+			"lat":          35.6762,
+			"lng":          139.6503,
+			"force_reload": true,
+		}
+		reloadJSON, _ := json.Marshal(reloadBody)
+		rw := httptest.NewRecorder()
+		rr, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+		rr.Header.Set("Content-Type", "application/json")
+		rr.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(rw, rr)
+
+		if rw.Code != http.StatusTooManyRequests {
+			t.Errorf("4th reload: Expected 429, got %d. Body: %s", rw.Code, rw.Body.String())
+		}
+
+		var errResp map[string]interface{}
+		json.Unmarshal(rw.Body.Bytes(), &errResp)
+		if errResp["code"] != "RELOAD_LIMIT_REACHED" {
+			t.Errorf("Expected code 'RELOAD_LIMIT_REACHED', got '%v'", errResp["code"])
+		}
+	})
+
+	t.Run("force_reload=trueでキャッシュがクリアされ新しい提案が生成される", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// 初回通常リクエスト
+		body := map[string]interface{}{
+			"lat": 35.6762,
+			"lng": 139.6503,
+		}
+		jsonBody, _ := json.Marshal(body)
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+
+		callsAfterFirst := mock.CallCount
+
+		// 通常の2回目リクエスト（キャッシュヒットするのでAPI呼び出しなし）
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+		if mock.CallCount != callsAfterFirst {
+			t.Errorf("Normal 2nd request should use cache, but API was called")
+		}
+
+		// force_reload=true でリクエスト（キャッシュクリアされるのでAPI呼び出しあり）
+		reloadBody := map[string]interface{}{
+			"lat":          35.6762,
+			"lng":          139.6503,
+			"force_reload": true,
+		}
+		reloadJSON, _ := json.Marshal(reloadBody)
+		w3 := httptest.NewRecorder()
+		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+		req3.Header.Set("Content-Type", "application/json")
+		req3.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w3, req3)
+
+		if w3.Code != http.StatusOK {
+			t.Fatalf("Reload request: Expected 200, got %d. Body: %s", w3.Code, w3.Body.String())
+		}
+		// Places APIが再度呼び出されたことを確認（キャッシュクリアによる）
+		if mock.CallCount <= callsAfterFirst {
+			t.Errorf("Expected Places API to be called again on reload, but CallCount stayed at %d", mock.CallCount)
+		}
+	})
+
+	t.Run("通常リクエストはリロードカウントを消費しない", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// 通常リクエストを5回実行しても全て成功する
+		for i := 0; i < 5; i++ {
+			body := map[string]interface{}{
+				"lat": 35.6762,
+				"lng": 139.6503,
+			}
+			jsonBody, _ := json.Marshal(body)
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			router.ServeHTTP(w, req)
+			if w.Code != http.StatusOK {
+				t.Fatalf("Normal request %d: Expected 200, got %d. Body: %s", i+1, w.Code, w.Body.String())
+			}
+		}
+	})
+
+	t.Run("レスポンスにreload_count_remainingが含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// 通常リクエスト（リロード0回の状態）
+		body := map[string]interface{}{
+			"lat": 35.6762,
+			"lng": 139.6503,
+		}
+		jsonBody, _ := json.Marshal(body)
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected 200, got %d. Body: %s", w.Code, w.Body.String())
+		}
+
+		var result struct {
+			Places               []PlaceResult `json:"places"`
+			ReloadCountRemaining *int          `json:"reload_count_remaining"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
+		}
+
+		if result.ReloadCountRemaining == nil {
+			t.Fatal("Expected reload_count_remaining to be present in response")
+		}
+		if *result.ReloadCountRemaining != 3 {
+			t.Errorf("Expected reload_count_remaining=3, got %d", *result.ReloadCountRemaining)
+		}
+
+		// リロード1回後
+		reloadBody := map[string]interface{}{
+			"lat":          35.6762,
+			"lng":          139.6503,
+			"force_reload": true,
+		}
+		reloadJSON, _ := json.Marshal(reloadBody)
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+
+		var result2 struct {
+			Places               []PlaceResult `json:"places"`
+			ReloadCountRemaining *int          `json:"reload_count_remaining"`
+		}
+		json.Unmarshal(w2.Body.Bytes(), &result2)
+		if result2.ReloadCountRemaining == nil || *result2.ReloadCountRemaining != 2 {
+			remaining := -1
+			if result2.ReloadCountRemaining != nil {
+				remaining = *result2.ReloadCountRemaining
+			}
+			t.Errorf("After 1 reload: Expected reload_count_remaining=2, got %d", remaining)
+		}
+	})
+
+	t.Run("DailyLimitReached状態ではforce_reloadでもcompletedが返る", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mock := &trackingMockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// 初回リクエスト
+		body := map[string]interface{}{
+			"lat": 35.6762,
+			"lng": 139.6503,
+		}
+		jsonBody, _ := json.Marshal(body)
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+
+		resp := parseSuggestions(t, w1.Body.Bytes())
+		// 全施設訪問済みにする
+		for _, p := range resp {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   p.PlaceID,
+				PlaceName: p.Name,
+				Latitude:  p.Lat,
+				Longitude: p.Lng,
+				VisitedAt: time.Now(),
+			})
+		}
+
+		// 全訪問後に通常リクエスト → completed
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+
+		var compResp struct{ Completed bool }
+		json.Unmarshal(w2.Body.Bytes(), &compResp)
+		if !compResp.Completed {
+			t.Fatalf("Expected completed=true after all visited")
+		}
+
+		// force_reload=true でも completed が返るべき（日次上限を超えてリロードできない）
+		reloadBody := map[string]interface{}{
+			"lat":          35.6762,
+			"lng":          139.6503,
+			"force_reload": true,
+		}
+		reloadJSON, _ := json.Marshal(reloadBody)
+		w3 := httptest.NewRecorder()
+		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+		req3.Header.Set("Content-Type", "application/json")
+		req3.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w3, req3)
+
+		if w3.Code != http.StatusOK {
+			t.Fatalf("Expected 200, got %d. Body: %s", w3.Code, w3.Body.String())
+		}
+
+		var compResp2 struct{ Completed bool }
+		json.Unmarshal(w3.Body.Bytes(), &compResp2)
+		if !compResp2.Completed {
+			t.Errorf("Expected completed=true even with force_reload after daily limit reached. Body: %s", w3.Body.String())
+		}
+	})
+
+	t.Run("興味タグ変更後にforce_reloadで新設定が反映される", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		cafePlaces := []PlaceResult{
+			{PlaceID: "cafe_r1", Name: "カフェR1", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+			{PlaceID: "cafe_r2", Name: "カフェR2", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
+			{PlaceID: "cafe_r3", Name: "カフェR3", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+		}
+		museumPlaces := []PlaceResult{
+			{PlaceID: "museum_r1", Name: "博物館R1", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
+			{PlaceID: "museum_r2", Name: "博物館R2", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
+			{PlaceID: "museum_r3", Name: "博物館R3", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
+		}
+		allPlaces := append(cafePlaces, museumPlaces...)
+		mock := &trackingMockPlacesClient{Results: allPlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		// ステップ1: 興味タグなしで初回提案取得
+		body := map[string]interface{}{
+			"lat": 35.6762,
+			"lng": 139.6503,
+		}
+		jsonBody, _ := json.Marshal(body)
+		w1 := httptest.NewRecorder()
+		req1, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req1.Header.Set("Content-Type", "application/json")
+		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w1, req1)
+
+		if w1.Code != http.StatusOK {
+			t.Fatalf("Expected 200, got %d", w1.Code)
+		}
+
+		// ステップ2: カフェの興味タグを追加
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		// ステップ3: 興味タグ変更（UpdateInterestsはキャッシュをクリアしない。force_reloadが自身でクリアする）
+
+		// ステップ4: force_reload=true でリクエスト → キャッシュクリア＋カフェが優先される
+		reloadBody := map[string]interface{}{
+			"lat":          35.6762,
+			"lng":          139.6503,
+			"force_reload": true,
+		}
+		reloadJSON, _ := json.Marshal(reloadBody)
+		w2 := httptest.NewRecorder()
+		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w2, req2)
+
+		if w2.Code != http.StatusOK {
+			t.Fatalf("Reload: Expected 200, got %d. Body: %s", w2.Code, w2.Body.String())
+		}
+
+		resp2 := parseSuggestions(t, w2.Body.Bytes())
+		// パーソナライズにより興味内(cafe)が優先される
+		cafeCount := 0
+		for _, p := range resp2 {
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					cafeCount++
+					break
+				}
+			}
+		}
+		if cafeCount < 2 {
+			t.Errorf("After interest update + reload: Expected at least 2 cafe places, got %d", cafeCount)
 		}
 	})
 }

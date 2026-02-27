@@ -124,3 +124,44 @@ func SetDailyLimitReached(ctx context.Context, client *redis.Client, userID stri
 	key := DailyLimitReachedKey(userID, date)
 	return client.Set(ctx, key, 1, ttl).Err()
 }
+
+// --- 日次リロードカウント ---
+// リロード回数は提案リストキャッシュ・上限到達フラグとは独立して管理される。
+// キーフォーマット: suggestion:reload:{userID}:{date}
+
+// MaxDailyReloads は1日あたりのリロード上限回数
+const MaxDailyReloads = 3
+
+// DailyReloadCountKey は日次リロードカウントのキーを生成する
+func DailyReloadCountKey(userID string, date string) string {
+	return fmt.Sprintf("suggestion:reload:%s:%s", userID, date)
+}
+
+// GetDailyReloadCount は当日のリロード回数を返す
+// キーが未設定の場合は 0 を返す
+func GetDailyReloadCount(ctx context.Context, client *redis.Client, userID string, date string) (int, error) {
+	key := DailyReloadCountKey(userID, date)
+	result, err := client.Get(ctx, key).Int()
+	if err == redis.Nil {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to get daily reload count: %w", err)
+	}
+	return result, nil
+}
+
+// IncrementDailyReloadCount は当日のリロードカウントを1増やし、新しいカウントを返す
+// キーが存在しない場合は1からスタート（TTL設定あり）
+func IncrementDailyReloadCount(ctx context.Context, client *redis.Client, userID string, date string, ttl time.Duration) (int, error) {
+	key := DailyReloadCountKey(userID, date)
+	newCount, err := client.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, fmt.Errorf("failed to increment daily reload count: %w", err)
+	}
+	// 初回インクリメント時にTTLを設定
+	if newCount == 1 {
+		client.Expire(ctx, key, ttl)
+	}
+	return int(newCount), nil
+}

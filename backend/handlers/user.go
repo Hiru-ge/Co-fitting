@@ -3,11 +3,9 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -283,12 +281,6 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update interests"})
 		return
-	}
-
-	// 興味タグ変更後は日次提案キャッシュを無効化する
-	if h.RedisClient != nil {
-		userIDStr := strconv.FormatUint(userID, 10)
-		database.ClearDailySuggestionsCache(c.Request.Context(), h.RedisClient, userIDStr)
 	}
 
 	var interests []interestResponse

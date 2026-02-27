@@ -56,11 +56,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [originalOrder, setOriginalOrder] = useState<string[]>([]);
   const [xpModalState, setXpModalState] = useState<XpModalState | null>(null);
   const [badgeQueue, setBadgeQueue] = useState<BadgeInfo[]>([]);
+  const [reloadCountRemaining, setReloadCountRemaining] = useState(3);
+  const [isReloading, setIsReloading] = useState(false);
   // StrictMode の二重呼び出しによるトースト重複を防ぐフラグ
   const initialLoadDoneRef = useRef(false);
 
-  const loadSuggestions = useCallback(async () => {
-    setIsLoading(true);
+  const loadSuggestions = useCallback(async (forceReload?: boolean) => {
+    if (forceReload) {
+      setIsReloading(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
     setIsCompleted(false);
     try {
@@ -68,7 +74,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       setUserPos(pos);
 
       // バックエンドの日次キャッシュにより、1回の呼び出しで最大3件取得
-      const { places: collected, notice, completed } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS);
+      const { places: collected, notice, completed, reload_count_remaining } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS, forceReload);
+
+      // リロード残り回数を更新
+      if (reload_count_remaining !== undefined) {
+        setReloadCountRemaining(reload_count_remaining);
+      }
 
       // 本日の提案を全て訪問済みの場合はコンプリート画面を表示
       if (completed) {
@@ -101,12 +112,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     } catch (err) {
       if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
         setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
+      } else if (err instanceof ApiError && err.code === "RELOAD_LIMIT_REACHED") {
+        setReloadCountRemaining(0);
+        showToast("今日のリロードは使い切りました。明日また使えます", "info");
       } else {
         setError(SUGGESTION_MESSAGES.FETCH_ERROR);
         showToast(toUserMessage(err));
       }
     } finally {
       setIsLoading(false);
+      setIsReloading(false);
     }
   }, [token, showToast]);
 
@@ -118,7 +133,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     loadSuggestions();
   }, [loadSuggestions]);
 
-  function handleSkip() {
+  function handleReload() {
+    loadSuggestions(true);
+  }
+
+  function handleSwipe() {
     if (places.length <= 1) return;
     setPlaces((prev) => [...prev.slice(1), prev[0]]);
   }
@@ -219,7 +238,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
             <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした"}</p>
             <button
-              onClick={loadSuggestions}
+              onClick={() => loadSuggestions()}
               className="px-6 py-2 bg-primary text-white rounded-full font-bold"
             >
               再試行
@@ -242,7 +261,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     userLng={userPos.lng}
                     photoUrl={place.photoUrl}
                     stackIndex={i}
-                    onSwipe={handleSkip}
+                    onSwipe={i === 0 ? handleSwipe : undefined}
                   />
                 ))}
               </div>
@@ -254,9 +273,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
             <ActionButtons
               onCheckIn={handleCheckIn}
-              onSkip={handleSkip}
+              onReload={handleReload}
               isVisited={isCurrentVisited}
               isCheckingIn={checkingIn}
+              reloadCountRemaining={reloadCountRemaining}
+              isReloading={isReloading}
             />
           </main>
         </>
