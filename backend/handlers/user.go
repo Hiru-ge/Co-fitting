@@ -86,8 +86,9 @@ func (h *UserHandler) GetStats(c *gin.Context) {
 	var totalVisits int64
 	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&totalVisits)
 
-	var comfortZoneVisits int64
-	h.DB.Model(&models.Visit{}).Where("user_id = ? AND is_comfort_zone = ?", userID, true).Count(&comfortZoneVisits)
+	// is_comfort_zone=true は「興味ジャンル外＝脱却訪問」を意味する
+	var challengeVisits int64
+	h.DB.Model(&models.Visit{}).Where("user_id = ? AND is_comfort_zone = ?", userID, true).Count(&challengeVisits)
 
 	c.JSON(http.StatusOK, userStatsResponse{
 		Level:             user.Level,
@@ -95,8 +96,8 @@ func (h *UserHandler) GetStats(c *gin.Context) {
 		StreakCount:       user.StreakCount,
 		StreakLast:        user.StreakLast,
 		TotalVisits:       totalVisits,
-		ComfortZoneVisits: comfortZoneVisits,
-		ChallengeVisits:   totalVisits - comfortZoneVisits,
+		ComfortZoneVisits: totalVisits - challengeVisits,
+		ChallengeVisits:   challengeVisits,
 	})
 }
 
