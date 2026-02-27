@@ -147,6 +147,11 @@ export default function DiscoveryCard({
         <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
           {category.label}
         </span>
+        {place.is_interest_match === false && (
+          <span className="bg-amber-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
+            脱却モード
+          </span>
+        )}
       </div>
 
       {/* 施設情報 */}

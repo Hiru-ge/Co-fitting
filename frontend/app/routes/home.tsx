@@ -129,6 +129,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         category: category,
         lat: place.lat,
         lng: place.lng,
+        place_types: place.types,
         visited_at: new Date().toISOString(),
       });
 
