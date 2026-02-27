@@ -229,8 +229,8 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <div className="space-y-2">
             {proficiency.slice(0, 3).map((p) => (
               <div key={p.genre_tag_id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-100">
-                <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
+                  <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                     {p.icon}
                   </span>
                 </div>

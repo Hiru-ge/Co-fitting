@@ -303,4 +303,34 @@ describe("プロフィール画面", () => {
       expect(screen.getByText(/38/)).toBeInTheDocument();
     });
   });
+
+  test("得意ジャンル一覧の各行にジャンル名とアイコンが別要素として正しく描画される", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText("得意ジャンル")).toBeInTheDocument();
+      expect(screen.getByText("カフェ")).toBeInTheDocument();
+      expect(screen.getByText("公園・緑地")).toBeInTheDocument();
+    });
+
+    // ジャンル名がtruncateクラスを持つspan要素であること
+    const genreNameEl = screen.getByText("カフェ");
+    expect(genreNameEl.tagName.toLowerCase()).toBe("span");
+    expect(genreNameEl).toHaveClass("truncate");
+
+    // アイコンがmaterial-symbols-outlinedクラスを持つspan要素として別途存在すること
+    const iconSpans = document.querySelectorAll("span.material-symbols-outlined");
+    const localCafeIconSpan = Array.from(iconSpans).find(
+      (el) => el.textContent?.trim() === "local_cafe"
+    );
+    expect(localCafeIconSpan).toBeTruthy();
+
+    // アイコンspanとジャンル名spanが異なる要素であること
+    expect(localCafeIconSpan).not.toBe(genreNameEl);
+    expect(localCafeIconSpan?.textContent?.trim()).not.toContain("カフェ");
+
+    // アイコンコンテナがoverflow-hiddenを持ち、はみ出しによる重なりを防止していること
+    const iconContainer = localCafeIconSpan?.parentElement;
+    expect(iconContainer).toHaveClass("overflow-hidden");
+  });
 });
