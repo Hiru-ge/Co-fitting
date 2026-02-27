@@ -369,7 +369,8 @@ func TestSuggest(t *testing.T) {
 		}
 	})
 
-	t.Run("全施設訪問済みで404", func(t *testing.T) {
+
+	t.Run("全施設訪問済みで200+completedフラグが返る", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUser(t)
@@ -402,50 +403,22 @@ func TestSuggest(t *testing.T) {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		router.ServeHTTP(w, req)
 
-		if w.Code != http.StatusNotFound {
-			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
-		}
-	})
-
-	t.Run("全施設訪問済みでcodeフィールドにDAILY_LIMIT_REACHEDが返る", func(t *testing.T) {
-		cleanupUsers(t)
-
-		user := createTestUser(t)
-		token := generateTestToken(user.ID)
-
-		for _, p := range mockPlaces {
-			testDB.Create(&models.Visit{
-				UserID:    user.ID,
-				PlaceID:   p.PlaceID,
-				PlaceName: p.Name,
-				Latitude:  p.Lat,
-				Longitude: p.Lng,
-				VisitedAt: time.Now(),
-			})
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		mock := &mockPlacesClient{Results: mockPlaces}
-		router := setupSuggestionRouter(mock)
-
-		body := map[string]interface{}{
-			"lat":    35.6762,
-			"lng":    139.6503,
-			"radius": 3000,
+		var result struct {
+			Completed bool          `json:"completed"`
+			Places    []PlaceResult `json:"places"`
 		}
-		jsonBody, _ := json.Marshal(body)
-
-		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-		router.ServeHTTP(w, req)
-
-		var result map[string]string
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
 		}
-		if result["code"] != "DAILY_LIMIT_REACHED" {
-			t.Errorf("Expected code 'DAILY_LIMIT_REACHED', got '%s'", result["code"])
+		if !result.Completed {
+			t.Errorf("Expected completed=true, got false. Body: %s", w.Body.String())
+		}
+		if len(result.Places) != 0 {
+			t.Errorf("Expected empty places when completed, got %d places", len(result.Places))
 		}
 	})
 
@@ -854,22 +827,25 @@ func TestSuggestDailyCache(t *testing.T) {
 			})
 		}
 
-		// 2回目: 日次提案が全て訪問済みなので拒否されるべき
+		// 2回目: 日次提案が全て訪問済みなので completed:true が返るべき
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req2.Header.Set("Content-Type", "application/json")
 		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		router.ServeHTTP(w2, req2)
 
-		if w2.Code != http.StatusTooManyRequests {
-			t.Errorf("Expected status %d (Too Many Requests) after all daily suggestions visited, got %d. Body: %s",
-				http.StatusTooManyRequests, w2.Code, w2.Body.String())
+		if w2.Code != http.StatusOK {
+			t.Errorf("Expected status %d after all daily suggestions visited, got %d. Body: %s",
+				http.StatusOK, w2.Code, w2.Body.String())
 		}
 
-		var errResp map[string]string
-		json.Unmarshal(w2.Body.Bytes(), &errResp)
-		if errResp["code"] != "daily_limit_reached" {
-			t.Errorf("Expected error code 'daily_limit_reached', got '%s'", errResp["code"])
+		var completedResp struct {
+			Completed bool          `json:"completed"`
+			Places    []PlaceResult `json:"places"`
+		}
+		json.Unmarshal(w2.Body.Bytes(), &completedResp)
+		if !completedResp.Completed {
+			t.Errorf("Expected completed=true after all suggestions visited. Body: %s", w2.Body.String())
 		}
 	})
 }
@@ -933,16 +909,25 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 			})
 		}
 
-		// ステップ3: 全訪問済みで再リクエスト → 429 + exhaustedフラグが立つ
+		// ステップ3: 全訪問済みで再リクエスト → completed:true + exhaustedフラグが立つ
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req2.Header.Set("Content-Type", "application/json")
 		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		router.ServeHTTP(w2, req2)
 
-		if w2.Code != http.StatusTooManyRequests {
-			t.Fatalf("全訪問後は429が返るはず: Expected status %d, got %d. Body: %s",
-				http.StatusTooManyRequests, w2.Code, w2.Body.String())
+		if w2.Code != http.StatusOK {
+			t.Fatalf("全訪問後はcompleted:trueが返るはず: Expected status %d, got %d. Body: %s",
+				http.StatusOK, w2.Code, w2.Body.String())
+		}
+
+		var w2Resp struct {
+			Completed bool          `json:"completed"`
+			Places    []PlaceResult `json:"places"`
+		}
+		json.Unmarshal(w2.Body.Bytes(), &w2Resp)
+		if !w2Resp.Completed {
+			t.Fatalf("全訪問後はcompleted=trueが返るはず. Body: %s", w2.Body.String())
 		}
 
 		// ステップ4: 興味タグ変更を模倣して提案リストキャッシュのみをクリアする
@@ -950,22 +935,25 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 		userIDStr := fmt.Sprintf("%d", user.ID)
 		database.ClearDailySuggestionsCache(context.Background(), testRedisClient, userIDStr)
 
-		// ステップ5: キャッシュクリア後に再リクエスト → 429 が引き続き返るべき
+		// ステップ5: キャッシュクリア後に再リクエスト → completed:true が引き続き返るべき（日次上限は復活しない）
 		w3 := httptest.NewRecorder()
 		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req3.Header.Set("Content-Type", "application/json")
 		req3.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		router.ServeHTTP(w3, req3)
 
-		if w3.Code != http.StatusTooManyRequests {
+		if w3.Code != http.StatusOK {
 			t.Errorf("興味タグ変更後も日次上限は有効なはず: Expected status %d, got %d. Body: %s",
-				http.StatusTooManyRequests, w3.Code, w3.Body.String())
+				http.StatusOK, w3.Code, w3.Body.String())
 		}
 
-		var errResp map[string]string
-		json.Unmarshal(w3.Body.Bytes(), &errResp)
-		if errResp["code"] != "daily_limit_reached" {
-			t.Errorf("Expected error code 'daily_limit_reached', got '%s'", errResp["code"])
+		var w3Resp struct {
+			Completed bool          `json:"completed"`
+			Places    []PlaceResult `json:"places"`
+		}
+		json.Unmarshal(w3.Body.Bytes(), &w3Resp)
+		if !w3Resp.Completed {
+			t.Errorf("興味タグ変更後も completed=true が返るはず（日次上限は復活しない）. Body: %s", w3.Body.String())
 		}
 	})
 }
@@ -1410,6 +1398,112 @@ func TestSuggestRadiusLimit(t *testing.T) {
 		// ユーザーのsearch_radius（DBデフォルト5000）が使われる
 		if mock.LastRadius != 5000 {
 			t.Errorf("Expected default radius to be 5000 (user's search_radius), got %d", mock.LastRadius)
+		}
+	})
+}
+
+// === Issue #178: is_interest_match フラグのテスト ===
+func TestInterestMatchFlag(t *testing.T) {
+	cafePlaces := []PlaceResult{
+		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
+		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+	}
+	museumPlaces := []PlaceResult{
+		{PlaceID: "museum_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
+		{PlaceID: "museum_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
+		{PlaceID: "museum_3", Name: "博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
+		{PlaceID: "museum_4", Name: "博物館D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"museum"}},
+	}
+	mixedPlaces := append(cafePlaces, museumPlaces...)
+
+	t.Run("興味タグ一致施設は is_interest_match=true で返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		mock := &mockPlacesClient{Results: mixedPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		if len(resp) == 0 {
+			t.Fatal("Expected at least 1 place")
+		}
+
+		// cafeはis_interest_match=true、museumはfalseであることを確認
+		for _, p := range resp {
+			isCafe := false
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					isCafe = true
+					break
+				}
+			}
+			if isCafe && !p.IsInterestMatch {
+				t.Errorf("cafe place '%s' should have is_interest_match=true, got false", p.PlaceID)
+			}
+			if !isCafe && p.IsInterestMatch {
+				t.Errorf("museum place '%s' should have is_interest_match=false, got true", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("興味タグ未設定ユーザーは全施設が is_interest_match=false", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+		// 興味タグを設定しない
+
+		mock := &mockPlacesClient{Results: cafePlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		for _, p := range resp {
+			if p.IsInterestMatch {
+				t.Errorf("place '%s' should have is_interest_match=false when no interests set, got true", p.PlaceID)
+			}
 		}
 	})
 }

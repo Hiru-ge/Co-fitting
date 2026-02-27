@@ -66,7 +66,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       setUserPos(pos);
 
       // バックエンドの日次キャッシュにより、1回の呼び出しで最大3件取得
-      const { places: collected, notice } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS);
+      const { places: collected, notice, completed } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS);
+
+      // 本日の提案を全て訪問済みの場合はコンプリート画面を表示
+      if (completed) {
+        setIsCompleted(true);
+        return;
+      }
 
       // 興味タグに合致する施設が半径内になかった場合、infoトーストで通知
       if (notice === API_ERROR_CODES.NO_INTEREST_PLACES) {
@@ -91,9 +97,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
       }
     } catch (err) {
-      if (err instanceof ApiError && err.code === API_ERROR_CODES.DAILY_LIMIT_REACHED) {
-        setIsCompleted(true);
-      } else if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
+      if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
         setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
       } else {
         setError(SUGGESTION_MESSAGES.FETCH_ERROR);

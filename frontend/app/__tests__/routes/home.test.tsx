@@ -219,33 +219,6 @@ describe("Home画面", () => {
     });
   });
 
-  test("DAILY_LIMIT_REACHEDエラー時にコンプリートカードが表示される", async () => {
-    const { getSuggestions } = await import("~/api/suggestions");
-    vi.mocked(getSuggestions).mockRejectedValueOnce(
-      new ApiError(404, "all nearby places have been visited", "DAILY_LIMIT_REACHED")
-    );
-
-    renderHome();
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
-    });
-  });
-
-  test("DAILY_LIMIT_REACHEDエラー時にエラーメッセージはトーストに表示されない", async () => {
-    const { getSuggestions } = await import("~/api/suggestions");
-    vi.mocked(getSuggestions).mockRejectedValueOnce(
-      new ApiError(404, "all nearby places have been visited", "DAILY_LIMIT_REACHED")
-    );
-
-    renderHome();
-
-    await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
-    });
-    expect(mockShowToast).not.toHaveBeenCalled();
-  });
-
   test("INTERNAL_ERRORエラー時にエラーメッセージが表示されトーストが出る", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockRejectedValueOnce(
@@ -445,6 +418,36 @@ describe("Home画面", () => {
       expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
       expect(screen.getByText("コンフォートゾーン・ブレイカー")).toBeInTheDocument();
     });
+  });
+
+  // === Issue #177: ページ再読み込み後もコンプリート画面を表示し、提案済みトーストを非表示にする ===
+  test("getSuggestionsがcompletedフラグ付きで返した場合、コンプリートカードが表示される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [],
+      completed: true,
+    });
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    });
+  });
+
+  test("getSuggestionsがcompletedフラグ付きで返した場合、トーストは表示されない", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [],
+      completed: true,
+    });
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    });
+    expect(mockShowToast).not.toHaveBeenCalled();
   });
 
   // === Issue #167: 興味タグ施設が半径内に見つからない場合のトースト通知 ===

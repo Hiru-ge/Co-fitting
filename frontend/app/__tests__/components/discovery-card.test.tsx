@@ -1,6 +1,6 @@
-// Issue #179: 脱却モードの実装を各所で見直し・正常動作させる
 import { describe, test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import DiscoveryCard from "~/components/discovery-card";
 
 vi.mock("~/utils/geolocation", () => ({
   calcDistance: vi.fn().mockReturnValue(500),
@@ -19,46 +19,51 @@ const basePlace = {
   lat: 35.66,
   lng: 139.7,
   rating: 4.2,
-  types: ["museum"],
+  types: ["cafe"],
 };
 
-describe("DiscoveryCard - 脱却モードバッジ", () => {
-  test("is_interest_match=falseの場合に脱却モードバッジが表示される", () => {
-    render(
-      <DiscoveryCard
-        place={{ ...basePlace, is_interest_match: false }}
-        isVisited={false}
-        userLat={35.658}
-        userLng={139.7016}
-        stackIndex={0}
-      />
-    );
-    expect(screen.getByText("脱却モード")).toBeInTheDocument();
+function renderCard(overrides = {}) {
+  return render(
+    <DiscoveryCard
+      place={{ ...basePlace, ...overrides }}
+      isVisited={false}
+      userLat={35.658}
+      userLng={139.7016}
+      stackIndex={0}
+    />
+  );
+}
+
+// === Issue #178: ジャンルバッジの興味タグ一致強調表示テスト ===
+describe("DiscoveryCard ジャンルバッジ", () => {
+  test("is_interest_match=true の場合、ジャンルバッジにブランドカラーが適用される", () => {
+    const { container } = renderCard({ is_interest_match: true });
+    // ブランドカラー (#525BBB) のクラスが適用されていることを確認
+    const badge = container.querySelector("[data-testid='genre-badge']");
+    expect(badge).not.toBeNull();
+    expect(badge?.className).toMatch(/brand|525BBB|interest-match/);
   });
 
-  test("is_interest_match=trueの場合に脱却モードバッジが表示されない", () => {
-    render(
-      <DiscoveryCard
-        place={{ ...basePlace, types: ["cafe"], is_interest_match: true }}
-        isVisited={false}
-        userLat={35.658}
-        userLng={139.7016}
-        stackIndex={0}
-      />
-    );
-    expect(screen.queryByText("脱却モード")).not.toBeInTheDocument();
+  test("is_interest_match=false の場合、ジャンルバッジが通常スタイル（bg-white/20）で表示される", () => {
+    const { container } = renderCard({ is_interest_match: false });
+    const badge = container.querySelector("[data-testid='genre-badge']");
+    expect(badge).not.toBeNull();
+    expect(badge?.className).toContain("bg-white/20");
+    expect(badge?.className).not.toMatch(/brand|525BBB|interest-match/);
   });
 
-  test("is_interest_matchがundefinedの場合に脱却モードバッジが表示されない", () => {
-    render(
-      <DiscoveryCard
-        place={basePlace}
-        isVisited={false}
-        userLat={35.658}
-        userLng={139.7016}
-        stackIndex={0}
-      />
-    );
-    expect(screen.queryByText("脱却モード")).not.toBeInTheDocument();
+  test("is_interest_match が未指定の場合、ジャンルバッジが通常スタイルで表示される", () => {
+    const { container } = renderCard();
+    const badge = container.querySelector("[data-testid='genre-badge']");
+    expect(badge).not.toBeNull();
+    expect(badge?.className).toContain("bg-white/20");
+    expect(badge?.className).not.toMatch(/brand|525BBB|interest-match/);
+  });
+
+  test("ジャンルラベルが表示される", () => {
+    renderCard({ is_interest_match: true });
+    // カフェのラベルが表示されていること
+    const labels = screen.getAllByText("カフェ");
+    expect(labels.length).toBeGreaterThan(0);
   });
 });

@@ -19,15 +19,15 @@ import (
 )
 
 type PlaceResult struct {
-	PlaceID         string   `json:"place_id"`
-	Name            string   `json:"name"`
-	Vicinity        string   `json:"vicinity"`
-	Lat             float64  `json:"lat"`
-	Lng             float64  `json:"lng"`
-	Rating          float32  `json:"rating"`
-	Types           []string `json:"types"`
-	PhotoReference  string   `json:"photo_reference,omitempty"`
-	IsInterestMatch *bool    `json:"is_interest_match,omitempty"` // nil=興味タグ未設定, true=興味内, false=興味外(脱却)
+	PlaceID          string   `json:"place_id"`
+	Name             string   `json:"name"`
+	Vicinity         string   `json:"vicinity"`
+	Lat              float64  `json:"lat"`
+	Lng              float64  `json:"lng"`
+	Rating           float32  `json:"rating"`
+	Types            []string `json:"types"`
+	PhotoReference   string   `json:"photo_reference,omitempty"`
+	IsInterestMatch  bool     `json:"is_interest_match"`
 }
 
 type PlacesSearcher interface {
@@ -149,11 +149,12 @@ func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, err
 	return names, nil
 }
 
-// classifyByInterest は候補を興味内・興味外に分類する
+// classifyByInterest は候補を興味内・興味外に分類し、興味内にはIsInterestMatch=trueを設定する
 func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool) (inInterest, outOfInterest []PlaceResult) {
 	for _, p := range places {
 		genreName := getGenreNameFromTypes(p.Types)
 		if genreName != "" && interestGenreNames[genreName] {
+			p.IsInterestMatch = true
 			inInterest = append(inInterest, p)
 		} else {
 			outOfInterest = append(outOfInterest, p)
@@ -270,9 +271,11 @@ type SuggestionHandler struct {
 
 // SuggestionResult は提案APIのレスポンス型
 // notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内に見つからなかったことを示す
+// completed が true の場合、本日の3件提案を全て訪問済みであることを示す
 type SuggestionResult struct {
-	Places []PlaceResult `json:"places"`
-	Notice string        `json:"notice,omitempty"`
+	Places    []PlaceResult `json:"places"`
+	Notice    string        `json:"notice,omitempty"`
+	Completed bool          `json:"completed,omitempty"`
 }
 
 type suggestionRequest struct {
@@ -344,29 +347,33 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 				// キャッシュヒットしても訪問済み施設を除外
 				filtered := filterOutVisited(h.DB, userID, dailyPlaces)
 				if len(filtered) > 0 {
+					// 最新の興味タグでis_interest_matchを再設定
+					interestNames, _ := getUserInterestGenreNames(h.DB, userID)
+					for i := range filtered {
+						if len(interestNames) > 0 {
+							genreName := getGenreNameFromTypes(filtered[i].Types)
+							filtered[i].IsInterestMatch = genreName != "" && interestNames[genreName]
+						} else {
+							filtered[i].IsInterestMatch = false
+						}
+					}
 					c.JSON(http.StatusOK, SuggestionResult{Places: filtered})
 					return
 				}
 				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
 				// 上限到達フラグを立てておく（リストキャッシュが削除されても復活しないよう）
 				database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
-				c.JSON(http.StatusTooManyRequests, gin.H{
-					"error": "本日の提案は全て訪問済みです。明日またお試しください。",
-					"code":  "daily_limit_reached",
-				})
+				c.JSON(http.StatusOK, SuggestionResult{Completed: true})
 				return
 			}
 		}
 
-		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は拒否
+		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は完了として返す
 		// 「全提案を訪問した後に興呗タグを変更した」ケースをここで捉える
 		// 未訪問提案がある状態での興呗タグ変更（Issue #153）は上限到達フラグが立たないため通過する
 		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
 		if err == nil && reached {
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": "本日の提案は全て訪問済みです。明日またお試しください。",
-				"code":  "daily_limit_reached",
-			})
+			c.JSON(http.StatusOK, SuggestionResult{Completed: true})
 			return
 		}
 	}
@@ -415,7 +422,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	unvisited := filterOutVisited(h.DB, userID, places)
 
 	if len(unvisited) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "all nearby places have been visited", "code": "DAILY_LIMIT_REACHED"})
+		c.JSON(http.StatusOK, SuggestionResult{Completed: true})
 		return
 	}
 

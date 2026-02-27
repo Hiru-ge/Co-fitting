@@ -2,7 +2,6 @@
  * バックエンドが返すエラーコード定数
  */
 export const API_ERROR_CODES = {
-  DAILY_LIMIT_REACHED: "DAILY_LIMIT_REACHED",
   NO_NEARBY_PLACES: "NO_NEARBY_PLACES",
   NO_INTEREST_PLACES: "NO_INTEREST_PLACES",
   INTERNAL_ERROR: "INTERNAL_ERROR",
@@ -10,7 +9,6 @@ export const API_ERROR_CODES = {
 
 /**
  * 提案API用のユーザー向けメッセージ定数
- * DAILY_LIMIT_REACHED はコンプリートカードで表示するためここには含めない
  */
 export const SUGGESTION_MESSAGES = {
   NO_NEARBY_PLACES: "近くのスポットが見つかりませんでした",
