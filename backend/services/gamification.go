@@ -132,6 +132,12 @@ func isNightVisitJST(t time.Time) bool {
 	return h >= 23 || h < 5
 }
 
+// isWeekendVisitJST はJST時刻で土曜日または日曜日かどうかを返す
+func isWeekendVisitJST(t time.Time) bool {
+	w := t.In(jst).Weekday()
+	return w == time.Saturday || w == time.Sunday
+}
+
 // weekStart は指定時刻が属する週の月曜日（0時0分0秒UTC）を返す
 func weekStart(t time.Time) time.Time {
 	t = t.UTC()
@@ -246,7 +252,19 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		case "night_visit":
 			earned = isNightVisitJST(visitedAt)
 		case "weekend_visits":
-			// 週末訪問数判定 - 未実装
+			// JST換算で土・日の訪問件数をカウント
+			var weekendVisits []models.Visit
+			db.Model(&models.Visit{}).
+				Where("user_id = ?", userID).
+				Select("visited_at").
+				Find(&weekendVisits)
+			weekendCount := 0
+			for _, v := range weekendVisits {
+				if isWeekendVisitJST(v.VisitedAt) {
+					weekendCount++
+				}
+			}
+			earned = weekendCount >= cond.Threshold
 		}
 
 		if earned {

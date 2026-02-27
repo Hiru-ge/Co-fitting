@@ -1,6 +1,7 @@
 package services_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -621,6 +622,189 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			if b.Name == "ナイトウォーカー" {
 				t.Errorf("should not award 'ナイトウォーカー' badge for 15:00 JST visit")
 			}
+		}
+	})
+
+	// =============================================
+	// ウィークエンドウォリアー バッジテスト
+	// =============================================
+
+	t.Run("週末（土曜JST）に3箇所以上訪問するとウィークエンドウォリアーバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "weekend1@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		// 2024-01-20 は土曜日（JST）
+		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, jst)
+
+		for i := 0; i < 3; i++ {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("place_weekend_sat_%d", i),
+				PlaceName: fmt.Sprintf("週末スポット%d", i+1),
+				Category:  "cafe",
+				Latitude:  35.67,
+				Longitude: 139.65,
+				VisitedAt: saturdayTime.Add(time.Duration(i) * time.Hour),
+			})
+		}
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3, saturdayTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "ウィークエンドウォリアー" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'ウィークエンドウォリアー' badge for 3 weekend visits, got %v", newBadges)
+		}
+	})
+
+	t.Run("週末（日曜JST）に3箇所以上訪問するとウィークエンドウォリアーバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "weekend2@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		// 2024-01-21 は日曜日（JST）
+		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, jst)
+
+		for i := 0; i < 3; i++ {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("place_weekend_sun_%d", i),
+				PlaceName: fmt.Sprintf("日曜スポット%d", i+1),
+				Category:  "cafe",
+				Latitude:  35.67,
+				Longitude: 139.65,
+				VisitedAt: sundayTime.Add(time.Duration(i) * time.Hour),
+			})
+		}
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3, sundayTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "ウィークエンドウォリアー" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'ウィークエンドウォリアー' badge for 3 Sunday visits, got %v", newBadges)
+		}
+	})
+
+	t.Run("週末訪問が2箇所ではウィークエンドウォリアーバッジを獲得しない", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "weekend3@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		// 2024-01-20 は土曜日（JST）
+		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, jst)
+
+		for i := 0; i < 2; i++ {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("place_weekend_2_%d", i),
+				PlaceName: fmt.Sprintf("週末スポット%d", i+1),
+				Category:  "cafe",
+				Latitude:  35.67,
+				Longitude: 139.65,
+				VisitedAt: saturdayTime.Add(time.Duration(i) * time.Hour),
+			})
+		}
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 2, saturdayTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "ウィークエンドウォリアー" {
+				t.Errorf("should not award 'ウィークエンドウォリアー' badge for only 2 weekend visits")
+			}
+		}
+	})
+
+	t.Run("平日の訪問3件ではウィークエンドウォリアーバッジを獲得しない", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "weekend4@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		// 2024-01-15 は月曜日（JST）
+		mondayTime := time.Date(2024, 1, 15, 14, 0, 0, 0, jst)
+
+		for i := 0; i < 3; i++ {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("place_weekday_%d", i),
+				PlaceName: fmt.Sprintf("平日スポット%d", i+1),
+				Category:  "cafe",
+				Latitude:  35.67,
+				Longitude: 139.65,
+				VisitedAt: mondayTime.Add(time.Duration(i) * time.Hour),
+			})
+		}
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3, mondayTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "ウィークエンドウォリアー" {
+				t.Errorf("should not award 'ウィークエンドウォリアー' badge for weekday visits")
+			}
+		}
+	})
+
+	t.Run("土日合計で3箇所以上（異なる週末日）でウィークエンドウォリアーバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "weekend5@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		// 2024-01-20 土曜, 2024-01-21 日曜
+		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, jst)
+		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, jst)
+
+		testDB.Create(&models.Visit{
+			UserID: user.ID, PlaceID: "place_sat_mixed_1", PlaceName: "土曜スポット1",
+			Category: "cafe", Latitude: 35.67, Longitude: 139.65, VisitedAt: saturdayTime,
+		})
+		testDB.Create(&models.Visit{
+			UserID: user.ID, PlaceID: "place_sat_mixed_2", PlaceName: "土曜スポット2",
+			Category: "cafe", Latitude: 35.67, Longitude: 139.65, VisitedAt: saturdayTime.Add(time.Hour),
+		})
+		testDB.Create(&models.Visit{
+			UserID: user.ID, PlaceID: "place_sun_mixed_1", PlaceName: "日曜スポット1",
+			Category: "cafe", Latitude: 35.67, Longitude: 139.65, VisitedAt: sundayTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3, sundayTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "ウィークエンドウォリアー" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'ウィークエンドウォリアー' badge for 3 total weekend visits (Sat+Sun), got %v", newBadges)
 		}
 	})
 }
