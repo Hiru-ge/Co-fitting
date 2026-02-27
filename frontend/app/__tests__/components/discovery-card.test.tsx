@@ -10,8 +10,6 @@ vi.mock("~/utils/helpers", () => ({
   formatDistance: vi.fn().mockReturnValue("500m"),
 }));
 
-import DiscoveryCard from "~/components/discovery-card";
-
 const basePlace = {
   place_id: "place_1",
   name: "テストスポット",

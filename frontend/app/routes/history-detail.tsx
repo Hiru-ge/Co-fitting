@@ -72,7 +72,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [token, visitId]);
+  }, [token, visitId, showToast]);
 
   useEffect(() => {
     loadVisit();
@@ -124,7 +124,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-20 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
+      <header className="sticky top-0 z-20 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
@@ -145,7 +145,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
 
       <main className="flex flex-col gap-6 px-4 pt-6 pb-20">
         {/* ── 場所情報カード ── */}
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm overflow-hidden">
           {/* 写真 */}
           <div
             className="w-full h-48 bg-gray-200 bg-center bg-cover bg-no-repeat"
@@ -237,7 +237,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
             onChange={(e) => setMemo(e.target.value)}
             placeholder="どんな体験でしたか？"
             rows={5}
-            className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-text-main-purple placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary resize-none"
+            className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-text-main-purple placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary resize-none"
           />
         </div>
 
