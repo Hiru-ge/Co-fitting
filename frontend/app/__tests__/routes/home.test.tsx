@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
+import { StrictMode } from "react";
 import { ApiError } from "~/utils/error";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -111,6 +112,26 @@ function renderHome() {
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return render(<Home loaderData={loaderData as any} params={{} as any} matches={[] as any} />);
+}
+
+function renderHomeStrict() {
+  const loaderData = {
+    user: {
+      id: 1,
+      email: "test@example.com",
+      display_name: "テストユーザー",
+      avatar_url: null,
+      created_at: "2024-01-01",
+      updated_at: "2024-01-01",
+    },
+    token: "test-token",
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return render(
+    <StrictMode>
+      <Home loaderData={loaderData as any} params={{} as any} matches={[] as any} />
+    </StrictMode>
+  );
 }
 
 describe("Home clientLoader", () => {
@@ -479,6 +500,42 @@ describe("Home画面", () => {
       expect.stringContaining("興味タグ"),
       "info"
     );
+  });
+
+  // === Issue #181: トーストが2回表示される問題 ===
+  test("React StrictMode環境でも NO_INTEREST_PLACES のinfoトーストは1回のみ表示される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({
+      places: mockPlaces,
+      notice: "NO_INTEREST_PLACES",
+    });
+
+    renderHomeStrict();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    expect(mockShowToast).toHaveBeenCalledTimes(1);
+    expect(mockShowToast).toHaveBeenCalledWith(
+      expect.stringContaining("興味タグ"),
+      "info"
+    );
+  });
+
+  test("React StrictMode環境でもエラー発生時のトーストは1回のみ表示される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockRejectedValue(
+      new ApiError(500, "internal error", "INTERNAL_ERROR")
+    );
+
+    renderHomeStrict();
+
+    await waitFor(() => {
+      expect(screen.getByText("スポットの取得に失敗しました")).toBeInTheDocument();
+    });
+
+    expect(mockShowToast).toHaveBeenCalledTimes(1);
   });
 });
 
