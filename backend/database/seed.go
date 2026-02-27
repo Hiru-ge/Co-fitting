@@ -118,7 +118,7 @@ func seedBadges(db *gorm.DB) error {
 		},
 		{
 			Name:          "ナイトウォーカー",
-			Description:   "夜間（20時以降）に訪問を記録した",
+			Description:   "深夜（23:00〜翌5:00）に訪問を記録した",
 			IconURL:       "",
 			ConditionJSON: `{"type":"night_visit","threshold":1}`,
 		},

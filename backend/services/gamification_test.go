@@ -372,7 +372,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			VisitedAt: time.Now(),
 		})
 
-		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1)
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, time.Now())
 		if err != nil {
 			t.Fatalf("CheckAndAwardBadges failed: %v", err)
 		}
@@ -420,7 +420,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			VisitedAt: time.Now(),
 		})
 
-		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 2)
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 2, time.Now())
 		if err != nil {
 			t.Fatalf("CheckAndAwardBadges failed: %v", err)
 		}
@@ -448,7 +448,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			VisitedAt:     time.Now(),
 		})
 
-		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, true, 1)
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, true, 1, time.Now())
 		if err != nil {
 			t.Fatalf("CheckAndAwardBadges failed: %v", err)
 		}
@@ -487,7 +487,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			})
 		}
 
-		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3)
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3, time.Now())
 		if err != nil {
 			t.Fatalf("CheckAndAwardBadges failed: %v", err)
 		}
@@ -510,7 +510,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 
 		testDB.Model(&user).Update("streak_count", 4)
 
-		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1)
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, time.Now())
 		if err != nil {
 			t.Fatalf("CheckAndAwardBadges failed: %v", err)
 		}
@@ -523,6 +523,104 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("expected 'ストリークマスター Lv.1' badge, got %v", newBadges)
+		}
+	})
+
+	t.Run("深夜（23時JST）の訪問でナイトウォーカーバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "night1@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		nightVisitTime := time.Date(2024, 1, 15, 23, 0, 0, 0, jst)
+
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_night1",
+			PlaceName: "深夜のカフェ",
+			Category:  "cafe",
+			Latitude:  35.67,
+			Longitude: 139.65,
+			VisitedAt: nightVisitTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, nightVisitTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "ナイトウォーカー" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'ナイトウォーカー' badge for 23:00 JST visit, got %v", newBadges)
+		}
+	})
+
+	t.Run("翌5時未満（4時JST）の訪問でナイトウォーカーバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "night2@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		nightVisitTime := time.Date(2024, 1, 16, 4, 0, 0, 0, jst)
+
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_night2",
+			PlaceName: "早朝の公園",
+			Category:  "park",
+			Latitude:  35.67,
+			Longitude: 139.65,
+			VisitedAt: nightVisitTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, nightVisitTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "ナイトウォーカー" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'ナイトウォーカー' badge for 4:00 JST visit, got %v", newBadges)
+		}
+	})
+
+	t.Run("昼間（15時JST）の訪問ではナイトウォーカーバッジを獲得しない", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "night3@example.com")
+		database.SeedMasterData(testDB)
+
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		dayVisitTime := time.Date(2024, 1, 15, 15, 0, 0, 0, jst)
+
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_day1",
+			PlaceName: "昼のカフェ",
+			Category:  "cafe",
+			Latitude:  35.67,
+			Longitude: 139.65,
+			VisitedAt: dayVisitTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, dayVisitTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "ナイトウォーカー" {
+				t.Errorf("should not award 'ナイトウォーカー' badge for 15:00 JST visit")
+			}
 		}
 	})
 }
