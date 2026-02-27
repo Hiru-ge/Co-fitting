@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"math"
 	"time"
 
 	"github.com/Hiru-ge/roamble/models"
@@ -16,6 +17,21 @@ const (
 	XPFirstArea    = 30  // 初めてのエリアボーナス
 	XPMemoBonus    = 10  // 感想メモ記入ボーナス
 )
+
+// エリアパイオニアバッジの距離閾値（メートル）
+const AreaPioneerDistanceM = 10000.0
+
+// haversineDistance は2点間の大圏距離をメートルで返す
+func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
+	const earthRadiusM = 6371000.0
+	dLat := (lat2 - lat1) * math.Pi / 180
+	dLng := (lng2 - lng1) * math.Pi / 180
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1*math.Pi/180)*math.Cos(lat2*math.Pi/180)*
+			math.Sin(dLng/2)*math.Sin(dLng/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return earthRadiusM * c
+}
 
 // レベルテーブル: インデックスiのレベル(i+1)はthresholds[i]以上で到達
 var levelThresholds = []int{0, 100, 300, 600, 1000, 2000, 3000, 4000, 4500, 5000}
@@ -186,7 +202,8 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 // isComfortZone: 今回の訪問が脱却訪問かどうか
 // visitCount: 現在の総訪問数（今回の訪問含む）
 // visitedAt: 今回の訪問日時
-func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCount int, visitedAt time.Time) ([]models.Badge, error) {
+// coords: 今回の訪問地点の緯度・経度（省略可。new_area判定に使用）
+func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCount int, visitedAt time.Time, coords ...float64) ([]models.Badge, error) {
 	// 既獲得バッジIDを取得
 	var existingBadgeIDs []uint64
 	db.Model(&models.UserBadge{}).
@@ -247,8 +264,27 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		case "streak_weeks":
 			earned = user.StreakCount >= cond.Threshold
 		case "new_area":
-			// エリア判定は今回の訪問がnew_area=trueの場合（後から追加可能）
-			// 現時点では skip（フォールバック実装）
+			// 過去訪問が存在し（visitCount > 1）、かつ lat/lng が渡されている場合のみ判定
+			if len(coords) >= 2 && visitCount > 1 {
+				currentLat, currentLng := coords[0], coords[1]
+				// 座標が未設定の場合はスキップ
+				if currentLat == 0 && currentLng == 0 {
+					break
+				}
+				var prevVisits []models.Visit
+				db.Model(&models.Visit{}).Where("user_id = ?", userID).
+					Select("lat, lng").Find(&prevVisits)
+				for _, pv := range prevVisits {
+					// 過去訪問も座標未設定の場合はスキップ
+					if pv.Latitude == 0 && pv.Longitude == 0 {
+						continue
+					}
+					if haversineDistance(currentLat, currentLng, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
+						earned = true
+						break
+					}
+				}
+			}
 		case "night_visit":
 			earned = isNightVisitJST(visitedAt)
 		case "weekend_visits":
@@ -344,7 +380,7 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		// バッジチェック
 		var visitCount int64
 		tx.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&visitCount)
-		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsComfortZone, int(visitCount), visit.VisitedAt)
+		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsComfortZone, int(visitCount), visit.VisitedAt, visit.Latitude, visit.Longitude)
 		if err != nil {
 			return err
 		}

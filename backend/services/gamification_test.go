@@ -807,6 +807,167 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			t.Errorf("expected 'ウィークエンドウォリアー' badge for 3 total weekend visits (Sat+Sun), got %v", newBadges)
 		}
 	})
+
+	// =============================================
+	// エリアパイオニアバッジテスト
+	// =============================================
+
+	t.Run("過去訪問から10km以上離れた場所を訪問するとエリアパイオニアバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "area_pioneer1@example.com")
+		database.SeedMasterData(testDB)
+
+		// 東京駅付近の過去訪問
+		tokyoLat, tokyoLng := 35.6812, 139.7671
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_tokyo",
+			PlaceName: "東京スポット",
+			Category:  "cafe",
+			Latitude:  tokyoLat,
+			Longitude: tokyoLng,
+			VisitedAt: time.Now().Add(-24 * time.Hour),
+		})
+
+		// 横浜駅付近（東京から約30km）の新しい訪問
+		yokohamaLat, yokohamaLng := 35.4660, 139.6225
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_yokohama",
+			PlaceName: "横浜スポット",
+			Category:  "cafe",
+			Latitude:  yokohamaLat,
+			Longitude: yokohamaLng,
+			VisitedAt: time.Now(),
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 2, time.Now(), yokohamaLat, yokohamaLng)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "エリアパイオニア" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'エリアパイオニア' badge for visit 30km away from past visit, got %v", newBadges)
+		}
+	})
+
+	t.Run("過去訪問から10km未満の場所を訪問してもエリアパイオニアバッジを獲得しない", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "area_pioneer2@example.com")
+		database.SeedMasterData(testDB)
+
+		// 東京駅付近の過去訪問
+		tokyoLat, tokyoLng := 35.6812, 139.7671
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_tokyo2",
+			PlaceName: "東京スポット",
+			Category:  "cafe",
+			Latitude:  tokyoLat,
+			Longitude: tokyoLng,
+			VisitedAt: time.Now().Add(-24 * time.Hour),
+		})
+
+		// 新宿駅付近（東京から約6km）の新しい訪問
+		shinjukuLat, shinjukuLng := 35.6896, 139.7006
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_shinjuku",
+			PlaceName: "新宿スポット",
+			Category:  "cafe",
+			Latitude:  shinjukuLat,
+			Longitude: shinjukuLng,
+			VisitedAt: time.Now(),
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 2, time.Now(), shinjukuLat, shinjukuLng)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "エリアパイオニア" {
+				t.Errorf("should not award 'エリアパイオニア' badge for visit only 6km away from past visit")
+			}
+		}
+	})
+
+	t.Run("初めての訪問（過去訪問なし）はエリアパイオニアバッジを獲得しない", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "area_pioneer3@example.com")
+		database.SeedMasterData(testDB)
+
+		yokohamaLat, yokohamaLng := 35.4660, 139.6225
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_first",
+			PlaceName: "初めての場所",
+			Category:  "cafe",
+			Latitude:  yokohamaLat,
+			Longitude: yokohamaLng,
+			VisitedAt: time.Now(),
+		})
+
+		// visitCount=1 は初回訪問なのでエリア判定対象外
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, time.Now(), yokohamaLat, yokohamaLng)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "エリアパイオニア" {
+				t.Errorf("should not award 'エリアパイオニア' badge on first-ever visit")
+			}
+		}
+	})
+
+	t.Run("複数の過去訪問のうち1つから10km以上離れていればエリアパイオニアバッジを獲得", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "area_pioneer4@example.com")
+		database.SeedMasterData(testDB)
+
+		// 近くの過去訪問（新宿）
+		testDB.Create(&models.Visit{
+			UserID: user.ID, PlaceID: "place_near", PlaceName: "近いスポット",
+			Category: "cafe", Latitude: 35.6896, Longitude: 139.7006,
+			VisitedAt: time.Now().Add(-48 * time.Hour),
+		})
+		// 遠くの過去訪問（東京）
+		testDB.Create(&models.Visit{
+			UserID: user.ID, PlaceID: "place_far", PlaceName: "東京スポット",
+			Category: "cafe", Latitude: 35.6812, Longitude: 139.7671,
+			VisitedAt: time.Now().Add(-24 * time.Hour),
+		})
+
+		// 横浜（東京から30km）の新しい訪問
+		yokohamaLat, yokohamaLng := 35.4660, 139.6225
+		testDB.Create(&models.Visit{
+			UserID: user.ID, PlaceID: "place_yokohama2", PlaceName: "横浜スポット",
+			Category: "cafe", Latitude: yokohamaLat, Longitude: yokohamaLng,
+			VisitedAt: time.Now(),
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 3, time.Now(), yokohamaLat, yokohamaLng)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "エリアパイオニア" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'エリアパイオニア' badge when at least one past visit is 10km+ away, got %v", newBadges)
+		}
+	})
 }
 
 // =============================================
