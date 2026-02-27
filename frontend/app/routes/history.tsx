@@ -70,7 +70,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
         setIsLoadingMore(false);
       }
     },
-    [token]
+    [token, showToast]
   );
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
+      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <button
@@ -274,7 +274,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
   return (
     <Link
       to={`/history/${visit.id}`}
-      className="flex items-center gap-4 bg-white p-3 rounded-lg border border-gray-100 shadow-sm transition-transform active:scale-[0.98]"
+      className="flex items-center gap-4 bg-white dark:bg-white/10 p-3 rounded-lg border border-gray-100 dark:border-white/10 shadow-sm transition-transform active:scale-[0.98]"
     >
       {/* サムネイル */}
       <div
@@ -297,14 +297,14 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
       {/* テキスト情報 */}
       <div className="flex flex-1 flex-col min-w-0">
         <div className="flex justify-between items-start">
-          <p className="text-text-main-purple text-base font-bold truncate">
+          <p className="text-text-main-purple dark:text-white text-base font-bold truncate">
             {visit.place_name}
           </p>
         </div>
-        <p className="text-[#75608a] text-xs mt-0.5">
+        <p className="text-[#75608a] dark:text-gray-400 text-xs mt-0.5">
           {visit.vicinity}
         </p>
-        <div className="flex items-center gap-1 mt-2 text-[#75608a]">
+        <div className="flex items-center gap-1 mt-2 text-[#75608a] dark:text-gray-400">
           <span className="material-symbols-outlined text-xs">
             calendar_today
           </span>

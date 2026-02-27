@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/profile";
-import { redirect, useNavigate } from "react-router";
+import { redirect, useNavigate, Link } from "react-router";
 import { getToken, getUser, logout } from "~/lib/auth";
 import { getUserStats, getUserBadges, getProficiency } from "~/api/users";
 import type { UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
+import { useModalClose } from "~/hooks/use-modal-close";
 import { getLevelInfo, getLevelTitle } from "~/utils/level";
 import { getBadgeIcon } from "~/utils/badge-icon";
 
@@ -43,7 +44,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, showToast]);
 
   useEffect(() => {
     loadData();
@@ -65,7 +66,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col pb-12">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
+      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/settings")}
@@ -94,7 +95,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       <div className="flex flex-col items-center px-4 pt-8 pb-4">
         {/* アバター（レベルバッジ付き） */}
         <div className="relative">
-          <div className="size-28 rounded-full border-4 border-primary p-1 bg-white overflow-hidden shadow-xl">
+          <div className="size-28 rounded-full border-4 border-primary p-1 bg-white dark:bg-gray-900 overflow-hidden shadow-xl">
             {user.avatar_url ? (
               <img
                 alt="ユーザーアイコン"
@@ -110,7 +111,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             )}
           </div>
           {stats && (
-            <div className="absolute bottom-0 right-0 bg-primary text-black text-[10px] font-black px-2 py-1 rounded-full border-2 border-white shadow">
+            <div className="absolute bottom-0 right-0 bg-primary text-black text-[10px] font-black px-2 py-1 rounded-full border-2 border-white dark:border-gray-900 shadow">
               LV.{stats.level}
             </div>
           )}
@@ -164,9 +165,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
 
       {/* ── Quick Menu (探索履歴 / ランキング) ── */}
       <div className="px-4 py-4 grid grid-cols-2 gap-3">
-        <a
-          href="/history"
-          className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-transform border-l-4 border-l-primary"
+        <Link
+          to="/history"
+          className="flex items-center gap-3 p-4 bg-white dark:bg-white/10 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm active:scale-95 transition-transform border-l-4 border-l-primary"
         >
           <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center">
             <span className="material-symbols-outlined text-primary text-xl">
@@ -177,12 +178,12 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               Activity
             </p>
-            <p className="font-bold text-sm text-gray-800">探索履歴</p>
+            <p className="font-bold text-sm text-gray-800 dark:text-gray-200">探索履歴</p>
           </div>
-        </a>
+        </Link>
         <button
           onClick={() => {/* TODO: ランキング機能 */}}
-          className="flex items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-95 transition-transform btn-unimplemented"
+          className="flex items-center gap-3 p-4 bg-white dark:bg-white/10 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm active:scale-95 transition-transform btn-unimplemented"
           disabled
         >
           <div className="size-10 rounded-full bg-amber-400/20 flex items-center justify-center">
@@ -194,7 +195,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               Rank
             </p>
-            <p className="font-bold text-sm text-gray-800">ランキング</p>
+            <p className="font-bold text-sm text-gray-800 dark:text-gray-200">ランキング</p>
           </div>
         </button>
       </div>
@@ -202,7 +203,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       {/* ── 脱却チャレンジ統計 ── */}
       {!isLoading && stats && (
         <div className="px-4 pb-2">
-          <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+          <div className="bg-gray-50 dark:bg-white/5 rounded-2xl p-4 border border-gray-100 dark:border-white/10">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Challenge Stats</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
@@ -228,7 +229,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <h3 className="text-base font-bold tracking-tight mb-3 px-1">得意ジャンル</h3>
           <div className="space-y-2">
             {proficiency.slice(0, 3).map((p) => (
-              <div key={p.genre_tag_id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3 border border-gray-100">
+              <div key={p.genre_tag_id} className="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-gray-100 dark:border-white/10">
                 <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
                   <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                     {p.icon}
@@ -258,7 +259,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         <div className="flex items-center justify-between mb-4 px-1">
           <h3 className="text-base font-bold tracking-tight">獲得バッジ</h3>
           {!isLoading && (
-            <span className="text-xs text-gray-500 font-bold bg-gray-200 px-2 py-1 rounded-full">
+            <span className="text-xs text-gray-500 font-bold bg-gray-200 dark:bg-white/10 px-2 py-1 rounded-full">
               {badges.length} 個
             </span>
           )}
@@ -302,8 +303,8 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
 
       {/* ── 探索を開始 ── */}
       <div className="px-6 pt-6 pb-4">
-        <a
-          href="/home"
+        <Link
+          to="/home"
           className="w-full bg-primary text-black font-extrabold h-14 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95 transition-transform"
         >
           <span
@@ -313,7 +314,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             explore
           </span>
           探索を開始
-        </a>
+        </Link>
       </div>
 
       {/* ── Logout Button ── */}
@@ -329,32 +330,55 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
 
       {/* ── Logout Confirmation Modal ── */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 mx-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-bold text-center mb-2c text-black">
-              ログアウトしますか？
-            </h3>
-            <p className="text-sm text-gray-500 text-center mb-6">
-              利用の際には再ログインが必要になります
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 py-3 rounded-full border border-gray-200 font-bold text-sm text-gray-600 transition-colors active:bg-gray-50"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:bg-red-600 disabled:opacity-50"
-              >
-                {isLoggingOut ? "処理中..." : "ログアウトする"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <LogoutModal
+          isLoggingOut={isLoggingOut}
+          onClose={() => setShowLogoutModal(false)}
+          onConfirm={handleLogout}
+        />
       )}
+    </div>
+  );
+}
+
+function LogoutModal({
+  isLoggingOut,
+  onClose,
+  onConfirm,
+}: {
+  isLoggingOut: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  useModalClose(onClose);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 mx-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold text-center mb-2 text-black dark:text-white">
+          ログアウトしますか？
+        </h3>
+        <p className="text-sm text-gray-500 text-center mb-6">
+          利用の際には再ログインが必要になります
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-full border border-gray-200 dark:border-gray-700 font-bold text-sm text-gray-600 dark:text-gray-300 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoggingOut}
+            className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:bg-red-600 disabled:opacity-50"
+          >
+            {isLoggingOut ? "処理中..." : "ログアウトする"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

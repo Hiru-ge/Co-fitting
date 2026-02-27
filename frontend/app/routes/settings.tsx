@@ -5,11 +5,12 @@ import { getToken, getUser, clearToken } from "~/lib/auth";
 import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
+import { useModalClose } from "~/hooks/use-modal-close";
 
 type TabId = "user" | "suggestion";
 
 const INPUT_CLASS =
-  "w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-black focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
+  "w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-black dark:text-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
 const SUBMIT_CLASS =
   "w-full py-3 rounded-full bg-primary text-black font-bold text-sm transition-colors active:scale-95 disabled:opacity-50";
 
@@ -57,7 +58,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100">
+      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
@@ -75,7 +76,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 
       {/* Tab Navigation */}
       <div className="px-4 pt-4" role="tablist">
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+        <div className="flex gap-1 bg-gray-100 dark:bg-white/10 rounded-xl p-1">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -84,8 +85,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === tab.id
-                  ? "bg-white text-gray-800 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
               }`}
             >
               <span className="material-symbols-outlined text-base" aria-hidden="true">
@@ -172,8 +173,8 @@ function UserInfoTab({
   return (
     <div className="space-y-6">
       {/* 表示名変更セクション */}
-      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             badge
           </span>
@@ -228,31 +229,11 @@ function UserInfoTab({
 
       {/* 削除確認モーダル */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">
-              本当にアカウントを削除しますか？
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              すべての訪問記録・バッジ・設定が完全に削除されます。この操作は取り消せません。
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-3 rounded-full border border-gray-200 text-gray-600 font-bold text-sm transition-colors active:scale-95"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={isDeleting}
-                className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:scale-95 hover:bg-red-600 disabled:opacity-50"
-              >
-                {isDeleting ? "削除中..." : "削除する"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteAccountModal
+          isDeleting={isDeleting}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteAccount}
+        />
       )}
     </div>
   );
@@ -323,8 +304,8 @@ function SuggestionTab({
   return (
     <div className="space-y-6">
       {/* 提案半径セクション */}
-      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
+      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             radar
           </span>
@@ -364,8 +345,8 @@ function SuggestionTab({
         </form>
       </section>
 
-      <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
+      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             interests
           </span>
@@ -409,3 +390,42 @@ function SuggestionTab({
   );
 }
 
+function DeleteAccountModal({
+  isDeleting,
+  onClose,
+  onConfirm,
+}: {
+  isDeleting: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  useModalClose(onClose);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">
+          本当にアカウントを削除しますか？
+        </h3>
+        <p className="text-sm text-gray-500 mb-6">
+          すべての訪問記録・バッジ・設定が完全に削除されます。この操作は取り消せません。
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold text-sm transition-colors active:scale-95"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 py-3 rounded-full bg-red-500 text-white font-bold text-sm transition-colors active:scale-95 hover:bg-red-600 disabled:opacity-50"
+          >
+            {isDeleting ? "削除中..." : "削除する"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -54,4 +54,19 @@ describe("BadgeModal", () => {
     expect(screen.getByText("新しいバッジ")).toBeInTheDocument();
     expect(screen.getByText("未知のバッジです")).toBeInTheDocument();
   });
+
+  test("Escapeキーで onClose が呼ばれる", () => {
+    const onClose = vi.fn();
+    render(<BadgeModal badge={badge} onClose={onClose} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("背景オーバーレイクリックで onClose が呼ばれる", () => {
+    const onClose = vi.fn();
+    render(<BadgeModal badge={badge} onClose={onClose} />);
+    const overlay = screen.getByTestId("modal-overlay");
+    fireEvent.click(overlay);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

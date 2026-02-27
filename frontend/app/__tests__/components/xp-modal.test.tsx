@@ -49,4 +49,19 @@ describe("XpModal", () => {
     render(<XpModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  test("Escapeキーで onClose が呼ばれる", () => {
+    const onClose = vi.fn();
+    render(<XpModal {...defaultProps} onClose={onClose} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("背景オーバーレイクリックで onClose が呼ばれる", () => {
+    const onClose = vi.fn();
+    render(<XpModal {...defaultProps} onClose={onClose} />);
+    const overlay = screen.getByTestId("modal-overlay");
+    fireEvent.click(overlay);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

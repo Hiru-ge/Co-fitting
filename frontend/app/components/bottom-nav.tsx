@@ -10,7 +10,7 @@ export default function BottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-200/50">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-gray-200/50 dark:border-white/10">
       <div className="max-w-md mx-auto flex justify-around items-center h-16">
         {navItems.map(({ to, label, icon }) => {
           const isActive = location.pathname === to;
