@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { getToken, getUser } from "~/lib/auth";
@@ -56,6 +56,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [originalOrder, setOriginalOrder] = useState<string[]>([]);
   const [xpModalState, setXpModalState] = useState<XpModalState | null>(null);
   const [badgeQueue, setBadgeQueue] = useState<BadgeInfo[]>([]);
+  // StrictMode の二重呼び出しによるトースト重複を防ぐフラグ
+  const initialLoadDoneRef = useRef(false);
 
   const loadSuggestions = useCallback(async () => {
     setIsLoading(true);
@@ -106,9 +108,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, showToast]);
 
   useEffect(() => {
+    // StrictMode 二重マウントによる重複呼び出しを防ぐ
+    // (ref は StrictMode の unmount/remount 間も保持されるため初回のみ実行)
+    if (initialLoadDoneRef.current) return;
+    initialLoadDoneRef.current = true;
     loadSuggestions();
   }, [loadSuggestions]);
 
