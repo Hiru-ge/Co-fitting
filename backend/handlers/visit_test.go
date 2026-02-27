@@ -1625,3 +1625,151 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 	})
 }
+
+func TestDailyVisitLimit(t *testing.T) {
+	router := setupVisitRouter()
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+
+	t.Run("当日3件完了後に4件目の訪問で429 Too Many Requests", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// JST基準で今日の訪問を3件直接DBに作成
+		now := time.Now().In(jst)
+		todayJST := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+
+		for i := 0; i < 3; i++ {
+			visit := models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("ChIJl_daily_limit_%d", i),
+				PlaceName: fmt.Sprintf("場所%d", i),
+				Category:  "cafe",
+				Latitude:  35.677,
+				Longitude: 139.650,
+				VisitedAt: todayJST.Add(time.Duration(i) * time.Hour),
+			}
+			testDB.Create(&visit)
+		}
+
+		// 4件目のPOSTを試みる
+		body := map[string]interface{}{
+			"place_id":   "ChIJl_4th_visit",
+			"place_name": "4件目のカフェ",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": time.Now().UTC().Format(time.RFC3339),
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusTooManyRequests {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusTooManyRequests, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+		if resp["error"] == nil {
+			t.Error("Expected error message in response")
+		}
+	})
+
+	t.Run("当日2件でも3件目は201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// JST基準で今日の訪問を2件直接DBに作成
+		now := time.Now().In(jst)
+		todayJST := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+
+		for i := 0; i < 2; i++ {
+			visit := models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("ChIJl_under_limit_%d", i),
+				PlaceName: fmt.Sprintf("場所%d", i),
+				Category:  "cafe",
+				Latitude:  35.677,
+				Longitude: 139.650,
+				VisitedAt: todayJST.Add(time.Duration(i) * time.Hour),
+			}
+			testDB.Create(&visit)
+		}
+
+		// 3件目のPOSTは201で成功する
+		body := map[string]interface{}{
+			"place_id":   "ChIJl_3rd_visit",
+			"place_name": "3件目のカフェ",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": time.Now().UTC().Format(time.RFC3339),
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("前日の訪問3件は今日のカウントに含まれない", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// JST基準で昨日の訪問を3件直接DBに作成
+		now := time.Now().In(jst)
+		yesterdayJST := time.Date(now.Year(), now.Month(), now.Day()-1, 12, 0, 0, 0, jst)
+
+		for i := 0; i < 3; i++ {
+			visit := models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("ChIJl_yesterday_%d", i),
+				PlaceName: fmt.Sprintf("昨日の場所%d", i),
+				Category:  "cafe",
+				Latitude:  35.677,
+				Longitude: 139.650,
+				VisitedAt: yesterdayJST.Add(time.Duration(i) * time.Hour),
+			}
+			testDB.Create(&visit)
+		}
+
+		// 今日の1件目のPOSTは201で成功する
+		body := map[string]interface{}{
+			"place_id":   "ChIJl_today_1st",
+			"place_name": "今日の1件目",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": time.Now().UTC().Format(time.RFC3339),
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+	})
+}
