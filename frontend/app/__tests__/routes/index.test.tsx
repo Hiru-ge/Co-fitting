@@ -84,11 +84,15 @@ describe("ランディングページ", () => {
 
     const { clientLoader } = await import("~/routes/index");
 
-    const result = await clientLoader();
-    expect(result).toBeInstanceOf(Response);
-    const response = result as unknown as Response;
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe("/home");
+    try {
+      await clientLoader();
+      expect.fail("redirect がスローされるべき");
+    } catch (response) {
+      expect(response).toBeInstanceOf(Response);
+      const res = response as Response;
+      expect(res.status).toBe(302);
+      expect(res.headers.get("Location")).toBe("/home");
+    }
   });
 
   test("未認証ユーザーは null が返される（リダイレクトなし）", async () => {

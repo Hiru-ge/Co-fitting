@@ -4,7 +4,7 @@ import { getToken } from "~/lib/auth";
 export async function clientLoader() {
   const token = getToken();
   if (token) {
-    return redirect("/home");
+    throw redirect("/home");
   }
   return null;
 }

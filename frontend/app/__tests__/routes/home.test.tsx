@@ -541,9 +541,13 @@ describe("Home画面", () => {
 
 // === Issue #158: レイアウト・スクロール制御 ===
 describe("ホームページ レイアウト・スクロール制御", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     localStorageMock.clear();
+    // 前のdescribeブロックで mockRejectedValue（永続的な実装変更）が設定されている場合があるため
+    // デフォルトの正常レスポンスに明示的にリセットする
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({ places: [...mockPlaces] });
   });
 
   test("ローディング中のルートコンテナにmin-h-maxクラスがない", () => {
