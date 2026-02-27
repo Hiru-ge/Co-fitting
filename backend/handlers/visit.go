@@ -90,7 +90,13 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	var req createVisitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "リクエストの形式が正しくありません"})
+		return
+	}
+
+	// 座標のバリデーション
+	if req.Lat < -90 || req.Lat > 90 || req.Lng < -180 || req.Lng > 180 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "座標が有効範囲外です（lat: -90〜90, lng: -180〜180）"})
 		return
 	}
 
@@ -388,7 +394,7 @@ func (h *VisitHandler) UpdateVisit(c *gin.Context) {
 
 	var req updateVisitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "リクエストの形式が正しくありません"})
 		return
 	}
 

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -68,34 +69,8 @@ func cleanupAllSuggestionCache(t *testing.T) {
 		return
 	}
 	ctx := context.Background()
-	var cursor uint64
-	for {
-		keys, nextCursor, err := testRedisClient.Scan(ctx, cursor, "suggestion:*", 100).Result()
-		if err != nil {
-			break
-		}
-		if len(keys) > 0 {
-			testRedisClient.Del(ctx, keys...)
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
-		}
-	}
-	// 旧キャッシュキーもクリア
-	for {
-		keys, nextCursor, err := testRedisClient.Scan(ctx, cursor, "suggestions:*", 100).Result()
-		if err != nil {
-			break
-		}
-		if len(keys) > 0 {
-			testRedisClient.Del(ctx, keys...)
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
-		}
-	}
+	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestion:*")
+	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestions:*")
 }
 
 // parseSuggestions は SuggestionResult ラッパーから []PlaceResult を取り出すテストヘルパー

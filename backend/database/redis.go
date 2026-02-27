@@ -40,6 +40,48 @@ func CloseRedis() error {
 	return RedisClient.Close()
 }
 
+// DeleteKeysByPattern は指定パターンにマッチするRedisキーをSCAN+DELで一括削除し、削除件数を返す
+func DeleteKeysByPattern(ctx context.Context, client *redis.Client, pattern string) (int64, error) {
+	var deletedCount int64
+	var cursor uint64
+	for {
+		keys, nextCursor, err := client.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			return deletedCount, fmt.Errorf("failed to scan keys for pattern %q: %w", pattern, err)
+		}
+		if len(keys) > 0 {
+			deleted, err := client.Del(ctx, keys...).Result()
+			if err != nil {
+				return deletedCount, fmt.Errorf("failed to delete keys for pattern %q: %w", pattern, err)
+			}
+			deletedCount += deleted
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return deletedCount, nil
+}
+
+// ScanKeysByPattern は指定パターンにマッチするRedisキーを全て収集して返す
+func ScanKeysByPattern(ctx context.Context, client *redis.Client, pattern string) ([]string, error) {
+	var allKeys []string
+	var cursor uint64
+	for {
+		keys, nextCursor, err := client.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan keys for pattern %q: %w", pattern, err)
+		}
+		allKeys = append(allKeys, keys...)
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+	return allKeys, nil
+}
+
 // --- 日次提案キャッシュ ---
 
 // DailySuggestionCacheKey は日次提案キャッシュのキーを生成する
@@ -72,26 +114,7 @@ func SetDailySuggestions(ctx context.Context, client *redis.Client, userID strin
 // 注意: 日次カウントキー（suggestion:count:*）は削除しない
 func ClearDailySuggestionsCache(ctx context.Context, client *redis.Client, userID string) (int64, error) {
 	pattern := fmt.Sprintf("suggestion:daily:%s:*", userID)
-	var deletedCount int64
-	var cursor uint64
-	for {
-		keys, nextCursor, err := client.Scan(ctx, cursor, pattern, 100).Result()
-		if err != nil {
-			return 0, fmt.Errorf("failed to scan daily suggestion cache keys: %w", err)
-		}
-		if len(keys) > 0 {
-			deleted, err := client.Del(ctx, keys...).Result()
-			if err != nil {
-				return deletedCount, fmt.Errorf("failed to delete daily suggestion cache keys: %w", err)
-			}
-			deletedCount += deleted
-		}
-		cursor = nextCursor
-		if cursor == 0 {
-			break
-		}
-	}
-	return deletedCount, nil
+	return DeleteKeysByPattern(ctx, client, pattern)
 }
 
 // --- 日次提案上限到達フラグ ---
