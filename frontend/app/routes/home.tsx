@@ -184,7 +184,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         });
       }
     } catch (err) {
-      showToast(toUserMessage(err));
+      if (err instanceof ApiError && err.status === 429) {
+        setIsCompleted(true);
+      } else {
+        showToast(toUserMessage(err));
+      }
     } finally {
       setCheckingIn(false);
     }

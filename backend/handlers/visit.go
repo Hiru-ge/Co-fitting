@@ -101,7 +101,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 	if todayCount >= MaxDailyVisits {
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily visit limit reached"})
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "本日の訪問上限（3件）に達しました", "code": "DAILY_LIMIT_REACHED"})
 		return
 	}
 
