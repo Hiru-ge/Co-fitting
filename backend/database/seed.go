@@ -70,9 +70,9 @@ func seedBadges(db *gorm.DB) error {
 		},
 		{
 			Name:          "コンフォートゾーン・ブレイカー",
-			Description:   "興味タグ外のジャンルを初めて訪問した",
+			Description:   "脱却訪問を5件達成した",
 			IconURL:       "",
-			ConditionJSON: `{"type":"comfort_zone_break","threshold":1}`,
+			ConditionJSON: `{"type":"comfort_zone_break","threshold":5}`,
 		},
 		{
 			Name:          "ジャンルコレクター Lv.1",
@@ -131,7 +131,14 @@ func seedBadges(db *gorm.DB) error {
 	}
 
 	for _, badge := range badges {
-		if err := db.Where(models.Badge{Name: badge.Name}).FirstOrCreate(&badge).Error; err != nil {
+		b := badge
+		if err := db.Where(models.Badge{Name: b.Name}).
+			Assign(models.Badge{
+				Description:   b.Description,
+				IconURL:       b.IconURL,
+				ConditionJSON: b.ConditionJSON,
+			}).
+			FirstOrCreate(&b).Error; err != nil {
 			return err
 		}
 	}
