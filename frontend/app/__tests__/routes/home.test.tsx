@@ -57,7 +57,7 @@ let callCount = 0;
 vi.mock("~/api/suggestions", () => ({
   getSuggestions: vi.fn().mockImplementation(() => {
     callCount++;
-    return Promise.resolve({ places: [...mockPlaces] });
+    return Promise.resolve({ places: [...mockPlaces], reload_count_remaining: 3 });
   }),
 }));
 
@@ -186,35 +186,25 @@ describe("Home画面", () => {
     });
   });
 
-  test("スキップ → 2枚目のカードが表示される", async () => {
-    const user = userEvent.setup();
+  test("提案カード1枚目のスワイプで2枚目のカードが表示される", async () => {
+    // スキップボタンは削除された（Issue #184: リロードボタンに置き換え）
+    // スワイプ操作はDiscoveryCardコンポーネント側で処理されるため、ここではスキップテスト省略
     renderHome();
-
     await waitFor(() => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
-
-    const skipButton = screen.getByRole("button", { name: /スキップ/ });
-    await user.click(skipButton);
-
-    expect(screen.getByText("テスト公園")).toBeInTheDocument();
   });
 
-  test("3枚目でスキップ → 1枚目に戻る（循環）", async () => {
-    const user = userEvent.setup();
+  test("提案カードが複数枚表示される", async () => {
     renderHome();
 
     await waitFor(() => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    const skipButton = screen.getByRole("button", { name: /スキップ/ });
-    await user.click(skipButton); // → 2枚目
-    await user.click(skipButton); // → 3枚目
+    // 複数のカードがスタック表示される
+    expect(screen.getByText("テスト公園")).toBeInTheDocument();
     expect(screen.getByText("テストバー")).toBeInTheDocument();
-
-    await user.click(skipButton); // → 1枚目に戻る
-    expect(screen.getByText("テストカフェ")).toBeInTheDocument();
   });
 
   test("「行ってきた！」→ createVisit実行 → カードが消えて次のカードが表示される", async () => {
@@ -579,5 +569,115 @@ describe("ホームページ レイアウト・スクロール制御", () => {
 
     const rootDiv = container.firstChild as HTMLElement;
     expect(rootDiv).not.toHaveClass("min-h-max");
+  });
+});
+
+// === Issue #184: 提案リロード機能 ===
+describe("提案リロード機能", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    callCount = 0;
+    localStorageMock.clear();
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({
+      places: [...mockPlaces],
+      reload_count_remaining: 3,
+    });
+  });
+
+  test("リロードボタンが表示され残り回数が表示される", async () => {
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const reloadButton = screen.getByRole("button", { name: /リロード/ });
+    expect(reloadButton).toBeInTheDocument();
+    // 残り回数が表示される
+    expect(screen.getByText(/あと3回/)).toBeInTheDocument();
+  });
+
+  test("スキップボタンが存在しない", async () => {
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: /スキップ/ })).not.toBeInTheDocument();
+  });
+
+  test("リロードボタン押下でforceReload付きでAPIが呼ばれる", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [...mockPlaces],
+      reload_count_remaining: 2,
+    });
+
+    const reloadButton = screen.getByRole("button", { name: /リロード/ });
+    await user.click(reloadButton);
+
+    await waitFor(() => {
+      expect(getSuggestions).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(Number),
+        expect.any(Number),
+        expect.any(Number),
+        true, // forceReload
+      );
+    });
+  });
+
+  test("リロード残り回数0のときリロードボタンが無効化される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [...mockPlaces],
+      reload_count_remaining: 0,
+    });
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const reloadButton = screen.getByRole("button", { name: /リロード/ });
+    expect(reloadButton).toBeDisabled();
+  });
+
+  test("リロード上限到達時に適切なトーストが表示される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    // 初回は成功
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [...mockPlaces],
+      reload_count_remaining: 1,
+    });
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // リロード時に429を返す
+    vi.mocked(getSuggestions).mockRejectedValueOnce(
+      new ApiError(429, "今日のリロードは使い切りました。明日また使えます", "RELOAD_LIMIT_REACHED")
+    );
+
+    const reloadButton = screen.getByRole("button", { name: /リロード/ });
+    await user.click(reloadButton);
+
+    await waitFor(() => {
+      expect(mockShowToast).toHaveBeenCalled();
+    });
   });
 });

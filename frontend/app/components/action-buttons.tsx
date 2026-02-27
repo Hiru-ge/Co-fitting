@@ -1,25 +1,39 @@
 interface ActionButtonsProps {
   onCheckIn: () => void;
-  onSkip: () => void;
+  onReload: () => void;
   isVisited: boolean;
   isCheckingIn: boolean;
+  reloadCountRemaining: number;
+  isReloading: boolean;
 }
 
 export default function ActionButtons({
   onCheckIn,
-  onSkip,
+  onReload,
   isVisited,
   isCheckingIn,
+  reloadCountRemaining,
+  isReloading,
 }: ActionButtonsProps) {
+  const isReloadDisabled = reloadCountRemaining <= 0 || isReloading;
+
   return (
     <div className="flex items-center gap-4 w-full">
-      <button
-        onClick={onSkip}
-        aria-label="スキップ"
-        className="size-14 flex items-center justify-center rounded-full bg-white dark:bg-white/10 shadow-md"
-      >
-        <span className="material-symbols-outlined text-2xl text-gray-500">skip_next</span>
-      </button>
+      <div className="flex flex-col items-center gap-1">
+        <button
+          onClick={onReload}
+          disabled={isReloadDisabled}
+          aria-label="リロード"
+          className="size-14 flex items-center justify-center rounded-full bg-white dark:bg-white/10 shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+        >
+          <span className={`material-symbols-outlined text-2xl text-gray-500 ${isReloading ? "animate-spin" : ""}`}>
+            {isReloading ? "progress_activity" : "refresh"}
+          </span>
+        </button>
+        <span className="text-xs text-gray-400">
+          あと{reloadCountRemaining}回
+        </span>
+      </div>
 
       <button
         onClick={onCheckIn}

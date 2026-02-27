@@ -306,8 +306,9 @@ func TestUpdateInterests(t *testing.T) {
 	})
 }
 
-// TestUpdateInterestsClearsDailyCache は興味タグ更新後に日次キャッシュが無効化されることを確認する
-func TestUpdateInterestsClearsDailyCache(t *testing.T) {
+// TestUpdateInterestsDoesNotClearDailyCache は興味タグ更新だけでは日次キャッシュが無効化されないことを確認する
+// リロード（force_reload）を使って初めて新しい興味タグが反映される
+func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 	if testRedisClient == nil {
 		t.Skip("Redisクライアントが設定されていません")
 	}
@@ -325,7 +326,7 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 	}
 	mixedPlaces := append(cafePlaces, museumPlaces...)
 
-	t.Run("興味タグ変更後の提案が新しいタグを反映する（日次キャッシュが無効化される）", func(t *testing.T) {
+	t.Run("興味タグ変更だけではキャッシュは残り、force_reloadで初めて新タグが反映される", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -373,22 +374,12 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 		}
 
 		firstResp := parseSuggestions(t, w1.Body.Bytes())
-
-		// カフェが多いことを確認
-		firstCafeCount := 0
-		for _, p := range firstResp {
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					firstCafeCount++
-					break
-				}
-			}
-		}
-		if firstCafeCount < 2 {
-			t.Errorf("初回提案でカフェが2件以上であることを期待しましたが、%d件でした", firstCafeCount)
+		firstPlaceIDs := make([]string, len(firstResp))
+		for i, p := range firstResp {
+			firstPlaceIDs[i] = p.PlaceID
 		}
 
-		// ステップ3: 興味タグを博物館に変更
+		// ステップ3: 興味タグを博物館に変更（UpdateInterestsはキャッシュをクリアしない）
 		var otherTags []models.GenreTag
 		testDB.Where("name != ? AND name != ?", "カフェ", "博物館・科学館").Limit(2).Find(&otherTags)
 		if len(otherTags) < 2 {
@@ -408,7 +399,7 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 			t.Fatalf("興味タグ更新失敗: status %d, body: %s", w2.Code, w2.Body.String())
 		}
 
-		// ステップ4: 再度提案リクエスト（博物館タグで日次キャッシュが再生成されるべき）
+		// ステップ4: タグ変更後に通常リクエスト → キャッシュが残っているので同じ提案が返る
 		jsonBody2, _ := json.Marshal(body)
 		w3 := httptest.NewRecorder()
 		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody2))
@@ -417,23 +408,52 @@ func TestUpdateInterestsClearsDailyCache(t *testing.T) {
 		suggestionRouter.ServeHTTP(w3, req3)
 
 		if w3.Code != http.StatusOK {
-			t.Fatalf("タグ変更後の提案リクエスト失敗: status %d, body: %s", w3.Code, w3.Body.String())
+			t.Fatalf("タグ変更後の通常リクエスト失敗: status %d, body: %s", w3.Code, w3.Body.String())
 		}
 
 		secondResp := parseSuggestions(t, w3.Body.Bytes())
 
-		// 博物館が多いことを確認（タグ変更が反映されている）
-		secondMuseumCount := 0
-		for _, p := range secondResp {
+		// キャッシュが残っているので同じ施設が返るはず
+		secondPlaceIDs := make([]string, len(secondResp))
+		for i, p := range secondResp {
+			secondPlaceIDs[i] = p.PlaceID
+		}
+		if len(firstPlaceIDs) != len(secondPlaceIDs) {
+			t.Errorf("タグ変更後もキャッシュから同じ件数が返るはず: first=%d, second=%d", len(firstPlaceIDs), len(secondPlaceIDs))
+		}
+		for i := range firstPlaceIDs {
+			if i < len(secondPlaceIDs) && firstPlaceIDs[i] != secondPlaceIDs[i] {
+				t.Errorf("タグ変更後もキャッシュから同じ施設が返るはず: first[%d]=%s, second[%d]=%s", i, firstPlaceIDs[i], i, secondPlaceIDs[i])
+			}
+		}
+
+		// ステップ5: force_reload で引き直し → 博物館が多い提案が返る
+		reloadBody := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000, "force_reload": true}
+		reloadJSON, _ := json.Marshal(reloadBody)
+		w4 := httptest.NewRecorder()
+		req4, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
+		req4.Header.Set("Content-Type", "application/json")
+		req4.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		suggestionRouter.ServeHTTP(w4, req4)
+
+		if w4.Code != http.StatusOK {
+			t.Fatalf("force_reloadリクエスト失敗: status %d, body: %s", w4.Code, w4.Body.String())
+		}
+
+		thirdResp := parseSuggestions(t, w4.Body.Bytes())
+
+		// 博物館が多いことを確認（タグ変更がforce_reloadで反映されている）
+		thirdMuseumCount := 0
+		for _, p := range thirdResp {
 			for _, typ := range p.Types {
 				if typ == "museum" {
-					secondMuseumCount++
+					thirdMuseumCount++
 					break
 				}
 			}
 		}
-		if secondMuseumCount < 2 {
-			t.Errorf("タグ変更後の提案で博物館が2件以上であることを期待しましたが、%d件でした（日次キャッシュが正しく無効化されていない可能性があります）", secondMuseumCount)
+		if thirdMuseumCount < 2 {
+			t.Errorf("force_reload後の提案で博物館が2件以上であることを期待しましたが、%d件でした", thirdMuseumCount)
 		}
 	})
 
