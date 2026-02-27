@@ -9,10 +9,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 技術スタック
 
 - **Frontend**: React (TypeScript) + Vite, Tailwind CSS, React Query
-- **Backend**: Go (net/http or Echo/Chi), JWT認証
+- **Backend**: Go (Gin), JWT認証
 - **Database**: MySQL 8.x, Redis (セッション/キャッシュ)
 - **Infrastructure**: AWS (ECS or EC2, RDS, ElastiCache, S3 + CloudFront, Route 53)
-- **External APIs**: Google Maps Places API, Google OAuth, Gemini API (Phase 2〜)
+- **External APIs**: Google Maps Places API, Google OAuth, Gemini API (Phase 3～)
 - **Testing**: Go: `testing` + testify / React: Vitest + React Testing Library
 - **Linting**: Go: golangci-lint / React: ESLint + Prettier
 - **API仕様**: OpenAPI (Swagger)
@@ -34,7 +34,7 @@ Phase 1のスコープ（実装済み・ドッグフーディング中）:
 - 脱却モード
 - Phase 0機能（提案・訪問記録・JWT認証）はすべて完了済み
 
-Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソーシャル機能、フレンド機能などのPhase 2以降の機能は一切実装しないこと。Phase 1はあくまで「基本的なゲーミフィケーション要素とパーソナライズ提案の実装と品質向上」に集中すること。
+Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソーシャル機能、フレンド機能などのPhase 3以降の機能は一切実装しないこと。Phase 1はあくまで「基本的なゲーミフィケーション要素とパーソナライズ提案の実装と品質向上」に集中すること。
 
 ## フロントエンド注意事項
 
