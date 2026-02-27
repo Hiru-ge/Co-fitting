@@ -443,7 +443,7 @@ const visitedExclusionDays = 30
 func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	var req suggestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "リクエストの形式が正しくありません"})
 		return
 	}
 
@@ -674,11 +674,21 @@ func selectRandomPlaces(candidates []PlaceResult, n int) []PlaceResult {
 
 // filterOutVisited は最近（30日以内）訪問済みの施設を除外する。
 // visitedExclusionDays 日より前に訪問した施設は除外対象から外し、再提案候補として扱う。
+// 候補のplace_idのみに絞ってクエリすることで、全訪問履歴のロードを回避する。
 func filterOutVisited(db *gorm.DB, userID uint64, places []PlaceResult) []PlaceResult {
+	if len(places) == 0 {
+		return nil
+	}
+
+	candidateIDs := make([]string, len(places))
+	for i, p := range places {
+		candidateIDs[i] = p.PlaceID
+	}
+
 	threshold := time.Now().AddDate(0, 0, -visitedExclusionDays)
 	var visitedPlaceIDs []string
 	db.Model(&models.Visit{}).
-		Where("user_id = ? AND visited_at >= ?", userID, threshold).
+		Where("user_id = ? AND visited_at >= ? AND place_id IN ?", userID, threshold, candidateIDs).
 		Pluck("place_id", &visitedPlaceIDs)
 
 	visitedSet := make(map[string]bool, len(visitedPlaceIDs))

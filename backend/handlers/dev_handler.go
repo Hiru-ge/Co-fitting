@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Hiru-ge/roamble/config"
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
@@ -35,31 +36,14 @@ func (h *DevHandler) ResetSuggestionCache(c *gin.Context) {
 
 	var deletedCount int64
 
-	// suggestions:* パターンと suggestion:daily:* パターンの両方を削除
 	patterns := []string{"suggestions:*", "suggestion:daily:*"}
 	for _, pattern := range patterns {
-		var cursor uint64
-		for {
-			keys, nextCursor, err := h.RedisClient.Scan(ctx, cursor, pattern, 100).Result()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
-				return
-			}
-
-			if len(keys) > 0 {
-				deleted, err := h.RedisClient.Del(ctx, keys...).Result()
-				if err != nil {
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete cache keys"})
-					return
-				}
-				deletedCount += deleted
-			}
-
-			cursor = nextCursor
-			if cursor == 0 {
-				break
-			}
+		deleted, err := database.DeleteKeysByPattern(ctx, h.RedisClient, pattern)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete cache keys"})
+			return
 		}
+		deletedCount += deleted
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -74,19 +58,12 @@ func (h *DevHandler) GetSuggestionStats(c *gin.Context) {
 	var allKeys []string
 	patterns := []string{"suggestions:*", "suggestion:daily:*"}
 	for _, pattern := range patterns {
-		var cursor uint64
-		for {
-			keys, nextCursor, err := h.RedisClient.Scan(ctx, cursor, pattern, 100).Result()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
-				return
-			}
-			allKeys = append(allKeys, keys...)
-			cursor = nextCursor
-			if cursor == 0 {
-				break
-			}
+		keys, err := database.ScanKeysByPattern(ctx, h.RedisClient, pattern)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to scan cache keys"})
+			return
 		}
+		allKeys = append(allKeys, keys...)
 	}
 
 	keyStats := make([]cacheKeyStats, 0, len(allKeys))

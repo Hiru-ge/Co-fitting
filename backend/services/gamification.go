@@ -199,15 +199,16 @@ func isWeekendVisitJST(t time.Time) bool {
 	return w == time.Saturday || w == time.Sunday
 }
 
-// weekStart は指定時刻が属する週の月曜日（0時0分0秒UTC）を返す
+// weekStart は指定時刻が属する週の月曜日（0時0分0秒JST）を返す
+// 他のJST判定関数（isNightVisitJST, isWeekendVisitJST）とタイムゾーンを統一
 func weekStart(t time.Time) time.Time {
-	t = t.UTC()
+	t = t.In(jst)
 	weekday := int(t.Weekday())
 	if weekday == 0 {
 		weekday = 7 // Sunday → 7
 	}
 	monday := t.AddDate(0, 0, -(weekday - 1))
-	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, jst)
 }
 
 // UpdateGenreProficiency はジャンル別熟練度を更新する
@@ -265,24 +266,29 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		return nil, err
 	}
 
-	// 判定に必要な値を取得
+	// 判定に必要な集計値を一括取得（N+1クエリ回避）
 	var user models.User
 	if err := db.First(&user, userID).Error; err != nil {
 		return nil, err
 	}
 
-	// ユニークジャンル数を取得
 	var uniqueGenreCount int64
 	db.Model(&models.Visit{}).
 		Where("user_id = ? AND genre_tag_id IS NOT NULL", userID).
 		Distinct("genre_tag_id").
 		Count(&uniqueGenreCount)
 
-	// コンフォートゾーン脱却訪問数
 	var comfortBreakCount int64
 	db.Model(&models.Visit{}).
 		Where("user_id = ? AND is_comfort_zone = ?", userID, true).
 		Count(&comfortBreakCount)
+
+	// new_area・weekend_visits判定用: 全訪問の座標・日時を一括取得
+	var allVisits []models.Visit
+	db.Model(&models.Visit{}).
+		Where("user_id = ?", userID).
+		Select("lat, lng, visited_at").
+		Find(&allVisits)
 
 	// 新規獲得バッジを追加
 	var newBadges []models.Badge
@@ -309,18 +315,12 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		case "streak_weeks":
 			earned = user.StreakCount >= cond.Threshold
 		case "new_area":
-			// 過去訪問が存在し（visitCount > 1）、かつ lat/lng が渡されている場合のみ判定
 			if len(coords) >= 2 && visitCount > 1 {
 				currentLat, currentLng := coords[0], coords[1]
-				// 座標が未設定の場合はスキップ
 				if currentLat == 0 && currentLng == 0 {
 					break
 				}
-				var prevVisits []models.Visit
-				db.Model(&models.Visit{}).Where("user_id = ?", userID).
-					Select("lat, lng").Find(&prevVisits)
-				for _, pv := range prevVisits {
-					// 過去訪問も座標未設定の場合はスキップ
+				for _, pv := range allVisits {
 					if pv.Latitude == 0 && pv.Longitude == 0 {
 						continue
 					}
@@ -333,14 +333,8 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		case "night_visit":
 			earned = isNightVisitJST(visitedAt)
 		case "weekend_visits":
-			// JST換算で土・日の訪問件数をカウント
-			var weekendVisits []models.Visit
-			db.Model(&models.Visit{}).
-				Where("user_id = ?", userID).
-				Select("visited_at").
-				Find(&weekendVisits)
 			weekendCount := 0
-			for _, v := range weekendVisits {
+			for _, v := range allVisits {
 				if isWeekendVisitJST(v.VisitedAt) {
 					weekendCount++
 				}
