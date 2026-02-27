@@ -433,23 +433,55 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		}
 	})
 
-	t.Run("コンフォートゾーン脱却時に「コンフォートゾーン・ブレイカー」バッジを獲得", func(t *testing.T) {
+	t.Run("コンフォートゾーン脱却訪問4件ではバッジが付与されない", func(t *testing.T) {
 		cleanupUsers(t)
-		user := createUser(t, "badge3@example.com")
+		user := createUser(t, "badge3a@example.com")
 		database.SeedMasterData(testDB)
 
-		testDB.Create(&models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place1",
-			PlaceName:     "テスト場所",
-			Category:      "museum",
-			Latitude:      35.67,
-			Longitude:     139.65,
-			IsComfortZone: true,
-			VisitedAt:     time.Now(),
-		})
+		for i := 0; i < 4; i++ {
+			testDB.Create(&models.Visit{
+				UserID:        user.ID,
+				PlaceID:       fmt.Sprintf("place_czb4_%d", i),
+				PlaceName:     "テスト場所",
+				Category:      "museum",
+				Latitude:      35.67,
+				Longitude:     139.65,
+				IsComfortZone: true,
+				VisitedAt:     time.Now(),
+			})
+		}
 
-		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, true, 1, time.Now())
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, true, 4, time.Now())
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "コンフォートゾーン・ブレイカー" {
+				t.Errorf("should not award 'コンフォートゾーン・ブレイカー' on 4th escape visit, got %v", newBadges)
+			}
+		}
+	})
+
+	t.Run("コンフォートゾーン脱却訪問5件目でバッジが付与される", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "badge3b@example.com")
+		database.SeedMasterData(testDB)
+
+		for i := 0; i < 5; i++ {
+			testDB.Create(&models.Visit{
+				UserID:        user.ID,
+				PlaceID:       fmt.Sprintf("place_czb5_%d", i),
+				PlaceName:     "テスト場所",
+				Category:      "museum",
+				Latitude:      35.67,
+				Longitude:     139.65,
+				IsComfortZone: true,
+				VisitedAt:     time.Now(),
+			})
+		}
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, true, 5, time.Now())
 		if err != nil {
 			t.Fatalf("CheckAndAwardBadges failed: %v", err)
 		}
@@ -461,7 +493,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Errorf("expected 'コンフォートゾーン・ブレイカー' badge, got %v", newBadges)
+			t.Errorf("expected 'コンフォートゾーン・ブレイカー' badge on 5th escape visit, got %v", newBadges)
 		}
 	})
 
