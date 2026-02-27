@@ -7,4 +7,5 @@ export interface Place {
   rating: number;
   types: string[];
   photo_reference?: string;
+  is_interest_match?: boolean;
 }

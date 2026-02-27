@@ -19,14 +19,15 @@ import (
 )
 
 type PlaceResult struct {
-	PlaceID        string   `json:"place_id"`
-	Name           string   `json:"name"`
-	Vicinity       string   `json:"vicinity"`
-	Lat            float64  `json:"lat"`
-	Lng            float64  `json:"lng"`
-	Rating         float32  `json:"rating"`
-	Types          []string `json:"types"`
-	PhotoReference string   `json:"photo_reference,omitempty"`
+	PlaceID          string   `json:"place_id"`
+	Name             string   `json:"name"`
+	Vicinity         string   `json:"vicinity"`
+	Lat              float64  `json:"lat"`
+	Lng              float64  `json:"lng"`
+	Rating           float32  `json:"rating"`
+	Types            []string `json:"types"`
+	PhotoReference   string   `json:"photo_reference,omitempty"`
+	IsInterestMatch  bool     `json:"is_interest_match"`
 }
 
 type PlacesSearcher interface {
@@ -148,11 +149,12 @@ func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, err
 	return names, nil
 }
 
-// classifyByInterest は候補を興味内・興味外に分類する
+// classifyByInterest は候補を興味内・興味外に分類し、興味内にはIsInterestMatch=trueを設定する
 func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool) (inInterest, outOfInterest []PlaceResult) {
 	for _, p := range places {
 		genreName := getGenreNameFromTypes(p.Types)
 		if genreName != "" && interestGenreNames[genreName] {
+			p.IsInterestMatch = true
 			inInterest = append(inInterest, p)
 		} else {
 			outOfInterest = append(outOfInterest, p)
@@ -345,6 +347,16 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 				// キャッシュヒットしても訪問済み施設を除外
 				filtered := filterOutVisited(h.DB, userID, dailyPlaces)
 				if len(filtered) > 0 {
+					// 最新の興味タグでis_interest_matchを再設定
+					interestNames, _ := getUserInterestGenreNames(h.DB, userID)
+					for i := range filtered {
+						if len(interestNames) > 0 {
+							genreName := getGenreNameFromTypes(filtered[i].Types)
+							filtered[i].IsInterestMatch = genreName != "" && interestNames[genreName]
+						} else {
+							filtered[i].IsInterestMatch = false
+						}
+					}
 					c.JSON(http.StatusOK, SuggestionResult{Places: filtered})
 					return
 				}
