@@ -6,9 +6,15 @@ vi.mock("~/utils/geolocation", () => ({
   calcDistance: vi.fn().mockReturnValue(500),
 }));
 
+vi.mock("~/utils/helpers", () => ({
+  formatDistance: vi.fn().mockReturnValue("500m"),
+}));
+
+import DiscoveryCard from "~/components/discovery-card";
+
 const basePlace = {
-  place_id: "cafe_1",
-  name: "テストカフェ",
+  place_id: "place_1",
+  name: "テストスポット",
   vicinity: "渋谷区1-1",
   lat: 35.66,
   lng: 139.7,

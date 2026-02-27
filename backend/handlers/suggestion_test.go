@@ -1507,3 +1507,131 @@ func TestInterestMatchFlag(t *testing.T) {
 		}
 	})
 }
+
+// TestBreakoutModeSuggestion は Issue #179 の脱却モードテスト
+// 提案APIレスポンスの各施設に is_interest_match フラグが正しく設定されることを確認する
+func TestBreakoutModeSuggestion(t *testing.T) {
+	cafePlaces := []PlaceResult{
+		{PlaceID: "cafe_bm_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "cafe_bm_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
+	}
+	museumPlaces := []PlaceResult{
+		{PlaceID: "museum_bm_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
+		{PlaceID: "museum_bm_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
+	}
+	mixedPlaces := append(cafePlaces, museumPlaces...)
+
+	t.Run("興味タグありユーザーへの提案でis_interest_matchフラグが含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		mock := &mockPlacesClient{Results: mixedPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		// is_interest_match フィールドを確認するために生のJSONをデコード
+		var result struct {
+			Places []struct {
+				PlaceID        string   `json:"place_id"`
+				Types          []string `json:"types"`
+				IsInterestMatch *bool   `json:"is_interest_match"`
+			} `json:"places"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
+		}
+
+		if len(result.Places) == 0 {
+			t.Fatal("Expected at least 1 place")
+		}
+
+		// 全施設に is_interest_match が設定されており、値が正しいことを確認
+		for _, p := range result.Places {
+			if p.IsInterestMatch == nil {
+				t.Errorf("Place %s: expected is_interest_match to be set (not nil)", p.PlaceID)
+				continue
+			}
+			isCafe := false
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					isCafe = true
+					break
+				}
+			}
+			if isCafe && !*p.IsInterestMatch {
+				t.Errorf("Place %s (cafe): expected is_interest_match=true, got false", p.PlaceID)
+			}
+			if !isCafe && *p.IsInterestMatch {
+				t.Errorf("Place %s (museum): expected is_interest_match=false, got true", p.PlaceID)
+			}
+		}
+	})
+
+	t.Run("興味タグなしユーザーへの提案でis_interest_matchはnil", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+		// 興味タグを設定しない
+
+		mock := &mockPlacesClient{Results: mixedPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var result struct {
+			Places []struct {
+				PlaceID        string `json:"place_id"`
+				IsInterestMatch *bool `json:"is_interest_match"`
+			} `json:"places"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
+		}
+
+		for _, p := range result.Places {
+			if p.IsInterestMatch != nil {
+				t.Errorf("Place %s: expected is_interest_match=nil (no interest tags), got %v", p.PlaceID, *p.IsInterestMatch)
+			}
+		}
+	})
+}

@@ -432,6 +432,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	interestGenreNames, err := getUserInterestGenreNames(h.DB, userID)
 	if err != nil || len(interestGenreNames) == 0 {
 		selected = selectRandomPlaces(unvisited, maxDailySuggestions)
+		// 興味タグ未設定時は is_interest_match をセットしない（nil のまま）
 	} else {
 		inInterest, outOfInterest := classifyByInterest(unvisited, interestGenreNames)
 		// 興味タグが設定されているが半径内に興味内施設が0件の場合はユーザーに通知
@@ -439,6 +440,12 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 			notice = "NO_INTEREST_PLACES"
 		}
 		selected = selectPersonalizedPlaces(inInterest, outOfInterest)
+		// is_interest_match フラグをセット（興味内/外を示す）
+		for i := range selected {
+			genreName := getGenreNameFromTypes(selected[i].Types)
+			isMatch := genreName != "" && interestGenreNames[genreName]
+			selected[i].IsInterestMatch = &isMatch
+		}
 	}
 
 	// 6. 日次キャッシュに保存（カウントは全提案訪問時にのみ設定。ここでは設定しない）

@@ -34,7 +34,7 @@ export interface CreateVisitRequest {
   lng: number;
   rating?: number;
   memo?: string;
-  is_comfort_zone?: boolean;
+  place_types?: string[]; // バックエンドの is_comfort_zone 自動判定に使用
   visited_at: string;
 }
 
