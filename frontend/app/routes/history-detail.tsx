@@ -6,7 +6,7 @@ import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import { formatDate } from "~/utils/helpers";
 import { getCategoryInfoByKey } from "~/utils/category-map";
-import { API_BASE_URL } from "~/utils/constants";
+import { apiCall } from "~/api/client";
 import type { Visit } from "~/types/visit";
 
 // React Router v7 の型は +types/ から自動生成される想定だが、
@@ -62,14 +62,8 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
 
       // 写真を取得
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/api/places/${data.place_id}/photo`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.ok) {
-          const json = await res.json();
-          setPhotoUrl(json.photo_url);
-        }
+        const json = await apiCall(`/api/places/${data.place_id}/photo`, token);
+        setPhotoUrl(json.photo_url);
       } catch {
         // 写真取得失敗はスキップ
       }

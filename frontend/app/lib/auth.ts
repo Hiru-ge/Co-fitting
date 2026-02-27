@@ -1,36 +1,25 @@
 import { apiCall } from "~/api/client";
 import { API_BASE_URL } from "~/utils/constants";
 import type { User } from "~/types/auth";
+import {
+  getToken as getStoredToken,
+  setToken as setStoredToken,
+  clearToken as clearStoredToken,
+  getRefreshToken,
+} from "~/lib/token-storage";
 
-const TOKEN_KEY = "roamble_token";
-const REFRESH_TOKEN_KEY = "roamble_refresh_token";
-
-export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setToken(accessToken: string, refreshToken?: string): void {
-  localStorage.setItem(TOKEN_KEY, accessToken);
-  if (refreshToken) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  }
-}
-
-export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
+export { getStoredToken as getToken, setStoredToken as setToken, clearStoredToken as clearToken };
 
 export async function logout(): Promise<void> {
   const token = getToken();
-  const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-  
+  const refresh = getRefreshToken();
+
   if (token) {
     try {
       // リクエストボディにリフレッシュトークンを含める（セキュリティ向上のため）
       const requestBody: { refresh_token?: string } = {};
-      if (refreshToken) {
-        requestBody.refresh_token = refreshToken;
+      if (refresh) {
+        requestBody.refresh_token = refresh;
       }
 
       await fetch(`${API_BASE_URL}/api/auth/logout`, {
@@ -49,7 +38,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function refreshToken(): Promise<void> {
-  const refresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+  const refresh = getRefreshToken();
 
   const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
     method: "POST",

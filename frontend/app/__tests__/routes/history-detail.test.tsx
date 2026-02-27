@@ -335,6 +335,38 @@ describe("HistoryDetail", () => {
     });
   });
 
+  describe("写真取得の apiCall 経由化", () => {
+    it("写真取得が apiCall 経由であること（Content-Type ヘッダーを含む）", async () => {
+      mockGetVisit.mockResolvedValue(mockVisit);
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ photo_url: "https://example.com/photo.jpg" }),
+      });
+
+      render(
+        <MemoryRouter>
+          <HistoryDetail
+            loaderData={{ user: mockUser, token: mockToken, visitId: 1 }}
+            params={{ id: "1" }}
+            matches={[] as any}
+          />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        // apiCall 経由なら Content-Type: application/json ヘッダーが含まれる
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining("/api/places/place1/photo"),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              "Content-Type": "application/json",
+            }),
+          })
+        );
+      });
+    });
+  });
+
   describe("API取得失敗のハンドリング", () => {
     it("訪問詳細の取得失敗時にエラートーストを表示する", async () => {
       mockGetVisit.mockRejectedValue(new Error("Not found"));

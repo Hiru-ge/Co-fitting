@@ -1,5 +1,6 @@
 import { API_BASE_URL } from "~/utils/constants";
 import { ApiError, parseApiError } from "~/utils/error";
+import { getToken, clearToken, getRefreshToken, setToken } from "~/lib/token-storage";
 
 /**
  * 認証付き API 呼び出しヘルパー
@@ -31,7 +32,7 @@ export async function apiCall(
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       // リフレッシュ成功 → 新しいトークンでリトライ
-      const newToken = localStorage.getItem("roamble_token");
+      const newToken = getToken();
       if (newToken) {
         const retryRes = await fetch(`${API_BASE_URL}${endpoint}`, {
           ...options,
@@ -49,8 +50,7 @@ export async function apiCall(
     }
 
     // リフレッシュ失敗 → トークンクリアして /login へリダイレクト
-    localStorage.removeItem("roamble_token");
-    localStorage.removeItem("roamble_refresh_token");
+    clearToken();
     window.location.href = "/login";
     throw new ApiError(401, "認証の有効期限が切れました。再ログインしてください");
   }
@@ -64,7 +64,7 @@ export async function apiCall(
  * @returns リフレッシュ成功なら true
  */
 async function tryRefreshToken(): Promise<boolean> {
-  const refresh = localStorage.getItem("roamble_refresh_token");
+  const refresh = getRefreshToken();
   if (!refresh) return false;
 
   try {
@@ -77,10 +77,7 @@ async function tryRefreshToken(): Promise<boolean> {
     if (!res.ok) return false;
 
     const { access_token, refresh_token } = await res.json();
-    localStorage.setItem("roamble_token", access_token);
-    if (refresh_token) {
-      localStorage.setItem("roamble_refresh_token", refresh_token);
-    }
+    setToken(access_token, refresh_token);
     return true;
   } catch {
     return false;
