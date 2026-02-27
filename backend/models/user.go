@@ -12,7 +12,7 @@ type User struct {
 	TotalXP      int        `gorm:"default:0;not null" json:"total_xp"`
 	StreakCount  int        `gorm:"default:0;not null" json:"streak_count"`
 	StreakLast   *time.Time `json:"streak_last"`
-	SearchRadius uint       `gorm:"default:5000;not null" json:"search_radius"`
+	SearchRadius uint       `gorm:"default:10000;not null" json:"search_radius"`
 	SettingsJSON *string    `gorm:"type:json" json:"settings_json"`
 	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`

@@ -1357,7 +1357,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 		}
 	})
 
-	t.Run("radius=0 のときユーザーのsearch_radius設定値(デフォルト5000)が使われる", func(t *testing.T) {
+	t.Run("radius=0 のときユーザーのsearch_radius設定値(デフォルト10000)が使われる", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
 			Results: []PlaceResult{
 				{PlaceID: "place3", Name: "Test Place 3", Types: []string{"park"}},
@@ -1377,7 +1377,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 		reqBody := suggestionRequest{
 			Lat: 35.6762,
 			Lng: 139.6503,
-			// Radius未指定（0になる）→ ユーザーのsearch_radius（DB デフォルト 5000）が使われる
+			// Radius未指定（0になる）→ ユーザーのsearch_radius（DB デフォルト 10000）が使われる
 		}
 		body, _ := json.Marshal(reqBody)
 		req := httptest.NewRequest("POST", "/api/suggestions", bytes.NewReader(body))
@@ -1391,9 +1391,9 @@ func TestSuggestRadiusLimit(t *testing.T) {
 			t.Errorf("Expected status 200, got %d", w.Code)
 		}
 
-		// ユーザーのsearch_radius（DBデフォルト5000）が使われる
-		if mock.LastRadius != 5000 {
-			t.Errorf("Expected default radius to be 5000 (user's search_radius), got %d", mock.LastRadius)
+		// ユーザーのsearch_radius（DBデフォルト10000）が使われる
+		if mock.LastRadius != 10000 {
+			t.Errorf("Expected default radius to be 10000 (user's search_radius), got %d", mock.LastRadius)
 		}
 	})
 }

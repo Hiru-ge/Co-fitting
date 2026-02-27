@@ -305,8 +305,8 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 }
 
 // 提案半径の最小・最大値（メートル）
-const minSearchRadius uint = 500
-const maxSettingRadius uint = 20000
+const minSearchRadius uint = 3000
+const maxSettingRadius uint = 30000
 
 type updateMeRequest struct {
 	DisplayName  *string `json:"display_name"`
@@ -354,11 +354,11 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 
 	if req.SearchRadius != nil {
 		if *req.SearchRadius < minSearchRadius {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "search_radius must be at least 500m"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "search_radius must be at least 3000m"})
 			return
 		}
 		if *req.SearchRadius > maxSettingRadius {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "search_radius must be at most 20000m"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "search_radius must be at most 30000m"})
 			return
 		}
 	}

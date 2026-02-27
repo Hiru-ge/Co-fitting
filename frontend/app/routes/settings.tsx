@@ -107,7 +107,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             token={token}
             genres={genres}
             initialInterests={interests}
-            initialRadius={user.search_radius ?? 5000}
+            initialRadius={user.search_radius ?? 10000}
           />
         )}
       </div>
@@ -116,8 +116,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 }
 
 // 提案半径スライダーの設定（メートル単位）
-const RADIUS_MIN = 1000;
-const RADIUS_MAX = 20000;
+const RADIUS_MIN = 3000;
+const RADIUS_MAX = 30000;
 const RADIUS_STEP = 1000;
 
 // === ユーザー情報タブ ===

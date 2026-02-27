@@ -299,7 +299,7 @@ func TestUpdateSearchRadius(t *testing.T) {
 		}
 	})
 
-	t.Run("search_radiusが最小値500未満で400 Bad Request", func(t *testing.T) {
+	t.Run("search_radiusが最小値3000未満で400 Bad Request", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := models.User{
@@ -311,7 +311,7 @@ func TestUpdateSearchRadius(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		body := map[string]interface{}{
-			"search_radius": 499,
+			"search_radius": 2999,
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -326,7 +326,7 @@ func TestUpdateSearchRadius(t *testing.T) {
 		}
 	})
 
-	t.Run("search_radiusが最大値20000超で400 Bad Request", func(t *testing.T) {
+	t.Run("search_radiusが最大値30000超で400 Bad Request", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := models.User{
@@ -338,7 +338,7 @@ func TestUpdateSearchRadius(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		body := map[string]interface{}{
-			"search_radius": 20001,
+			"search_radius": 30001,
 		}
 		jsonBody, _ := json.Marshal(body)
 
