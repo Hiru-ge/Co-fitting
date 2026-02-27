@@ -2418,7 +2418,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 							"latitude":  35.6770,
 							"longitude": 139.6510,
 						},
-						"rating": 4.0,
+						"rating":                4.0,
 						"shortFormattedAddress": "渋谷区2-2",
 					},
 				},
@@ -2551,6 +2551,224 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 			if !typeSet[vt] {
 				t.Errorf("visitableType '%s' not found in includedTypes", vt)
 			}
+		}
+	})
+}
+
+// TestVisitedFilterWithTimeThreshold は Issue #197 の訪問済みフィルタ閾値テスト
+// 30日以内の訪問済み施設は除外され、31日以上前の訪問済み施設は再提案候補に含まれることを確認する
+func TestVisitedFilterWithTimeThreshold(t *testing.T) {
+	mockPlaces := []PlaceResult{
+		{PlaceID: "thresh_1", Name: "Cafe A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "thresh_2", Name: "Park B", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
+		{PlaceID: "thresh_3", Name: "Restaurant C", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+	}
+
+	t.Run("30日以内の訪問済み施設は提案から除外される", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// 1日前に訪問済み（30日以内）
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "thresh_1",
+			PlaceName: "Cafe A",
+			Latitude:  35.6762,
+			Longitude: 139.6503,
+			VisitedAt: time.Now().AddDate(0, 0, -1),
+		})
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		for _, p := range resp {
+			if p.PlaceID == "thresh_1" {
+				t.Errorf("thresh_1 は30日以内に訪問済みのため提案に含まれるべきでない")
+			}
+		}
+	})
+
+	t.Run("31日以上前に訪問した施設は再提案候補に含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// 31日前に訪問済み（閾値を超えているため再提案候補）
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "thresh_1",
+			PlaceName: "Cafe A",
+			Latitude:  35.6762,
+			Longitude: 139.6503,
+			VisitedAt: time.Now().AddDate(0, 0, -31),
+		})
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		found := false
+		for _, p := range resp {
+			if p.PlaceID == "thresh_1" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("thresh_1 は31日以上前の訪問のため再提案候補に含まれるべき")
+		}
+	})
+
+	t.Run("全施設が30日以内に訪問済みの場合、completed=trueかつnotice=ALL_VISITED_NEARBYが返る", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// 全施設を3日前に訪問済み（30日以内）
+		for _, p := range mockPlaces {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   p.PlaceID,
+				PlaceName: p.Name,
+				Latitude:  p.Lat,
+				Longitude: p.Lng,
+				VisitedAt: time.Now().AddDate(0, 0, -3),
+			})
+		}
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var result struct {
+			Completed bool          `json:"completed"`
+			Notice    string        `json:"notice"`
+			Places    []PlaceResult `json:"places"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response body: %v", err)
+		}
+		if !result.Completed {
+			t.Errorf("Expected completed=true, got false. Body: %s", w.Body.String())
+		}
+		if result.Notice != "ALL_VISITED_NEARBY" {
+			t.Errorf("Expected notice='ALL_VISITED_NEARBY', got '%s'. Body: %s", result.Notice, w.Body.String())
+		}
+		if len(result.Places) != 0 {
+			t.Errorf("Expected empty places when all visited nearby, got %d", len(result.Places))
+		}
+	})
+
+	t.Run("全施設が31日以上前に訪問済みの場合は通常通り提案が返る", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// 全施設を40日前に訪問済み（閾値超えのため再提案候補）
+		for _, p := range mockPlaces {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   p.PlaceID,
+				PlaceName: p.Name,
+				Latitude:  p.Lat,
+				Longitude: p.Lng,
+				VisitedAt: time.Now().AddDate(0, 0, -40),
+			})
+		}
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var result struct {
+			Completed bool          `json:"completed"`
+			Notice    string        `json:"notice"`
+			Places    []PlaceResult `json:"places"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatalf("Failed to parse response body: %v", err)
+		}
+		if result.Completed {
+			t.Errorf("全施設が閾値超えのため completed=false であるべき. Body: %s", w.Body.String())
+		}
+		if len(result.Places) == 0 {
+			t.Errorf("全施設が閾値超えのため再提案候補として Places が返るべき. Body: %s", w.Body.String())
 		}
 	})
 }

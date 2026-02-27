@@ -75,11 +75,11 @@ func (g *GooglePlacesClient) getHTTPClient() *http.Client {
 
 // nearbySearchRequest は New Places API (v1) searchNearby のリクエストボディ
 type nearbySearchAPIRequest struct {
-	IncludedTypes       []string                   `json:"includedTypes"`
+	IncludedTypes       []string                     `json:"includedTypes"`
 	LocationRestriction nearbySearchLocationRestrict `json:"locationRestriction"`
-	RankPreference      string                     `json:"rankPreference"`
-	LanguageCode        string                     `json:"languageCode"`
-	MaxResultCount      int                        `json:"maxResultCount"`
+	RankPreference      string                       `json:"rankPreference"`
+	LanguageCode        string                       `json:"languageCode"`
+	MaxResultCount      int                          `json:"maxResultCount"`
 }
 
 type nearbySearchLocationRestrict struct {
@@ -102,13 +102,13 @@ type nearbySearchAPIResponse struct {
 }
 
 type nearbySearchPlace struct {
-	ID          string                    `json:"id"`
-	Types       []string                  `json:"types"`
-	DisplayName nearbySearchDisplayName   `json:"displayName"`
-	Location    nearbySearchLatLng        `json:"location"`
-	Rating      float32                   `json:"rating"`
-	Photos      []nearbySearchPhoto       `json:"photos"`
-	ShortFormattedAddress string          `json:"shortFormattedAddress"`
+	ID                    string                  `json:"id"`
+	Types                 []string                `json:"types"`
+	DisplayName           nearbySearchDisplayName `json:"displayName"`
+	Location              nearbySearchLatLng      `json:"location"`
+	Rating                float32                 `json:"rating"`
+	Photos                []nearbySearchPhoto     `json:"photos"`
+	ShortFormattedAddress string                  `json:"shortFormattedAddress"`
 }
 
 type nearbySearchDisplayName struct {
@@ -202,13 +202,13 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 // placeTypeToGenreName はGoogle Maps Place TypeからGenreTag名（日本語）へのマッピング
 var placeTypeToGenreName = map[string]string{
 	// 飲食
-	"cafe":              "カフェ",
-	"restaurant":        "レストラン",
-	"meal_takeaway":     "レストラン",
-	"bar":               "居酒屋・バー",
-	"night_club":        "居酒屋・バー",
-	"bakery":            "スイーツ・ベーカリー",
-	"ramen_restaurant":  "ラーメン・麺類",
+	"cafe":             "カフェ",
+	"restaurant":       "レストラン",
+	"meal_takeaway":    "レストラン",
+	"bar":              "居酒屋・バー",
+	"night_club":       "居酒屋・バー",
+	"bakery":           "スイーツ・ベーカリー",
+	"ramen_restaurant": "ラーメン・麺類",
 	// アウトドア・自然
 	"park":       "公園・緑地",
 	"campground": "自然・ハイキング",
@@ -221,11 +221,11 @@ var placeTypeToGenreName = map[string]string{
 	"library":     "図書館・書店",
 	"book_store":  "図書館・書店",
 	// エンタメ
-	"movie_theater":   "映画館",
-	"bowling_alley":   "スポーツ施設",
-	"karaoke":         "カラオケ",
+	"movie_theater":    "映画館",
+	"bowling_alley":    "スポーツ施設",
+	"karaoke":          "カラオケ",
 	"amusement_center": "ゲームセンター",
-	"video_arcade":    "ゲームセンター",
+	"video_arcade":     "ゲームセンター",
 	// スポーツ・アクティブ
 	"gym":            "スポーツジム",
 	"fitness_center": "スポーツジム",
@@ -345,10 +345,10 @@ var visitableTypes = map[string]bool{
 	"amusement_center": true,
 	"video_arcade":     true,
 	// 文化・アート
-	"art_gallery":      true,
-	"museum":           true,
-	"library":          true,
-	"book_store":       true,
+	"art_gallery": true,
+	"museum":      true,
+	"library":     true,
+	"book_store":  true,
 	// 自然・アウトドア
 	"park":       true,
 	"campground": true,
@@ -421,6 +421,10 @@ const defaultSearchRadius uint = 3000
 
 // 最大検索半径（メートル）— API課金制御
 const maxSearchRadius uint = 50000
+
+// visitedExclusionDays は訪問済みフィルタの閾値日数
+// この日数以内に訪問した施設は提案から除外される。それより前の訪問は再提案候補として扱う
+const visitedExclusionDays = 30
 
 // Suggest godoc
 // @Summary      場所の提案
@@ -610,7 +614,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	unvisited := filterOutVisited(h.DB, userID, places)
 
 	if len(unvisited) == 0 {
-		c.JSON(http.StatusOK, SuggestionResult{Completed: true})
+		c.JSON(http.StatusOK, SuggestionResult{Completed: true, Notice: "ALL_VISITED_NEARBY"})
 		return
 	}
 
@@ -668,11 +672,13 @@ func selectRandomPlaces(candidates []PlaceResult, n int) []PlaceResult {
 	return shuffled[:n]
 }
 
-// filterOutVisited は訪問済みの施設を除外する
+// filterOutVisited は最近（30日以内）訪問済みの施設を除外する。
+// visitedExclusionDays 日より前に訪問した施設は除外対象から外し、再提案候補として扱う。
 func filterOutVisited(db *gorm.DB, userID uint64, places []PlaceResult) []PlaceResult {
+	threshold := time.Now().AddDate(0, 0, -visitedExclusionDays)
 	var visitedPlaceIDs []string
 	db.Model(&models.Visit{}).
-		Where("user_id = ?", userID).
+		Where("user_id = ? AND visited_at >= ?", userID, threshold).
 		Pluck("place_id", &visitedPlaceIDs)
 
 	visitedSet := make(map[string]bool, len(visitedPlaceIDs))

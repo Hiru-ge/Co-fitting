@@ -82,8 +82,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       }
 
       // 本日の提案を全て訪問済みの場合はコンプリート画面を表示
+      // ALL_VISITED_NEARBY の場合は枯渇メッセージを表示（CompleteCard は使わない）
       if (completed) {
-        setIsCompleted(true);
+        if (notice === API_ERROR_CODES.ALL_VISITED_NEARBY) {
+          setError(SUGGESTION_MESSAGES.ALL_VISITED_NEARBY);
+        } else {
+          setIsCompleted(true);
+        }
         return;
       }
 
