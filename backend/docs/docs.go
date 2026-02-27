@@ -15,118 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/auth/change-password": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "現在のパスワードを確認し、新しいパスワードに変更する",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "パスワード変更",
-                "parameters": [
-                    {
-                        "description": "パスワード変更情報",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.changePasswordRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/auth/login": {
-            "post": {
-                "description": "メールとパスワードで認証し、トークンペアを返す",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "ログイン",
-                "parameters": [
-                    {
-                        "description": "ログイン情報",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.loginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/utils.TokenPair"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/auth/logout": {
             "post": {
                 "security": [
@@ -293,58 +181,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/auth/signup": {
-            "post": {
-                "description": "新しいユーザーを登録し、トークンペアを返す",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "ユーザー登録",
-                "parameters": [
-                    {
-                        "description": "登録情報",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.signUpRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/utils.TokenPair"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/badges": {
             "get": {
                 "description": "バッジマスタの全一覧を返す",
@@ -416,7 +252,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）",
+                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）\nnotice が \"NO_INTEREST_PLACES\" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）",
                 "consumes": [
                     "application/json"
                 ],
@@ -442,10 +278,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.PlaceResult"
-                            }
+                            "$ref": "#/definitions/handlers.SuggestionResult"
                         }
                     },
                     "400": {
@@ -563,7 +396,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "JWT認証済みユーザーの表示名を更新する",
+                "description": "JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）",
                 "consumes": [
                     "application/json"
                 ],
@@ -644,84 +477,6 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/users/me/email": {
-            "patch": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "現在のパスワードで本人確認後、メールアドレスを変更する",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "メールアドレス変更",
-                "parameters": [
-                    {
-                        "description": "メールアドレス変更情報",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.updateEmailRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1184,6 +939,12 @@ const docTemplate = `{
         "handlers.PlaceResult": {
             "type": "object",
             "properties": {
+                "is_comfort_zone": {
+                    "type": "boolean"
+                },
+                "is_interest_match": {
+                    "type": "boolean"
+                },
                 "lat": {
                     "type": "number"
                 },
@@ -1210,6 +971,26 @@ const docTemplate = `{
                 },
                 "vicinity": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.SuggestionResult": {
+            "type": "object",
+            "properties": {
+                "completed": {
+                    "type": "boolean"
+                },
+                "notice": {
+                    "type": "string"
+                },
+                "places": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.PlaceResult"
+                    }
+                },
+                "reload_count_remaining": {
+                    "type": "integer"
                 }
             }
         },
@@ -1250,23 +1031,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.changePasswordRequest": {
-            "type": "object",
-            "required": [
-                "current_password",
-                "new_password"
-            ],
-            "properties": {
-                "current_password": {
-                    "type": "string"
-                },
-                "new_password": {
-                    "type": "string",
-                    "maxLength": 72,
-                    "minLength": 8
-                }
-            }
-        },
         "handlers.createVisitRequest": {
             "type": "object",
             "required": [
@@ -1287,11 +1051,21 @@ const docTemplate = `{
                 "lng": {
                     "type": "number"
                 },
+                "memo": {
+                    "type": "string"
+                },
                 "place_id": {
                     "type": "string"
                 },
                 "place_name": {
                     "type": "string"
+                },
+                "place_types": {
+                    "description": "任意: is_comfort_zone自動判定に使用",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "rating": {
                     "type": "number"
@@ -1363,21 +1137,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.loginRequest": {
-            "type": "object",
-            "required": [
-                "email",
-                "password"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
         "handlers.logoutRequest": {
             "type": "object",
             "properties": {
@@ -1421,27 +1180,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.signUpRequest": {
-            "type": "object",
-            "required": [
-                "display_name",
-                "email",
-                "password"
-            ],
-            "properties": {
-                "display_name": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "maxLength": 72,
-                    "minLength": 8
-                }
-            }
-        },
         "handlers.suggestionRequest": {
             "type": "object",
             "required": [
@@ -1449,6 +1187,9 @@ const docTemplate = `{
                 "lng"
             ],
             "properties": {
+                "force_reload": {
+                    "type": "boolean"
+                },
                 "lat": {
                     "type": "number"
                 },
@@ -1457,21 +1198,6 @@ const docTemplate = `{
                 },
                 "radius": {
                     "type": "integer"
-                }
-            }
-        },
-        "handlers.updateEmailRequest": {
-            "type": "object",
-            "required": [
-                "current_password",
-                "new_email"
-            ],
-            "properties": {
-                "current_password": {
-                    "type": "string"
-                },
-                "new_email": {
-                    "type": "string"
                 }
             }
         },
@@ -1491,12 +1217,12 @@ const docTemplate = `{
         },
         "handlers.updateMeRequest": {
             "type": "object",
-            "required": [
-                "display_name"
-            ],
             "properties": {
                 "display_name": {
                     "type": "string"
+                },
+                "search_radius": {
+                    "type": "integer"
                 }
             }
         },
@@ -1556,6 +1282,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "level": {
+                    "type": "integer"
+                },
+                "search_radius": {
                     "type": "integer"
                 },
                 "settings_json": {
@@ -1622,17 +1351,6 @@ const docTemplate = `{
                 },
                 "xp_earned": {
                     "type": "integer"
-                }
-            }
-        },
-        "utils.TokenPair": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
                 }
             }
         }

@@ -2,6 +2,10 @@ basePath: /
 definitions:
   handlers.PlaceResult:
     properties:
+      is_comfort_zone:
+        type: boolean
+      is_interest_match:
+        type: boolean
       lat:
         type: number
       lng:
@@ -20,6 +24,19 @@ definitions:
         type: array
       vicinity:
         type: string
+    type: object
+  handlers.SuggestionResult:
+    properties:
+      completed:
+        type: boolean
+      notice:
+        type: string
+      places:
+        items:
+          $ref: '#/definitions/handlers.PlaceResult'
+        type: array
+      reload_count_remaining:
+        type: integer
     type: object
   handlers.allBadgeResponse:
     properties:
@@ -45,18 +62,6 @@ definitions:
       name:
         type: string
     type: object
-  handlers.changePasswordRequest:
-    properties:
-      current_password:
-        type: string
-      new_password:
-        maxLength: 72
-        minLength: 8
-        type: string
-    required:
-    - current_password
-    - new_password
-    type: object
   handlers.createVisitRequest:
     properties:
       category:
@@ -65,10 +70,17 @@ definitions:
         type: number
       lng:
         type: number
+      memo:
+        type: string
       place_id:
         type: string
       place_name:
         type: string
+      place_types:
+        description: '任意: is_comfort_zone自動判定に使用'
+        items:
+          type: string
+        type: array
       rating:
         type: number
       vicinity:
@@ -121,16 +133,6 @@ definitions:
       name:
         type: string
     type: object
-  handlers.loginRequest:
-    properties:
-      email:
-        type: string
-      password:
-        type: string
-    required:
-    - email
-    - password
-    type: object
   handlers.logoutRequest:
     properties:
       refresh_token:
@@ -159,23 +161,10 @@ definitions:
     required:
     - refresh_token
     type: object
-  handlers.signUpRequest:
-    properties:
-      display_name:
-        type: string
-      email:
-        type: string
-      password:
-        maxLength: 72
-        minLength: 8
-        type: string
-    required:
-    - display_name
-    - email
-    - password
-    type: object
   handlers.suggestionRequest:
     properties:
+      force_reload:
+        type: boolean
       lat:
         type: number
       lng:
@@ -185,16 +174,6 @@ definitions:
     required:
     - lat
     - lng
-    type: object
-  handlers.updateEmailRequest:
-    properties:
-      current_password:
-        type: string
-      new_email:
-        type: string
-    required:
-    - current_password
-    - new_email
     type: object
   handlers.updateInterestsRequest:
     properties:
@@ -209,8 +188,8 @@ definitions:
     properties:
       display_name:
         type: string
-    required:
-    - display_name
+      search_radius:
+        type: integer
     type: object
   handlers.updateVisitRequest:
     properties:
@@ -249,6 +228,8 @@ definitions:
       id:
         type: integer
       level:
+        type: integer
+      search_radius:
         type: integer
       settings_json:
         type: string
@@ -294,13 +275,6 @@ definitions:
       xp_earned:
         type: integer
     type: object
-  utils.TokenPair:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-    type: object
 host: localhost:8000
 info:
   contact: {}
@@ -308,78 +282,6 @@ info:
   title: Roamble API
   version: "1.0"
 paths:
-  /api/auth/change-password:
-    post:
-      consumes:
-      - application/json
-      description: 現在のパスワードを確認し、新しいパスワードに変更する
-      parameters:
-      - description: パスワード変更情報
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.changePasswordRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: パスワード変更
-      tags:
-      - Auth
-  /api/auth/login:
-    post:
-      consumes:
-      - application/json
-      description: メールとパスワードで認証し、トークンペアを返す
-      parameters:
-      - description: ログイン情報
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.loginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/utils.TokenPair'
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: ログイン
-      tags:
-      - Auth
   /api/auth/logout:
     post:
       consumes:
@@ -487,40 +389,6 @@ paths:
       summary: トークンリフレッシュ
       tags:
       - Auth
-  /api/auth/signup:
-    post:
-      consumes:
-      - application/json
-      description: 新しいユーザーを登録し、トークンペアを返す
-      parameters:
-      - description: 登録情報
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.signUpRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/utils.TokenPair'
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: ユーザー登録
-      tags:
-      - Auth
   /api/badges:
     get:
       description: バッジマスタの全一覧を返す
@@ -567,7 +435,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: 指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
+      description: |-
+        指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
+        notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
       parameters:
       - description: 位置情報と半径
         in: body
@@ -581,9 +451,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.PlaceResult'
-            type: array
+            $ref: '#/definitions/handlers.SuggestionResult'
         "400":
           description: Bad Request
           schema:
@@ -665,7 +533,7 @@ paths:
     patch:
       consumes:
       - application/json
-      description: JWT認証済みユーザーの表示名を更新する
+      description: JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）
       parameters:
       - description: 更新情報
         in: body
@@ -720,56 +588,6 @@ paths:
               type: string
             type: object
       summary: 獲得バッジ一覧取得
-      tags:
-      - Users
-  /api/users/me/email:
-    patch:
-      consumes:
-      - application/json
-      description: 現在のパスワードで本人確認後、メールアドレスを変更する
-      parameters:
-      - description: メールアドレス変更情報
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.updateEmailRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: Not Found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "409":
-          description: Conflict
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: メールアドレス変更
       tags:
       - Users
   /api/users/me/interests:
