@@ -11,11 +11,13 @@ import (
 
 // XP計算ルール定数
 const (
-	XPNormalVisit  = 50  // 通常訪問
-	XPComfortBreak = 100 // 脱却訪問
-	XPFirstGenre   = 50  // 初めてのジャンルボーナス
-	XPFirstArea    = 30  // 初めてのエリアボーナス
-	XPMemoBonus    = 10  // 感想メモ記入ボーナス
+	XPNormalVisit        = 50  // 通常訪問
+	XPComfortBreak       = 100 // 脱却訪問
+	XPFirstGenre         = 50  // 初めてのジャンルボーナス
+	XPFirstArea          = 30  // 初めてのエリアボーナス
+	XPMemoBonus          = 10  // 感想メモ記入ボーナス
+	XPStreakBonusPerWeek = 10  // ストリークボーナス（1週あたり）
+	XPStreakBonusMax     = 100 // ストリークボーナス上限（10週連続から固定）
 )
 
 // エリアパイオニアバッジの距離閾値（メートル）
@@ -34,7 +36,40 @@ func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
 }
 
 // レベルテーブル: インデックスiのレベル(i+1)はthresholds[i]以上で到達
-var levelThresholds = []int{0, 100, 300, 600, 1000, 2000, 3000, 4000, 4500, 5000}
+// Lv.1〜30の指数カーブ（等差増加: 各ステップの増分が67XPずつ増加）、
+// 最大Lv.30 = 30,000 XP
+var levelThresholds = []int{
+	0,     // Lv.1:      0 XP〜
+	100,   // Lv.2:    100 XP〜
+	267,   // Lv.3:    267 XP〜
+	501,   // Lv.4:    501 XP〜
+	802,   // Lv.5:    802 XP〜
+	1170,  // Lv.6:  1,170 XP〜
+	1605,  // Lv.7:  1,605 XP〜
+	2107,  // Lv.8:  2,107 XP〜
+	2676,  // Lv.9:  2,676 XP〜
+	3312,  // Lv.10: 3,312 XP〜
+	4015,  // Lv.11: 4,015 XP〜
+	4785,  // Lv.12: 4,785 XP〜
+	5622,  // Lv.13: 5,622 XP〜
+	6526,  // Lv.14: 6,526 XP〜
+	7497,  // Lv.15: 7,497 XP〜
+	8535,  // Lv.16: 8,535 XP〜
+	9640,  // Lv.17: 9,640 XP〜
+	10812, // Lv.18: 10,812 XP〜
+	12051, // Lv.19: 12,051 XP〜
+	13357, // Lv.20: 13,357 XP〜
+	14730, // Lv.21: 14,730 XP〜
+	16170, // Lv.22: 16,170 XP〜
+	17677, // Lv.23: 17,677 XP〜
+	19251, // Lv.24: 19,251 XP〜
+	20892, // Lv.25: 20,892 XP〜
+	22600, // Lv.26: 22,600 XP〜
+	24375, // Lv.27: 24,375 XP〜
+	26217, // Lv.28: 26,217 XP〜
+	28126, // Lv.29: 28,126 XP〜
+	30000, // Lv.30: 30,000 XP〜
+}
 
 // GamificationResult はゲーミフィケーション処理の結果
 type GamificationResult struct {
@@ -73,7 +108,7 @@ func CalcXP(isComfortZone bool, isFirstGenre bool, isFirstArea bool, hasMemo boo
 	return xp
 }
 
-// CalcLevel はtotalXPからレベルを算出する（1〜10）
+// CalcLevel はtotalXPからレベルを算出する（1〜30）
 func CalcLevel(totalXP int) int {
 	level := 1
 	for i, threshold := range levelThresholds {
@@ -82,6 +117,16 @@ func CalcLevel(totalXP int) int {
 		}
 	}
 	return level
+}
+
+// CalcStreakBonus は連続週数に応じたストリークXPボーナスを返す
+// streakCount週 × XPStreakBonusPerWeek、上限 XPStreakBonusMax（10週連続から固定）
+func CalcStreakBonus(streakCount int) int {
+	bonus := streakCount * XPStreakBonusPerWeek
+	if bonus > XPStreakBonusMax {
+		bonus = XPStreakBonusMax
+	}
+	return bonus
 }
 
 // calcGenreLevel はジャンル熟練度XPからジャンルレベルを算出する
@@ -334,12 +379,30 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 			isFirstGenre = count == 0
 		}
 
+		// 初めてのエリア訪問かチェック（過去訪問のいずれかから10km以上離れていればtrue）
+		isFirstArea := false
+		if visit.Latitude != 0 || visit.Longitude != 0 {
+			var prevVisits []models.Visit
+			tx.Model(&models.Visit{}).
+				Where("user_id = ? AND id != ?", userID, visit.ID).
+				Select("lat, lng").
+				Find(&prevVisits)
+			for _, pv := range prevVisits {
+				if pv.Latitude == 0 && pv.Longitude == 0 {
+					continue
+				}
+				if haversineDistance(visit.Latitude, visit.Longitude, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
+					isFirstArea = true
+					break
+				}
+			}
+		}
+
 		// 感想メモの有無
 		hasMemo := visit.Memo != nil && *visit.Memo != ""
 
 		// XP計算
-		xpEarned := CalcXP(visit.IsComfortZone, isFirstGenre, false, hasMemo)
-		result.XPEarned = xpEarned
+		xpEarned := CalcXP(visit.IsComfortZone, isFirstGenre, isFirstArea, hasMemo)
 
 		// 訪問記録にXPを保存
 		if err := tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
@@ -363,10 +426,6 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 			return err
 		}
 
-		result.TotalXP = newTotalXP
-		result.NewLevel = newLevel
-		result.LevelUp = newLevel > oldLevel
-
 		// ジャンル熟練度更新
 		if err := UpdateGenreProficiency(tx, userID, visit.GenreTagID, xpEarned); err != nil {
 			return err
@@ -376,6 +435,33 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		if err := UpdateStreak(tx, userID, visit.VisitedAt); err != nil {
 			return err
 		}
+
+		// ストリーク更新後のstreakCountを取得してXPボーナスを付与
+		var updatedUser models.User
+		if err := tx.Where("id = ?", userID).First(&updatedUser).Error; err != nil {
+			return err
+		}
+		streakBonus := CalcStreakBonus(updatedUser.StreakCount)
+		if streakBonus > 0 {
+			xpEarned += streakBonus
+			newTotalXP += streakBonus
+			newLevel = CalcLevel(newTotalXP)
+			if err := tx.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+				"total_xp": newTotalXP,
+				"level":    newLevel,
+			}).Error; err != nil {
+				return err
+			}
+			// 訪問記録のXPもストリークボーナスを含めて更新
+			if err := tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
+				return err
+			}
+		}
+
+		result.XPEarned = xpEarned
+		result.TotalXP = newTotalXP
+		result.NewLevel = newLevel
+		result.LevelUp = newLevel > oldLevel
 
 		// バッジチェック
 		var visitCount int64

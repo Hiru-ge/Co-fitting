@@ -122,7 +122,7 @@ func TestCalcXP(t *testing.T) {
 }
 
 // =============================================
-// CalcLevel テスト
+// CalcLevel テスト（Lv.30拡張後）
 // =============================================
 
 func TestCalcLevel(t *testing.T) {
@@ -131,20 +131,21 @@ func TestCalcLevel(t *testing.T) {
 		totalXP   int
 		wantLevel int
 	}{
+		// 基本境界値
 		{"0XPはレベル1", 0, 1},
 		{"99XPはレベル1", 99, 1},
 		{"100XPはレベル2", 100, 2},
-		{"299XPはレベル2", 299, 2},
-		{"300XPはレベル3", 300, 3},
-		{"599XPはレベル3", 599, 3},
-		{"600XPはレベル4", 600, 4},
-		{"999XPはレベル4", 999, 4},
-		{"1000XPはレベル5", 1000, 5},
-		{"1999XPはレベル5", 1999, 5},
-		{"2000XPはレベル6", 2000, 6},
-		{"4999XPはレベル9", 4999, 9},
-		{"5000XPはレベル10", 5000, 10},
-		{"10000XP以上はレベル10上限", 99999, 10},
+		// Lv.10前後
+		{"3311XPはレベル9", 3311, 9},
+		{"3312XPはレベル10", 3312, 10},
+		// Lv.20
+		{"13356XPはレベル19", 13356, 19},
+		{"13357XPはレベル20", 13357, 20},
+		// Lv.30境界
+		{"29999XPはレベル29", 29999, 29},
+		{"30000XPはレベル30", 30000, 30},
+		// レベル上限: 30,000 XP以上はLv.30
+		{"99999XPはレベル30上限", 99999, 30},
 	}
 
 	for _, tt := range tests {
@@ -152,6 +153,35 @@ func TestCalcLevel(t *testing.T) {
 			level := services.CalcLevel(tt.totalXP)
 			if level != tt.wantLevel {
 				t.Errorf("CalcLevel(%d) = %d, want %d", tt.totalXP, level, tt.wantLevel)
+			}
+		})
+	}
+}
+
+// =============================================
+// CalcStreakBonus テスト
+// =============================================
+
+func TestCalcStreakBonus(t *testing.T) {
+	tests := []struct {
+		name        string
+		streakCount int
+		wantBonus   int
+	}{
+		{"streak=0でボーナスなし", 0, 0},
+		{"streak=1で10XP", 1, 10},
+		{"streak=5で50XP", 5, 50},
+		{"streak=9で90XP", 9, 90},
+		{"streak=10で上限100XP", 10, 100},
+		{"streak=15でも上限100XP", 15, 100},
+		{"streak=100でも上限100XP", 100, 100},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bonus := services.CalcStreakBonus(tt.streakCount)
+			if bonus != tt.wantBonus {
+				t.Errorf("CalcStreakBonus(%d) = %d, want %d", tt.streakCount, bonus, tt.wantBonus)
 			}
 		})
 	}
@@ -1125,6 +1155,170 @@ func TestProcessGamification(t *testing.T) {
 		testDB.First(&updated, visit.ID)
 		if updated.XpEarned != result.XPEarned {
 			t.Errorf("expected visit.xp_earned=%d in DB, got %d", result.XPEarned, updated.XpEarned)
+		}
+	})
+
+	t.Run("streak=5のユーザーが訪問するとストリークボーナス+50XPが加算される", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "gamif_streak@example.com")
+		database.SeedMasterData(testDB)
+
+		// streakを5に設定
+		lastWeek := time.Now().AddDate(0, 0, -7)
+		testDB.Model(&user).Updates(map[string]interface{}{
+			"streak_count": 4, // UpdateStreak後に5になる
+			"streak_last":  lastWeek,
+		})
+
+		visit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_streak_bonus",
+			PlaceName:     "テスト",
+			Category:      "cafe",
+			Latitude:      35.67,
+			Longitude:     139.65,
+			IsComfortZone: false,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&visit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+
+		// 通常訪問50XP + ストリーク5週×10=50XP = 100XP (初ジャンルボーナスを除く)
+		// ストリークボーナスが含まれているか確認（最低基本XP+50以上）
+		if result.XPEarned < 100 {
+			t.Errorf("expected xp_earned >= 100 with streak bonus (streak=5), got %d", result.XPEarned)
+		}
+	})
+
+	t.Run("streak=10のユーザーが訪問するとストリークボーナス上限100XPが加算される", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "gamif_streak_cap@example.com")
+		database.SeedMasterData(testDB)
+
+		// streak=9（UpdateStreak後に10になる）
+		lastWeek := time.Now().AddDate(0, 0, -7)
+		testDB.Model(&user).Updates(map[string]interface{}{
+			"streak_count": 9,
+			"streak_last":  lastWeek,
+		})
+
+		visit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_streak_cap",
+			PlaceName:     "テスト",
+			Category:      "cafe",
+			Latitude:      35.67,
+			Longitude:     139.65,
+			IsComfortZone: false,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&visit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+
+		// 通常訪問50XP + ストリーク上限100XP + 初ジャンルボーナス50XP = 200XP
+		if result.XPEarned < 150 {
+			t.Errorf("expected xp_earned >= 150 with max streak bonus (streak=10), got %d", result.XPEarned)
+		}
+	})
+
+	t.Run("過去訪問から10km以上離れた場所への訪問で初エリアボーナス+30XPが付与される", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "gamif_first_area@example.com")
+		database.SeedMasterData(testDB)
+
+		// 東京駅付近の過去訪問
+		pastVisit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_tokyo_past",
+			PlaceName:     "東京の場所",
+			Category:      "cafe",
+			Latitude:      35.6812,
+			Longitude:     139.7671,
+			IsComfortZone: false,
+			VisitedAt:     time.Now().Add(-24 * time.Hour),
+		}
+		testDB.Create(&pastVisit)
+		// 過去訪問のXPを更新しておく（ロジック外のため手動でXP付与）
+		testDB.Model(&pastVisit).Update("xp_earned", 50)
+
+		// 横浜（東京から約30km）の新しい訪問
+		newVisit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_yokohama_new",
+			PlaceName:     "横浜の場所",
+			Category:      "cafe",
+			Latitude:      35.4660,
+			Longitude:     139.6225,
+			IsComfortZone: false,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&newVisit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, newVisit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+
+		// 通常訪問50XP + 初エリアボーナス30XP = 80XP（初ジャンルボーナス除く）
+		// 実際には初ジャンルの可能性もあるので、最低でも80XP以上
+		if result.XPEarned < 80 {
+			t.Errorf("expected xp_earned >= 80 with first area bonus, got %d", result.XPEarned)
+		}
+	})
+
+	t.Run("過去訪問から10km未満の場所への訪問では初エリアボーナスが付かない", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "gamif_no_area_bonus@example.com")
+		database.SeedMasterData(testDB)
+
+		// 東京駅付近の過去訪問
+		pastVisit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_tokyo_near_past",
+			PlaceName:     "東京の場所",
+			Category:      "cafe",
+			Latitude:      35.6812,
+			Longitude:     139.7671,
+			IsComfortZone: false,
+			VisitedAt:     time.Now().Add(-24 * time.Hour),
+		}
+		testDB.Create(&pastVisit)
+
+		// 新宿（東京から約6km）の新しい訪問
+		nearVisit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_shinjuku_near",
+			PlaceName:     "新宿の場所",
+			Category:      "cafe",
+			Latitude:      35.6896,
+			Longitude:     139.7006,
+			IsComfortZone: false,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&nearVisit)
+
+		// 初ジャンルのXPなしで計算するためジャンルを同一にする
+		tag := getOrCreateGenreTag(t, "カフェ")
+		testDB.Model(&pastVisit).Update("genre_tag_id", tag.ID)
+		nearVisit.GenreTagID = &tag.ID
+		testDB.Save(&nearVisit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, nearVisit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+
+		// 通常訪問50XP のみ（初エリアボーナス30XP は付かない）
+		if result.XPEarned > 60 {
+			t.Errorf("expected xp_earned <= 60 (no first area bonus), got %d", result.XPEarned)
 		}
 	})
 }
