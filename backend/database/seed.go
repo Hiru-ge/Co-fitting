@@ -112,7 +112,7 @@ func seedBadges(db *gorm.DB) error {
 		},
 		{
 			Name:          "エリアパイオニア",
-			Description:   "新しいエリア（初めての駅圏）を訪問した",
+			Description:   "かつて訪れた場所から10km以上離れた新しいエリアを冒険した",
 			IconURL:       "",
 			ConditionJSON: `{"type":"new_area","threshold":1}`,
 		},
