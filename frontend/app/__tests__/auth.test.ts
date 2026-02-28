@@ -169,3 +169,89 @@ describe("protectedLoader", () => {
     }
   });
 });
+
+describe("refreshToken / tryRefreshToken", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", createStorageMock());
+    vi.restoreAllMocks();
+  });
+
+  test("refreshToken: 成功時にアクセストークンとリフレッシュトークンが更新される", async () => {
+    const { refreshToken } = await import("~/lib/auth");
+
+    localStorage.setItem("roamble_refresh_token", "old-refresh");
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          access_token: "new-access",
+          refresh_token: "new-refresh",
+        }),
+    });
+
+    await refreshToken();
+
+    expect(localStorage.getItem("roamble_token")).toBe("new-access");
+    expect(localStorage.getItem("roamble_refresh_token")).toBe("new-refresh");
+  });
+
+  test("refreshToken: 失敗時に Error を throw する", async () => {
+    const { refreshToken } = await import("~/lib/auth");
+
+    localStorage.setItem("roamble_refresh_token", "bad-refresh");
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+    });
+
+    await expect(refreshToken()).rejects.toThrow("Token refresh failed: 401");
+  });
+
+  test("tryRefreshToken: リフレッシュトークンがなければ fetch を呼ばず false を返す", async () => {
+    const { tryRefreshToken } = await import("~/lib/auth");
+
+    global.fetch = vi.fn();
+
+    const result = await tryRefreshToken();
+
+    expect(result).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  test("tryRefreshToken: リフレッシュ成功時に true を返す", async () => {
+    const { tryRefreshToken } = await import("~/lib/auth");
+
+    localStorage.setItem("roamble_refresh_token", "valid-refresh");
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          access_token: "new-access",
+          refresh_token: "new-refresh",
+        }),
+    });
+
+    const result = await tryRefreshToken();
+
+    expect(result).toBe(true);
+    expect(localStorage.getItem("roamble_token")).toBe("new-access");
+  });
+
+  test("tryRefreshToken: リフレッシュ失敗時に false を返す（throw しない）", async () => {
+    const { tryRefreshToken } = await import("~/lib/auth");
+
+    localStorage.setItem("roamble_refresh_token", "expired-refresh");
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+    });
+
+    const result = await tryRefreshToken();
+
+    expect(result).toBe(false);
+  });
+});

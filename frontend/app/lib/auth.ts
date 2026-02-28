@@ -7,6 +7,7 @@ import {
   clearToken as clearStoredToken,
   getRefreshToken,
 } from "~/lib/token-storage";
+export { refreshToken, tryRefreshToken } from "~/lib/token-refresh";
 
 export { getStoredToken as getToken, setStoredToken as setToken, clearStoredToken as clearToken };
 
@@ -35,23 +36,6 @@ export async function logout(): Promise<void> {
     }
   }
   clearToken();
-}
-
-export async function refreshToken(): Promise<void> {
-  const refresh = getRefreshToken();
-
-  const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refresh }),
-  });
-
-  if (!res.ok) {
-    throw new Error(`Token refresh failed: ${res.status}`);
-  }
-
-  const { access_token, refresh_token } = await res.json();
-  setToken(access_token, refresh_token);
 }
 
 export async function getUser(token: string): Promise<User> {

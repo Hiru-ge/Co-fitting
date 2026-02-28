@@ -1,6 +1,7 @@
 import { API_BASE_URL } from "~/utils/constants";
 import { ApiError, parseApiError } from "~/utils/error";
-import { getToken, clearToken, getRefreshToken, setToken } from "~/lib/token-storage";
+import { getToken, clearToken } from "~/lib/token-storage";
+import { tryRefreshToken } from "~/lib/token-refresh";
 
 /**
  * 認証付き API 呼び出しヘルパー
@@ -59,27 +60,3 @@ export async function apiCall(
   throw await parseApiError(res);
 }
 
-/**
- * リフレッシュトークンでアクセストークンを更新する
- * @returns リフレッシュ成功なら true
- */
-async function tryRefreshToken(): Promise<boolean> {
-  const refresh = getRefreshToken();
-  if (!refresh) return false;
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: refresh }),
-    });
-
-    if (!res.ok) return false;
-
-    const { access_token, refresh_token } = await res.json();
-    setToken(access_token, refresh_token);
-    return true;
-  } catch {
-    return false;
-  }
-}
