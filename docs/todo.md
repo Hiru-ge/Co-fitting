@@ -70,8 +70,61 @@
 
 ---
 
-## 🔧 Phase 1 仕上げ（リファクタリング）
+## 🔧 Phase 1 仕上げ（コードレビュー指摘対応）
 
+> Phase 1 コードレビュー結果（`docs/Phase1-code-review-result.md`）に基づく改善タスク。
+
+### 即座に対応
+
+- [ ] **コードレビュー指摘の即時修正6件**: Issue #238
+  - IF-C1: バイナリ `backend/roamble` をGit追跡から除外
+  - BE-C1: `main.go` の `SeedMasterData` 二重呼び出し削除
+  - IF-H3: root Makefile `test-be` の構文エラー修正（`&&` 追加）
+  - BE-M3: `GetMapData` / `ListVisits` のDBエラーハンドリング追加
+  - IF-C2: Redis ポートバインドを `127.0.0.1` に制限
+  - IF-H1: MySQL ポートバインドを `127.0.0.1` に制限
+
+### ローンチ前に対応
+
+- [ ] **アカウント削除時のJWT無効化・キャッシュクリア（BE-C2）**: Issue #239
+  - 削除後のアクセストークンをブラックリストに追加
+  - Redis上のユーザー関連キャッシュを削除
+  - **優先度**: 高 / **工数**: 30分
+
+- [ ] **トークンリフレッシュロジック統一（FE-H1）**: Issue #240
+  - `client.ts` の `tryRefreshToken()` と `auth.ts` の `refreshToken()` を統一
+  - `auth.ts` を唯一の実装とし、`client.ts` から呼び出す形に
+  - **優先度**: 高 / **工数**: 30分
+
+- [ ] **protectedLoader活用 + clientLoader認証チェック統一（FE-H2, FE-M6）**: Issue #241
+  - 未使用の `protectedLoader` を全ルートに適用するか削除
+  - 6ルートで重複する `getToken() → redirect("/login") → getUser()` パターンを共通化
+  - **優先度**: 高 / **工数**: 30分
+
+- [ ] **写真取得ロジック統一（FE-H3）**: Issue #242
+  - `history.tsx` / `history-detail.tsx` のインライン写真取得を `api/places.ts` の `getPlacePhoto()` に統一
+  - テストの `global.fetch` モックも `vi.mock("~/api/places")` に統一
+  - **優先度**: 中 / **工数**: 15分
+
+- [ ] **ベータパスフレーズのサーバーサイド移動（FE-M2）**: Issue #243
+  - `VITE_BETA_PASSPHRASE` がクライアントバンドルに露出する問題を解消
+  - サーバーサイドでパスフレーズ検証API（`POST /api/beta/verify`）を実装
+  - **優先度**: 中 / **工数**: 1時間
+
+- [ ] **エラーメッセージ言語統一（BE-H4）**: Issue #244
+  - APIレスポンスのエラーメッセージが英語と日本語で混在する問題を解消
+  - 英語 `code` フィールドで識別し、日本語メッセージはフロントエンドで生成する方針に統一
+  - **優先度**: 中 / **工数**: 1時間
+
+- [ ] **visitableTypes / placeTypeToGenreName 整合性修正（BE-M2）**: Issue #245
+  - `stadium` が `visitableTypes` にあるが `placeTypeToGenreName` にない不整合を修正
+  - 両マッピングの整合性を確認・統一
+  - **優先度**: 中 / **工数**: 15分
+
+- [ ] **.dockerignore 作成 + .gitignore 拡充（IF-H5, IF-L5）**: Issue #246
+  - `backend/.dockerignore` を作成（`roamble`, `*.test`, `.env`, `docs/`）
+  - `.gitignore` に `backend/roamble`, `*.log`, `tmp/` 等を追加
+  - **優先度**: 中 / **工数**: 10分
 
 ---
 
