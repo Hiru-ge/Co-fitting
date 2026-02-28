@@ -69,6 +69,7 @@ export default function VisitMap({ visits }: Props) {
         mapId={`roamble-visit-map`}
         gestureHandling="greedy"
         disableDefaultUI={false}
+        colorScheme="FOLLOW_SYSTEM"
       >
         {visits.map((visit) => (
           <AdvancedMarker

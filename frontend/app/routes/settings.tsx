@@ -209,14 +209,14 @@ function UserInfoTab({
       </section>
 
       {/* アカウント削除セクション */}
-      <section className="bg-white rounded-2xl border border-red-100 shadow-sm p-5">
-        <h2 className="text-base font-bold text-red-600 mb-2 flex items-center gap-2">
+      <section className="bg-white dark:bg-white/5 rounded-2xl border border-red-100 dark:border-red-900/30 shadow-sm p-5">
+        <h2 className="text-base font-bold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-red-500 text-xl">
             warning
           </span>
           アカウントの削除
         </h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           アカウントを削除すると、すべてのデータが完全に削除されます。この操作は取り消せません。
         </p>
         <button
@@ -367,8 +367,8 @@ function SuggestionTab({
                   onClick={() => toggleGenre(genre.id)}
                   className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                     selected
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                      ? "bg-primary text-bg-dark border-primary"
+                      : "bg-gray-50 dark:bg-white/10 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/20 hover:border-primary/60"
                   }`}
                 >
                   {genre.name}
