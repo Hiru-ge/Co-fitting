@@ -129,6 +129,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           currentLevel={xpModalState.currentLevel}
           levelUp={xpModalState.levelUp}
           newLevel={xpModalState.newLevel}
+          xpBreakdown={xpModalState.xpBreakdown}
           onClose={handleXpModalClose}
         />
       )}

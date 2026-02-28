@@ -8,7 +8,7 @@ import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import type { Place } from "~/types/suggestion";
-import type { BadgeInfo, CreateVisitResponse } from "~/types/visit";
+import type { BadgeInfo, CreateVisitResponse, XPBreakdown } from "~/types/visit";
 
 export type PlaceWithPhoto = Place & { photoUrl?: string };
 
@@ -19,6 +19,7 @@ export interface XpModalState {
   levelUp: boolean;
   newLevel: number;
   newBadges: BadgeInfo[];
+  xpBreakdown?: XPBreakdown;
 }
 
 const COMPLETED_KEY = "roamble_completed";
@@ -189,6 +190,7 @@ export function useSuggestions(token: string) {
           levelUp: result.level_up ?? false,
           newLevel: result.new_level ?? 1,
           newBadges: result.new_badges ?? [],
+          xpBreakdown: result.xp_breakdown,
         });
       }
     } catch (err) {
