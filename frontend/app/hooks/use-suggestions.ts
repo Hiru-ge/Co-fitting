@@ -4,6 +4,7 @@ import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
 import { getPositionWithFallback } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
+import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import type { Place } from "~/types/suggestion";
@@ -156,7 +157,7 @@ export function useSuggestions(token: string) {
 
     setCheckingIn(true);
     try {
-      const category = place.types && place.types.length > 0 ? place.types[0] : "other";
+      const category = getBestCategoryKey(place.types ?? []);
 
       const result: CreateVisitResponse = await createVisit(token, {
         place_id: place.place_id,
