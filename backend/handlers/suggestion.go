@@ -473,125 +473,178 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	// radius未指定の場合はユーザーのsearch_radius設定値を使用
-	if req.Radius == 0 {
-		var user models.User
-		if err := h.DB.Select("search_radius").First(&user, userID).Error; err == nil && user.SearchRadius > 0 {
-			req.Radius = user.SearchRadius
-		} else {
-			req.Radius = defaultSearchRadius
-		}
-	}
-	if req.Radius > maxSearchRadius {
-		req.Radius = maxSearchRadius
-	}
+	req.Radius = h.resolveRadius(userID, req.Radius)
 
 	ctx := c.Request.Context()
 	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 	today := time.Now().In(jst).Format("2006-01-02")
 	userIDStr := strconv.FormatUint(userID, 10)
 
-	// 0. リロードカウントの取得（レスポンスに含めるため）
-	var reloadCount int
-	if h.RedisClient != nil {
-		rc, err := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
-		if err == nil {
-			reloadCount = rc
-		}
-	}
+	reloadCount := h.getReloadCount(ctx, userIDStr, today)
 
-	// 0.5 force_reload の場合: リロード上限チェック → キャッシュクリア
-	if req.ForceReload && h.RedisClient != nil {
-		// 日次上限到達済みの場合はリロード不可
-		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
-		if err == nil && reached {
-			c.JSON(http.StatusOK, SuggestionResult{Completed: true})
+	if req.ForceReload {
+		newCount, done, status, body := h.processForceReload(ctx, userIDStr, today, req, reloadCount)
+		if done {
+			c.JSON(status, body)
 			return
 		}
-
-		// リロード回数の上限チェック
-		if reloadCount >= database.MaxDailyReloads {
-			remaining := 0
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error":                  "今日のリロードは使い切りました。明日また使えます",
-				"code":                   "RELOAD_LIMIT_REACHED",
-				"reload_count_remaining": remaining,
-			})
-			return
-		}
-
-		// リロードカウントをインクリメント
-		newCount, err := database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
-		if err == nil {
-			reloadCount = newCount
-		}
-
-		// 日次提案キャッシュをクリア（新しい提案を生成するため）
-		database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr)
-
-		// Places APIキャッシュもクリア（完全に新しい候補を取得するため）
-		placeCacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
-		h.RedisClient.Del(ctx, placeCacheKey)
+		reloadCount = newCount
 	}
 
-	// リロード残り回数を計算
 	reloadRemaining := database.MaxDailyReloads - reloadCount
 	if reloadRemaining < 0 {
 		reloadRemaining = 0
 	}
 
-	// 1. 日次キャッシュを確認
-	if h.RedisClient != nil {
-		cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng)
-		if err == nil && cached != "" {
-			var dailyPlaces []PlaceResult
-			if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
-				// キャッシュヒットしても訪問済み施設を除外
-				filtered := filterOutVisited(h.DB, userID, dailyPlaces)
-				if len(filtered) > 0 {
-					// 最新の興味タグでis_interest_matchを再設定、熟練度ベースis_comfort_zoneを設定
-					interestNames, _ := getUserInterestGenreNames(h.DB, userID)
-					for i := range filtered {
-						genreName := getGenreNameFromTypes(filtered[i].Types)
-						if len(interestNames) > 0 {
-							match := genreName != "" && interestNames[genreName]
-							filtered[i].IsInterestMatch = &match
-						} else {
-							filtered[i].IsInterestMatch = nil
-						}
-						// 熟練度ベース脱却判定を再設定
-						isComfort := isComfortZoneVisit(h.DB, userID, genreName)
-						filtered[i].IsComfortZone = &isComfort
-					}
-					c.JSON(http.StatusOK, SuggestionResult{Places: filtered, ReloadCountRemaining: &reloadRemaining})
-					return
-				}
-				// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
-				// 上限到達フラグを立てておく（リストキャッシュが削除されても復活しないよう）
-				database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
-				c.JSON(http.StatusOK, SuggestionResult{Completed: true})
-				return
-			}
-		}
+	if result, found := h.checkDailyCacheResult(ctx, userID, userIDStr, today, req, reloadRemaining); found {
+		c.JSON(http.StatusOK, *result)
+		return
+	}
 
-		// 1.5. リストキャッシュがなくても上限到達フラグが立っている場合は完了として返す
-		// 「全提案を訪問した後に興味タグを変更した」ケースをここで捉える
-		// 未訪問提案がある状態での興味タグ変更（Issue #153）は上限到達フラグが立たないため通過する
-		reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
-		if err == nil && reached {
-			c.JSON(http.StatusOK, SuggestionResult{Completed: true})
-			return
+	cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
+	places, err := h.fetchPlacesFromCacheOrAPI(ctx, req, cacheKey)
+	if err != nil {
+		log.Printf("NearbySearch error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
+		return
+	}
+
+	if len(places) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found", "code": "NO_NEARBY_PLACES"})
+		return
+	}
+
+	unvisited := filterOutVisited(h.DB, userID, places)
+	if len(unvisited) == 0 {
+		c.JSON(http.StatusOK, SuggestionResult{Completed: true, Notice: "ALL_VISITED_NEARBY"})
+		return
+	}
+
+	selected, notice := h.buildPersonalizedSelections(userID, unvisited)
+
+	if h.RedisClient != nil {
+		data, _ := json.Marshal(selected)
+		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
+	}
+
+	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice, ReloadCountRemaining: &reloadRemaining})
+}
+
+// resolveRadius はリクエストの radius が未指定の場合、ユーザーの設定値またはデフォルト値で補完する。
+func (h *SuggestionHandler) resolveRadius(userID uint64, requestedRadius uint) uint {
+	radius := requestedRadius
+	if radius == 0 {
+		var user models.User
+		if err := h.DB.Select("search_radius").First(&user, userID).Error; err == nil && user.SearchRadius > 0 {
+			radius = user.SearchRadius
+		} else {
+			radius = defaultSearchRadius
+		}
+	}
+	if radius > maxSearchRadius {
+		radius = maxSearchRadius
+	}
+	return radius
+}
+
+// getReloadCount は Redis からリロードカウントを取得する。Redis 未接続時は 0 を返す。
+func (h *SuggestionHandler) getReloadCount(ctx context.Context, userIDStr, today string) int {
+	if h.RedisClient == nil {
+		return 0
+	}
+	rc, err := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
+	if err != nil {
+		return 0
+	}
+	return rc
+}
+
+// processForceReload は force_reload フラグの処理を行う。
+// done=true の場合、caller は status/body でレスポンスを返して終了すべき。
+// done=false の場合、reloadCount には更新後の値が入る。
+func (h *SuggestionHandler) processForceReload(ctx context.Context, userIDStr, today string, req suggestionRequest, reloadCount int) (newCount int, done bool, status int, body interface{}) {
+	if h.RedisClient == nil {
+		return reloadCount, false, 0, nil
+	}
+
+	reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
+	if err == nil && reached {
+		return reloadCount, true, http.StatusOK, SuggestionResult{Completed: true}
+	}
+
+	if reloadCount >= database.MaxDailyReloads {
+		remaining := 0
+		return reloadCount, true, http.StatusTooManyRequests, gin.H{
+			"error":                  "今日のリロードは使い切りました。明日また使えます",
+			"code":                   "RELOAD_LIMIT_REACHED",
+			"reload_count_remaining": remaining,
 		}
 	}
 
-	// 2. Places API結果のキャッシュを確認
-	cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
+	newCount, err = database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
+	if err != nil {
+		newCount = reloadCount
+	}
+
+	database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr)
+
+	placeCacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
+	h.RedisClient.Del(ctx, placeCacheKey)
+
+	return newCount, false, 0, nil
+}
+
+// checkDailyCacheResult は日次キャッシュを確認し、有効なキャッシュがあれば SuggestionResult を返す。
+// found=true の場合、caller はその result を返して終了すべき。
+func (h *SuggestionHandler) checkDailyCacheResult(ctx context.Context, userID uint64, userIDStr, today string, req suggestionRequest, reloadRemaining int) (*SuggestionResult, bool) {
+	if h.RedisClient == nil {
+		return nil, false
+	}
+
+	cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng)
+	if err == nil && cached != "" {
+		var dailyPlaces []PlaceResult
+		if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
+			filtered := filterOutVisited(h.DB, userID, dailyPlaces)
+			if len(filtered) > 0 {
+				interestNames, _ := getUserInterestGenreNames(h.DB, userID)
+				for i := range filtered {
+					genreName := getGenreNameFromTypes(filtered[i].Types)
+					if len(interestNames) > 0 {
+						match := genreName != "" && interestNames[genreName]
+						filtered[i].IsInterestMatch = &match
+					} else {
+						filtered[i].IsInterestMatch = nil
+					}
+					isComfort := isComfortZoneVisit(h.DB, userID, genreName)
+					filtered[i].IsComfortZone = &isComfort
+				}
+				return &SuggestionResult{Places: filtered, ReloadCountRemaining: &reloadRemaining}, true
+			}
+			// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
+			database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
+			return &SuggestionResult{Completed: true}, true
+		}
+	}
+
+	// リストキャッシュがなくても上限到達フラグが立っている場合は完了として返す
+	reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
+	if err == nil && reached {
+		return &SuggestionResult{Completed: true}, true
+	}
+
+	return nil, false
+}
+
+// fetchPlacesFromCacheOrAPI は Places API キャッシュを確認し、なければ API を呼び出す。
+// フィルタ済みの PlaceResult スライスを返す。
+func (h *SuggestionHandler) fetchPlacesFromCacheOrAPI(ctx context.Context, req suggestionRequest, cacheKey string) ([]PlaceResult, error) {
 	var places []PlaceResult
+
 	if h.RedisClient != nil {
 		cached, err := h.RedisClient.Get(ctx, cacheKey).Result()
 		if err == nil {
 			if unmarshalErr := json.Unmarshal([]byte(cached), &places); unmarshalErr != nil {
-				// キャッシュが破損している場合はキャッシュを無効化してAPI再取得へフォールバック
 				log.Printf("Warning: corrupted places cache for key %s, invalidating: %v", cacheKey, unmarshalErr)
 				h.RedisClient.Del(ctx, cacheKey)
 				places = nil
@@ -599,17 +652,13 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		}
 	}
 
-	// 3. キャッシュがなければPlaces APIを呼び出し
 	if len(places) == 0 {
 		var err error
 		places, err = h.Places.NearbySearch(ctx, req.Lat, req.Lng, req.Radius)
 		if err != nil {
-			log.Printf("NearbySearch error: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
-			return
+			return nil, err
 		}
 
-		// 訪れるのに適した場所のみにフィルタリング
 		filtered := make([]PlaceResult, 0, len(places))
 		for _, p := range places {
 			if isVisitablePlace(p.Types) {
@@ -618,41 +667,30 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		}
 		places = filtered
 
-		// Redisにキャッシュ（TTL 24h）— フィルタ済みの結果を保存
 		if h.RedisClient != nil && len(places) > 0 {
 			data, _ := json.Marshal(places)
 			h.RedisClient.Set(ctx, cacheKey, string(data), 24*time.Hour)
 		}
 	}
 
-	if len(places) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found", "code": "NO_NEARBY_PLACES"})
-		return
-	}
+	return places, nil
+}
 
-	// 4. 訪問済みを除外
-	unvisited := filterOutVisited(h.DB, userID, places)
-
-	if len(unvisited) == 0 {
-		c.JSON(http.StatusOK, SuggestionResult{Completed: true, Notice: "ALL_VISITED_NEARBY"})
-		return
-	}
-
-	// 5. ユーザーの興味タグを取得してパーソナライズ選出（タグなしはランダムにフォールバック）
+// buildPersonalizedSelections は未訪問施設から興味タグに基づいて提案施設を選出し、
+// is_interest_match・is_comfort_zone フラグを設定して返す。
+func (h *SuggestionHandler) buildPersonalizedSelections(userID uint64, unvisited []PlaceResult) ([]PlaceResult, string) {
 	var selected []PlaceResult
 	var notice string
+
 	interestGenreNames, err := getUserInterestGenreNames(h.DB, userID)
 	if err != nil || len(interestGenreNames) == 0 {
 		selected = selectRandomPlaces(unvisited, maxDailySuggestions)
-		// 興味タグ未設定時は is_interest_match をセットしない（nil のまま）
 	} else {
 		inInterest, outOfInterest := classifyByInterest(unvisited, interestGenreNames)
-		// 興味タグが設定されているが半径内に興味内施設が0件の場合はユーザーに通知
 		if len(inInterest) == 0 && len(outOfInterest) > 0 {
 			notice = "NO_INTEREST_PLACES"
 		}
 		selected = selectPersonalizedPlaces(inInterest, outOfInterest)
-		// is_interest_match フラグをセット（興味内/外を示す）
 		for i := range selected {
 			genreName := getGenreNameFromTypes(selected[i].Types)
 			match := genreName != "" && interestGenreNames[genreName]
@@ -660,20 +698,13 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		}
 	}
 
-	// 熟練度ベース脱却判定 is_comfort_zone を全選出施設にセット
 	for i := range selected {
 		genreName := getGenreNameFromTypes(selected[i].Types)
 		isComfort := isComfortZoneVisit(h.DB, userID, genreName)
 		selected[i].IsComfortZone = &isComfort
 	}
 
-	// 6. 日次キャッシュに保存（カウントは全提案訪問時にのみ設定。ここでは設定しない）
-	if h.RedisClient != nil {
-		data, _ := json.Marshal(selected)
-		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
-	}
-
-	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice, ReloadCountRemaining: &reloadRemaining})
+	return selected, notice
 }
 
 // selectRandomPlaces は候補から最大n件をランダムに選出する

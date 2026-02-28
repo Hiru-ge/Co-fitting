@@ -11,7 +11,6 @@ import (
 
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
-	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,14 +22,6 @@ func setupUserRouter() *gin.Engine {
 	return r
 }
 
-func generateTestToken(userID uint64) string {
-	token, _ := utils.GenerateAccessToken(
-		userID,
-		testAuthHandler.JWTCfg.Secret,
-		testAuthHandler.JWTCfg.AccessExpiry,
-	)
-	return token
-}
 
 func setupUserRouterWithPatch() *gin.Engine {
 	userHandler := &UserHandler{DB: testDB}

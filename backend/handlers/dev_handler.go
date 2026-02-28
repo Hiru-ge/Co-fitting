@@ -96,8 +96,12 @@ type testLoginRequest struct {
 	DisplayName string `json:"display_name" binding:"required"`
 }
 
-// TestLogin は開発環境専用のテストログインエンドポイント
-// ユーザーが存在しない場合は作成し、JWTトークンペアを返す
+// TestLogin は開発環境専用のテストログインエンドポイント。
+// セキュリティ: routes.go の `environment == "development"` チェックにより本番環境では
+// このルート自体が登録されないため、エンドポイントは存在しない（一次防衛）。
+// Docker ネットワーク経由では RemoteAddr がゲートウェイ IP になるため、
+// localhost IP フィルタは機能しない。環境変数による環境ガードを唯一の防衛とする。
+// ユーザーが存在しない場合は作成し、JWT トークンペアを返す。
 func (h *DevHandler) TestLogin(c *gin.Context) {
 	var req testLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

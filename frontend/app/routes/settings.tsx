@@ -6,6 +6,7 @@ import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/user
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
 import { useModalClose } from "~/hooks/use-modal-close";
+import { useFormMessage } from "~/hooks/use-form-message";
 
 type TabId = "user" | "suggestion";
 
@@ -131,16 +132,14 @@ function UserInfoTab({
 }) {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(user.display_name);
-  const [displayNameMsg, setDisplayNameMsg] = useState("");
-  const [displayNameError, setDisplayNameError] = useState("");
+  const { msg: displayNameMsg, error: displayNameError, setMsg: setDisplayNameMsg, setError: setDisplayNameError, reset: resetDisplayNameMsg } = useFormMessage();
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   async function handleUpdateDisplayName(e: React.FormEvent) {
     e.preventDefault();
-    setDisplayNameMsg("");
-    setDisplayNameError("");
+    resetDisplayNameMsg();
 
     if (!displayName.trim()) {
       setDisplayNameError("表示名を入力してください");
@@ -254,13 +253,11 @@ function SuggestionTab({
   const [selectedIds, setSelectedIds] = useState<number[]>(
     initialInterests.map((i) => i.genre_tag_id)
   );
-  const [interestMsg, setInterestMsg] = useState("");
-  const [interestError, setInterestError] = useState("");
+  const { msg: interestMsg, error: interestError, setMsg: setInterestMsg, setError: setInterestError, reset: resetInterestMsg } = useFormMessage();
   const [isSaving, setIsSaving] = useState(false);
 
   const [selectedRadius, setSelectedRadius] = useState<number>(initialRadius);
-  const [radiusMsg, setRadiusMsg] = useState("");
-  const [radiusError, setRadiusError] = useState("");
+  const { msg: radiusMsg, error: radiusError, setMsg: setRadiusMsg, setError: setRadiusError, reset: resetRadiusMsg } = useFormMessage();
   const [isSavingRadius, setIsSavingRadius] = useState(false);
 
   function toggleGenre(id: number) {
@@ -271,8 +268,7 @@ function SuggestionTab({
 
   async function handleSaveInterests(e: React.FormEvent) {
     e.preventDefault();
-    setInterestMsg("");
-    setInterestError("");
+    resetInterestMsg();
 
     setIsSaving(true);
     try {
@@ -287,8 +283,7 @@ function SuggestionTab({
 
   async function handleSaveRadius(e: React.FormEvent) {
     e.preventDefault();
-    setRadiusMsg("");
-    setRadiusError("");
+    resetRadiusMsg();
 
     setIsSavingRadius(true);
     try {

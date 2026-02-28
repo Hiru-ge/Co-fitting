@@ -98,6 +98,35 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 - `プログラミング日誌/_data/Roamble(コンフォートゾーン脱却サポーター)作成日誌.md` — 開発日誌
 - `プログラミング日誌/_data/Roamble 要件定義書.md` — 要件定義書（Vault内コピー）
 
+## テスト方針
+
+コードに変更を加えたあとは必ず以下の順でテストを実行し、全て通過したことを確認してから完了とすること。
+
+### 1. ユニット・統合テスト
+
+```bash
+# バックエンド（handlers パッケージなど）
+cd backend && go test ./...
+
+# フロントエンド（Vitest）
+cd frontend && npx vitest run
+```
+
+### 2. E2Eテスト（Playwright）
+
+バックエンドが起動済みの状態で実行する（`docker-compose up` が前提）。
+
+```bash
+cd frontend && npx playwright test
+```
+
+E2E テストは `frontend/e2e/main-flow.spec.ts` に定義されている。バックエンドに変更（エンドポイント・認証・リダイレクト）を加えた場合は特に必ず確認すること。バックエンドのコードを変更した場合は `docker-compose restart backend` で再起動してから実行する。
+
+### 注意事項
+
+- バックエンドは Docker コンテナ内で動作するため、`c.ClientIP()` はホスト IP ではなく Docker のゲートウェイ IP を返す。ループバック IP フィルタは機能しないため使用しないこと。
+- E2E の `devTestLogin` ヘルパーは `/api/dev/auth/test-login` を呼び出すため、バックエンドが `development` 環境で起動している必要がある。
+
 ## 言語・コミュニケーション
 
 - コミット・PRは日本語で記述

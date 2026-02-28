@@ -119,6 +119,11 @@ func main() {
 		environment = "development"
 	}
 
+	healthHandler := &handlers.HealthHandler{
+		DB:          db,
+		RedisClient: redisClient,
+	}
+
 	// 開発用ハンドラー
 	devHandler := &handlers.DevHandler{
 		RedisClient: redisClient,
@@ -136,6 +141,7 @@ func main() {
 		VisitHandler:      visitHandler,
 		SuggestionHandler: suggestionHandler,
 		PlacePhotoHandler: placePhotoHandler,
+		HealthHandler:     healthHandler,
 		DevHandler:        devHandler,
 		JWTSecret:         jwtCfg.Secret,
 		RedisClient:       redisClient,

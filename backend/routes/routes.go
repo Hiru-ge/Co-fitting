@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"time"
+
 	"github.com/Hiru-ge/roamble/handlers"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/redis/go-redis/v9"
@@ -19,6 +21,7 @@ type Deps struct {
 	VisitHandler      *handlers.VisitHandler
 	SuggestionHandler *handlers.SuggestionHandler
 	PlacePhotoHandler *handlers.PlacePhotoHandler
+	HealthHandler     *handlers.HealthHandler
 	DevHandler        *handlers.DevHandler
 	JWTSecret         string
 	RedisClient       *redis.Client
@@ -29,9 +32,10 @@ func Setup(router *gin.Engine, deps Deps) {
 	// グローバルミドルウェア
 	router.Use(middleware.CORS())
 	router.Use(middleware.ErrorHandler())
+	router.Use(middleware.RateLimit(middleware.NewRateLimiter(120, time.Minute)))
 
 	// ヘルスチェック
-	router.GET("/health", handlers.HealthCheck)
+	router.GET("/health", deps.HealthHandler.HealthCheck)
 
 	// Swagger
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

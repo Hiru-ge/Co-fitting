@@ -318,19 +318,29 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
 }
 
 
+const PHOTO_BATCH_SIZE = 5;
+
 async function loadPhotos(
   visits: Visit[],
   token: string
 ): Promise<VisitWithPhoto[]> {
-  return Promise.all(
-    visits.map(async (visit) => {
-      try {
-        const json = await apiCall(`/api/places/${visit.place_id}/photo`, token);
-        return { ...visit, photoUrl: json.photo_url };
-      } catch {
-        // 写真取得失敗はスキップ
-      }
-      return visit;
-    })
-  );
+  const results: VisitWithPhoto[] = [];
+
+  for (let i = 0; i < visits.length; i += PHOTO_BATCH_SIZE) {
+    const batch = visits.slice(i, i + PHOTO_BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (visit) => {
+        try {
+          const json = await apiCall(`/api/places/${visit.place_id}/photo`, token);
+          return { ...visit, photoUrl: json.photo_url };
+        } catch {
+          // 写真取得失敗はスキップ
+        }
+        return visit;
+      })
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
 }

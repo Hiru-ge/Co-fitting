@@ -39,16 +39,3 @@ export async function getSuggestions(
     body: JSON.stringify(body),
   });
 }
-
-/**
- * @deprecated getSuggestions() を使用してください
- */
-export async function getSuggestion(
-  token: string,
-  lat: number,
-  lng: number,
-  radius?: number
-): Promise<Place> {
-  const result = await getSuggestions(token, lat, lng, radius);
-  return result.places[0];
-}
