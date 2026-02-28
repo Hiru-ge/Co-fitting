@@ -65,7 +65,7 @@ export default function VisitMap({ visits }: Props) {
       <Map
         style={{ width: "100%", height: "calc(100dvh - 180px)" }}
         defaultCenter={center}
-        defaultZoom={12}
+        defaultZoom={15}
         mapId={`roamble-visit-map`}
         gestureHandling="greedy"
         disableDefaultUI={false}

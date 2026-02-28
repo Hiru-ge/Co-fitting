@@ -62,7 +62,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100"
+            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
             aria-label="戻る"
           >
             <span className="material-symbols-outlined text-xl text-gray-600">

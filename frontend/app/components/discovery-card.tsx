@@ -141,17 +141,17 @@ export default function DiscoveryCard({
 
       {/* バッジ */}
       <div className="absolute top-4 left-4 flex gap-2">
-        <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
+        <span className="bg-white/30 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
           NEW SPOT
         </span>
         <span
           data-testid="genre-badge"
-          className={`${place.is_interest_match ? "bg-brand/80" : "bg-white/20"} backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full`}
+          className={`${place.is_interest_match ? "bg-orange-500/90" : "bg-white/20"} backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full`}
         >
           {category.label}
         </span>
         {place.is_comfort_zone === true && (
-          <span className="bg-amber-500/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
+          <span className="bg-red-600 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
             脱却モード
           </span>
         )}

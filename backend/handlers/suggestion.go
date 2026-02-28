@@ -311,17 +311,37 @@ func classifyByInterest(places []PlaceResult, interestGenreNames map[string]bool
 	return
 }
 
-// selectPersonalizedPlaces は興味内を優先して最大maxDailySuggestions件を選出する
-// 興味内が3件以上あれば全て興味内から選出（旧来の強制挿入＝上限2件キャップを廃止）
-// 興味内が不足する場合のみ興味外から補充する
-// 脱却判定は訪問時の熟練度ベース（Issue #198）で自然に発生するため強制挿入は不要
+// selectPersonalizedPlaces は「興味内2枠 + 完全ランダム1枠」で最大maxDailySuggestions件を選出する
+// Issue #222: 発見感を高めるため、固定2枠興味内 + 1枠完全ランダム（興味内外問わず）とする
+// 興味内が2未満の場合は全興味内を使い、残りをランダム補充する
 func selectPersonalizedPlaces(inInterest, outOfInterest []PlaceResult) []PlaceResult {
-	// 興味内から最大maxDailySuggestions件選出（強制上限なし）
-	selected := selectRandomPlaces(inInterest, maxDailySuggestions)
-	// 不足分を興味外から補充
+	const interestSlots = 2
+
+	// 興味内から最大2枠選出
+	selected := selectRandomPlaces(inInterest, interestSlots)
+
+	// 選出済みIDのセット
+	selectedIDs := make(map[string]bool, len(selected))
+	for _, p := range selected {
+		selectedIDs[p.PlaceID] = true
+	}
+
+	// 完全ランダム枠: 選出済みを除いた全候補（興味内残り + 興味外）から補充
+	allRemaining := make([]PlaceResult, 0, len(inInterest)+len(outOfInterest))
+	for _, p := range inInterest {
+		if !selectedIDs[p.PlaceID] {
+			allRemaining = append(allRemaining, p)
+		}
+	}
+	for _, p := range outOfInterest {
+		if !selectedIDs[p.PlaceID] {
+			allRemaining = append(allRemaining, p)
+		}
+	}
+
 	remaining := maxDailySuggestions - len(selected)
-	if remaining > 0 && len(outOfInterest) > 0 {
-		selected = append(selected, selectRandomPlaces(outOfInterest, remaining)...)
+	if remaining > 0 && len(allRemaining) > 0 {
+		selected = append(selected, selectRandomPlaces(allRemaining, remaining)...)
 	}
 	return selected
 }

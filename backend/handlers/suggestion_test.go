@@ -2192,32 +2192,119 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		}
 	})
 
-	t.Run("selectPersonalizedPlacesは強制挿入なし（全候補からランダム選出）", func(t *testing.T) {
-		// inInterest 3件のみ（outOfInterest無し）でも3件全て選出できる
+	t.Run("selectPersonalizedPlacesは興味内2枠+完全ランダム1枠で選出する（Issue #222）", func(t *testing.T) {
+		// 興味内ぴったり2件（2枠に対して2件）→ 必ず2件とも選ばれ、残り1枠は興味外から
+		inInterest := []PlaceResult{
+			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+		}
+		outOfInterest := []PlaceResult{
+			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_3", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+		}
+
+		// 複数回試行しても常に同じパターンになることを確認
+		const trials = 20
+		for i := 0; i < trials; i++ {
+			selected := selectPersonalizedPlaces(inInterest, outOfInterest)
+
+			if len(selected) != 3 {
+				t.Fatalf("trial %d: Expected 3 selected places, got %d", i, len(selected))
+			}
+
+			// 興味内（cafe）が必ず2件含まれること（固定2枠）
+			cafeCount := 0
+			for _, p := range selected {
+				for _, typ := range p.Types {
+					if typ == "cafe" {
+						cafeCount++
+						break
+					}
+				}
+			}
+			if cafeCount != 2 {
+				t.Errorf("trial %d: Expected exactly 2 cafe places (fixed interest slots), got %d", i, cafeCount)
+			}
+
+			// 残り1枠は興味外（museum）から選ばれること
+			museumCount := 0
+			for _, p := range selected {
+				for _, typ := range p.Types {
+					if typ == "museum" {
+						museumCount++
+						break
+					}
+				}
+			}
+			if museumCount != 1 {
+				t.Errorf("trial %d: Expected exactly 1 museum place (random slot from outOfInterest), got %d", i, museumCount)
+			}
+		}
+	})
+
+	t.Run("selectPersonalizedPlacesは興味内3件以上あっても2枠に制限する（Issue #222）", func(t *testing.T) {
+		// 興味内3件、興味外4件 → 2枠のみ興味内、1枠はすべての残り候補からランダム
 		inInterest := []PlaceResult{
 			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 			{PlaceID: "cafe_sel_3", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 		}
-		outOfInterest := []PlaceResult{}
+		outOfInterest := []PlaceResult{
+			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_3", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_4", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+		}
+
+		selected := selectPersonalizedPlaces(inInterest, outOfInterest)
+
+		if len(selected) != 3 {
+			t.Fatalf("Expected 3 selected places, got %d", len(selected))
+		}
+
+		// 興味内は必ず2件（旧挙動の3件全取りは廃止）
+		cafeCount := 0
+		for _, p := range selected {
+			for _, typ := range p.Types {
+				if typ == "cafe" {
+					cafeCount++
+					break
+				}
+			}
+		}
+		if cafeCount < 2 {
+			t.Errorf("Expected at least 2 cafe places (2 fixed interest slots), got %d", cafeCount)
+		}
+	})
+
+	t.Run("selectPersonalizedPlacesは興味内が2未満の場合は全件使い残りをランダム補充", func(t *testing.T) {
+		// 興味内1件のみ
+		inInterest := []PlaceResult{
+			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+		}
+		outOfInterest := []PlaceResult{
+			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+		}
 
 		selected := selectPersonalizedPlaces(inInterest, outOfInterest)
 
 		if len(selected) != 3 {
 			t.Errorf("Expected 3 selected places, got %d", len(selected))
 		}
-		// 全て inInterest から選ばれていること（強制挿入なし）
+		// cafe が1件含まれること（興味内全件）
+		cafeCount := 0
 		for _, p := range selected {
-			isCafe := false
 			for _, typ := range p.Types {
 				if typ == "cafe" {
-					isCafe = true
+					cafeCount++
 					break
 				}
 			}
-			if !isCafe {
-				t.Errorf("Expected all places from inInterest (cafe), got non-cafe: %s", p.PlaceID)
-			}
+		}
+		if cafeCount < 1 {
+			t.Errorf("Expected at least 1 cafe place (inInterest), got %d", cafeCount)
 		}
 	})
 }
