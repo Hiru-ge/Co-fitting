@@ -20,13 +20,44 @@ export interface XpModalState {
   newBadges: BadgeInfo[];
 }
 
+const COMPLETED_KEY = "roamble_completed";
+
+/**
+ * 今日の日付キー（JST）でコンプリートフラグをsessionStorageに保存する。
+ * セッション内（タブを閉じるまで）有効で、日付が変わると無効になる。
+ */
+function getTodayKey(): string {
+  const now = new Date();
+  const jstOffset = 9 * 60;
+  const jst = new Date(now.getTime() + (jstOffset + now.getTimezoneOffset()) * 60000);
+  return `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, "0")}-${String(jst.getDate()).padStart(2, "0")}`;
+}
+
+function isCompletedToday(): boolean {
+  try {
+    const saved = sessionStorage.getItem(COMPLETED_KEY);
+    return saved === getTodayKey();
+  } catch {
+    return false;
+  }
+}
+
+function markCompletedToday(): void {
+  try {
+    sessionStorage.setItem(COMPLETED_KEY, getTodayKey());
+  } catch {
+    // sessionStorage使用不可の環境では無視
+  }
+}
+
 export function useSuggestions(token: string) {
   const { showToast } = useToast();
   const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
+  const completedFromSession = isCompletedToday();
+  const [isLoading, setIsLoading] = useState(!completedFromSession);
   const [error, setError] = useState<string | null>(null);
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(completedFromSession);
   const [checkingIn, setCheckingIn] = useState(false);
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
   const [originalOrder, setOriginalOrder] = useState<string[]>([]);
@@ -59,6 +90,7 @@ export function useSuggestions(token: string) {
           setError(SUGGESTION_MESSAGES.ALL_VISITED_NEARBY);
         } else {
           setIsCompleted(true);
+          markCompletedToday();
         }
         return;
       }
@@ -103,8 +135,10 @@ export function useSuggestions(token: string) {
   useEffect(() => {
     if (initialLoadDoneRef.current) return;
     initialLoadDoneRef.current = true;
+    // sessionStorageからコンプリート済みと判定された場合はAPIを呼ばない
+    if (completedFromSession) return;
     loadSuggestions();
-  }, [loadSuggestions]);
+  }, [loadSuggestions, completedFromSession]);
 
   function handleReload() {
     loadSuggestions(true);
@@ -140,6 +174,7 @@ export function useSuggestions(token: string) {
 
       if (remainingPlaces.length === 0) {
         setIsCompleted(true);
+        markCompletedToday();
       }
 
       if (result.xp_earned !== undefined) {
@@ -155,6 +190,7 @@ export function useSuggestions(token: string) {
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
         setIsCompleted(true);
+        markCompletedToday();
       } else {
         showToast(toUserMessage(err));
       }
