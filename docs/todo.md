@@ -76,7 +76,7 @@
 
 ### 即座に対応
 
-- [ ] **コードレビュー指摘の即時修正6件**: Issue #238
+- [x] **コードレビュー指摘の即時修正6件**: Issue #238
   - IF-C1: バイナリ `backend/roamble` をGit追跡から除外
   - BE-C1: `main.go` の `SeedMasterData` 二重呼び出し削除
   - IF-H3: root Makefile `test-be` の構文エラー修正（`&&` 追加）

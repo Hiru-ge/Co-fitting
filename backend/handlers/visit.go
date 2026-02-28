@@ -252,15 +252,21 @@ func (h *VisitHandler) GetMapData(c *gin.Context) {
 	}
 
 	visits := make([]models.Visit, 0)
-	h.DB.Select("id, place_id, place_name, lat, lng, category, genre_tag_id, visited_at").
+	if err := h.DB.Select("id, place_id, place_name, lat, lng, category, genre_tag_id, visited_at").
 		Where("user_id = ?", userID).
 		Order("visited_at DESC").
 		Limit(limit).
 		Offset(offset).
-		Find(&visits)
+		Find(&visits).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve map data"})
+		return
+	}
 
 	var total int64
-	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&total)
+	if err := h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count visits"})
+		return
+	}
 
 	items := make([]mapVisitItem, len(visits))
 	for i, v := range visits {
@@ -352,14 +358,20 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 	}
 
 	visits := make([]models.Visit, 0)
-	h.DB.Where("user_id = ?", userID).
+	if err := h.DB.Where("user_id = ?", userID).
 		Order("visited_at DESC").
 		Limit(limit).
 		Offset(offset).
-		Find(&visits)
+		Find(&visits).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve visits"})
+		return
+	}
 
 	var total int64
-	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&total)
+	if err := h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count visits"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"visits": visits,
