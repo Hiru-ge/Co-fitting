@@ -73,11 +73,21 @@ var levelThresholds = []int{
 
 // GamificationResult はゲーミフィケーション処理の結果
 type GamificationResult struct {
-	XPEarned  int
-	TotalXP   int
-	LevelUp   bool
-	NewLevel  int
-	NewBadges []models.Badge
+	XPEarned    int
+	TotalXP     int
+	LevelUp     bool
+	NewLevel    int
+	NewBadges   []models.Badge
+	XPBreakdown *XPBreakdown
+}
+
+// XPBreakdown はXP獲得の内訳
+type XPBreakdown struct {
+	BaseXP          int `json:"base_xp"`           // ベースXP（通常50 or 脱却100）
+	FirstGenreBonus int `json:"first_genre_bonus"` // 初ジャンルボーナス
+	FirstAreaBonus  int `json:"first_area_bonus"`  // 初エリアボーナス
+	MemoBonus       int `json:"memo_bonus"`        // メモボーナス
+	StreakBonus     int `json:"streak_bonus"`      // ストリークボーナス
 }
 
 // badgeCondition はConditionJSONのデコード用
@@ -398,6 +408,24 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		// XP計算
 		xpEarned := CalcXP(visit.IsComfortZone, isFirstGenre, isFirstArea, hasMemo)
 
+		// 内訳を記録
+		baseXP := XPNormalVisit
+		if visit.IsComfortZone {
+			baseXP = XPComfortBreak
+		}
+		firstGenreBonusXP := 0
+		if isFirstGenre {
+			firstGenreBonusXP = XPFirstGenre
+		}
+		firstAreaBonusXP := 0
+		if isFirstArea {
+			firstAreaBonusXP = XPFirstArea
+		}
+		memoBonusXP := 0
+		if hasMemo {
+			memoBonusXP = XPMemoBonus
+		}
+
 		// 訪問記録にXPを保存
 		if err := tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
 			return err
@@ -456,6 +484,13 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		result.TotalXP = newTotalXP
 		result.NewLevel = newLevel
 		result.LevelUp = newLevel > oldLevel
+		result.XPBreakdown = &XPBreakdown{
+			BaseXP:          baseXP,
+			FirstGenreBonus: firstGenreBonusXP,
+			FirstAreaBonus:  firstAreaBonusXP,
+			MemoBonus:       memoBonusXP,
+			StreakBonus:     streakBonus,
+		}
 
 		// バッジチェック
 		var visitCount int64

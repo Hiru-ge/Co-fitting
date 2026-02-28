@@ -1322,3 +1322,79 @@ func TestProcessGamification(t *testing.T) {
 		}
 	})
 }
+
+// Issue #227: XP計算内訳テスト
+func TestProcessGamificationXPBreakdown(t *testing.T) {
+	t.Run("ProcessGamificationはXP内訳情報(XPBreakdown)を返す", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "gamif_breakdown@example.com")
+		database.SeedMasterData(testDB)
+
+		tag := getOrCreateGenreTag(t, "カフェ")
+		visit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_breakdown_test",
+			PlaceName:     "ブレイクダウンテスト",
+			Category:      "cafe",
+			Latitude:      35.6895,
+			Longitude:     139.6917,
+			IsComfortZone: false,
+			GenreTagID:    &tag.ID,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&visit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+
+		if result.XPBreakdown == nil {
+			t.Fatal("expected XPBreakdown to be non-nil")
+		}
+		if result.XPBreakdown.BaseXP <= 0 {
+			t.Errorf("expected BaseXP > 0, got %d", result.XPBreakdown.BaseXP)
+		}
+		// 初回訪問なので初ジャンルボーナスが付く
+		if result.XPBreakdown.FirstGenreBonus != services.XPFirstGenre {
+			t.Errorf("expected FirstGenreBonus=%d, got %d", services.XPFirstGenre, result.XPBreakdown.FirstGenreBonus)
+		}
+		// base_xp + first_genre_bonus + その他 = XPEarned
+		sum := result.XPBreakdown.BaseXP + result.XPBreakdown.FirstGenreBonus +
+			result.XPBreakdown.FirstAreaBonus + result.XPBreakdown.MemoBonus + result.XPBreakdown.StreakBonus
+		if sum != result.XPEarned {
+			t.Errorf("XPBreakdown合計(%d) != XPEarned(%d)", sum, result.XPEarned)
+		}
+	})
+
+	t.Run("脱却訪問のXPBreakdownはBaseXP=100を返す", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "gamif_breakdown_escape@example.com")
+		database.SeedMasterData(testDB)
+
+		tag := getOrCreateGenreTag(t, "カフェ")
+		visit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_escape_test",
+			PlaceName:     "脱却テスト",
+			Category:      "cafe",
+			Latitude:      35.6895,
+			Longitude:     139.6917,
+			IsComfortZone: true, // 脱却訪問
+			GenreTagID:    &tag.ID,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&visit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+		if result.XPBreakdown == nil {
+			t.Fatal("expected XPBreakdown to be non-nil")
+		}
+		if result.XPBreakdown.BaseXP != services.XPComfortBreak {
+			t.Errorf("expected BaseXP=%d for comfort zone break, got %d", services.XPComfortBreak, result.XPBreakdown.BaseXP)
+		}
+	})
+}

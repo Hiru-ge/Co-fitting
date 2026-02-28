@@ -38,6 +38,15 @@ export interface CreateVisitRequest {
   visited_at: string;
 }
 
+// XP計算内訳
+export interface XPBreakdown {
+  base_xp: number;           // ベースXP（通常50 or 脱却100）
+  first_genre_bonus: number; // 初ジャンルボーナス（0 or 50）
+  first_area_bonus: number;  // 初エリアボーナス（0 or 30）
+  memo_bonus: number;        // メモボーナス（0 or 10）
+  streak_bonus: number;      // ストリークボーナス（0〜100）
+}
+
 export interface BadgeInfo {
   id: number;
   name: string;
@@ -71,4 +80,6 @@ export interface CreateVisitResponse extends Omit<Visit, 'xp_earned'> {
   new_badges?: BadgeInfo[];
   /** 今回の訪問で本日の3件上限に達したか（バックエンドの訪問履歴に基づく正確な判定） */
   daily_completed?: boolean;
+  /** XP計算内訳 */
+  xp_breakdown?: XPBreakdown;
 }

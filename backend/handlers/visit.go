@@ -64,11 +64,12 @@ type createVisitRequest struct {
 // total_xp/level_up/new_level/new_badges/daily_completedをゲーミフィケーション情報として追加する
 type createVisitResponse struct {
 	models.Visit
-	TotalXP        int            `json:"total_xp"`        // ユーザー累計XP
-	LevelUp        bool           `json:"level_up"`        // 今回の訪問でレベルアップしたか
-	NewLevel       int            `json:"new_level"`       // 現在のレベル
-	NewBadges      []models.Badge `json:"new_badges"`      // 今回獲得した新バッジ
-	DailyCompleted bool           `json:"daily_completed"` // 今回の訪問で本日の3件上限に達したか
+	TotalXP        int                   `json:"total_xp"`               // ユーザー累計XP
+	LevelUp        bool                  `json:"level_up"`               // 今回の訪問でレベルアップしたか
+	NewLevel       int                   `json:"new_level"`              // 現在のレベル
+	NewBadges      []models.Badge        `json:"new_badges"`             // 今回獲得した新バッジ
+	DailyCompleted bool                  `json:"daily_completed"`        // 今回の訪問で本日の3件上限に達したか
+	XPBreakdown    *services.XPBreakdown `json:"xp_breakdown,omitempty"` // XP計算内訳
 }
 
 // CreateVisit godoc
@@ -187,6 +188,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		NewLevel:       gamifResult.NewLevel,
 		NewBadges:      newBadges,
 		DailyCompleted: dailyCompleted,
+		XPBreakdown:    gamifResult.XPBreakdown,
 	})
 }
 

@@ -1,6 +1,7 @@
 import { getLevelInfo } from "~/utils/level";
 import { useModalClose } from "~/hooks/use-modal-close";
 import ConfettiDecoration from "~/components/confetti-decoration";
+import type { XPBreakdown } from "~/types/visit";
 
 interface XpModalProps {
   xpEarned: number;
@@ -8,6 +9,7 @@ interface XpModalProps {
   currentLevel: number;
   levelUp: boolean;
   newLevel: number;
+  xpBreakdown?: XPBreakdown;
   onClose: () => void;
 }
 
@@ -17,6 +19,7 @@ export default function XpModal({
   currentLevel,
   levelUp,
   newLevel,
+  xpBreakdown,
   onClose,
 }: XpModalProps) {
   const { xpToNextLevel, progressPercent } = getLevelInfo(totalXp);
@@ -97,6 +100,33 @@ export default function XpModal({
             </p>
           </div>
 
+          {/* XP計算内訳 */}
+          {xpBreakdown && (
+            <div
+              data-testid="xp-breakdown"
+              className="w-full mt-6 rounded-xl px-4 py-3 text-left space-y-1.5"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              <XpBreakdownRow
+                label={xpBreakdown.base_xp >= 100 ? "脱却ボーナス" : "通常訪問"}
+                xp={xpBreakdown.base_xp}
+                highlight={xpBreakdown.base_xp >= 100}
+              />
+              {xpBreakdown.first_genre_bonus > 0 && (
+                <XpBreakdownRow label="初ジャンルボーナス" xp={xpBreakdown.first_genre_bonus} />
+              )}
+              {xpBreakdown.first_area_bonus > 0 && (
+                <XpBreakdownRow label="初エリアボーナス" xp={xpBreakdown.first_area_bonus} />
+              )}
+              {xpBreakdown.memo_bonus > 0 && (
+                <XpBreakdownRow label="メモボーナス" xp={xpBreakdown.memo_bonus} />
+              )}
+              {xpBreakdown.streak_bonus > 0 && (
+                <XpBreakdownRow label="ストリークボーナス" xp={xpBreakdown.streak_bonus} />
+              )}
+            </div>
+          )}
+
           {/* レベルプログレスバー */}
           <div className="w-full mt-8">
             <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden p-0.5">
@@ -134,6 +164,16 @@ export default function XpModal({
           <span className="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+// XP内訳の1行コンポーネント
+function XpBreakdownRow({ label, xp, highlight = false }: { label: string; xp: number; highlight?: boolean }) {
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className={highlight ? "text-red-400 font-semibold" : "text-white/60"}>{label}</span>
+      <span className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}>+{xp}</span>
     </div>
   );
 }
