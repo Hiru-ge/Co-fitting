@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Route } from "./+types/settings";
-import { redirect, useNavigate, Link } from "react-router";
-import { getToken, getUser, clearToken } from "~/lib/auth";
+import { useNavigate, Link } from "react-router";
+import { clearToken } from "~/lib/auth";
+import { protectedLoader } from "~/lib/protected-loader";
 import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
@@ -41,10 +42,8 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 ];
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
-  const token = getToken();
-  if (!token) throw redirect("/login");
-  const [user, genres, interests] = await Promise.all([
-    getUser(token),
+  const { user, token } = await protectedLoader();
+  const [genres, interests] = await Promise.all([
     getGenreTags(token),
     getInterests(token),
   ]);

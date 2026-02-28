@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/profile";
-import { redirect, useNavigate, Link } from "react-router";
-import { getToken, getUser, logout } from "~/lib/auth";
+import { useNavigate, Link } from "react-router";
+import { logout } from "~/lib/auth";
+import { protectedLoader } from "~/lib/protected-loader";
 import { getUserStats, getUserBadges, getProficiency } from "~/api/users";
 import type { UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 import { toUserMessage } from "~/utils/error";
@@ -10,12 +11,7 @@ import { useModalClose } from "~/hooks/use-modal-close";
 import { getLevelInfo, getLevelTitle } from "~/utils/level";
 import { getBadgeIcon } from "~/utils/badge-icon";
 
-export async function clientLoader({}: Route.ClientLoaderArgs) {
-  const token = getToken();
-  if (!token) throw redirect("/login");
-  const user = await getUser(token);
-  return { user, token };
-}
+export { protectedLoader as clientLoader };
 
 export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user, token } = loaderData;

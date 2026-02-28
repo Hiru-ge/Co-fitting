@@ -96,7 +96,7 @@
   - `auth.ts` を唯一の実装とし、`client.ts` から呼び出す形に
   - **優先度**: 高 / **工数**: 30分
 
-- [ ] **protectedLoader活用 + clientLoader認証チェック統一（FE-H2, FE-M6）**: Issue #241
+- [x] **protectedLoader活用 + clientLoader認証チェック統一（FE-H2, FE-M6）**: Issue #241
   - 未使用の `protectedLoader` を全ルートに適用するか削除
   - 6ルートで重複する `getToken() → redirect("/login") → getUser()` パターンを共通化
   - **優先度**: 高 / **工数**: 30分

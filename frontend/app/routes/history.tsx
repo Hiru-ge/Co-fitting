@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Route } from "./+types/history";
-import { redirect, useNavigate, Link } from "react-router";
-import { getToken, getUser } from "~/lib/auth";
+import { useNavigate, Link } from "react-router";
+import { protectedLoader } from "~/lib/protected-loader";
 import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
@@ -16,12 +16,7 @@ const ITEMS_PER_PAGE = 20;
 type ViewMode = "list" | "map";
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
-export async function clientLoader({}: Route.ClientLoaderArgs) {
-  const token = getToken();
-  if (!token) throw redirect("/login");
-  const user = await getUser(token);
-  return { user, token };
-}
+export { protectedLoader as clientLoader };
 
 export default function History({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;

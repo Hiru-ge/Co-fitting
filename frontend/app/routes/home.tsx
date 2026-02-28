@@ -1,6 +1,6 @@
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
-import { getToken, getUser } from "~/lib/auth";
+import { protectedLoader } from "~/lib/protected-loader";
 import { getInterests } from "~/api/genres";
 import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
@@ -13,12 +13,8 @@ import BadgeModal from "~/components/badge-modal";
 import CompleteCard from "~/components/complete-card";
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
-  const token = getToken();
-  if (!token) throw redirect("/login");
-  const [user, interests] = await Promise.all([
-    getUser(token),
-    getInterests(token),
-  ]);
+  const { user, token } = await protectedLoader();
+  const interests = await getInterests(token);
   const onboardingSkipped = localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
   if (interests.length < 3 && !onboardingSkipped) throw redirect("/onboarding");
   return { user, token };

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { redirect, useNavigate } from "react-router";
-import { getToken, getUser } from "~/lib/auth";
+import { protectedLoader } from "~/lib/protected-loader";
 import { getVisit, updateVisit } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
@@ -28,9 +28,7 @@ export async function clientLoader({
 }: {
   params: Record<string, string | undefined>;
 }) {
-  const token = getToken();
-  if (!token) throw redirect("/login");
-  const user = await getUser(token);
+  const { user, token } = await protectedLoader();
 
   const visitId = Number(params.id);
   if (!params.id || isNaN(visitId) || visitId <= 0) {
