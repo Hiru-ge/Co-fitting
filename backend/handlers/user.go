@@ -1,13 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/Hiru-ge/roamble/config"
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -16,6 +21,7 @@ import (
 type UserHandler struct {
 	DB          *gorm.DB
 	RedisClient *redis.Client
+	JWTCfg      *config.JWTConfig
 }
 
 // GetMe godoc
@@ -414,6 +420,27 @@ func (h *UserHandler) DeleteMe(c *gin.Context) {
 	if result.RowsAffected == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
+	}
+
+	ctx := context.Background()
+
+	// アクセストークンをブラックリストに登録して無効化
+	if h.RedisClient != nil && h.JWTCfg != nil {
+		authHeader := c.GetHeader("Authorization")
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) == 2 && parts[0] == "Bearer" {
+			accessToken := parts[1]
+			if claims, err := utils.ValidateToken(accessToken, h.JWTCfg.Secret); err == nil {
+				ttl := time.Until(claims.ExpiresAt.Time)
+				utils.AddTokenToBlacklist(ctx, h.RedisClient, accessToken, ttl) //nolint:errcheck
+			}
+		}
+
+		// ユーザーのRedisキャッシュを全削除
+		userIDStr := fmt.Sprintf("%d", userID)
+		database.DeleteKeysByPattern(ctx, h.RedisClient, fmt.Sprintf("suggestion:daily:%s:*", userIDStr))  //nolint:errcheck
+		database.DeleteKeysByPattern(ctx, h.RedisClient, fmt.Sprintf("suggestion:count:%s:*", userIDStr))  //nolint:errcheck
+		database.DeleteKeysByPattern(ctx, h.RedisClient, fmt.Sprintf("suggestion:reload:%s:*", userIDStr)) //nolint:errcheck
 	}
 
 	c.Status(http.StatusNoContent)
