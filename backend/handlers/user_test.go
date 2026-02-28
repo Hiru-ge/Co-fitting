@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,8 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +24,6 @@ func setupUserRouter() *gin.Engine {
 	r.GET("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.GetMe)
 	return r
 }
-
 
 func setupUserRouterWithPatch() *gin.Engine {
 	userHandler := &UserHandler{DB: testDB}
@@ -384,7 +386,11 @@ func TestUpdateSearchRadius(t *testing.T) {
 }
 
 func setupUserRouterWithDelete() *gin.Engine {
-	userHandler := &UserHandler{DB: testDB}
+	userHandler := &UserHandler{
+		DB:          testDB,
+		JWTCfg:      testAuthHandler.JWTCfg,
+		RedisClient: testRedisClient,
+	}
 
 	r := gin.New()
 	r.DELETE("/api/users/me", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.DeleteMe)
@@ -482,6 +488,85 @@ func TestDeleteMe(t *testing.T) {
 
 		if w.Code != http.StatusNotFound {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("削除後のアクセストークンがブラックリストに登録される", func(t *testing.T) {
+		if testRedisClient == nil {
+			t.Skip("Redis not available")
+		}
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "delete_blacklist@example.com",
+			DisplayName: "Delete Blacklist",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/users/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNoContent {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNoContent, w.Code, w.Body.String())
+		}
+
+		// 削除後のトークンがブラックリストに登録されていることを確認
+		isBlacklisted, err := utils.IsTokenBlacklisted(context.Background(), testRedisClient, token)
+		if err != nil {
+			t.Fatalf("Failed to check blacklist: %v", err)
+		}
+		if !isBlacklisted {
+			t.Error("Expected access token to be blacklisted after account deletion")
+		}
+	})
+
+	t.Run("削除後にユーザーのRedisキャッシュが削除される", func(t *testing.T) {
+		if testRedisClient == nil {
+			t.Skip("Redis not available")
+		}
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "delete_cache@example.com",
+			DisplayName: "Delete Cache",
+		}
+		testDB.Create(&user)
+
+		// テスト用のRedisキャッシュを事前に設定
+		ctx := context.Background()
+		userIDStr := fmt.Sprintf("%d", user.ID)
+		today := time.Now().Format("2006-01-02")
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.0, 135.0, `{"places":[]}`, 24*time.Hour)
+		database.SetDailyLimitReached(ctx, testRedisClient, userIDStr, today, 24*time.Hour)
+		database.IncrementDailyReloadCount(ctx, testRedisClient, userIDStr, today, 24*time.Hour)
+
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/api/users/me", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNoContent {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNoContent, w.Code, w.Body.String())
+		}
+
+		// Redisキャッシュが削除されていることを確認
+		dailyKeys, _ := database.ScanKeysByPattern(ctx, testRedisClient, fmt.Sprintf("suggestion:daily:%s:*", userIDStr))
+		if len(dailyKeys) > 0 {
+			t.Errorf("Expected daily suggestion cache to be deleted, but found %d keys", len(dailyKeys))
+		}
+		countKeys, _ := database.ScanKeysByPattern(ctx, testRedisClient, fmt.Sprintf("suggestion:count:%s:*", userIDStr))
+		if len(countKeys) > 0 {
+			t.Errorf("Expected suggestion count cache to be deleted, but found %d keys", len(countKeys))
+		}
+		reloadKeys, _ := database.ScanKeysByPattern(ctx, testRedisClient, fmt.Sprintf("suggestion:reload:%s:*", userIDStr))
+		if len(reloadKeys) > 0 {
+			t.Errorf("Expected suggestion reload cache to be deleted, but found %d keys", len(reloadKeys))
 		}
 	})
 }
