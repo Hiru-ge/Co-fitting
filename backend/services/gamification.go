@@ -13,7 +13,6 @@ import (
 const (
 	XPNormalVisit        = 50  // 通常訪問
 	XPComfortBreak       = 100 // 脱却訪問
-	XPFirstGenre         = 50  // 初めてのジャンルボーナス
 	XPFirstArea          = 30  // 初めてのエリアボーナス
 	XPMemoBonus          = 10  // 感想メモ記入ボーナス
 	XPStreakBonusPerWeek = 10  // ストリークボーナス（1週あたり）
@@ -83,11 +82,10 @@ type GamificationResult struct {
 
 // XPBreakdown はXP獲得の内訳
 type XPBreakdown struct {
-	BaseXP          int `json:"base_xp"`           // ベースXP（通常50 or 脱却100）
-	FirstGenreBonus int `json:"first_genre_bonus"` // 初ジャンルボーナス
-	FirstAreaBonus  int `json:"first_area_bonus"`  // 初エリアボーナス
-	MemoBonus       int `json:"memo_bonus"`        // メモボーナス
-	StreakBonus     int `json:"streak_bonus"`      // ストリークボーナス
+	BaseXP         int `json:"base_xp"`          // ベースXP（通常50 or 脱却100）
+	FirstAreaBonus int `json:"first_area_bonus"` // 初エリアボーナス
+	MemoBonus      int `json:"memo_bonus"`       // メモボーナス
+	StreakBonus    int `json:"streak_bonus"`     // ストリークボーナス
 }
 
 // badgeCondition はConditionJSONのデコード用
@@ -98,16 +96,12 @@ type badgeCondition struct {
 
 // CalcXP はXPを計算して返す
 // isComfortZone: 興味ジャンル外ならtrue（脱却訪問）
-// isFirstGenre: 初めてのジャンル訪問ならtrue
 // isFirstArea: 初めてのエリア訪問ならtrue
 // hasMemo: 感想メモありならtrue
-func CalcXP(isComfortZone bool, isFirstGenre bool, isFirstArea bool, hasMemo bool) int {
+func CalcXP(isComfortZone bool, isFirstArea bool, hasMemo bool) int {
 	xp := XPNormalVisit
 	if isComfortZone {
 		xp = XPComfortBreak
-	}
-	if isFirstGenre {
-		xp += XPFirstGenre
 	}
 	if isFirstArea {
 		xp += XPFirstArea
@@ -373,16 +367,6 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 	var result GamificationResult
 
 	err := db.Transaction(func(tx *gorm.DB) error {
-		// 初めてのジャンル訪問かチェック
-		isFirstGenre := false
-		if visit.GenreTagID != nil {
-			var count int64
-			tx.Model(&models.Visit{}).
-				Where("user_id = ? AND genre_tag_id = ? AND id != ?", userID, *visit.GenreTagID, visit.ID).
-				Count(&count)
-			isFirstGenre = count == 0
-		}
-
 		// 初めてのエリア訪問かチェック（過去訪問のいずれかから10km以上離れていればtrue）
 		isFirstArea := false
 		if visit.Latitude != 0 || visit.Longitude != 0 {
@@ -406,16 +390,12 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		hasMemo := visit.Memo != nil && *visit.Memo != ""
 
 		// XP計算
-		xpEarned := CalcXP(visit.IsComfortZone, isFirstGenre, isFirstArea, hasMemo)
+		xpEarned := CalcXP(visit.IsComfortZone, isFirstArea, hasMemo)
 
 		// 内訳を記録
 		baseXP := XPNormalVisit
 		if visit.IsComfortZone {
 			baseXP = XPComfortBreak
-		}
-		firstGenreBonusXP := 0
-		if isFirstGenre {
-			firstGenreBonusXP = XPFirstGenre
 		}
 		firstAreaBonusXP := 0
 		if isFirstArea {
@@ -485,11 +465,10 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		result.NewLevel = newLevel
 		result.LevelUp = newLevel > oldLevel
 		result.XPBreakdown = &XPBreakdown{
-			BaseXP:          baseXP,
-			FirstGenreBonus: firstGenreBonusXP,
-			FirstAreaBonus:  firstAreaBonusXP,
-			MemoBonus:       memoBonusXP,
-			StreakBonus:     streakBonus,
+			BaseXP:         baseXP,
+			FirstAreaBonus: firstAreaBonusXP,
+			MemoBonus:      memoBonusXP,
+			StreakBonus:    streakBonus,
 		}
 
 		// バッジチェック

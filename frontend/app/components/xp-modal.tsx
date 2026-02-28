@@ -112,9 +112,6 @@ export default function XpModal({
                 xp={xpBreakdown.base_xp}
                 highlight={xpBreakdown.base_xp >= 100}
               />
-              {xpBreakdown.first_genre_bonus > 0 && (
-                <XpBreakdownRow label="初ジャンルボーナス" xp={xpBreakdown.first_genre_bonus} />
-              )}
               {xpBreakdown.first_area_bonus > 0 && (
                 <XpBreakdownRow label="初エリアボーナス" xp={xpBreakdown.first_area_bonus} />
               )}

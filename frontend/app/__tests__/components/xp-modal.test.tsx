@@ -77,7 +77,7 @@ describe("XpModal", () => {
       <XpModal
         {...defaultProps}
         xpEarned={50}
-        xpBreakdown={{ base_xp: 50, first_genre_bonus: 0, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 0 }}
+        xpBreakdown={{ base_xp: 50, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 0 }}
       />
     );
     const breakdownEl = screen.getByTestId("xp-breakdown");
@@ -91,34 +91,21 @@ describe("XpModal", () => {
       <XpModal
         {...defaultProps}
         xpEarned={100}
-        xpBreakdown={{ base_xp: 100, first_genre_bonus: 0, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 0 }}
+        xpBreakdown={{ base_xp: 100, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 0 }}
       />
     );
     expect(screen.getByText(/脱却ボーナス/)).toBeInTheDocument();
-  });
-
-  test("初ジャンルボーナスがある場合に内訳に表示される", () => {
-    render(
-      <XpModal
-        {...defaultProps}
-        xpEarned={150}
-        xpBreakdown={{ base_xp: 100, first_genre_bonus: 50, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 0 }}
-      />
-    );
-    expect(screen.getByText(/初ジャンル/)).toBeInTheDocument();
-    expect(screen.getAllByText(/\+50/).length).toBeGreaterThan(0);
   });
 
   test("複数ボーナスがある場合にすべて表示される", () => {
     render(
       <XpModal
         {...defaultProps}
-        xpEarned={190}
-        xpBreakdown={{ base_xp: 100, first_genre_bonus: 50, first_area_bonus: 30, memo_bonus: 10, streak_bonus: 0 }}
+        xpEarned={140}
+        xpBreakdown={{ base_xp: 100, first_area_bonus: 30, memo_bonus: 10, streak_bonus: 0 }}
       />
     );
     expect(screen.getByText(/脱却ボーナス/)).toBeInTheDocument();
-    expect(screen.getByText(/初ジャンル/)).toBeInTheDocument();
     expect(screen.getByText(/初エリア/)).toBeInTheDocument();
     expect(screen.getByText(/メモ/)).toBeInTheDocument();
   });
@@ -128,7 +115,7 @@ describe("XpModal", () => {
       <XpModal
         {...defaultProps}
         xpEarned={60}
-        xpBreakdown={{ base_xp: 50, first_genre_bonus: 0, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 10 }}
+        xpBreakdown={{ base_xp: 50, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 10 }}
       />
     );
     expect(screen.getByText(/ストリーク/)).toBeInTheDocument();

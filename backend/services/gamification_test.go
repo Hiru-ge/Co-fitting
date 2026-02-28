@@ -70,53 +70,46 @@ func getOrCreateGenreTag(t *testing.T, name string) models.GenreTag {
 
 func TestCalcXP(t *testing.T) {
 	t.Run("通常訪問（is_comfort_zone=false）は50XP", func(t *testing.T) {
-		xp := services.CalcXP(false, false, false, false)
+		xp := services.CalcXP(false, false, false)
 		if xp != 50 {
 			t.Errorf("expected 50, got %d", xp)
 		}
 	})
 
 	t.Run("脱却訪問（is_comfort_zone=true）は100XP", func(t *testing.T) {
-		xp := services.CalcXP(true, false, false, false)
+		xp := services.CalcXP(true, false, false)
 		if xp != 100 {
 			t.Errorf("expected 100, got %d", xp)
 		}
 	})
 
-	t.Run("初めてのジャンルボーナス+50XP", func(t *testing.T) {
-		xp := services.CalcXP(false, true, false, false)
-		if xp != 100 {
-			t.Errorf("expected 100 (50+50), got %d", xp)
-		}
-	})
-
 	t.Run("初めてのエリアボーナス+30XP", func(t *testing.T) {
-		xp := services.CalcXP(false, false, true, false)
+		xp := services.CalcXP(false, true, false)
 		if xp != 80 {
 			t.Errorf("expected 80 (50+30), got %d", xp)
 		}
 	})
 
 	t.Run("感想メモ記入ボーナス+10XP", func(t *testing.T) {
-		xp := services.CalcXP(false, false, false, true)
+		xp := services.CalcXP(false, false, true)
 		if xp != 60 {
 			t.Errorf("expected 60 (50+10), got %d", xp)
 		}
 	})
 
-	t.Run("脱却+初ジャンル+初エリア+メモ =190XP", func(t *testing.T) {
-		xp := services.CalcXP(true, true, true, true)
-		// 100 + 50 + 30 + 10 = 190
-		if xp != 190 {
-			t.Errorf("expected 190, got %d", xp)
+	t.Run("脱却+初エリア+メモ =140XP", func(t *testing.T) {
+		xp := services.CalcXP(true, true, true)
+		// 100 + 30 + 10 = 140
+		if xp != 140 {
+			t.Errorf("expected 140, got %d", xp)
 		}
 	})
 
-	t.Run("通常+初ジャンル+初エリア+メモ =140XP", func(t *testing.T) {
-		xp := services.CalcXP(false, true, true, true)
-		// 50 + 50 + 30 + 10 = 140
-		if xp != 140 {
-			t.Errorf("expected 140, got %d", xp)
+	t.Run("通常+初エリア+メモ =90XP", func(t *testing.T) {
+		xp := services.CalcXP(false, true, true)
+		// 50 + 30 + 10 = 90
+		if xp != 90 {
+			t.Errorf("expected 90, got %d", xp)
 		}
 	})
 }
@@ -1187,7 +1180,7 @@ func TestProcessGamification(t *testing.T) {
 			t.Fatalf("ProcessGamification failed: %v", err)
 		}
 
-		// 通常訪問50XP + ストリーク5週×10=50XP = 100XP (初ジャンルボーナスを除く)
+		// 通常訪問50XP + ストリーク5週×10=50XP = 100XP
 		// ストリークボーナスが含まれているか確認（最低基本XP+50以上）
 		if result.XPEarned < 100 {
 			t.Errorf("expected xp_earned >= 100 with streak bonus (streak=5), got %d", result.XPEarned)
@@ -1223,7 +1216,7 @@ func TestProcessGamification(t *testing.T) {
 			t.Fatalf("ProcessGamification failed: %v", err)
 		}
 
-		// 通常訪問50XP + ストリーク上限100XP + 初ジャンルボーナス50XP = 200XP
+		// 通常訪問50XP + ストリーク上限100XP = 150XP
 		if result.XPEarned < 150 {
 			t.Errorf("expected xp_earned >= 150 with max streak bonus (streak=10), got %d", result.XPEarned)
 		}
@@ -1267,8 +1260,7 @@ func TestProcessGamification(t *testing.T) {
 			t.Fatalf("ProcessGamification failed: %v", err)
 		}
 
-		// 通常訪問50XP + 初エリアボーナス30XP = 80XP（初ジャンルボーナス除く）
-		// 実際には初ジャンルの可能性もあるので、最低でも80XP以上
+		// 通常訪問50XP + 初エリアボーナス30XP = 80XP
 		if result.XPEarned < 80 {
 			t.Errorf("expected xp_earned >= 80 with first area bonus, got %d", result.XPEarned)
 		}
@@ -1305,7 +1297,7 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&nearVisit)
 
-		// 初ジャンルのXPなしで計算するためジャンルを同一にする
+		// 同一ジャンルを設定して近距離であることを明確にする
 		tag := getOrCreateGenreTag(t, "カフェ")
 		testDB.Model(&pastVisit).Update("genre_tag_id", tag.ID)
 		nearVisit.GenreTagID = &tag.ID
@@ -1355,13 +1347,9 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 		if result.XPBreakdown.BaseXP <= 0 {
 			t.Errorf("expected BaseXP > 0, got %d", result.XPBreakdown.BaseXP)
 		}
-		// 初回訪問なので初ジャンルボーナスが付く
-		if result.XPBreakdown.FirstGenreBonus != services.XPFirstGenre {
-			t.Errorf("expected FirstGenreBonus=%d, got %d", services.XPFirstGenre, result.XPBreakdown.FirstGenreBonus)
-		}
-		// base_xp + first_genre_bonus + その他 = XPEarned
-		sum := result.XPBreakdown.BaseXP + result.XPBreakdown.FirstGenreBonus +
-			result.XPBreakdown.FirstAreaBonus + result.XPBreakdown.MemoBonus + result.XPBreakdown.StreakBonus
+		// base_xp + その他 = XPEarned
+		sum := result.XPBreakdown.BaseXP + result.XPBreakdown.FirstAreaBonus +
+			result.XPBreakdown.MemoBonus + result.XPBreakdown.StreakBonus
 		if sum != result.XPEarned {
 			t.Errorf("XPBreakdown合計(%d) != XPEarned(%d)", sum, result.XPEarned)
 		}

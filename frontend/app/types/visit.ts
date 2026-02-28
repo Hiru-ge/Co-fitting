@@ -40,11 +40,10 @@ export interface CreateVisitRequest {
 
 // XP計算内訳
 export interface XPBreakdown {
-  base_xp: number;           // ベースXP（通常50 or 脱却100）
-  first_genre_bonus: number; // 初ジャンルボーナス（0 or 50）
-  first_area_bonus: number;  // 初エリアボーナス（0 or 30）
-  memo_bonus: number;        // メモボーナス（0 or 10）
-  streak_bonus: number;      // ストリークボーナス（0〜100）
+  base_xp: number;          // ベースXP（通常50 or 脱却100）
+  first_area_bonus: number; // 初エリアボーナス（0 or 30）
+  memo_bonus: number;       // メモボーナス（0 or 10）
+  streak_bonus: number;     // ストリークボーナス（0〜100）
 }
 
 export interface BadgeInfo {
