@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Route } from "./+types/settings";
-import { redirect, useNavigate } from "react-router";
+import { redirect, useNavigate, Link } from "react-router";
 import { getToken, getUser, clearToken } from "~/lib/auth";
 import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
@@ -205,6 +205,30 @@ function UserInfoTab({
             {isUpdatingName ? "変更中..." : "表示名を変更"}
           </button>
         </form>
+      </section>
+
+      {/* プライバシーポリシー・法的情報 */}
+      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-xl">
+            policy
+          </span>
+          法的情報
+        </h2>
+        <Link
+          to="/privacy"
+          className="flex items-center justify-between py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg text-gray-400">
+              description
+            </span>
+            プライバシーポリシー
+          </span>
+          <span className="material-symbols-outlined text-lg text-gray-400">
+            chevron_right
+          </span>
+        </Link>
       </section>
 
       {/* アカウント削除セクション */}
