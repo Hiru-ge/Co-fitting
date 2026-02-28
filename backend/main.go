@@ -38,10 +38,6 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	if err := database.SeedMasterData(db); err != nil {
-		log.Fatalf("Failed to seed master data: %v", err)
-	}
-
 	log.Println("Database connected and migrated successfully")
 
 	defer func() {
