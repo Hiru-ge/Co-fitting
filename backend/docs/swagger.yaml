@@ -138,8 +138,47 @@ definitions:
       refresh_token:
         description: オプション（下位互換性のため）
         type: string
+    type: object  handlers.listVisitsResponse:
+    properties:
+      total:
+        description: 訪問記録の総件数
+        type: integer
+      visits:
+        description: 訪問記録の一覧
+        items:
+          $ref: '#/definitions/models.Visit'
+        type: array
     type: object
-  handlers.proficiencyResponse:
+  handlers.mapVisitItem:
+    properties:
+      category:
+        type: string
+      genre_tag_id:
+        type: integer
+      id:
+        type: integer
+      lat:
+        type: number
+      lng:
+        type: number
+      place_id:
+        type: string
+      place_name:
+        type: string
+      visited_at:
+        type: string
+    type: object
+  handlers.mapVisitsResponse:
+    properties:
+      total:
+        description: 訪問記録の総件数
+        type: integer
+      visits:
+        description: マップ表示用訪問データの一覧
+        items:
+          $ref: '#/definitions/handlers.mapVisitItem'
+        type: array
+    type: object  handlers.proficiencyResponse:
     properties:
       category:
         type: string
@@ -710,8 +749,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.listVisitsResponse'
         "401":
           description: Unauthorized
           schema:
@@ -859,8 +897,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.mapVisitsResponse'
         "401":
           description: Unauthorized
           schema:
@@ -885,4 +922,10 @@ paths:
       summary: ヘルスチェック
       tags:
       - Health
+securityDefinitions:
+  BearerAuth:
+    description: JWTアクセストークン（Bearer形式）
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

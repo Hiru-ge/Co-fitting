@@ -670,8 +670,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.listVisitsResponse"
                         }
                     },
                     "401": {
@@ -684,8 +683,7 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
+            }, {
                 "description": "ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）",
                 "consumes": [
                     "application/json"
@@ -764,8 +762,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.mapVisitsResponse"
                         }
                     },
                     "401": {
@@ -1353,6 +1350,14 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "JWTアクセストークン（Bearer形式）",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

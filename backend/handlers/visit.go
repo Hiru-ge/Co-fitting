@@ -204,6 +204,18 @@ type mapVisitItem struct {
 	VisitedAt  string  `json:"visited_at"`
 }
 
+// listVisitsResponse は訪問履歴一覧取得APIのレスポンス
+type listVisitsResponse struct {
+	Visits []models.Visit `json:"visits"`
+	Total  int64          `json:"total"`
+}
+
+// mapVisitsResponse はマップ表示用訪問データ取得APIのレスポンス
+type mapVisitsResponse struct {
+	Visits []mapVisitItem `json:"visits"`
+	Total  int64          `json:"total"`
+}
+
 // GetMapData godoc
 // @Summary      マップ表示用訪問データ取得
 // @Description  マップ表示に必要な位置情報・ジャンル情報を最適化して取得する
@@ -211,8 +223,9 @@ type mapVisitItem struct {
 // @Produce      json
 // @Param        limit   query  int  false  "取得件数（デフォルト・上限2000）"
 // @Param        offset  query  int  false  "オフセット（デフォルト0）"
-// @Success      200  {object}  map[string]interface{}
+// @Success      200  {object}  handlers.mapVisitsResponse
 // @Failure      401  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/visits/map [get]
 func (h *VisitHandler) GetMapData(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -310,8 +323,9 @@ func (h *VisitHandler) GetVisit(c *gin.Context) {
 // @Produce      json
 // @Param        limit   query  int  false  "取得件数（デフォルト20）"
 // @Param        offset  query  int  false  "オフセット（デフォルト0）"
-// @Success      200  {object}  map[string]interface{}
+// @Success      200  {object}  handlers.listVisitsResponse
 // @Failure      401  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/visits [get]
 func (h *VisitHandler) ListVisits(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)

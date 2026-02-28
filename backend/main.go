@@ -19,6 +19,10 @@ import (
 // @description     RoambleのバックエンドAPIドキュメント
 // @host            localhost:8000
 // @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description JWTアクセストークン（Bearer形式）
 func main() {
 	// .envファイルから環境変数を読み込む
 	if err := godotenv.Load(); err != nil {
