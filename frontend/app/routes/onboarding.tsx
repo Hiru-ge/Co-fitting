@@ -82,10 +82,10 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-5 mb-4">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 space-y-5 mb-4">
         {Object.entries(grouped).map(([category, tags]) => (
           <div key={category}>
-            <h2 className="text-sm font-semibold text-gray-500 mb-2">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
               {category}
             </h2>
             <div className="flex flex-wrap gap-2">
@@ -99,7 +99,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
                     className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                       isSelected
                         ? "bg-primary text-bg-dark border-primary"
-                        : "bg-gray-50 text-gray-700 border-gray-200 hover:border-primary/60"
+                        : "bg-gray-50 dark:bg-white/10 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:border-primary/60"
                     }`}
                   >
                     {tag.name}
@@ -129,7 +129,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
         </button>
         <button
           onClick={handleSkip}
-          className="w-full rounded-md border border-gray-200 py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors bg-white"
+          className="w-full rounded-md border border-gray-200 dark:border-gray-600 py-2.5 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors bg-white dark:bg-white/5"
         >
           スキップ
         </button>

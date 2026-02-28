@@ -34,12 +34,12 @@ function renderCard(overrides = {}) {
 
 // === Issue #178: ジャンルバッジの興味タグ一致強調表示テスト ===
 describe("DiscoveryCard ジャンルバッジ", () => {
-  test("is_interest_match=true の場合、ジャンルバッジにブランドカラーが適用される", () => {
+  test("is_interest_match=true の場合、ジャンルバッジにオレンジカラーが適用される", () => {
     const { container } = renderCard({ is_interest_match: true });
-    // ブランドカラー (#525BBB) のクラスが適用されていることを確認
+    // オレンジカラーのクラスが適用されていることを確認（Issue #222: 興味タグ一致バッジ視認性改善）
     const badge = container.querySelector("[data-testid='genre-badge']");
     expect(badge).not.toBeNull();
-    expect(badge?.className).toMatch(/brand|525BBB|interest-match/);
+    expect(badge?.className).toMatch(/orange/);
   });
 
   test("is_interest_match=false の場合、ジャンルバッジが通常スタイル（bg-white/20）で表示される", () => {
@@ -47,7 +47,7 @@ describe("DiscoveryCard ジャンルバッジ", () => {
     const badge = container.querySelector("[data-testid='genre-badge']");
     expect(badge).not.toBeNull();
     expect(badge?.className).toContain("bg-white/20");
-    expect(badge?.className).not.toMatch(/brand|525BBB|interest-match/);
+    expect(badge?.className).not.toMatch(/orange/);
   });
 
   test("is_interest_match が未指定の場合、ジャンルバッジが通常スタイルで表示される", () => {
@@ -55,7 +55,7 @@ describe("DiscoveryCard ジャンルバッジ", () => {
     const badge = container.querySelector("[data-testid='genre-badge']");
     expect(badge).not.toBeNull();
     expect(badge?.className).toContain("bg-white/20");
-    expect(badge?.className).not.toMatch(/brand|525BBB|interest-match/);
+    expect(badge?.className).not.toMatch(/orange/);
   });
 
   test("ジャンルラベルが表示される", () => {
@@ -71,6 +71,15 @@ describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () =>
   test("is_comfort_zone=true の場合に脱却モードバッジが表示される", () => {
     renderCard({ is_comfort_zone: true });
     expect(screen.getByText("脱却モード")).toBeTruthy();
+  });
+
+  test("is_comfort_zone=true の場合、脱却モードバッジに赤系カラーが適用される（Issue #222: 視認性改善）", () => {
+    const { container } = renderCard({ is_comfort_zone: true });
+    const badge = Array.from(container.querySelectorAll("span")).find(
+      (el) => el.textContent === "脱却モード"
+    );
+    expect(badge).toBeTruthy();
+    expect(badge?.className).toMatch(/red/);
   });
 
   test("is_comfort_zone=false の場合は脱却モードバッジが表示されない", () => {

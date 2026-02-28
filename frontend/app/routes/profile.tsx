@@ -70,7 +70,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/settings")}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100"
+            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
             aria-label="設定"
           >
             <span className="material-symbols-outlined text-xl text-gray-600">
@@ -80,7 +80,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <h1 className="text-lg font-bold text-center">マイページ</h1>
           <button
             onClick={() => {/* TODO: 共有機能 */}}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100 btn-unimplemented"
+            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 btn-unimplemented"
             aria-label="共有"
             disabled
           >
