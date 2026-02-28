@@ -108,7 +108,7 @@ export default function XpModal({
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
             >
               <XpBreakdownRow
-                label={xpBreakdown.base_xp >= 100 ? "脱却ボーナス" : "通常訪問"}
+                label={xpBreakdown.base_xp >= 100 ? "脱却訪問" : "通常訪問"}
                 xp={xpBreakdown.base_xp}
                 highlight={xpBreakdown.base_xp >= 100}
               />

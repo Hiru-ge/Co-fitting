@@ -86,7 +86,7 @@ describe("XpModal", () => {
     expect(within(breakdownEl).getByText("+50")).toBeInTheDocument();
   });
 
-  test("脱却ボーナスがある場合に「脱却ボーナス」が表示される", () => {
+  test("脱却訪問の場合に「脱却訪問」が表示される", () => {
     render(
       <XpModal
         {...defaultProps}
@@ -94,7 +94,7 @@ describe("XpModal", () => {
         xpBreakdown={{ base_xp: 100, first_area_bonus: 0, memo_bonus: 0, streak_bonus: 0 }}
       />
     );
-    expect(screen.getByText(/脱却ボーナス/)).toBeInTheDocument();
+    expect(screen.getByText(/脱却訪問/)).toBeInTheDocument();
   });
 
   test("複数ボーナスがある場合にすべて表示される", () => {
@@ -105,7 +105,7 @@ describe("XpModal", () => {
         xpBreakdown={{ base_xp: 100, first_area_bonus: 30, memo_bonus: 10, streak_bonus: 0 }}
       />
     );
-    expect(screen.getByText(/脱却ボーナス/)).toBeInTheDocument();
+    expect(screen.getByText(/脱却訪問/)).toBeInTheDocument();
     expect(screen.getByText(/初エリア/)).toBeInTheDocument();
     expect(screen.getByText(/メモ/)).toBeInTheDocument();
   });
