@@ -11,6 +11,9 @@ export default [
   // オンボーディング（ボトムナビなし）
   route("onboarding", "routes/onboarding.tsx"),
 
+  // 公開ページ（認証不要）
+  route("privacy", "routes/privacy.tsx"),
+
   // アプリレイアウト（認証必須）
   layout("layouts/app-layout.tsx", [
     route("home", "routes/home.tsx"),

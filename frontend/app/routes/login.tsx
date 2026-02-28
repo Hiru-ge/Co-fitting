@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { GoogleLogin } from "@react-oauth/google";
 import { setToken, googleOAuth } from "~/lib/auth";
 import { isNetworkError } from "~/utils/error";
@@ -71,6 +71,14 @@ export default function Login() {
           {googleError}
         </p>
       )}
+
+      <p className="text-center text-xs text-text-main/40">
+        ログインすることで、
+        <Link to="/privacy" className="underline hover:text-text-main/60">
+          プライバシーポリシー
+        </Link>
+        に同意したものとみなされます。
+      </p>
     </div>
   );
 }
