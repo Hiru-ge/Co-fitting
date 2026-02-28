@@ -23,12 +23,7 @@ func setupVisitMapRouter() *gin.Engine {
 
 func createTestUserForMap(t *testing.T) models.User {
 	t.Helper()
-	user := models.User{
-		Email:       "map@example.com",
-		DisplayName: "Map User",
-	}
-	testDB.Create(&user)
-	return user
+	return createTestUserByEmail(t, "map@example.com", "Map User")
 }
 
 func createVisitsForMap(t *testing.T, userID uint64, count int) []models.Visit {

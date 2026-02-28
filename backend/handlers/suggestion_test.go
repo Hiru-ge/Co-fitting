@@ -87,12 +87,7 @@ func parseSuggestions(t *testing.T, body []byte) []PlaceResult {
 
 func createTestUser(t *testing.T) models.User {
 	t.Helper()
-	user := models.User{
-		Email:       "suggest@example.com",
-		DisplayName: "Suggest User",
-	}
-	testDB.Create(&user)
-	return user
+	return createTestUserByEmail(t, "suggest@example.com", "Suggest User")
 }
 
 func TestSuggest(t *testing.T) {

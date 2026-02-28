@@ -28,12 +28,7 @@ func setupVisitRouter() *gin.Engine {
 
 func createTestUserForVisit(t *testing.T) models.User {
 	t.Helper()
-	user := models.User{
-		Email:       "visit@example.com",
-		DisplayName: "Visit User",
-	}
-	testDB.Create(&user)
-	return user
+	return createTestUserByEmail(t, "visit@example.com", "Visit User")
 }
 
 func TestCreateVisit(t *testing.T) {

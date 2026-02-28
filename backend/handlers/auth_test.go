@@ -67,11 +67,6 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func cleanupUsers(t *testing.T) {
-	t.Helper()
-	testDB.Exec("DELETE FROM visit_history")
-	testDB.Exec("DELETE FROM users")
-}
 
 func setupRouter() *gin.Engine {
 	r := gin.New()
