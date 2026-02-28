@@ -83,7 +83,7 @@ describe("XpModal", () => {
     const breakdownEl = screen.getByTestId("xp-breakdown");
     expect(breakdownEl).toBeInTheDocument();
     expect(screen.getByText(/通常訪問/)).toBeInTheDocument();
-    expect(within(breakdownEl).getByText("+50")).toBeInTheDocument();
+    expect(within(breakdownEl).getByText("50")).toBeInTheDocument();
   });
 
   test("脱却訪問の場合に「脱却訪問」が表示される", () => {

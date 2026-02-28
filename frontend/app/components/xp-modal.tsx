@@ -111,6 +111,7 @@ export default function XpModal({
                 label={xpBreakdown.base_xp >= 100 ? "脱却訪問" : "通常訪問"}
                 xp={xpBreakdown.base_xp}
                 highlight={xpBreakdown.base_xp >= 100}
+                showPlus={false}
               />
               {xpBreakdown.first_area_bonus > 0 && (
                 <XpBreakdownRow label="初エリアボーナス" xp={xpBreakdown.first_area_bonus} />
@@ -166,11 +167,11 @@ export default function XpModal({
 }
 
 // XP内訳の1行コンポーネント
-function XpBreakdownRow({ label, xp, highlight = false }: { label: string; xp: number; highlight?: boolean }) {
+function XpBreakdownRow({ label, xp, highlight = false, showPlus = true }: { label: string; xp: number; highlight?: boolean; showPlus?: boolean }) {
   return (
     <div className="flex items-center justify-between text-xs">
       <span className={highlight ? "text-red-400 font-semibold" : "text-white/60"}>{label}</span>
-      <span className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}>+{xp}</span>
+      <span className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}>{showPlus ? "+" : ""}{xp}</span>
     </div>
   );
 }
