@@ -69,4 +69,6 @@ export interface CreateVisitResponse extends Omit<Visit, 'xp_earned'> {
   level_up?: boolean;
   new_level?: number;
   new_badges?: BadgeInfo[];
+  /** 今回の訪問で本日の3件上限に達したか（バックエンドの訪問履歴に基づく正確な判定） */
+  daily_completed?: boolean;
 }

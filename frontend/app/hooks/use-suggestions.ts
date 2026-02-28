@@ -23,8 +23,9 @@ export interface XpModalState {
 const COMPLETED_KEY = "roamble_completed";
 
 /**
- * 今日の日付キー（JST）でコンプリートフラグをsessionStorageに保存する。
- * セッション内（タブを閉じるまで）有効で、日付が変わると無効になる。
+ * 今日の日付キー（JST）でコンプリートフラグをlocalStorageに保存する。
+ * 日付キーが一致する間は有効で、日付が変わると無効になる。
+ * localStorageを使用することでタブを閉じても当日中は状態が維持される。
  */
 function getTodayKey(): string {
   const now = new Date();
@@ -35,7 +36,7 @@ function getTodayKey(): string {
 
 function isCompletedToday(): boolean {
   try {
-    const saved = sessionStorage.getItem(COMPLETED_KEY);
+    const saved = localStorage.getItem(COMPLETED_KEY);
     return saved === getTodayKey();
   } catch {
     return false;
@@ -44,9 +45,9 @@ function isCompletedToday(): boolean {
 
 function markCompletedToday(): void {
   try {
-    sessionStorage.setItem(COMPLETED_KEY, getTodayKey());
+    localStorage.setItem(COMPLETED_KEY, getTodayKey());
   } catch {
-    // sessionStorage使用不可の環境では無視
+    // localStorage使用不可の環境では無視
   }
 }
 
@@ -54,10 +55,10 @@ export function useSuggestions(token: string) {
   const { showToast } = useToast();
   const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
-  const completedFromSession = isCompletedToday();
-  const [isLoading, setIsLoading] = useState(!completedFromSession);
+  const completedFromStorage = isCompletedToday();
+  const [isLoading, setIsLoading] = useState(!completedFromStorage);
   const [error, setError] = useState<string | null>(null);
-  const [isCompleted, setIsCompleted] = useState(completedFromSession);
+  const [isCompleted, setIsCompleted] = useState(completedFromStorage);
   const [checkingIn, setCheckingIn] = useState(false);
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
   const [originalOrder, setOriginalOrder] = useState<string[]>([]);
@@ -135,10 +136,10 @@ export function useSuggestions(token: string) {
   useEffect(() => {
     if (initialLoadDoneRef.current) return;
     initialLoadDoneRef.current = true;
-    // sessionStorageからコンプリート済みと判定された場合はAPIを呼ばない
-    if (completedFromSession) return;
+    // localStorageからコンプリート済みと判定された場合はAPIを呼ばない
+    if (completedFromStorage) return;
     loadSuggestions();
-  }, [loadSuggestions, completedFromSession]);
+  }, [loadSuggestions, completedFromStorage]);
 
   function handleReload() {
     loadSuggestions(true);
@@ -172,7 +173,9 @@ export function useSuggestions(token: string) {
       setPlaces(remainingPlaces);
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
 
-      if (remainingPlaces.length === 0) {
+      // バックエンドの訪問履歴件数に基づくコンプリート判定（フロントのカード枚数ではなくサーバー側の事実を信頼）
+      // これによりリロードを挟んだ場合でも正確にコンプリートを検出できる
+      if (result.daily_completed) {
         setIsCompleted(true);
         markCompletedToday();
       }
@@ -189,8 +192,9 @@ export function useSuggestions(token: string) {
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
+        // 429は「すでに本日の上限を訪問済み」を示す。UIのみコンプリート状態に復元する。
+        // markCompletedTodayは3件目の訪問成功時（remainingPlaces.length === 0）に呼ぶため、ここでは呼ばない。
         setIsCompleted(true);
-        markCompletedToday();
       } else {
         showToast(toUserMessage(err));
       }

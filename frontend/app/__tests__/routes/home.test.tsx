@@ -188,6 +188,7 @@ describe("Home画面", () => {
     callCount = 0;
     vi.clearAllMocks();
     sessionStorageMock.clear();
+    localStorageMock.clear(); // localStorageに変更後、テスト間のコンプリートフラグ汚染を防ぐ
   });
 
   test("提案カード1枚目が表示される", async () => {
@@ -329,14 +330,11 @@ describe("Home画面", () => {
   // === Issue #164: 3件目完了時にXP獲得モーダルが表示されない問題 ===
   test("3件目チェックイン完了時にXPモーダルが表示される", async () => {
     const { createVisit } = await import("~/api/visits");
-    vi.mocked(createVisit).mockResolvedValue({
-      id: 1,
-      xp_earned: 50,
-      total_xp: 150,
-      level_up: false,
-      new_level: 2,
-      new_badges: [],
-    } as any);
+    // 1・2件目は未コンプリート、3件目でdaily_completed=trueを返す
+    vi.mocked(createVisit)
+      .mockResolvedValueOnce({ id: 1, xp_earned: 50, total_xp: 100, level_up: false, new_level: 2, new_badges: [], daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, xp_earned: 50, total_xp: 100, level_up: false, new_level: 2, new_badges: [], daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, xp_earned: 50, total_xp: 150, level_up: false, new_level: 2, new_badges: [], daily_completed: true } as any);
 
     const user = userEvent.setup();
     renderHome();
@@ -375,6 +373,12 @@ describe("Home画面", () => {
 
   // === Issue #165: 3件完了時にコンプリートカードを表示する ===
   test("全カードを訪問するとコンプリートカードが表示される", async () => {
+    const { createVisit } = await import("~/api/visits");
+    // バックエンドの訪問件数に基づくコンプリート判定: 3件目でdaily_completed=trueを返す
+    vi.mocked(createVisit)
+      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, daily_completed: true } as any);
     const user = userEvent.setup();
     renderHome();
 
@@ -557,7 +561,11 @@ describe("Issue #223: コンプリート状態の永続化", () => {
   test("3件全て訪問後に再マウントしてもコンプリート画面が表示される（APIを再呼び出ししない）", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const { createVisit } = await import("~/api/visits");
-    vi.mocked(createVisit).mockResolvedValue({ id: 1 } as any);
+    // バックエンドの訪問件数に基づくコンプリート判定: 3件目でdaily_completed=trueを返す
+    vi.mocked(createVisit)
+      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, daily_completed: true } as any);
 
     const user = userEvent.setup();
 
@@ -600,7 +608,7 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     expect(vi.mocked(getSuggestions).mock.calls.length).toBe(callCountBeforeRemount);
   });
 
-  test("コンプリートフラグはセッション内で保持される", async () => {
+  test("コンプリートフラグはlocalStorageで保持される（タブを閉じても当日中は有効）", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
@@ -617,7 +625,7 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     // アンマウント
     unmount();
 
-    // 再マウント: sessionStorageからコンプリート状態を復元
+    // 再マウント: localStorageからコンプリート状態を復元
     renderHome();
 
     await waitFor(() => {

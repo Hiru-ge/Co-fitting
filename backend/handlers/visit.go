@@ -61,13 +61,14 @@ type createVisitRequest struct {
 
 // createVisitResponse はゲーミフィケーション情報を含むCreateVisitのレスポンス
 // models.Visit を埋め込み、xp_earnedはVisit.XpEarnedで（Goの仕様により外側フィールドが優先）、
-// total_xp/level_up/new_level/new_badgesをゲーミフィケーション情報として追加する
+// total_xp/level_up/new_level/new_badges/daily_completedをゲーミフィケーション情報として追加する
 type createVisitResponse struct {
 	models.Visit
-	TotalXP   int            `json:"total_xp"`   // ユーザー累計XP
-	LevelUp   bool           `json:"level_up"`   // 今回の訪問でレベルアップしたか
-	NewLevel  int            `json:"new_level"`  // 現在のレベル
-	NewBadges []models.Badge `json:"new_badges"` // 今回獲得した新バッジ
+	TotalXP        int            `json:"total_xp"`        // ユーザー累計XP
+	LevelUp        bool           `json:"level_up"`        // 今回の訪問でレベルアップしたか
+	NewLevel       int            `json:"new_level"`       // 現在のレベル
+	NewBadges      []models.Badge `json:"new_badges"`      // 今回獲得した新バッジ
+	DailyCompleted bool           `json:"daily_completed"` // 今回の訪問で本日の3件上限に達したか
 }
 
 // CreateVisit godoc
@@ -152,17 +153,21 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
+	// DB保存後の当日訪問件数でコンプリート判定（todayCount は保存前の件数なので +1 が保存後の件数）
+	dailyCompleted := todayCount+1 >= MaxDailyVisits
+
 	// ゲーミフィケーション処理（XP計算・レベルアップ判定・バッジ付与・ジャンル熟練度更新・ストリーク更新）
 	gamifResult, err := services.ProcessGamification(h.DB, userID, visit)
 	if err != nil {
 		// ゲーミフィケーション処理失敗は訪問記録自体を無効化しない（ログのみ）
 		// 最低限の情報でレスポンスを返す
 		c.JSON(http.StatusCreated, createVisitResponse{
-			Visit:     visit,
-			TotalXP:   0,
-			LevelUp:   false,
-			NewLevel:  1,
-			NewBadges: []models.Badge{},
+			Visit:          visit,
+			TotalXP:        0,
+			LevelUp:        false,
+			NewLevel:       1,
+			NewBadges:      []models.Badge{},
+			DailyCompleted: dailyCompleted,
 		})
 		return
 	}
@@ -176,11 +181,12 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, createVisitResponse{
-		Visit:     visit,
-		TotalXP:   gamifResult.TotalXP,
-		LevelUp:   gamifResult.LevelUp,
-		NewLevel:  gamifResult.NewLevel,
-		NewBadges: newBadges,
+		Visit:          visit,
+		TotalXP:        gamifResult.TotalXP,
+		LevelUp:        gamifResult.LevelUp,
+		NewLevel:       gamifResult.NewLevel,
+		NewBadges:      newBadges,
+		DailyCompleted: dailyCompleted,
 	})
 }
 
