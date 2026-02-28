@@ -62,6 +62,10 @@ test.describe("主要ユーザーフロー", () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+    // ベータゲートをスキップするためアンロックフラグを全ページロード時にセット
+    await page.addInitScript(() => {
+      localStorage.setItem("roamble_beta_unlocked", "1");
+    });
   });
 
   test.afterAll(async () => {
@@ -205,6 +209,12 @@ test.describe("主要ユーザーフロー", () => {
 });
 
 test.describe("未認証ガード", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("roamble_beta_unlocked", "1");
+    });
+  });
+
   test("未認証で /home にアクセス → /login へリダイレクト", async ({ page }) => {
     await page.goto("/home");
     await page.waitForURL("/login", { timeout: 10_000 });
@@ -225,6 +235,12 @@ test.describe("未認証ガード", () => {
 });
 
 test.describe("ログイン画面", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("roamble_beta_unlocked", "1");
+    });
+  });
+
   test("ログイン画面の要素が正しく表示される", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "Roambleへようこそ" })).toBeVisible();
