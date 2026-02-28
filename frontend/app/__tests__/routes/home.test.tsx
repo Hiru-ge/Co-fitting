@@ -13,6 +13,15 @@ const localStorageMock = {
 };
 vi.stubGlobal("localStorage", localStorageMock);
 
+const sessionStorageData: Record<string, string> = {};
+const sessionStorageMock = {
+  getItem: (key: string) => sessionStorageData[key] ?? null,
+  setItem: (key: string, value: string) => { sessionStorageData[key] = value; },
+  removeItem: (key: string) => { delete sessionStorageData[key]; },
+  clear: () => { Object.keys(sessionStorageData).forEach(k => delete sessionStorageData[k]); },
+};
+vi.stubGlobal("sessionStorage", sessionStorageMock);
+
 const mockShowToast = vi.fn();
 vi.mock("~/components/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
@@ -138,6 +147,7 @@ describe("Home clientLoader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
+    sessionStorageMock.clear();
   });
 
   test("interests < 3 かつ onboarding_skipped フラグなしなら /onboarding にリダイレクトする", async () => {
@@ -177,6 +187,7 @@ describe("Home画面", () => {
   beforeEach(() => {
     callCount = 0;
     vi.clearAllMocks();
+    sessionStorageMock.clear();
   });
 
   test("提案カード1枚目が表示される", async () => {
@@ -529,11 +540,98 @@ describe("Home画面", () => {
   });
 });
 
+// === Issue #223: 3件訪問後に発見画面を再訪問すると再度提案されるバグ修正 ===
+describe("Issue #223: コンプリート状態の永続化", () => {
+  beforeEach(async () => {
+    callCount = 0;
+    vi.clearAllMocks();
+    sessionStorageMock.clear();
+    localStorageMock.clear();
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({
+      places: [...mockPlaces],
+      reload_count_remaining: 3,
+    });
+  });
+
+  test("3件全て訪問後に再マウントしてもコンプリート画面が表示される（APIを再呼び出ししない）", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    const { createVisit } = await import("~/api/visits");
+    vi.mocked(createVisit).mockResolvedValue({ id: 1 } as any);
+
+    const user = userEvent.setup();
+
+    // 初回レンダリング
+    const { unmount } = renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // 3枚全て訪問
+    for (let i = 0; i < 3; i++) {
+      const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
+      await user.click(checkInButton);
+      await waitFor(() => {
+        expect(checkInButton).not.toBeDisabled();
+      }, { timeout: 500 }).catch(() => {});
+    }
+
+    // コンプリート状態になる
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    });
+
+    // API呼び出し回数を記録
+    const callCountBeforeRemount = vi.mocked(getSuggestions).mock.calls.length;
+
+    // コンポーネントをアンマウント（BottomNavで他の画面に遷移した想定）
+    unmount();
+
+    // 再マウント（BottomNavで/homeに戻った想定）
+    renderHome();
+
+    // APIを再呼び出しせずにコンプリート画面が即表示される
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    });
+
+    // 再マウント後にAPIが追加で呼ばれていないことを確認
+    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(callCountBeforeRemount);
+  });
+
+  test("コンプリートフラグはセッション内で保持される", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [],
+      completed: true,
+    });
+
+    // 初回レンダリング: サーバーからcompleted=trueが返る
+    const { unmount } = renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    });
+
+    // アンマウント
+    unmount();
+
+    // 再マウント: sessionStorageからコンプリート状態を復元
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    });
+  });
+});
+
 // === Issue #158: レイアウト・スクロール制御 ===
 describe("ホームページ レイアウト・スクロール制御", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     localStorageMock.clear();
+    sessionStorageMock.clear();
     // 前のdescribeブロックで mockRejectedValue（永続的な実装変更）が設定されている場合があるため
     // デフォルトの正常レスポンスに明示的にリセットする
     const { getSuggestions } = await import("~/api/suggestions");
@@ -578,6 +676,7 @@ describe("提案リロード機能", () => {
     vi.clearAllMocks();
     callCount = 0;
     localStorageMock.clear();
+    sessionStorageMock.clear();
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValue({
       places: [...mockPlaces],
