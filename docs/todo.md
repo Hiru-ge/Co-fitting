@@ -31,7 +31,7 @@
   - Redis: **Upstash Redis**（500K commands/月）
   - 本番環境用の環境変数（`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID` 等）を設定
   - CORS設定を `roamble.pages.dev` に対応させる
-- [ ] **合言葉アクセス制限の実装**: Issue #232
+- [x] **合言葉アクセス制限の実装**: Issue #232
   - フロントエンドのみで実装。初回アクセス時に合言葉入力画面を表示し、正しければlocalStorageにフラグ保存
   - 合言葉はベータテスター募集時に通知する
 - [x] **プライバシーポリシーの作成・設置**: Issue #233

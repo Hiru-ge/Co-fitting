@@ -11,6 +11,9 @@ export default [
   // オンボーディング（ボトムナビなし）
   route("onboarding", "routes/onboarding.tsx"),
 
+  // ベータ版ゲート（合言葉入力）
+  route("beta-gate", "routes/beta-gate.tsx"),
+
   // 公開ページ（認証不要）
   route("privacy", "routes/privacy.tsx"),
 
