@@ -2385,6 +2385,7 @@ func TestNewGenreTypeMapping(t *testing.T) {
 		{"sauna", "温泉・銭湯"},
 		{"gym", "スポーツジム"},
 		{"fitness_center", "スポーツジム"},
+		{"stadium", "スポーツ施設"},
 		{"beach", "海・川・湖"},
 		{"lake", "海・川・湖"},
 		{"river", "海・川・湖"},
@@ -2402,7 +2403,7 @@ func TestNewGenreTypeMapping(t *testing.T) {
 	t.Run("新ジャンルタイプがvisitableTypesに含まれる", func(t *testing.T) {
 		newTypes := []string{
 			"ramen_restaurant", "karaoke", "amusement_center", "video_arcade",
-			"public_bath", "sauna", "beach", "lake", "river",
+			"public_bath", "sauna", "stadium", "beach", "lake", "river",
 		}
 		for _, tp := range newTypes {
 			if !visitableTypes[tp] {

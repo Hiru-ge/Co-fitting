@@ -229,6 +229,7 @@ var placeTypeToGenreName = map[string]string{
 	// スポーツ・アクティブ
 	"gym":            "スポーツジム",
 	"fitness_center": "スポーツジム",
+	"stadium":        "スポーツ施設",
 	// リラクゼーション
 	"spa":         "マッサージ・スパ",
 	"public_bath": "温泉・銭湯",

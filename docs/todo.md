@@ -116,7 +116,7 @@
   - 英語 `code` フィールドで識別し、日本語メッセージはフロントエンドで生成する方針に統一
   - **優先度**: 中 / **工数**: 1時間
 
-- [ ] **visitableTypes / placeTypeToGenreName 整合性修正（BE-M2）**: Issue #245
+- [x] **visitableTypes / placeTypeToGenreName 整合性修正（BE-M2）**: Issue #245
   - `stadium` が `visitableTypes` にあるが `placeTypeToGenreName` にない不整合を修正
   - 両マッピングの整合性を確認・統一
   - **優先度**: 中 / **工数**: 15分
