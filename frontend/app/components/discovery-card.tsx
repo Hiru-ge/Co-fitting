@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import type { Place } from "~/types/suggestion";
 import { getCategoryInfo } from "~/utils/category-map";
 import { calcDistance } from "~/utils/geolocation";
-import { buildGoogleMapsNavUrl, formatDistance } from "~/utils/helpers";
+import { buildGoogleMapsPlaceUrl, formatDistance } from "~/utils/helpers";
 
 interface DiscoveryCardProps {
   place: Place;
@@ -187,7 +187,7 @@ export default function DiscoveryCard({
           </div>
           <a
             data-testid="google-maps-link"
-            href={buildGoogleMapsNavUrl(place.lat, place.lng)}
+            href={buildGoogleMapsPlaceUrl(place.place_id)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-white/80 text-sm hover:text-white transition-colors"
@@ -195,7 +195,7 @@ export default function DiscoveryCard({
             onClick={(e) => e.stopPropagation()}
           >
             <span className="material-symbols-outlined text-base">
-              navigation
+              location_on
             </span>
             地図で開く
           </a>

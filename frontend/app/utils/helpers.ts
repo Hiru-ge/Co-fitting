@@ -37,7 +37,6 @@ export function formatDistance(meters: number): string {
   return `${Math.round(meters)}m`;
 }
 
-export function buildGoogleMapsNavUrl(lat: number, lng: number): string {
-  const params = new URLSearchParams({ destination: `${lat},${lng}` });
-  return `https://www.google.com/maps/dir/?api=1&${params.toString()}`;
+export function buildGoogleMapsPlaceUrl(placeId: string): string {
+  return `https://www.google.com/maps/place/?q=place_id:${placeId}`;
 }

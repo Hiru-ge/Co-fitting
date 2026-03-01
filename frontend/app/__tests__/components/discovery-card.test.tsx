@@ -102,18 +102,18 @@ describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () =>
   });
 });
 
-// === Issue #200: Google Mapsナビゲーション連携テスト ===
-describe("DiscoveryCard Google Mapsナビゲーション", () => {
-  test("「Google Mapsで開く」リンクが表示される", () => {
+// === Issue #200: Google Maps施設詳細連携テスト ===
+describe("DiscoveryCard Google Maps施設詳細", () => {
+  test("「地図で開く」リンクが表示される", () => {
     renderCard();
     expect(screen.getByTestId("google-maps-link")).toBeTruthy();
   });
 
-  test("リンクの href に place の lat/lng を含む Google Maps URL が設定される", () => {
+  test("リンクの href に place_id を含む Google Maps 施設詳細 URL が設定される", () => {
     renderCard();
     const link = screen.getByTestId("google-maps-link");
     expect(link.getAttribute("href")).toBe(
-      "https://www.google.com/maps/dir/?api=1&destination=35.66%2C139.7"
+      "https://www.google.com/maps/place/?q=place_id:place_1"
     );
   });
 
@@ -123,11 +123,11 @@ describe("DiscoveryCard Google Mapsナビゲーション", () => {
     expect(link.getAttribute("target")).toBe("_blank");
   });
 
-  test("別の lat/lng を持つ place でも正しい URL が生成される", () => {
-    renderCard({ lat: 34.6937, lng: 135.5023 });
+  test("別の place_id を持つ place でも正しい URL が生成される", () => {
+    renderCard({ place_id: "place_2" });
     const link = screen.getByTestId("google-maps-link");
     expect(link.getAttribute("href")).toBe(
-      "https://www.google.com/maps/dir/?api=1&destination=34.6937%2C135.5023"
+      "https://www.google.com/maps/place/?q=place_id:place_2"
     );
   });
 });

@@ -88,7 +88,7 @@
 **優先度**: 中 / **工数**: 小
 
 - [x] 🔴 RED: 施設カードの「Google Mapsで開く」ボタン押下で正しいナビ用URLが生成されることを確認するテストを書く
-- [x] 🟢 GREEN: 施設の lat/lng を使った Google Maps ディープリンク（`https://www.google.com/maps/dir/?api=1&destination={lat},{lng}`）をカードに追加する
+- [x] 🟢 GREEN: 施設の Google Maps ディープリンク（`https://www.google.com/maps/place/?q=place_id:${placeId}`）をカードに追加する
 - [x] 🔵 REFACTOR: URL生成ロジックをユーティリティ関数に切り出す
 
 ---
