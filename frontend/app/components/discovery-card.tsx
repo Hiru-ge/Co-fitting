@@ -2,7 +2,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import type { Place } from "~/types/suggestion";
 import { getCategoryInfo } from "~/utils/category-map";
 import { calcDistance } from "~/utils/geolocation";
-import { formatDistance } from "~/utils/helpers";
+import { buildGoogleMapsNavUrl, formatDistance } from "~/utils/helpers";
 
 interface DiscoveryCardProps {
   place: Place;
@@ -162,27 +162,43 @@ export default function DiscoveryCard({
         <h2 className="text-3xl font-extrabold text-white leading-tight mb-2">
           {place.name}
         </h2>
-        <div className="flex items-center gap-3 text-white/80 text-sm">
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-base">
-              {category.icon}
-            </span>
-            {category.label}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-base">
-              distance
-            </span>
-            {formatDistance(distance)}
-          </span>
-          {place.rating > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-white/80 text-sm">
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-base text-yellow-400">
-                star
+              <span className="material-symbols-outlined text-base">
+                {category.icon}
               </span>
-              {place.rating.toFixed(1)}
+              {category.label}
             </span>
-          )}
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-base">
+                distance
+              </span>
+              {formatDistance(distance)}
+            </span>
+            {place.rating > 0 && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-base text-yellow-400">
+                  star
+                </span>
+                {place.rating.toFixed(1)}
+              </span>
+            )}
+          </div>
+          <a
+            data-testid="google-maps-link"
+            href={buildGoogleMapsNavUrl(place.lat, place.lng)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-white/80 text-sm hover:text-white transition-colors"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="material-symbols-outlined text-base">
+              navigation
+            </span>
+            地図で開く
+          </a>
         </div>
       </div>
 
