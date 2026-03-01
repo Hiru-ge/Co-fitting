@@ -36,6 +36,7 @@ func Setup(router *gin.Engine, deps Deps) {
 
 	// ヘルスチェック
 	router.GET("/health", deps.HealthHandler.HealthCheck)
+	router.HEAD("/health", deps.HealthHandler.HealthCheck) // UptimeRobot用(不要になったら消すこと)
 
 	// Swagger
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

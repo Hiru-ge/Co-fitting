@@ -27,8 +27,13 @@ func Init() (*gorm.DB, error) {
 	}
 
 	// Build DSN (Data Source Name)
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		user, password, host, port, database)
+	// MYSQL_TLS: TiDB Cloud等TLS必須環境では "tidb" を設定。ローカル開発時は空でよい
+	params := "charset=utf8mb4&parseTime=True&loc=Local"
+	if tlsMode := os.Getenv("MYSQL_TLS"); tlsMode != "" {
+		params += "&tls=" + tlsMode
+	}
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s",
+		user, password, host, port, database, params)
 
 	// Connect to MySQL
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

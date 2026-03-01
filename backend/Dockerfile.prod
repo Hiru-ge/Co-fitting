@@ -1,0 +1,26 @@
+# --- Build Stage ---
+FROM golang:1.25.6-alpine AS builder
+
+WORKDIR /app
+
+RUN apk add --no-cache git make
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go build -o roamble main.go
+
+# --- Run Stage ---
+FROM alpine:latest
+
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /app/roamble .
+
+EXPOSE 8000
+
+CMD ["./roamble"]

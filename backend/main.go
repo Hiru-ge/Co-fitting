@@ -148,7 +148,11 @@ func main() {
 		Environment:       environment,
 	})
 
-	if err := router.Run(":8000"); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
+	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

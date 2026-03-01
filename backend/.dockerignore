@@ -1,7 +1,8 @@
 roamble
 *.test
 .env
-docs/
+docs/swagger.json
+docs/swagger.yaml
 .DS_STORE
 .git
 .gitignore
