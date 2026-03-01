@@ -1,9 +1,12 @@
+import { useEffect, useRef } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { protectedLoader } from "~/lib/protected-loader";
 import { getInterests } from "~/api/genres";
 import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
+import { sendSuggestionViewed } from "~/lib/gtag";
+import { getBestCategoryKey } from "~/utils/category-map";
 import AppHeader from "~/components/app-header";
 import DiscoveryCard from "~/components/discovery-card";
 import CardIndicator from "~/components/card-indicator";
@@ -44,6 +47,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     handleXpModalClose,
     handleBadgeModalClose,
   } = useSuggestions(token);
+
+  const firstViewSentRef = useRef(false);
+  useEffect(() => {
+    if (firstViewSentRef.current || !currentPlace) return;
+    firstViewSentRef.current = true;
+    sendSuggestionViewed({
+      placeName: currentPlace.name,
+      category: getBestCategoryKey(currentPlace.types ?? []),
+      isInterestMatch: !!currentPlace.is_interest_match,
+      isComfortZone: !!currentPlace.is_comfort_zone,
+      cardIndex: 0,
+    });
+  }, [currentPlace]);
 
   function getTruncatedLocationLabel(vicinity: string) {
     const MAX_LENGTH = 12;

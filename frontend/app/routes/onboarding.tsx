@@ -4,6 +4,7 @@ import type { Route } from "./+types/onboarding";
 import { getToken } from "~/lib/auth";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
+import { sendOnboardingCompleted, sendOnboardingSkipped } from "~/lib/gtag";
 import type { GenreTag } from "~/types/genre";
 
 export async function clientLoader(_: Route.ClientLoaderArgs) {
@@ -45,6 +46,10 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
     setError(null);
     try {
       await updateInterests(token, selectedIds);
+      const selectedNames = genres
+        .filter((g) => selectedIds.includes(g.id))
+        .map((g) => g.name);
+      sendOnboardingCompleted(selectedIds.length, selectedNames);
       navigate("/home");
     } catch {
       setError("保存に失敗しました。もう一度お試しください。");
@@ -55,6 +60,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
 
   function handleSkip() {
     localStorage.setItem(ONBOARDING_SKIPPED_KEY, "true");
+    sendOnboardingSkipped();
     navigate("/home");
   }
 

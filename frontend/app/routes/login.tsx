@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router";
 import { GoogleLogin } from "@react-oauth/google";
 import { setToken, googleOAuth } from "~/lib/auth";
 import { isNetworkError } from "~/utils/error";
+import { sendLogin } from "~/lib/gtag";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function Login() {
         credentialResponse.credential
       );
       setToken(access_token, refresh_token);
+      sendLogin("google_oauth", is_new_user);
       navigate(is_new_user ? "/onboarding" : "/home");
     } catch (err) {
       if (isNetworkError(err)) {

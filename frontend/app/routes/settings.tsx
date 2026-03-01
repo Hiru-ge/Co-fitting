@@ -8,6 +8,7 @@ import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
 import { useModalClose } from "~/hooks/use-modal-close";
 import { useFormMessage } from "~/hooks/use-form-message";
+import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
 
 type TabId = "user" | "suggestion";
 
@@ -296,6 +297,7 @@ function SuggestionTab({
     setIsSaving(true);
     try {
       await updateInterests(token, selectedIds);
+      sendInterestsUpdated(selectedIds.length);
       setInterestMsg("興味タグを保存しました");
     } catch {
       setInterestError("興味タグの保存に失敗しました");
@@ -311,6 +313,7 @@ function SuggestionTab({
     setIsSavingRadius(true);
     try {
       await updateSearchRadius(token, selectedRadius);
+      sendSearchRadiusUpdated(selectedRadius / 1000);
       setRadiusMsg("提案半径を保存しました");
     } catch {
       setRadiusError("提案半径の保存に失敗しました");

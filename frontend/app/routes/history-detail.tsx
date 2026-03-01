@@ -7,6 +7,7 @@ import { useToast } from "~/components/toast";
 import { formatDate } from "~/utils/helpers";
 import { getCategoryInfoByKey } from "~/utils/category-map";
 import { getPlacePhoto } from "~/api/places";
+import { sendVisitMemoSaved } from "~/lib/gtag";
 import type { Visit } from "~/types/visit";
 
 // React Router v7 の型は +types/ から自動生成される想定だが、
@@ -87,6 +88,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
       setVisit(updated);
       setMemo(updated.memo ?? "");
       setRating(updated.rating ?? null);
+      sendVisitMemoSaved({ hasMemo: !!memo, rating: rating ?? null });
       showToast("保存しました", "success");
     } catch (err) {
       showToast(toUserMessage(err));

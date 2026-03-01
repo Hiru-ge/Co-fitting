@@ -7,6 +7,16 @@ import { DEFAULT_RADIUS } from "~/utils/constants";
 import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
+import {
+  sendSuggestionGenerated,
+  sendSuggestionViewed,
+  sendSuggestionSkipped,
+  sendSuggestionReloaded,
+  sendVisitRecorded,
+  sendDailyCompleted,
+  sendBadgeEarned,
+  sendLevelUp,
+} from "~/lib/gtag";
 import type { Place } from "~/types/suggestion";
 import type { BadgeInfo, CreateVisitResponse, XPBreakdown } from "~/types/visit";
 
@@ -118,6 +128,13 @@ export function useSuggestions(token: string) {
         );
         setPlaces(placesWithPhotos);
         setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
+        sendSuggestionGenerated({
+          placesCount: placesWithPhotos.length,
+          interestMatchCount: placesWithPhotos.filter((p) => p.is_interest_match).length,
+          comfortZoneCount: placesWithPhotos.filter((p) => p.is_comfort_zone).length,
+          categories: placesWithPhotos.map((p) => getBestCategoryKey(p.types ?? [])),
+          isReload: !!forceReload,
+        });
       }
     } catch (err) {
       if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
@@ -144,12 +161,35 @@ export function useSuggestions(token: string) {
   }, [loadSuggestions, completedFromStorage]);
 
   function handleReload() {
+    sendSuggestionReloaded(reloadCountRemaining);
     loadSuggestions(true);
   }
 
   function handleSwipe() {
     if (places.length <= 1) return;
-    setPlaces((prev) => [...prev.slice(1), prev[0]]);
+    const skipped = places[0];
+    if (skipped) {
+      sendSuggestionSkipped({
+        placeName: skipped.name,
+        category: getBestCategoryKey(skipped.types ?? []),
+        isInterestMatch: !!skipped.is_interest_match,
+        isComfortZone: !!skipped.is_comfort_zone,
+      });
+    }
+    setPlaces((prev) => {
+      const next = [...prev.slice(1), prev[0]];
+      const nextPlace = next[0];
+      if (nextPlace) {
+        sendSuggestionViewed({
+          placeName: nextPlace.name,
+          category: getBestCategoryKey(nextPlace.types ?? []),
+          isInterestMatch: !!nextPlace.is_interest_match,
+          isComfortZone: !!nextPlace.is_comfort_zone,
+          cardIndex: originalOrder.indexOf(nextPlace.place_id),
+        });
+      }
+      return next;
+    });
   }
 
   async function handleCheckIn() {
@@ -180,7 +220,18 @@ export function useSuggestions(token: string) {
       if (result.daily_completed) {
         setIsCompleted(true);
         markCompletedToday();
+        sendDailyCompleted();
       }
+
+      sendVisitRecorded({
+        placeName: place.name,
+        category,
+        isComfortZone: !!place.is_comfort_zone,
+        xpEarned: result.xp_earned,
+        xpBase: result.xp_breakdown?.base_xp,
+        firstAreaBonus: result.xp_breakdown?.first_area_bonus,
+        streakBonus: result.xp_breakdown?.streak_bonus,
+      });
 
       if (result.xp_earned !== undefined) {
         setXpModalState({
@@ -192,6 +243,14 @@ export function useSuggestions(token: string) {
           newBadges: result.new_badges ?? [],
           xpBreakdown: result.xp_breakdown,
         });
+
+        if (result.level_up && result.new_level) {
+          sendLevelUp(result.new_level);
+        }
+
+        for (const badge of result.new_badges ?? []) {
+          sendBadgeEarned(badge.name);
+        }
       }
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
