@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router";
 import History, { clientLoader } from "~/routes/history";
 import { getToken, getUser } from "~/lib/auth";
 import { listVisits, getMapVisits } from "~/api/visits";
+import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import { getCategoryInfoByKey } from "~/utils/category-map";
@@ -14,6 +15,7 @@ import type { User } from "~/types/auth";
 // モック設定
 vi.mock("~/lib/auth");
 vi.mock("~/api/visits");
+vi.mock("~/api/places");
 vi.mock("~/utils/error");
 vi.mock("~/components/toast");
 vi.mock("~/utils/category-map");
@@ -34,6 +36,7 @@ vi.mock("react-router", async () => {
 });
 
 // モックされた関数の型安全性のため
+const mockGetPlacePhoto = vi.mocked(getPlacePhoto);
 const mockGetMapVisits = vi.mocked(getMapVisits);
 const mockGetToken = vi.mocked(getToken);
 const mockGetUser = vi.mocked(getUser);
@@ -127,11 +130,8 @@ describe("History", () => {
       ])
     );
 
-    // fetch のモック（写真取得用）
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ photo_url: "https://example.com/photo.jpg" }),
-    });
+    // 写真取得モック
+    mockGetPlacePhoto.mockResolvedValue("https://example.com/photo.jpg");
   });
 
   describe("clientLoader", () => {
@@ -350,7 +350,7 @@ describe("History", () => {
   });
 
   describe("Photo loading", () => {
-    it("should load photos for visits with place_id via apiCall", async () => {
+    it("should load photos for all visits via getPlacePhoto", async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
 
       render(
@@ -360,48 +360,22 @@ describe("History", () => {
       );
 
       await waitFor(() => {
-        // apiCall 経由（Content-Type: application/json を含む）で各 place_id の写真を取得
-        expect(global.fetch).toHaveBeenCalledWith(
-          "http://localhost:8000/api/places/place1/photo",
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${mockToken}`,
-            }),
-          })
-        );
-        expect(global.fetch).toHaveBeenCalledWith(
-          "http://localhost:8000/api/places/place2/photo",
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${mockToken}`,
-            }),
-          })
-        );
-        expect(global.fetch).toHaveBeenCalledWith(
-          "http://localhost:8000/api/places/place3/photo",
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${mockToken}`,
-            }),
-          })
-        );
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1");
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place2");
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place3");
       });
     });
 
     it("should display default camera icon when photo fails to load", async () => {
-      // fetch を失敗させる
-      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+      mockGetPlacePhoto.mockRejectedValue(new Error("Network error"));
       mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
-      
+
       render(
         <MemoryRouter>
           <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
         </MemoryRouter>
       );
-      
+
       await waitFor(() => {
         // カメラアイコンが表示されることを確認
         expect(screen.getByText("photo_camera")).toBeInTheDocument();
@@ -410,10 +384,7 @@ describe("History", () => {
 
     it("should display photo when successfully loaded", async () => {
       const photoUrl = "https://example.com/photo.jpg";
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ photo_url: photoUrl }),
-      });
+      mockGetPlacePhoto.mockResolvedValue(photoUrl);
       mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
 
       render(
@@ -426,33 +397,6 @@ describe("History", () => {
         // 背景画像としてphoto_urlが設定されることを確認
         const imageElement = document.querySelector('[style*="background-image"]');
         expect(imageElement).toBeInTheDocument();
-      });
-    });
-
-    it("写真取得が apiCall 経由であること（Content-Type ヘッダーを含む）", async () => {
-      const photoUrl = "https://example.com/photo.jpg";
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ photo_url: photoUrl }),
-      });
-      mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
-
-      render(
-        <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
-      );
-
-      await waitFor(() => {
-        // apiCall 経由なら Content-Type: application/json ヘッダーが含まれる
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("/api/places/place1/photo"),
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              "Content-Type": "application/json",
-            }),
-          })
-        );
       });
     });
   });
@@ -477,13 +421,10 @@ describe("History", () => {
 
     it("should continue working when photo loading fails for some visits", async () => {
       // 1つ目は成功、2つ目は失敗
-      global.fetch = vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve({ photo_url: "https://example.com/photo1.jpg" }),
-        })
+      mockGetPlacePhoto
+        .mockResolvedValueOnce("https://example.com/photo1.jpg")
         .mockRejectedValueOnce(new Error("Photo load error"));
-      
+
       mockListVisits.mockResolvedValue({ visits: mockVisits.slice(0, 2), total: 2 });
       
       render(

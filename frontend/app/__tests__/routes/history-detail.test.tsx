@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router";
 import HistoryDetail, { clientLoader } from "~/routes/history-detail";
 import { getToken, getUser } from "~/lib/auth";
 import { getVisit, updateVisit } from "~/api/visits";
+import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
 import type { Visit } from "~/types/visit";
@@ -11,6 +12,7 @@ import type { User } from "~/types/auth";
 
 vi.mock("~/lib/auth");
 vi.mock("~/api/visits");
+vi.mock("~/api/places");
 vi.mock("~/utils/error");
 vi.mock("~/components/toast");
 vi.mock("react-router", async () => {
@@ -25,6 +27,7 @@ vi.mock("react-router", async () => {
 
 const mockGetToken = vi.mocked(getToken);
 const mockGetUser = vi.mocked(getUser);
+const mockGetPlacePhoto = vi.mocked(getPlacePhoto);
 const mockGetVisit = vi.mocked(getVisit);
 const mockUpdateVisit = vi.mocked(updateVisit);
 const mockToUserMessage = vi.mocked(toUserMessage);
@@ -64,10 +67,7 @@ describe("HistoryDetail", () => {
     vi.clearAllMocks();
     mockUseToast.mockReturnValue({ showToast: mockShowToast });
     mockToUserMessage.mockImplementation((err) => String(err));
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ photo_url: "https://example.com/photo.jpg" }),
-    });
+    mockGetPlacePhoto.mockResolvedValue("https://example.com/photo.jpg");
   });
 
   describe("clientLoader", () => {
@@ -335,13 +335,10 @@ describe("HistoryDetail", () => {
     });
   });
 
-  describe("写真取得の apiCall 経由化", () => {
-    it("写真取得が apiCall 経由であること（Content-Type ヘッダーを含む）", async () => {
+  describe("写真取得の getPlacePhoto 経由化", () => {
+    it("写真取得が getPlacePhoto 経由であること", async () => {
       mockGetVisit.mockResolvedValue(mockVisit);
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ photo_url: "https://example.com/photo.jpg" }),
-      });
+      mockGetPlacePhoto.mockResolvedValue("https://example.com/photo.jpg");
 
       render(
         <MemoryRouter>
@@ -354,15 +351,7 @@ describe("HistoryDetail", () => {
       );
 
       await waitFor(() => {
-        // apiCall 経由なら Content-Type: application/json ヘッダーが含まれる
-        expect(global.fetch).toHaveBeenCalledWith(
-          expect.stringContaining("/api/places/place1/photo"),
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              "Content-Type": "application/json",
-            }),
-          })
-        );
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1");
       });
     });
   });

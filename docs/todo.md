@@ -101,7 +101,7 @@
   - 6ルートで重複する `getToken() → redirect("/login") → getUser()` パターンを共通化
   - **優先度**: 高 / **工数**: 30分
 
-- [ ] **写真取得ロジック統一（FE-H3）**: Issue #242
+- [x] **写真取得ロジック統一（FE-H3）**: Issue #242
   - `history.tsx` / `history-detail.tsx` のインライン写真取得を `api/places.ts` の `getPlacePhoto()` に統一
   - テストの `global.fetch` モックも `vi.mock("~/api/places")` に統一
   - **優先度**: 中 / **工数**: 15分

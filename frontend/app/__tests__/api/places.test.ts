@@ -54,14 +54,27 @@ describe("places API", () => {
       expect(result).toBe(expectedPhotoUrl);
     });
 
-    it("should handle empty photo_reference", async () => {
+    it("should handle empty photo_reference (no query param)", async () => {
       const expectedPhotoUrl = "https://example.com/default.jpg";
       mockApiCall.mockResolvedValue({ photo_url: expectedPhotoUrl });
 
+      // 空文字列は undefined と同様にクエリパラメータなしで呼ばれる
       await getPlacePhoto(mockToken, mockPlaceId, "");
 
       expect(mockApiCall).toHaveBeenCalledWith(
-        `/api/places/${mockPlaceId}/photo?photo_reference=`,
+        `/api/places/${mockPlaceId}/photo`,
+        mockToken
+      );
+    });
+
+    it("should omit photo_reference when not provided", async () => {
+      const expectedPhotoUrl = "https://example.com/default.jpg";
+      mockApiCall.mockResolvedValue({ photo_url: expectedPhotoUrl });
+
+      await getPlacePhoto(mockToken, mockPlaceId);
+
+      expect(mockApiCall).toHaveBeenCalledWith(
+        `/api/places/${mockPlaceId}/photo`,
         mockToken
       );
     });
