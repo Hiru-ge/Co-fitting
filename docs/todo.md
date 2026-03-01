@@ -70,24 +70,6 @@
 
 ---
 
-## 🔧 Phase 1 仕上げ（コードレビュー指摘対応）
-
-> Phase 1 コードレビュー結果（`docs/Phase1-code-review-result.md`）に基づく改善タスク。
-
-### ローンチ前に対応
-
-- [ ] **ベータパスフレーズのサーバーサイド移動（FE-M2）**: Issue #243
-  - `VITE_BETA_PASSPHRASE` がクライアントバンドルに露出する問題を解消
-  - サーバーサイドでパスフレーズ検証API（`POST /api/beta/verify`）を実装
-  - **優先度**: 中 / **工数**: 1時間
-
-- [x] **.dockerignore 作成 + .gitignore 拡充（IF-H5, IF-L5）**: Issue #246
-  - `backend/.dockerignore` を作成（`roamble`, `*.test`, `.env`, `docs/`）
-  - `.gitignore` に `backend/roamble`, `*.log`, `tmp/` 等を追加
-  - **優先度**: 中 / **工数**: 10分
-
----
-
 ## 🔮 Phase 2 計画（MVP公開後・ドッグフーディングFB次第）
 
 > 仕様見直し（2026-02-27議論結果）を受けたPhase 2タスク群。
