@@ -213,7 +213,7 @@ function UserInfoTab({
           <span className="material-symbols-outlined text-primary text-xl">
             policy
           </span>
-          法的情報
+          法的情報・サポート
         </h2>
         <Link
           to="/privacy"
@@ -229,6 +229,23 @@ function UserInfoTab({
             chevron_right
           </span>
         </Link>
+        <div className="border-t border-gray-100 dark:border-white/10" />
+        <a
+          href="https://forms.gle/upcMz6uV97hmLn9n9"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-between py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-lg text-gray-400">
+              feedback
+            </span>
+            お問い合わせ・フィードバック
+          </span>
+          <span className="material-symbols-outlined text-lg text-gray-400">
+            open_in_new
+          </span>
+        </a>
       </section>
 
       {/* アカウント削除セクション */}
