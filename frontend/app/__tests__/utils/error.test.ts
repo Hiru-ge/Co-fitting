@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { ApiError, getErrorMessage, isNetworkError, toUserMessage } from "~/utils/error";
+import { ApiError, getErrorMessage, getErrorMessageByCode, parseApiError, isNetworkError, toUserMessage } from "~/utils/error";
 
 describe("ApiError", () => {
   test("status, message, code を保持する", () => {
@@ -63,6 +63,66 @@ describe("isNetworkError", () => {
   test("null / undefined なら false", () => {
     expect(isNetworkError(null)).toBe(false);
     expect(isNetworkError(undefined)).toBe(false);
+  });
+});
+
+describe("getErrorMessageByCode", () => {
+  test("DAILY_LIMIT_REACHED に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCode("DAILY_LIMIT_REACHED")).toContain("訪問上限");
+  });
+
+  test("RELOAD_LIMIT_REACHED に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCode("RELOAD_LIMIT_REACHED")).toContain("リロード");
+  });
+
+  test("INVALID_REQUEST に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCode("INVALID_REQUEST")).toContain("形式が正しく");
+  });
+
+  test("INVALID_COORDINATES に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCode("INVALID_COORDINATES")).toContain("座標");
+  });
+
+  test("NO_NEARBY_PLACES に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCode("NO_NEARBY_PLACES")).toContain("スポット");
+  });
+
+  test("未知の code には undefined を返す", () => {
+    expect(getErrorMessageByCode("UNKNOWN_CODE")).toBeUndefined();
+  });
+});
+
+describe("parseApiError", () => {
+  test("code がある場合は getErrorMessageByCode の日本語メッセージを使う", async () => {
+    const mockRes = {
+      status: 429,
+      json: async () => ({ error: "daily visit limit reached", code: "DAILY_LIMIT_REACHED" }),
+    } as Response;
+    const err = await parseApiError(mockRes);
+    expect(err.status).toBe(429);
+    expect(err.code).toBe("DAILY_LIMIT_REACHED");
+    expect(err.message).toContain("訪問上限");
+  });
+
+  test("code がない場合は HTTP ステータスに基づく日本語メッセージを使う", async () => {
+    const mockRes = {
+      status: 400,
+      json: async () => ({ error: "invalid request body" }),
+    } as Response;
+    const err = await parseApiError(mockRes);
+    expect(err.status).toBe(400);
+    expect(err.code).toBeUndefined();
+    expect(err.message).toContain("リクエストが不正");
+  });
+
+  test("JSON パース失敗時はステータスに基づく日本語メッセージを使う", async () => {
+    const mockRes = {
+      status: 500,
+      json: async () => { throw new Error("parse error"); },
+    } as Response;
+    const err = await parseApiError(mockRes);
+    expect(err.status).toBe(500);
+    expect(err.message).toContain("サーバーエラー");
   });
 });
 

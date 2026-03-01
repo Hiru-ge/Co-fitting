@@ -122,9 +122,9 @@ export function useSuggestions(token: string) {
     } catch (err) {
       if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
         setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
-      } else if (err instanceof ApiError && err.code === "RELOAD_LIMIT_REACHED") {
+      } else if (err instanceof ApiError && err.code === API_ERROR_CODES.RELOAD_LIMIT_REACHED) {
         setReloadCountRemaining(0);
-        showToast("今日のリロードは使い切りました。明日また使えます", "info");
+        showToast(err.message, "info");
       } else {
         setError(SUGGESTION_MESSAGES.FETCH_ERROR);
         showToast(toUserMessage(err));

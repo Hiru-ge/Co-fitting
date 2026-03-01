@@ -7,7 +7,32 @@ export const API_ERROR_CODES = {
   ALL_VISITED_NEARBY: "ALL_VISITED_NEARBY",
   INTERNAL_ERROR: "INTERNAL_ERROR",
   DAILY_LIMIT_REACHED: "DAILY_LIMIT_REACHED",
+  RELOAD_LIMIT_REACHED: "RELOAD_LIMIT_REACHED",
+  INVALID_REQUEST: "INVALID_REQUEST",
+  INVALID_COORDINATES: "INVALID_COORDINATES",
 } as const;
+
+/**
+ * エラーコードに対応するユーザー向け日本語メッセージを返す
+ */
+export function getErrorMessageByCode(code: string): string | undefined {
+  switch (code) {
+    case "DAILY_LIMIT_REACHED":
+      return "本日の訪問上限（3件）に達しました";
+    case "RELOAD_LIMIT_REACHED":
+      return "今日のリロードは使い切りました。明日また使えます";
+    case "NO_NEARBY_PLACES":
+      return "近くのスポットが見つかりませんでした";
+    case "INVALID_REQUEST":
+      return "リクエストの形式が正しくありません";
+    case "INVALID_COORDINATES":
+      return "座標が有効範囲外です";
+    case "INTERNAL_ERROR":
+      return "サーバーエラーが発生しました。時間をおいて再度お試しください";
+    default:
+      return undefined;
+  }
+}
 
 /**
  * 提案API用のユーザー向けメッセージ定数
@@ -62,6 +87,7 @@ export function getErrorMessage(status: number, fallback?: string): string {
 
 /**
  * fetch レスポンスから ApiError を生成する
+ * code フィールドがある場合は getErrorMessageByCode で日本語メッセージを生成する
  */
 export async function parseApiError(res: Response): Promise<ApiError> {
   let message = getErrorMessage(res.status);
@@ -69,11 +95,12 @@ export async function parseApiError(res: Response): Promise<ApiError> {
 
   try {
     const body = await res.json();
-    if (body.error) {
-      message = body.error;
-    }
     if (body.code) {
       code = body.code;
+      const codeMessage = getErrorMessageByCode(body.code);
+      if (codeMessage) {
+        message = codeMessage;
+      }
     }
   } catch {
     // JSON パース失敗時はデフォルトメッセージを使用

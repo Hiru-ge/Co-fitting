@@ -92,13 +92,13 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	var req createVisitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "リクエストの形式が正しくありません"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "code": "INVALID_REQUEST"})
 		return
 	}
 
 	// 座標のバリデーション
 	if req.Lat < -90 || req.Lat > 90 || req.Lng < -180 || req.Lng > 180 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "座標が有効範囲外です（lat: -90〜90, lng: -180〜180）"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid coordinates", "code": "INVALID_COORDINATES"})
 		return
 	}
 
@@ -109,7 +109,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 	if todayCount >= MaxDailyVisits {
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "本日の訪問上限（3件）に達しました", "code": "DAILY_LIMIT_REACHED"})
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "daily visit limit reached", "code": "DAILY_LIMIT_REACHED"})
 		return
 	}
 
@@ -428,7 +428,7 @@ func (h *VisitHandler) UpdateVisit(c *gin.Context) {
 
 	var req updateVisitRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "リクエストの形式が正しくありません"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "code": "INVALID_REQUEST"})
 		return
 	}
 

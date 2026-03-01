@@ -43,7 +43,7 @@ describe("apiCall", () => {
     );
 
     await expect(apiCall("/api/test", "token")).rejects.toThrow(ApiError);
-    await expect(apiCall("/api/test", "token")).rejects.toThrow("Internal Server Error");
+    await expect(apiCall("/api/test", "token")).rejects.toThrow("サーバーエラー");
   });
 
   test("401 でリフレッシュ失敗時に access_token と refresh_token の両方が削除される（clearToken 相当）", async () => {

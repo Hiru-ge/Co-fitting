@@ -463,7 +463,7 @@ const visitedExclusionDays = 30
 func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	var req suggestionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "リクエストの形式が正しくありません"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "code": "INVALID_REQUEST"})
 		return
 	}
 
@@ -575,7 +575,7 @@ func (h *SuggestionHandler) processForceReload(ctx context.Context, userIDStr, t
 	if reloadCount >= database.MaxDailyReloads {
 		remaining := 0
 		return reloadCount, true, http.StatusTooManyRequests, gin.H{
-			"error":                  "今日のリロードは使い切りました。明日また使えます",
+			"error":                  "reload limit reached",
 			"code":                   "RELOAD_LIMIT_REACHED",
 			"reload_count_remaining": remaining,
 		}
