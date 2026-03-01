@@ -2,3 +2,5 @@
 .env
 .vscode
 backend/roamble
+*.log
+tmp/
