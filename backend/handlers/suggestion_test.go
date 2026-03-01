@@ -2830,3 +2830,170 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 		}
 	})
 }
+
+// TestSuggestFilterOpenNow は営業時間フィルタ（filter_open_now）の動作を検証する
+func TestSuggestFilterOpenNow(t *testing.T) {
+	openNow := true
+	closedNow := false
+
+	t.Run("filter_open_now=trueの場合、閉店中の施設は除外される", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mockPlaces := []PlaceResult{
+			{PlaceID: "open_1", Name: "Open Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}, OpenNow: &openNow},
+			{PlaceID: "closed_1", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"restaurant"}, OpenNow: &closedNow},
+			{PlaceID: "open_2", Name: "Open Park", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"park"}, OpenNow: &openNow},
+		}
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":             35.6762,
+			"lng":             139.6503,
+			"filter_open_now": true,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		places := parseSuggestions(t, w.Body.Bytes())
+		for _, p := range places {
+			if p.PlaceID == "closed_1" {
+				t.Errorf("閉店中の施設 'closed_1' が提案に含まれている")
+			}
+		}
+		if len(places) == 0 {
+			t.Error("営業中の施設が1件も返されていない")
+		}
+	})
+
+	t.Run("filter_open_now=falseの場合、閉店中の施設も提案に含まれうる", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mockPlaces := []PlaceResult{
+			{PlaceID: "closed_only", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, OpenNow: &closedNow},
+		}
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":             35.6762,
+			"lng":             139.6503,
+			"filter_open_now": false,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		places := parseSuggestions(t, w.Body.Bytes())
+		found := false
+		for _, p := range places {
+			if p.PlaceID == "closed_only" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("filter_open_now=falseなのに閉店中の施設が除外されている")
+		}
+	})
+
+	t.Run("filter_open_now=trueで全施設閉店中の場合は404", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mockPlaces := []PlaceResult{
+			{PlaceID: "closed_1", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, OpenNow: &closedNow},
+			{PlaceID: "closed_2", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.5, Types: []string{"restaurant"}, OpenNow: &closedNow},
+		}
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":             35.6762,
+			"lng":             139.6503,
+			"filter_open_now": true,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNotFound, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("open_now情報がない施設はfilter_open_now=trueでも提案に含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		mockPlaces := []PlaceResult{
+			{PlaceID: "unknown_hours", Name: "Unknown Hours Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}, OpenNow: nil},
+		}
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{
+			"lat":             35.6762,
+			"lng":             139.6503,
+			"filter_open_now": true,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		places := parseSuggestions(t, w.Body.Bytes())
+		found := false
+		for _, p := range places {
+			if p.PlaceID == "unknown_hours" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("営業時間不明の施設がfilter_open_now=trueで除外されている（除外されるべきではない）")
+		}
+	})
+}

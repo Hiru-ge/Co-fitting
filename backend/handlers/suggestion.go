@@ -32,6 +32,7 @@ type PlaceResult struct {
 	PhotoReference  string   `json:"photo_reference,omitempty"`
 	IsInterestMatch *bool    `json:"is_interest_match"`
 	IsComfortZone   *bool    `json:"is_comfort_zone"`
+	OpenNow         *bool    `json:"open_now,omitempty"`
 }
 
 type PlacesSearcher interface {
@@ -48,7 +49,8 @@ type GooglePlacesClient struct {
 const defaultPlacesAPIBaseURL = "https://places.googleapis.com"
 
 // fieldMask は New Places API のレスポンスに含めるフィールド
-const nearbySearchFieldMask = "places.id,places.displayName,places.location,places.types,places.photos,places.rating,places.shortFormattedAddress"
+// currentOpeningHours は季節・祝日を考慮した現在の営業状況（regularOpeningHours より正確）
+const nearbySearchFieldMask = "places.id,places.displayName,places.location,places.types,places.photos,places.rating,places.shortFormattedAddress,places.currentOpeningHours"
 
 func NewGooglePlacesClient(apiKey string) (*GooglePlacesClient, error) {
 	return &GooglePlacesClient{
@@ -102,13 +104,18 @@ type nearbySearchAPIResponse struct {
 }
 
 type nearbySearchPlace struct {
-	ID                    string                  `json:"id"`
-	Types                 []string                `json:"types"`
-	DisplayName           nearbySearchDisplayName `json:"displayName"`
-	Location              nearbySearchLatLng      `json:"location"`
-	Rating                float32                 `json:"rating"`
-	Photos                []nearbySearchPhoto     `json:"photos"`
-	ShortFormattedAddress string                  `json:"shortFormattedAddress"`
+	ID                    string                       `json:"id"`
+	Types                 []string                     `json:"types"`
+	DisplayName           nearbySearchDisplayName      `json:"displayName"`
+	Location              nearbySearchLatLng           `json:"location"`
+	Rating                float32                      `json:"rating"`
+	Photos                []nearbySearchPhoto          `json:"photos"`
+	ShortFormattedAddress string                       `json:"shortFormattedAddress"`
+	CurrentOpeningHours   *nearbySearchOpeningHours    `json:"currentOpeningHours,omitempty"`
+}
+
+type nearbySearchOpeningHours struct {
+	OpenNow bool `json:"openNow"`
 }
 
 type nearbySearchDisplayName struct {
@@ -185,6 +192,11 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 		if len(p.Photos) > 0 {
 			photoRef = p.Photos[0].Name
 		}
+		var openNow *bool
+		if p.CurrentOpeningHours != nil {
+			v := p.CurrentOpeningHours.OpenNow
+			openNow = &v
+		}
 		results = append(results, PlaceResult{
 			PlaceID:        p.ID,
 			Name:           p.DisplayName.Text,
@@ -194,6 +206,7 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 			Rating:         p.Rating,
 			Types:          p.Types,
 			PhotoReference: photoRef,
+			OpenNow:        openNow,
 		})
 	}
 	return results, nil
@@ -407,6 +420,19 @@ func isVisitablePlace(types []string) bool {
 	return false
 }
 
+// filterOpenNowPlaces は OpenNow=false の施設を除外する。
+// OpenNow が nil（営業時間情報なし）の施設は深夜時間帯ユーザーへの配慮として除外しない。
+func filterOpenNowPlaces(places []PlaceResult) []PlaceResult {
+	filtered := make([]PlaceResult, 0, len(places))
+	for _, p := range places {
+		if p.OpenNow != nil && !*p.OpenNow {
+			continue
+		}
+		filtered = append(filtered, p)
+	}
+	return filtered
+}
+
 type SuggestionHandler struct {
 	DB          *gorm.DB
 	RedisClient *redis.Client
@@ -424,10 +450,11 @@ type SuggestionResult struct {
 }
 
 type suggestionRequest struct {
-	Lat         float64 `json:"lat" binding:"required"`
-	Lng         float64 `json:"lng" binding:"required"`
-	Radius      uint    `json:"radius"`
-	ForceReload bool    `json:"force_reload"`
+	Lat           float64 `json:"lat" binding:"required"`
+	Lng           float64 `json:"lng" binding:"required"`
+	Radius        uint    `json:"radius"`
+	ForceReload   bool    `json:"force_reload"`
+	FilterOpenNow bool    `json:"filter_open_now"`
 }
 
 // 日次キャッシュで返す最大施設数
@@ -451,6 +478,7 @@ const visitedExclusionDays = 30
 // @Summary      場所の提案
 // @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
 // @Description  notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
+// @Description  filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
 // @Tags         Suggestion
 // @Accept       json
 // @Produce      json
@@ -513,6 +541,14 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	if len(places) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found", "code": "NO_NEARBY_PLACES"})
 		return
+	}
+
+	if req.FilterOpenNow {
+		places = filterOpenNowPlaces(places)
+		if len(places) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no open places found", "code": "NO_OPEN_PLACES"})
+			return
+		}
 	}
 
 	unvisited := filterOutVisited(h.DB, userID, places)
