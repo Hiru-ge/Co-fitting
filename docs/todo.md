@@ -24,23 +24,23 @@
 
 ### 3/1（土）・3/3（月）: インフラ準備・ベータ版セットアップ
 
-- [ ] **無料PaaSへのデプロイ**： Issue #231
+- [x] **Issue #231: 無料PaaSへのデプロイ**
   - Frontend: **Cloudflare Pages**（帯域無制限、`roamble.pages.dev`）
   - Backend: **Render Free**（512MB RAM、15分スリープ → UptimeRobotで回避）
   - DB: **TiDB Cloud Starter**（MySQL 8.x互換、5GB、接続文字列変更のみ。**Spending Limit $0 に設定すること**）
   - Redis: **Upstash Redis**（500K commands/月）
   - 本番環境用の環境変数（`DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `GOOGLE_CLIENT_ID` 等）を設定
   - CORS設定を `roamble.pages.dev` に対応させる
-- [x] **合言葉アクセス制限の実装**: Issue #232
+- [x] **Issue #232: 合言葉アクセス制限の実装**
   - フロントエンドのみで実装。初回アクセス時に合言葉入力画面を表示し、正しければlocalStorageにフラグ保存
   - 合言葉はベータテスター募集時に通知する
-- [x] **プライバシーポリシーの作成・設置**: Issue #233
+- [x] **Issue #233: プライバシーポリシーの作成・設置**
   - Google OAuthを使用しているため必須。位置情報の取り扱い・Place IDのみサーバー保存などを明記
   - アプリ内のフッターまたは設定画面にリンクを設置
-- [ ] **お問い合わせフォーム（Google Form）の設置**: Issue #234
+- [ ] **Issue #234: お問い合わせフォーム（Google Form）の設置**
   - Google Formでバグ報告・フィードバック用のフォームを作成
   - アプリ内の設定画面にリンクを設置
-- [ ] **Google Analytics（GA4）の設定**: Issue #235
+- [ ] **Issue #235: Google Analytics（GA4）の設定**
   - フロントエンドにGA4のトラッキングコードを追加
   - 主要イベント（提案生成、訪問記録、バッジ獲得）のカスタムイベントを設定
 
@@ -52,6 +52,10 @@
   - モバイルでの表示・操作感を確認
 - [ ] **本番環境でのUX改善**
   - 動作確認で見つかった問題を修正・再デプロイ
+  - 読み込みが全体的に遅い（Render Free のコールドスタート含む）
+  - 全体的にデザインの縦幅が長く、スマホ画面内に収まっていない
+  - スマホから現在地取得できない・許可ダイアログが表示されない（要調査）
+  - PWA対応（ホーム画面追加・オフライン対応）
 
 ### 3/6（木）: ベータ版公開
 
