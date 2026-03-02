@@ -73,7 +73,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <>
           <AppHeader />
           <div className="flex-1 flex items-center justify-center px-6">
-            <div className="w-full aspect-4/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+            <div className="w-full aspect-3/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
           </div>
         </>
       ) : isCompleted ? (
@@ -101,7 +101,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
           <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
             {places.length > 0 && (
-              <div className="relative w-full aspect-4/5">
+              <div className="relative w-full aspect-3/5">
                 {places.slice(0, 3).map((place, i) => (
                   <DiscoveryCard
                     key={place.place_id}
