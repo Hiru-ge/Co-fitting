@@ -163,7 +163,20 @@ export default function DiscoveryCard({
           className="text-2xl font-extrabold text-white leading-tight mb-2"
           style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
         >
+          <a
+          data-testid="google-maps-link"
+          href={buildGoogleMapsPlaceUrl(place.place_id)}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
           {place.name}
+          <span className="flex items-center gap-1 text-white text-sm hover:text-white transition-colors">
+          (Google Mapsで開く)
+          </span>
+        </a>
         </h2>
         <div className="flex items-center justify-between">
           <div
@@ -191,21 +204,6 @@ export default function DiscoveryCard({
               </span>
             )}
           </div>
-          <a
-            data-testid="google-maps-link"
-            href={buildGoogleMapsPlaceUrl(place.place_id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-white text-sm hover:text-white transition-colors"
-            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="material-symbols-outlined text-base">
-              location_on
-            </span>
-            地図で開く
-          </a>
         </div>
       </div>
 
