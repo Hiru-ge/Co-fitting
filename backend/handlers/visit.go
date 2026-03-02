@@ -119,7 +119,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// is_comfort_zone の自動設定: 熟練度Lv.1（初回〜数回訪問）のジャンルへの訪問を脱却扱いとする
+	// is_comfort_zone の自動設定: 「興味タグ外 かつ 熟練度Lv.1」のジャンルへの訪問を脱却扱いとする (Issue #255)
 	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
 	isComfortZone := false
 	var genreTagID *uint64

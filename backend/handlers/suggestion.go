@@ -104,14 +104,14 @@ type nearbySearchAPIResponse struct {
 }
 
 type nearbySearchPlace struct {
-	ID                    string                       `json:"id"`
-	Types                 []string                     `json:"types"`
-	DisplayName           nearbySearchDisplayName      `json:"displayName"`
-	Location              nearbySearchLatLng           `json:"location"`
-	Rating                float32                      `json:"rating"`
-	Photos                []nearbySearchPhoto          `json:"photos"`
-	ShortFormattedAddress string                       `json:"shortFormattedAddress"`
-	CurrentOpeningHours   *nearbySearchOpeningHours    `json:"currentOpeningHours,omitempty"`
+	ID                    string                    `json:"id"`
+	Types                 []string                  `json:"types"`
+	DisplayName           nearbySearchDisplayName   `json:"displayName"`
+	Location              nearbySearchLatLng        `json:"location"`
+	Rating                float32                   `json:"rating"`
+	Photos                []nearbySearchPhoto       `json:"photos"`
+	ShortFormattedAddress string                    `json:"shortFormattedAddress"`
+	CurrentOpeningHours   *nearbySearchOpeningHours `json:"currentOpeningHours,omitempty"`
 }
 
 type nearbySearchOpeningHours struct {
@@ -293,13 +293,21 @@ func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, err
 	return names, nil
 }
 
-// isComfortZoneVisit はジャンル熟練度に基づいて脱却訪問かどうかを判定する
-// 熟練度Lv.1（レコードなし or Level==1）なら脱却扱い（初回〜数回の訪問）
+// isComfortZoneVisit はジャンル熟練度と興味タグに基づいて脱却訪問かどうかを判定する
+// Issue #255: 「興味タグ外 かつ 熟練度Lv.1」のジャンルへの訪問を脱却扱いとする
+// 興味タグ内のジャンルへの初回訪問は「期待していた行動」なので脱却扱いしない
 // genreName が空の場合や genreTag が見つからない場合は false を返す
 func isComfortZoneVisit(db *gorm.DB, userID uint64, genreName string) bool {
 	if genreName == "" {
 		return false
 	}
+
+	// 興味タグ内のジャンルは脱却扱いしない
+	interestGenres, err := getUserInterestGenreNames(db, userID)
+	if err == nil && interestGenres[genreName] {
+		return false
+	}
+
 	var genreTag models.GenreTag
 	if err := db.Where("name = ?", genreName).First(&genreTag).Error; err != nil {
 		// ジャンルタグが見つからない場合は脱却扱い（未知のジャンル）

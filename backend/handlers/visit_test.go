@@ -391,13 +391,13 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		}
 	})
 
-	t.Run("興味内ジャンル(cafe)の初回訪問でも熟練度Lv.1のためis_comfort_zone=trueになる（脱却扱い）", func(t *testing.T) {
+	t.Run("興味内ジャンル(cafe)の初回訪問は興味タグ内なのでis_comfort_zone=false（Issue #255）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
 
-		// "カフェ" 興味タグを設定（しかし初回訪問なので熟練度なし → 脱却扱い）
+		// "カフェ" 興味タグを設定 → 興味タグ内のLv.1は脱却扱いしない
 		var cafeTag models.GenreTag
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")
@@ -430,8 +430,8 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for first visit to cafe (proficiency Lv.1), got false")
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false for interest-tag genre (cafe) even at Lv.1 (Issue #255), got true")
 		}
 	})
 
