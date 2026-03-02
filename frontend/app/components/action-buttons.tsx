@@ -18,19 +18,19 @@ export default function ActionButtons({
   const isReloadDisabled = reloadCountRemaining <= 0 || isReloading;
 
   return (
-    <div className="flex items-center gap-4 w-full">
-      <div className="flex flex-col items-center gap-1">
+    <div className="flex items-center gap-3 w-full">
+      <div className="flex flex-col items-center gap-0.5">
         <button
           onClick={onReload}
           disabled={isReloadDisabled}
           aria-label="リロード"
-          className="size-14 flex items-center justify-center rounded-full bg-white dark:bg-white/10 shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          className="size-12 flex items-center justify-center rounded-full bg-white/90 dark:bg-white/20 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
-          <span className={`material-symbols-outlined text-2xl text-gray-500 ${isReloading ? "animate-spin" : ""}`}>
+          <span className={`material-symbols-outlined text-xl text-gray-600 dark:text-gray-300 ${isReloading ? "animate-spin" : ""}`}>
             {isReloading ? "progress_activity" : "refresh"}
           </span>
         </button>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-white/70">
           あと{reloadCountRemaining}回
         </span>
       </div>
@@ -38,7 +38,7 @@ export default function ActionButtons({
       <button
         onClick={onCheckIn}
         disabled={isVisited || isCheckingIn}
-        className="flex-1 h-14 rounded-full bg-primary text-white font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+        className="flex-1 h-12 rounded-full bg-primary text-white font-bold text-base shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
       >
         {isCheckingIn ? (
           <span className="flex items-center justify-center gap-2">

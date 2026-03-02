@@ -107,7 +107,7 @@ export default function DiscoveryCard({
   return (
     <div
       ref={cardRef}
-      className={`absolute inset-0 rounded-3xl overflow-hidden pb-10 ${showPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`absolute inset-0 rounded-3xl overflow-hidden ${showPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
       style={{
         transform: cardTransform,
         opacity: cardOpacity,
@@ -158,12 +158,18 @@ export default function DiscoveryCard({
       </div>
 
       {/* 施設情報 */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
-        <h2 className="text-3xl font-extrabold text-white leading-tight mb-2">
+      <div className="absolute bottom-0 left-0 right-0 px-6 pt-20 pb-20 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+        <h2
+          className="text-2xl font-extrabold text-white leading-tight mb-2"
+          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
+        >
           {place.name}
         </h2>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-white/80 text-sm">
+          <div
+            className="flex items-center gap-3 text-white text-sm"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+          >
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-base">
                 {category.icon}
@@ -190,7 +196,8 @@ export default function DiscoveryCard({
             href={buildGoogleMapsPlaceUrl(place.place_id)}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-white/80 text-sm hover:text-white transition-colors"
+            className="flex items-center gap-1 text-white text-sm hover:text-white transition-colors"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >

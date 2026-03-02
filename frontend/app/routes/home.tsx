@@ -99,7 +99,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <>
           <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace!.vicinity)} />
 
-          <main className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pb-6 pt-4 overflow-hidden">
+          <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
             {places.length > 0 && (
               <div className="relative w-full aspect-3/5">
                 {places.slice(0, 3).map((place, i) => (
@@ -114,21 +114,27 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     onSwipe={i === 0 ? handleSwipe : undefined}
                   />
                 ))}
+
+                {/* アクションボタンをカード下部にオーバーレイ */}
+                <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
+                  <ActionButtons
+                    onCheckIn={handleCheckIn}
+                    onReload={handleReload}
+                    isVisited={isCurrentVisited}
+                    isCheckingIn={checkingIn}
+                    reloadCountRemaining={reloadCountRemaining}
+                    isReloading={isReloading}
+                  />
+                </div>
               </div>
             )}
 
+            {/* カードインジケーターはカードの外 */}
             {places.length > 1 && (
-              <CardIndicator total={places.length} currentIndex={currentIndex} />
+              <div className="mt-2">
+                <CardIndicator total={places.length} currentIndex={currentIndex} />
+              </div>
             )}
-
-            <ActionButtons
-              onCheckIn={handleCheckIn}
-              onReload={handleReload}
-              isVisited={isCurrentVisited}
-              isCheckingIn={checkingIn}
-              reloadCountRemaining={reloadCountRemaining}
-              isReloading={isReloading}
-            />
           </main>
         </>
       )}
