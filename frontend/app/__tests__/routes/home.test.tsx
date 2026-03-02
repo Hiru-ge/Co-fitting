@@ -788,3 +788,120 @@ describe("提案リロード機能", () => {
     });
   });
 });
+
+// === Issue #252: 位置情報変化による自動再提案機能の排除 ===
+describe("Issue #252: 位置情報変化による自動再提案機能の排除", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    callCount = 0;
+    localStorageMock.clear();
+    sessionStorageMock.clear();
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({
+      places: [...mockPlaces],
+      reload_count_remaining: 3,
+    });
+  });
+
+  test("マウント時の getSuggestions 呼び出しは1回のみ（位置情報変化で自動再呼び出しされない）", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // マウント後の呼び出し回数が1回のみであることを確認
+    // 「位置情報が変わったら自動で再提案」という動作は存在しない
+    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(1);
+  });
+
+  test("watchPosition は使用されていない（位置情報の連続監視なし）", async () => {
+    // watchPosition が呼ばれたらリグレッションとして検出する
+    const watchPositionMock = vi.fn();
+    vi.stubGlobal("navigator", {
+      geolocation: {
+        getCurrentPosition: vi.fn().mockImplementation(
+          (success: (pos: { coords: { latitude: number; longitude: number } }) => void) =>
+            success({ coords: { latitude: 35.658, longitude: 139.7016 } })
+        ),
+        watchPosition: watchPositionMock,
+        clearWatch: vi.fn(),
+      },
+    });
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // watchPosition が一度も呼ばれていないことを確認
+    expect(watchPositionMock).not.toHaveBeenCalled();
+  });
+
+  test("提案取得後にアンマウント→再マウントしても getSuggestions が再呼び出しされない（位置変化に関係なく）", async () => {
+    const { getSuggestions, } = await import("~/api/suggestions");
+    const { getPositionWithFallback } = await import("~/utils/geolocation");
+
+    // 初回: 位置A
+    vi.mocked(getPositionWithFallback).mockResolvedValue({ lat: 35.658, lng: 139.7016 });
+
+    const { unmount } = renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const callCountAfterFirstMount = vi.mocked(getSuggestions).mock.calls.length;
+    expect(callCountAfterFirstMount).toBe(1);
+
+    // 画面遷移をシミュレート（アンマウント）
+    unmount();
+
+    // 位置が変わった（B地点）状態で再マウント
+    vi.mocked(getPositionWithFallback).mockResolvedValue({ lat: 35.680, lng: 139.760 });
+    renderHome();
+
+    // sessionStorageキャッシュから復元されるため、提案カードはすぐに表示される
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // 再マウント後に getSuggestions が追加で呼ばれていないことを確認
+    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(callCountAfterFirstMount);
+  });
+
+  test("forceReload（リロードボタン押下）時は localStorage キャッシュを無視して再取得する", async () => {
+    const { getSuggestions } = await import("~/api/suggestions");
+    const user = userEvent.setup();
+
+    const { unmount } = renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    // アンマウント → 再マウント
+    unmount();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    const callCountBeforeReload = vi.mocked(getSuggestions).mock.calls.length;
+
+    // リロードボタンを押す
+    const reloadButton = screen.getByRole("button", { name: /リロード/ });
+    await user.click(reloadButton);
+
+    await waitFor(() => {
+      expect(vi.mocked(getSuggestions).mock.calls.length).toBeGreaterThan(callCountBeforeReload);
+    });
+
+    // forceReload=true で呼ばれていることを確認
+    const lastCall = vi.mocked(getSuggestions).mock.calls.at(-1);
+    expect(lastCall?.[4]).toBe(true); // 第5引数が forceReload
+  });
+});

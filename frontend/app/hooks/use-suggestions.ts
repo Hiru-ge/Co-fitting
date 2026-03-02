@@ -33,6 +33,47 @@ export interface XpModalState {
 }
 
 const COMPLETED_KEY = "roamble_completed";
+const SUGGESTIONS_CACHE_KEY = "roamble_suggestions_cache";
+
+interface SuggestionsCache {
+  date: string; // getTodayKey() の値。日付が変わると無効
+  places: PlaceWithPhoto[];
+  reloadCountRemaining: number;
+}
+
+/**
+ * 当日の提案キャッシュを取得する。
+ * 日付が変わっている場合は null を返す（キャッシュ無効）。
+ * localStorageを使うことでタブを閉じて再度開いても当日中は有効。
+ */
+function getSuggestionsCache(): SuggestionsCache | null {
+  try {
+    const saved = localStorage.getItem(SUGGESTIONS_CACHE_KEY);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as SuggestionsCache;
+    if (parsed.date !== getTodayKey()) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function setSuggestionsCache(places: PlaceWithPhoto[], reloadCountRemaining: number): void {
+  try {
+    const data: SuggestionsCache = { date: getTodayKey(), places, reloadCountRemaining };
+    localStorage.setItem(SUGGESTIONS_CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage 使用不可の環境では無視
+  }
+}
+
+function clearSuggestionsCache(): void {
+  try {
+    localStorage.removeItem(SUGGESTIONS_CACHE_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 /**
  * 今日の日付キー（JST）でコンプリートフラグをlocalStorageに保存する。
@@ -65,25 +106,45 @@ function markCompletedToday(): void {
 
 export function useSuggestions(token: string) {
   const { showToast } = useToast();
-  const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
-  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const completedFromStorage = isCompletedToday();
-  const [isLoading, setIsLoading] = useState(!completedFromStorage);
+  // コンプリート済みでなければ当日の提案キャッシュを確認（初期化時に1回のみ呼ぶ）
+  const initialCache = completedFromStorage ? null : getSuggestionsCache();
+  const [places, setPlaces] = useState<PlaceWithPhoto[]>(initialCache?.places ?? []);
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
+  // コンプリート済みの場合もキャッシュがある場合も初期ローディングは不要
+  const [isLoading, setIsLoading] = useState(!completedFromStorage && !initialCache);
   const [error, setError] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(completedFromStorage);
   const [checkingIn, setCheckingIn] = useState(false);
+  // userPos はキャッシュせず毎回現在地を取得する（距離表示を正確に保つため）
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
-  const [originalOrder, setOriginalOrder] = useState<string[]>([]);
+  // originalOrder は places から導出可能なため、キャッシュではなく places の初期値から設定する
+  const [originalOrder, setOriginalOrder] = useState<string[]>(
+    initialCache?.places.map((p) => p.place_id) ?? []
+  );
   const [xpModalState, setXpModalState] = useState<XpModalState | null>(null);
   const [badgeQueue, setBadgeQueue] = useState<BadgeInfo[]>([]);
-  const [reloadCountRemaining, setReloadCountRemaining] = useState(3);
+  const [reloadCountRemaining, setReloadCountRemaining] = useState(initialCache?.reloadCountRemaining ?? 3);
   const [isReloading, setIsReloading] = useState(false);
   const initialLoadDoneRef = useRef(false);
 
   const loadSuggestions = useCallback(async (forceReload?: boolean) => {
     if (forceReload) {
+      // forceReload 時はキャッシュを削除して新鮮な提案を取得する
+      clearSuggestionsCache();
       setIsReloading(true);
     } else {
+      // 通常ロード時は当日のキャッシュを確認し、あれば復元して API 呼び出しをスキップする
+      const cached = getSuggestionsCache();
+      if (cached) {
+        setPlaces(cached.places);
+        setOriginalOrder(cached.places.map((p) => p.place_id));
+        setReloadCountRemaining(cached.reloadCountRemaining);
+        // userPos は現在地を取得し直す（距離表示を最新に保つため）
+        getPositionWithFallback().then(setUserPos);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
     }
     setError(null);
@@ -128,6 +189,7 @@ export function useSuggestions(token: string) {
         );
         setPlaces(placesWithPhotos);
         setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
+        setSuggestionsCache(placesWithPhotos, reload_count_remaining ?? 3);
         sendSuggestionGenerated({
           placesCount: placesWithPhotos.length,
           interestMatchCount: placesWithPhotos.filter((p) => p.is_interest_match).length,
