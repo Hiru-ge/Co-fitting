@@ -276,6 +276,8 @@ export function useSuggestions(token: string) {
       const remainingPlaces = places.filter((p) => p.place_id !== place.place_id);
       setPlaces(remainingPlaces);
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
+      // 訪問済み施設をキャッシュからも除去する（ページ再訪時に再表示されないようにする）
+      setSuggestionsCache(remainingPlaces, reloadCountRemaining);
 
       // バックエンドの訪問履歴件数に基づくコンプリート判定（フロントのカード枚数ではなくサーバー側の事実を信頼）
       // これによりリロードを挟んだ場合でも正確にコンプリートを検出できる
