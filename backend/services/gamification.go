@@ -134,11 +134,16 @@ func CalcStreakBonus(streakCount int) int {
 }
 
 // calcGenreLevel はジャンル熟練度XPからジャンルレベルを算出する
-// ジャンルレベルは1〜5で、100XPごとに1レベルアップ（最大5）
+// ユーザーレベルと同じ levelThresholds テーブルを使用し、最大Lv.20でキャップ
 func calcGenreLevel(xp int) int {
-	level := xp/100 + 1
-	if level > 5 {
-		level = 5
+	level := 1
+	for i, threshold := range levelThresholds {
+		if xp >= threshold {
+			level = i + 1
+		}
+	}
+	if level > 20 {
+		level = 20
 	}
 	return level
 }

@@ -2127,14 +2127,14 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		}
 	})
 
-	t.Run("熟練度Lv.2以上ジャンルの提案はis_comfort_zone=falseになる", func(t *testing.T) {
+	t.Run("熟練度Lv.2ジャンルの提案でもLv.5以下なのでis_comfort_zone=trueになる", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		// カフェジャンルの熟練度をLv.2に設定
+		// カフェジャンルの熟練度をLv.2に設定（Lv.5以下なので脱却扱い）
 		var cafeTag models.GenreTag
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")
@@ -2181,8 +2181,8 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 				t.Errorf("Place %s: expected is_comfort_zone to be set (not nil)", p.PlaceID)
 				continue
 			}
-			if *p.IsComfortZone {
-				t.Errorf("Place %s: expected is_comfort_zone=false for cafe with proficiency Lv.2, got true", p.PlaceID)
+			if !*p.IsComfortZone {
+				t.Errorf("Place %s: expected is_comfort_zone=true for cafe with proficiency Lv.2 (Lv.5以下), got false", p.PlaceID)
 			}
 		}
 	})

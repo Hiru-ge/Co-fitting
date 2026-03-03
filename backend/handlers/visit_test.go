@@ -473,7 +473,7 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		}
 	})
 
-	t.Run("同ジャンル2回目訪問（熟練度Lv.2以上）はis_comfort_zone=falseになる", func(t *testing.T) {
+	t.Run("興味タグ外ジャンルの熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_comfort_zone=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -484,7 +484,7 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 			t.Skip("カフェジャンルタグが見つかりません")
 		}
 
-		// 熟練度をLv.2（xp=100以上）に事前設定
+		// 熟練度をLv.2（xp=100以上）に事前設定（興味タグ未設定なので脱却扱い）
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
 			GenreTagID: cafeTag.ID,
@@ -518,12 +518,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_2nd_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false for second visit to cafe (proficiency Lv.2), got true")
+		if !visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=true for Lv.2 proficiency without interest tags (Lv.5以下), got false")
 		}
 	})
 
-	t.Run("興味外ジャンルでも熟練度Lv.2以上なら通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+	t.Run("興味外ジャンルで熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_comfort_zone=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -573,8 +573,8 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv2_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false for museum with proficiency Lv.2 (even though not in interest), got true")
+		if !visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=true for museum with proficiency Lv.2 (Lv.5以下なので脱却扱い), got false")
 		}
 	})
 
@@ -618,6 +618,277 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		}
 		if visit.IsComfortZone {
 			t.Error("Expected is_comfort_zone=false when place_types not provided, got true")
+		}
+	})
+
+	// === 境界テスト: 脱却判定の熟練度閾値（Lv.5以下=脱却、Lv.6以上=通常）と最大レベル（Lv.20） ===
+
+	t.Run("興味タグ外×熟練度Lv.5（閾値上限）は脱却扱い（is_comfort_zone=true）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		// 博物館（興味外）の熟練度をLv.5（XP=802）に設定 → 閾値ちょうどなので脱却
+		var museumTag models.GenreTag
+		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
+			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: museumTag.ID,
+			XP:         802,
+			Level:      5,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_museum_lv5_001",
+			"place_name":  "熟練博物館",
+			"vicinity":    "東京都渋谷区",
+			"category":    "museum",
+			"place_types": []string{"museum", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-09T10:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv5_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if !visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=true for out-of-interest genre at Lv.5 (threshold boundary), got false")
+		}
+	})
+
+	t.Run("興味タグ外×熟練度Lv.6（閾値超え）は通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		// 博物館（興味外）の熟練度をLv.6（XP=1170）に設定 → 閾値超えなので通常扱い
+		var museumTag models.GenreTag
+		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
+			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: museumTag.ID,
+			XP:         1170,
+			Level:      6,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_museum_lv6_001",
+			"place_name":  "通い慣れた博物館",
+			"vicinity":    "東京都渋谷区",
+			"category":    "museum",
+			"place_types": []string{"museum", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-09T10:30:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv6_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false for out-of-interest genre at Lv.6 (above threshold), got true")
+		}
+	})
+
+	t.Run("興味タグ内×熟練度Lv.5は通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: cafeTag.ID,
+			XP:         802,
+			Level:      5,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_cafe_lv5_001",
+			"place_name":  "常連カフェ",
+			"vicinity":    "東京都渋谷区",
+			"category":    "cafe",
+			"place_types": []string{"cafe", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-09T11:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_lv5_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false for interest-tag genre at Lv.5, got true")
+		}
+	})
+
+	t.Run("興味タグ外×熟練度Lv.4（XP=801、Lv.5直前の境界）でも脱却扱い", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		var museumTag models.GenreTag
+		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
+			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: museumTag.ID,
+			XP:         801,
+			Level:      4,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_museum_lv4_001",
+			"place_name":  "あと一歩の博物館",
+			"vicinity":    "東京都渋谷区",
+			"category":    "museum",
+			"place_types": []string{"museum", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-09T12:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv4_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if !visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=true for out-of-interest genre at Lv.4 (XP=801), got false")
+		}
+	})
+
+	t.Run("興味タグ外×熟練度Lv.20（最大）は通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		var cafeTag models.GenreTag
+		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
+			t.Skip("カフェジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
+
+		// 博物館（興味外）の熟練度をLv.20（XP=13357、最大レベル）に設定
+		var museumTag models.GenreTag
+		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
+			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		}
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: museumTag.ID,
+			XP:         13357,
+			Level:      20,
+		})
+
+		body := map[string]interface{}{
+			"place_id":    "ChIJl_museum_lv20_001",
+			"place_name":  "極めた博物館",
+			"vicinity":    "東京都渋谷区",
+			"category":    "museum",
+			"place_types": []string{"museum", "point_of_interest"},
+			"lat":         35.677,
+			"lng":         139.650,
+			"visited_at":  "2024-02-09T13:00:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv20_001", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.IsComfortZone {
+			t.Error("Expected is_comfort_zone=false for out-of-interest genre at max Lv.20, got true")
 		}
 	})
 }

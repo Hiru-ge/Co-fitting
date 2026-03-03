@@ -294,8 +294,8 @@ func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, err
 }
 
 // isComfortZoneVisit はジャンル熟練度と興味タグに基づいて脱却訪問かどうかを判定する
-// Issue #255: 「興味タグ外 かつ 熟練度Lv.1」のジャンルへの訪問を脱却扱いとする
-// 興味タグ内のジャンルへの初回訪問は「期待していた行動」なので脱却扱いしない
+// 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
+// 興味タグ内のジャンルへの訪問は脱却扱いしない
 // genreName が空の場合や genreTag が見つからない場合は false を返す
 func isComfortZoneVisit(db *gorm.DB, userID uint64, genreName string) bool {
 	if genreName == "" {
@@ -469,8 +469,9 @@ type suggestionRequest struct {
 const maxDailySuggestions = 3
 
 // comfortZoneLevelThreshold は脱却判定の熟練度閾値
-// ジャンル熟練度がこのレベル未満（Lv.1 = 0〜99XP）なら脱却扱い
-const comfortZoneLevelThreshold = 2
+// ジャンル熟練度がこのレベル未満（Lv.5以下 = 0〜499XP）なら脱却扱い
+// ジャンル熟練度の最大はLv.20だが、Lv.6以上になれば興味タグ外でも通常扱い
+const comfortZoneLevelThreshold = 6
 
 // デフォルトの検索半径（メートル）
 const defaultSearchRadius uint = 3000
