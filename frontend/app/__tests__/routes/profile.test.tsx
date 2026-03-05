@@ -114,9 +114,29 @@ function renderProfile() {
   );
 }
 
+const sessionStorageData: Record<string, string> = {};
+const sessionStorageMock = {
+  getItem: (key: string) => sessionStorageData[key] ?? null,
+  setItem: (key: string, value: string) => { sessionStorageData[key] = value; },
+  removeItem: (key: string) => { delete sessionStorageData[key]; },
+  clear: () => { Object.keys(sessionStorageData).forEach(k => delete sessionStorageData[k]); },
+};
+vi.stubGlobal("sessionStorage", sessionStorageMock);
+
+const localStorageData: Record<string, string> = {};
+const localStorageMock = {
+  getItem: (key: string) => localStorageData[key] ?? null,
+  setItem: (key: string, value: string) => { localStorageData[key] = value; },
+  removeItem: (key: string) => { delete localStorageData[key]; },
+  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+};
+vi.stubGlobal("localStorage", localStorageMock);
+
 describe("プロフィール画面", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorageMock.clear();
+    localStorageMock.clear();
   });
 
   test("ユーザー情報が表示される", async () => {
@@ -302,6 +322,72 @@ describe("プロフィール画面", () => {
       // challenge_visits: 38
       expect(screen.getByText(/38/)).toBeInTheDocument();
     });
+  });
+
+  // === Issue #258: プロフィールツアーステップ3 ===
+  test("profile_tour_active が 'true' のとき ProfileTourStep が表示される", async () => {
+    sessionStorage.setItem("profile_tour_active", "true");
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "使い方ツアー ステップ3" })).toBeInTheDocument();
+      expect(screen.getByText("XPとバッジを集めよう")).toBeInTheDocument();
+      expect(screen.getByText("3 / 3")).toBeInTheDocument();
+    });
+  });
+
+  test("profile_tour_active がないとき ProfileTourStep は表示されない", async () => {
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストユーザー")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("dialog", { name: "使い方ツアー ステップ3" })).not.toBeInTheDocument();
+  });
+
+  test("ProfileTourStep「はじめる」でフラグが書き込まれ /home に遷移する", async () => {
+    const user = userEvent.setup();
+    const mockNavigate = vi.fn();
+    const { useNavigate } = await import("react-router");
+    vi.mocked(useNavigate).mockReturnValue(mockNavigate as any);
+
+    sessionStorage.setItem("profile_tour_active", "true");
+    renderProfile();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "はじめる" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "はじめる" }));
+
+    expect(localStorage.getItem("home_tour_seen")).toBe("true");
+    expect(sessionStorage.getItem("profile_tour_active")).toBeNull();
+    expect(mockNavigate).toHaveBeenCalledWith("/home");
+  });
+
+  test("ProfileTourStep「スキップ」でもフラグが書き込まれ /home に遷移する", async () => {
+    const user = userEvent.setup();
+    const mockNavigate = vi.fn();
+    const { useNavigate } = await import("react-router");
+    vi.mocked(useNavigate).mockReturnValue(mockNavigate as any);
+
+    sessionStorage.setItem("profile_tour_active", "true");
+    renderProfile();
+
+    await waitFor(() => {
+      // ツアーオーバーレイ内のスキップボタン
+      const skipButtons = screen.getAllByRole("button", { name: "スキップ" });
+      expect(skipButtons.length).toBeGreaterThan(0);
+    });
+
+    const skipButtons = screen.getAllByRole("button", { name: "スキップ" });
+    // ツアーオーバーレイのスキップは最後のもの（dialog内）
+    await user.click(skipButtons[skipButtons.length - 1]);
+
+    expect(localStorage.getItem("home_tour_seen")).toBe("true");
+    expect(sessionStorage.getItem("profile_tour_active")).toBeNull();
+    expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
 
   test("得意ジャンル一覧の各行にジャンル名とアイコンが別要素として正しく描画される", async () => {

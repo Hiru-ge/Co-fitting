@@ -10,6 +10,7 @@ import { useToast } from "~/components/toast";
 import { useModalClose } from "~/hooks/use-modal-close";
 import { getLevelInfo, getLevelTitle } from "~/utils/level";
 import { getBadgeIcon } from "~/utils/badge-icon";
+import { HOME_TOUR_SEEN_KEY, PROFILE_TOUR_KEY } from "~/utils/constants";
 
 export { protectedLoader as clientLoader };
 
@@ -17,6 +18,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user, token } = loaderData;
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [showProfileTour, setShowProfileTour] = useState(
+    () => sessionStorage.getItem(PROFILE_TOUR_KEY) === "true"
+  );
   const [stats, setStats] = useState<UserStats | null>(null);
   const [badges, setBadges] = useState<EarnedBadge[]>([]);
   const [proficiency, setProficiency] = useState<Proficiency[]>([]);
@@ -130,7 +134,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* ── XP プログレスバー ── */}
-      <div className="px-6 py-4">
+      <div data-tour="xp-section" className="px-6 py-4">
         {isLoading ? (
           <div className="space-y-2">
             <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
@@ -332,6 +336,108 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           onConfirm={handleLogout}
         />
       )}
+
+      {/* ── ツアーステップ3：XP・バッジ説明 ── */}
+      {showProfileTour && (
+        <ProfileTourStep onClose={() => setShowProfileTour(false)} />
+      )}
+    </div>
+  );
+}
+
+function ProfileTourStep({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const SPOTLIGHT_PADDING = 10;
+
+  useEffect(() => {
+    const el = document.querySelector('[data-tour="xp-section"]');
+    setTargetRect(el ? el.getBoundingClientRect() : null);
+  }, []);
+
+  function handleFinish() {
+    localStorage.setItem(HOME_TOUR_SEEN_KEY, "true");
+    sessionStorage.removeItem(PROFILE_TOUR_KEY);
+    onClose();
+    navigate("/home");
+  }
+
+  const panelAtTop = targetRect
+    ? (targetRect.top + targetRect.height / 2) > window.innerHeight * 0.55
+    : false;
+
+  const panelStyle: React.CSSProperties = panelAtTop
+    ? { position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)" }
+    : { position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)" };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="使い方ツアー ステップ3"
+      className="fixed inset-0 z-[60]"
+    >
+      {targetRect ? (
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            top: targetRect.top - SPOTLIGHT_PADDING,
+            left: targetRect.left - SPOTLIGHT_PADDING,
+            width: targetRect.width + SPOTLIGHT_PADDING * 2,
+            height: targetRect.height + SPOTLIGHT_PADDING * 2,
+            borderRadius: 16,
+            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.75)",
+            pointerEvents: "none",
+          }}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-black/75" aria-hidden="true" />
+      )}
+
+      <div
+        className="z-10"
+        style={{
+          ...panelStyle,
+          width: "calc(100vw - 32px)",
+          maxWidth: "20rem",
+        }}
+      >
+        <div
+          className="rounded-2xl p-5 text-center"
+          style={{
+            background: "rgba(16, 34, 34, 0.97)",
+            border: "1px solid rgba(82, 91, 187, 0.4)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <p className="text-xs font-bold tracking-widest text-primary/70 mb-3">
+            3 / 3
+          </p>
+          <h2 className="text-white text-base font-bold leading-snug mb-2">
+            XPとバッジを集めよう
+          </h2>
+          <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
+            {"訪問するたびにXPとバッジが貯まります\n興味外ジャンルへの脱却訪問はボーナスXP！"}
+          </p>
+        </div>
+
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={handleFinish}
+            className="flex-1 py-2.5 rounded-full text-sm text-gray-400 border border-gray-600 bg-white/5 hover:text-gray-300 transition-colors"
+          >
+            スキップ
+          </button>
+          <button
+            onClick={handleFinish}
+            className="flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-95"
+            style={{ background: "#525BBB", color: "#fff" }}
+          >
+            はじめる
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
