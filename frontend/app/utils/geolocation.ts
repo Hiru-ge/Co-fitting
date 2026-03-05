@@ -5,6 +5,19 @@ export interface Position {
   lng: number;
 }
 
+export function calcMapCenter(
+  visits: { lat: number; lng: number }[],
+  userPosition: Position | null
+): Position {
+  if (userPosition) return userPosition;
+  if (visits.length > 0) {
+    const lat = visits.reduce((sum, v) => sum + v.lat, 0) / visits.length;
+    const lng = visits.reduce((sum, v) => sum + v.lng, 0) / visits.length;
+    return { lat, lng };
+  }
+  return { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
+}
+
 export function getCurrentPosition(): Promise<Position> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
