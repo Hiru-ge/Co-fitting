@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
   APIProvider,
@@ -8,6 +8,11 @@ import {
 } from "@vis.gl/react-google-maps";
 import { getCategoryInfoByKey } from "~/utils/category-map";
 import { formatShortDate } from "~/utils/helpers";
+import {
+  getPositionWithFallback,
+  calcMapCenter,
+  type Position,
+} from "~/utils/geolocation";
 import type { MapVisit } from "~/types/visit";
 
 // カテゴリー別のピン色（Tailwind の bg 色に直接使えないので hex を定義）
@@ -43,8 +48,6 @@ function getPinColor(category: string): string {
   return CATEGORY_PIN_COLORS[category] ?? DEFAULT_PIN_COLOR;
 }
 
-// 東京（渋谷）をデフォルトの地図中心に設定
-const DEFAULT_CENTER = { lat: 35.658, lng: 139.7016 };
 const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
 
 interface Props {
@@ -53,12 +56,29 @@ interface Props {
 
 export default function VisitMap({ visits }: Props) {
   const [selectedVisit, setSelectedVisit] = useState<MapVisit | null>(null);
+  const [userPosition, setUserPosition] = useState<Position | null>(null);
+  const [positionReady, setPositionReady] = useState(false);
 
-  // 訪問記録がある場合は最初のピンを中心に
-  const center =
-    visits.length > 0
-      ? { lat: visits[0].lat, lng: visits[0].lng }
-      : DEFAULT_CENTER;
+  useEffect(() => {
+    getPositionWithFallback().then((pos) => {
+      setUserPosition(pos);
+      setPositionReady(true);
+    });
+  }, []);
+
+  if (!positionReady) {
+    return (
+      <div
+        data-testid="map-loading"
+        className="flex items-center justify-center"
+        style={{ height: "calc(100dvh - 180px)" }}
+      >
+        <span className="text-sm text-gray-400">地図を読み込み中...</span>
+      </div>
+    );
+  }
+
+  const center = calcMapCenter(visits, userPosition);
 
   return (
     <APIProvider apiKey={API_KEY}>

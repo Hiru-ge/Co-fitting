@@ -1,8 +1,21 @@
-import { DEFAULT_LOCATION } from "./constants";
+import { DEFAULT_LOCATION, CHECKIN_DISTANCE_THRESHOLD } from "./constants";
 
 export interface Position {
   lat: number;
   lng: number;
+}
+
+export function calcMapCenter(
+  visits: { lat: number; lng: number }[],
+  userPosition: Position | null
+): Position {
+  if (userPosition) return userPosition;
+  if (visits.length > 0) {
+    const lat = visits.reduce((sum, v) => sum + v.lat, 0) / visits.length;
+    const lng = visits.reduce((sum, v) => sum + v.lng, 0) / visits.length;
+    return { lat, lng };
+  }
+  return { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
 }
 
 export function getCurrentPosition(): Promise<Position> {
@@ -25,6 +38,21 @@ export async function getPositionWithFallback(): Promise<Position> {
   } catch {
     return { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
   }
+}
+
+/**
+ * ユーザーが対象施設の訪問記録可能圏内（デフォルト200m以内）にいるか判定する。
+ * userPos が (0,0) の場合は GPS 未取得とみなし true を返す。
+ */
+export function isWithinCheckInRange(
+  userLat: number,
+  userLng: number,
+  targetLat: number,
+  targetLng: number,
+  thresholdMeters: number = CHECKIN_DISTANCE_THRESHOLD
+): boolean {
+  if (userLat === 0 && userLng === 0) return true;
+  return calcDistance(userLat, userLng, targetLat, targetLng) <= thresholdMeters;
 }
 
 export function calcDistance(

@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { calcDistance, getPositionWithFallback } from "~/utils/geolocation";
+import { calcDistance, getPositionWithFallback, calcMapCenter, isWithinCheckInRange } from "~/utils/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 describe("calcDistance", () => {
@@ -17,6 +17,33 @@ describe("calcDistance", () => {
     const dist = calcDistance(35.658, 139.7016, 35.6896, 139.6999);
     expect(dist).toBeGreaterThan(2500);
     expect(dist).toBeLessThan(4500);
+  });
+});
+
+// === Issue #257: 訪問ボタン近接制限 ===
+describe("isWithinCheckInRange", () => {
+  test("同一地点は200m以内と判定される", () => {
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.658, 139.7016)).toBe(true);
+  });
+
+  test("約150m離れた地点は200m以内と判定される", () => {
+    // 緯度0.00135度 ≈ 150m
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016)).toBe(true);
+  });
+
+  test("約300m離れた地点は200m超と判定される", () => {
+    // 緯度0.0027度 ≈ 300m
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6607, 139.7016)).toBe(false);
+  });
+
+  test("userPos が (0,0) のときは常に true（GPS未取得扱い）", () => {
+    expect(isWithinCheckInRange(0, 0, 35.658, 139.7016)).toBe(true);
+  });
+
+  test("カスタム閾値（100m）での判定", () => {
+    // 約150m離れた地点: 100m閾値ではfalse、200m閾値ではtrue
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016, 100)).toBe(false);
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016, 200)).toBe(true);
   });
 });
 
@@ -62,5 +89,37 @@ describe("getPositionWithFallback", () => {
     const pos = await getPositionWithFallback();
     expect(pos.lat).toBe(DEFAULT_LOCATION.lat);
     expect(pos.lng).toBe(DEFAULT_LOCATION.lng);
+  });
+});
+
+describe("calcMapCenter", () => {
+  test("userPositionがある場合はそれを返す", () => {
+    const pos = { lat: 35.7, lng: 139.8 };
+    const visits = [{ lat: 35.6, lng: 139.7 }];
+    expect(calcMapCenter(visits, pos)).toEqual(pos);
+  });
+
+  test("userPositionがなくvisitsがある場合は平均座標を返す", () => {
+    const visits = [
+      { lat: 35.6762, lng: 139.6503 },
+      { lat: 35.68, lng: 139.66 },
+    ];
+    const result = calcMapCenter(visits, null);
+    expect(result.lat).toBeCloseTo((35.6762 + 35.68) / 2);
+    expect(result.lng).toBeCloseTo((139.6503 + 139.66) / 2);
+  });
+
+  test("userPositionもvisitsも空の場合はDEFAULT_LOCATIONを返す", () => {
+    expect(calcMapCenter([], null)).toEqual({
+      lat: DEFAULT_LOCATION.lat,
+      lng: DEFAULT_LOCATION.lng,
+    });
+  });
+
+  test("visits1件の場合はその座標を返す", () => {
+    const visits = [{ lat: 35.7, lng: 139.9 }];
+    const result = calcMapCenter(visits, null);
+    expect(result.lat).toBe(35.7);
+    expect(result.lng).toBe(139.9);
   });
 });
