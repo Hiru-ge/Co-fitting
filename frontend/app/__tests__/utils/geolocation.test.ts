@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { calcDistance, getPositionWithFallback } from "~/utils/geolocation";
+import { calcDistance, getPositionWithFallback, calcMapCenter } from "~/utils/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 describe("calcDistance", () => {
@@ -62,5 +62,37 @@ describe("getPositionWithFallback", () => {
     const pos = await getPositionWithFallback();
     expect(pos.lat).toBe(DEFAULT_LOCATION.lat);
     expect(pos.lng).toBe(DEFAULT_LOCATION.lng);
+  });
+});
+
+describe("calcMapCenter", () => {
+  test("userPositionがある場合はそれを返す", () => {
+    const pos = { lat: 35.7, lng: 139.8 };
+    const visits = [{ lat: 35.6, lng: 139.7 }];
+    expect(calcMapCenter(visits, pos)).toEqual(pos);
+  });
+
+  test("userPositionがなくvisitsがある場合は平均座標を返す", () => {
+    const visits = [
+      { lat: 35.6762, lng: 139.6503 },
+      { lat: 35.68, lng: 139.66 },
+    ];
+    const result = calcMapCenter(visits, null);
+    expect(result.lat).toBeCloseTo((35.6762 + 35.68) / 2);
+    expect(result.lng).toBeCloseTo((139.6503 + 139.66) / 2);
+  });
+
+  test("userPositionもvisitsも空の場合はDEFAULT_LOCATIONを返す", () => {
+    expect(calcMapCenter([], null)).toEqual({
+      lat: DEFAULT_LOCATION.lat,
+      lng: DEFAULT_LOCATION.lng,
+    });
+  });
+
+  test("visits1件の場合はその座標を返す", () => {
+    const visits = [{ lat: 35.7, lng: 139.9 }];
+    const result = calcMapCenter(visits, null);
+    expect(result.lat).toBe(35.7);
+    expect(result.lng).toBe(139.9);
   });
 });
