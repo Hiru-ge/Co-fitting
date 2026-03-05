@@ -24,7 +24,7 @@
   - `maximumAge: 300000` → `0`、`enableHighAccuracy: true` に変更
   - 閾値200mは維持（GPS精度問題は `coords.accuracy` で後から調整可能）
   - バックエンド変更不要
-- [ ] Issue #263: フィードバックボタンの常時表示（FAB）
+- [x] Issue #263: フィードバックボタンの常時表示（FAB）
   - app-layout.tsx に右下FAB（BottomNav上）を追加
   - Google Formsリンクへの導線。ベータ版中はフィードバックを気軽に出せるようにする
   - settings.tsx の既存リンクはそのまま維持
