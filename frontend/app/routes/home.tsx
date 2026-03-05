@@ -40,6 +40,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     currentPlace,
     isCurrentVisited,
     currentIndex,
+    isNearCurrentPlace,
     loadSuggestions,
     handleReload,
     handleSwipe,
@@ -124,6 +125,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     isCheckingIn={checkingIn}
                     reloadCountRemaining={reloadCountRemaining}
                     isReloading={isReloading}
+                    isNearPlace={isNearCurrentPlace}
                   />
                 </div>
               </div>
