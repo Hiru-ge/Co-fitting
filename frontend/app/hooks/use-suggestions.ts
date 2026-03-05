@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
-import { getPositionWithFallback, isWithinCheckInRange } from "~/utils/geolocation";
+import { getPositionWithFallback, watchCurrentPosition, isWithinCheckInRange } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
 import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
@@ -127,6 +127,19 @@ export function useSuggestions(token: string) {
   const [reloadCountRemaining, setReloadCountRemaining] = useState(initialCache?.reloadCountRemaining ?? 3);
   const [isReloading, setIsReloading] = useState(false);
   const initialLoadDoneRef = useRef(false);
+
+  // === Issue #262: 施設カード表示中のみ位置を継続監視し、訪問ボタンの距離判定をリアルタイム更新する ===
+  const hasCards = places.length > 0;
+  useEffect(() => {
+    if (!hasCards) return;
+
+    const watchId = watchCurrentPosition(setUserPos);
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation?.clearWatch(watchId);
+      }
+    };
+  }, [hasCards]);
 
   const loadSuggestions = useCallback(async (forceReload?: boolean) => {
     if (forceReload) {

@@ -18,7 +18,7 @@
   - GCP無料枠内（ベータ版規模なら$0）
   - Dockerfile.prodがそのまま使える。環境変数設定 + `gcloud run deploy` で完了
   - フロントエンド側コード変更：`_headers`追加、PWA precacheフォント除外、Material Symbols最適化、BottomNavローディングインジケータ
-- [ ] Issue #262: 訪問ボタン距離判定のリアルタイム更新
+- [x] Issue #262: 訪問ボタン距離判定のリアルタイム更新
   - `getCurrentPosition()`（1回取得）→ `watchPosition()`（継続監視）に変更
   - 施設カード表示中のみ監視を有効化し、バッテリー消費を抑制
   - `maximumAge: 300000` → `0`、`enableHighAccuracy: true` に変更

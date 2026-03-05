@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { calcDistance, getPositionWithFallback, calcMapCenter, isWithinCheckInRange } from "~/utils/geolocation";
+import { calcDistance, getPositionWithFallback, calcMapCenter, isWithinCheckInRange, watchCurrentPosition } from "~/utils/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 describe("calcDistance", () => {
@@ -121,5 +121,58 @@ describe("calcMapCenter", () => {
     const result = calcMapCenter(visits, null);
     expect(result.lat).toBe(35.7);
     expect(result.lng).toBe(139.9);
+  });
+});
+
+// === Issue #262: 訪問ボタン距離判定のリアルタイム更新 ===
+describe("watchCurrentPosition", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test("GPS監視を開始し、位置更新コールバックが呼ばれる", () => {
+    const onPosition = vi.fn();
+    const watchId = 42;
+    const watchPositionMock = vi.fn().mockImplementation(
+      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 35.68, longitude: 139.76 } });
+        return watchId;
+      }
+    );
+    vi.stubGlobal("navigator", {
+      geolocation: { watchPosition: watchPositionMock },
+    });
+
+    const result = watchCurrentPosition(onPosition);
+
+    expect(watchPositionMock).toHaveBeenCalledWith(
+      expect.any(Function),
+      undefined,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+    expect(onPosition).toHaveBeenCalledWith({ lat: 35.68, lng: 139.76 });
+    expect(result).toBe(watchId);
+  });
+
+  test("onError コールバックが渡された場合、watchPosition に転送される", () => {
+    const onPosition = vi.fn();
+    const onError = vi.fn();
+    const watchPositionMock = vi.fn().mockReturnValue(1);
+    vi.stubGlobal("navigator", {
+      geolocation: { watchPosition: watchPositionMock },
+    });
+
+    watchCurrentPosition(onPosition, onError);
+
+    expect(watchPositionMock).toHaveBeenCalledWith(
+      expect.any(Function),
+      onError,
+      expect.any(Object)
+    );
+  });
+
+  test("Geolocation非対応の場合は null を返す", () => {
+    vi.stubGlobal("navigator", { geolocation: undefined });
+    expect(watchCurrentPosition(vi.fn())).toBeNull();
   });
 });

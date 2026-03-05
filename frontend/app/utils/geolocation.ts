@@ -41,6 +41,23 @@ export async function getPositionWithFallback(): Promise<Position> {
 }
 
 /**
+ * GPS位置を継続監視し、10秒おきの更新のたびに onPosition を呼び出す。
+ * 返り値の watch ID を clearWatch() に渡すと監視を停止できる。
+ * Geolocation非対応の環境では null を返す。
+ */
+export function watchCurrentPosition(
+  onPosition: (pos: Position) => void,
+  onError?: (err: GeolocationPositionError) => void
+): number | null {
+  if (!navigator.geolocation) return null;
+  return navigator.geolocation.watchPosition(
+    (pos) => onPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+    onError,
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+/**
  * ユーザーが対象施設の訪問記録可能圏内（デフォルト200m以内）にいるか判定する。
  * userPos が (0,0) の場合は GPS 未取得とみなし true を返す。
  */
