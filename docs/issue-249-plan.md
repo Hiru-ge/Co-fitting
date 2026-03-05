@@ -212,13 +212,64 @@ API レイテンシを根本的に改善する（300-550ms → 50-100ms）。
 
 #### 移行手順
 
-1. GCP プロジェクト作成、Cloud Run API・Artifact Registry API 有効化
-2. `gcloud run deploy` で `backend/Dockerfile.prod` をデプロイ（環境変数を設定）
-3. Cloud Run のサービス URL を取得
-4. Cloudflare Pages の環境変数 `VITE_API_BASE_URL` を Cloud Run の URL に変更
-5. フロントエンド再デプロイ
-6. 動作確認（OAuth、提案生成、訪問記録、XP付与、バッジ）
-7. Render のサービスを停止
+**前提: gcloud CLI のインストール＆認証**
+
+```bash
+# 未インストールの場合
+brew install --cask google-cloud-sdk
+
+# 認証
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+```
+
+**1. GCP プロジェクト作成、Cloud Run API・Artifact Registry API 有効化**
+
+GCP コンソール上で実施。
+
+**2. Artifact Registry にリポジトリ作成、イメージをビルド＆プッシュしてデプロイ**
+
+```bash
+# Artifact Registry にリポジトリ作成（初回のみ）
+gcloud artifacts repositories create roamble \
+  --repository-format=docker \
+  --location=asia-northeast1
+
+# Docker 認証設定
+gcloud auth configure-docker asia-northeast1-docker.pkg.dev
+
+# イメージビルド＆プッシュ
+cd /path/to/Roamble
+docker build -t asia-northeast1-docker.pkg.dev/YOUR_PROJECT_ID/roamble/backend:latest \
+  -f backend/Dockerfile.prod backend/
+docker push asia-northeast1-docker.pkg.dev/YOUR_PROJECT_ID/roamble/backend:latest
+
+# Cloud Run にデプロイ（Render の環境変数をすべて --set-env-vars に設定）
+gcloud run deploy roamble-backend \
+  --image asia-northeast1-docker.pkg.dev/YOUR_PROJECT_ID/roamble/backend:latest \
+  --region asia-northeast1 \
+  --allow-unauthenticated \
+  --set-env-vars "GIN_MODE=release,DB_HOST=...,REDIS_URL=...,JWT_SECRET=..."
+```
+
+**3. Cloud Run のサービス URL を取得・疎通確認**
+
+デプロイ完了時にターミナルに `Service URL` が表示される。以下で疎通＆レイテンシを確認：
+
+```bash
+curl -w "\nTTFB: %{time_starttransfer}s\n" -o /dev/null -s https://roamble-backend-579127299450.asia-northeast1.run.app/health
+```
+
+[結果] TTFB: 0.226823s(226ms)
+[参考(Render)] TTFB: 0.363363s(363ms)
+
+**4. Cloudflare Pages の環境変数 `VITE_API_BASE_URL` を Cloud Run の URL に変更**
+
+**5. フロントエンド再デプロイ**
+
+**6. 動作確認（OAuth、提案生成、訪問記録、XP付与、バッジ）**
+
+**7. Render のサービスを停止**
 
 #### Render 有料プラン ($7/月) との比較
 

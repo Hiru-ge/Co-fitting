@@ -45,10 +45,24 @@ export default defineConfig({
       workbox: {
         // ナビゲーション（SPAルーティング）は常にindex.htmlにフォールバック
         navigateFallback: "index.html",
-        // キャッシュするアセットのパターン
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
+        // フォントを除外: JS/CSS/HTML/アイコンのみプリキャッシュ（フォントは_headersのimmutableキャッシュを使用）
+        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
         // 外部APIへのリクエストはキャッシュしない
         navigateFallbackDenylist: [/^\/api\//],
+        // フォントはランタイムキャッシュ（CacheFirst）で配信
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:woff2?|ttf|otf)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "fonts",
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 365 * 24 * 60 * 60,
+              },
+            },
+          },
+        ],
       },
     }),
   ],

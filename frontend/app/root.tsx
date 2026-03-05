@@ -26,7 +26,7 @@ export async function clientLoader({ request }: { request: Request }) {
 import "@fontsource/plus-jakarta-sans";
 import "@fontsource/space-grotesk";
 import "@fontsource/noto-sans-jp";
-import "@fontsource/material-symbols-outlined";
+import "@fontsource/material-symbols-outlined/400.css";
 
 import "./app.css";
 
