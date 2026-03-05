@@ -12,7 +12,22 @@
   - デプロイ後に一通り操作確認（OAuth、提案生成、訪問記録、XP付与、バッジ）
   - スリープからの復帰時間が許容範囲か確認
   - モバイルでの表示・操作感を確認
-- [ ] Issue #249: ローディングパフォーマンス改善（実機確認）
+- [ ] Issue #249: ローディングパフォーマンス改善
+  - Cloud Run (Tokyo) への移行でレイテンシ根本改善（300-550ms → 50-100ms）
+  - Render有料化はリージョン問題を解決しないため、Cloud Runを選択
+  - GCP無料枠内（ベータ版規模なら$0）
+  - Dockerfile.prodがそのまま使える。環境変数設定 + `gcloud run deploy` で完了
+  - フロントエンド側コード変更：`_headers`追加、PWA precacheフォント除外、Material Symbols最適化、BottomNavローディングインジケータ
+- [ ] Issue #262: 訪問ボタン距離判定のリアルタイム更新
+  - `getCurrentPosition()`（1回取得）→ `watchPosition()`（継続監視）に変更
+  - 施設カード表示中のみ監視を有効化し、バッテリー消費を抑制
+  - `maximumAge: 300000` → `0`、`enableHighAccuracy: true` に変更
+  - 閾値200mは維持（GPS精度問題は `coords.accuracy` で後から調整可能）
+  - バックエンド変更不要
+- [ ] Issue #263: フィードバックボタンの常時表示（FAB）
+  - app-layout.tsx に右下FAB（BottomNav上）を追加
+  - Google Formsリンクへの導線。ベータ版中はフィードバックを気軽に出せるようにする
+  - settings.tsx の既存リンクはそのまま維持
 - [ ] Issue #254: PWA以外の環境でも適切な表示にする
   - PWA（ホーム画面追加）でのみ見た目が整う状態を解消
   - ブラウザ単体でのアクセス時もPWAと同等のレイアウト・表示品質を担保する
