@@ -1,9 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { protectedLoader } from "~/lib/protected-loader";
 import { getInterests } from "~/api/genres";
-import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
+import { ONBOARDING_SKIPPED_KEY, HOME_TOUR_SEEN_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
 import { sendSuggestionViewed } from "~/lib/gtag";
 import { getBestCategoryKey } from "~/utils/category-map";
@@ -14,6 +14,7 @@ import ActionButtons from "~/components/action-buttons";
 import XpModal from "~/components/xp-modal";
 import BadgeModal from "~/components/badge-modal";
 import CompleteCard from "~/components/complete-card";
+import HomeTourModal from "~/components/HomeTourModal";
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   const { user, token } = await protectedLoader();
@@ -25,6 +26,7 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
+  const [showTour, setShowTour] = useState(() => localStorage.getItem(HOME_TOUR_SEEN_KEY) === null);
   const {
     places,
     isLoading,
@@ -102,7 +104,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
           <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
             {places.length > 0 && (
-              <div className="relative w-full aspect-3/5">
+              <div data-tour="discovery-cards" className="relative w-full aspect-3/5">
                 {places.slice(0, 3).map((place, i) => (
                   <DiscoveryCard
                     key={place.place_id}
@@ -117,7 +119,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 ))}
 
                 {/* アクションボタンをカード下部にオーバーレイ */}
-                <div className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
+                <div data-tour="action-buttons" className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
                   <ActionButtons
                     onCheckIn={handleCheckIn}
                     onReload={handleReload}
@@ -161,6 +163,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           onClose={handleBadgeModalClose}
         />
       )}
+
+      {/* チュートリアルツアーモーダル: 初回のみ表示 */}
+      {showTour && <HomeTourModal onClose={() => setShowTour(false)} />}
     </div>
   );
 }

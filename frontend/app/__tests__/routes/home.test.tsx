@@ -79,6 +79,7 @@ vi.mock("react-router", async () => {
   return {
     ...actual,
     redirect: vi.fn(),
+    useNavigate: vi.fn().mockReturnValue(vi.fn()),
     Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
       <a href={to} {...props}>{children}</a>
     ),
@@ -189,6 +190,7 @@ describe("Home画面", () => {
     vi.clearAllMocks();
     sessionStorageMock.clear();
     localStorageMock.clear(); // localStorageに変更後、テスト間のコンプリートフラグ汚染を防ぐ
+    localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
   });
 
   test("提案カード1枚目が表示される", async () => {
@@ -551,6 +553,7 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     vi.clearAllMocks();
     sessionStorageMock.clear();
     localStorageMock.clear();
+    localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValue({
       places: [...mockPlaces],
@@ -640,6 +643,7 @@ describe("ホームページ レイアウト・スクロール制御", () => {
     vi.clearAllMocks();
     localStorageMock.clear();
     sessionStorageMock.clear();
+    localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
     // 前のdescribeブロックで mockRejectedValue（永続的な実装変更）が設定されている場合があるため
     // デフォルトの正常レスポンスに明示的にリセットする
     const { getSuggestions } = await import("~/api/suggestions");
@@ -685,6 +689,7 @@ describe("提案リロード機能", () => {
     callCount = 0;
     localStorageMock.clear();
     sessionStorageMock.clear();
+    localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValue({
       places: [...mockPlaces],
@@ -796,6 +801,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     callCount = 0;
     localStorageMock.clear();
     sessionStorageMock.clear();
+    localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValue({
       places: [...mockPlaces],
@@ -903,5 +909,38 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     // forceReload=true で呼ばれていることを確認
     const lastCall = vi.mocked(getSuggestions).mock.calls.at(-1);
     expect(lastCall?.[4]).toBe(true); // 第5引数が forceReload
+  });
+});
+
+// === Issue #258: ホームチュートリアルツアーモーダル ===
+describe("Issue #258: ホームチュートリアルツアーモーダル", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    callCount = 0;
+    localStorageMock.clear();
+    sessionStorageMock.clear();
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({
+      places: [...mockPlaces],
+      reload_count_remaining: 3,
+    });
+  });
+
+  test("home_tour_seen が null のとき HomeTourModal が表示される", async () => {
+    renderHome();
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "使い方ツアー" })).toBeInTheDocument();
+    });
+  });
+
+  test("home_tour_seen が 'true' のとき HomeTourModal は表示されない", async () => {
+    localStorage.setItem("home_tour_seen", "true");
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("dialog", { name: "使い方ツアー" })).not.toBeInTheDocument();
   });
 });
