@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
-import { getPositionWithFallback } from "~/utils/geolocation";
+import { getPositionWithFallback, isWithinCheckInRange } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
 import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
@@ -345,6 +345,11 @@ export function useSuggestions(token: string) {
   const currentPlace = places[0];
   const isCurrentVisited = currentPlace ? visitedIds.has(currentPlace.place_id) : false;
   const currentIndex = currentPlace ? originalOrder.indexOf(currentPlace.place_id) : 0;
+  // development環境では常に有効化（開発・テストの利便性のため）
+  const isNearCurrentPlace = import.meta.env.DEV || (
+    currentPlace !== undefined &&
+    isWithinCheckInRange(userPos.lat, userPos.lng, currentPlace.lat, currentPlace.lng)
+  );
 
   return {
     places,
@@ -361,6 +366,7 @@ export function useSuggestions(token: string) {
     currentPlace,
     isCurrentVisited,
     currentIndex,
+    isNearCurrentPlace,
     loadSuggestions,
     handleReload,
     handleSwipe,
