@@ -62,9 +62,10 @@ test.describe("主要ユーザーフロー", () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
-    // ベータゲートをスキップするためアンロックフラグを全ページロード時にセット
+    // ベータゲートをスキップ、ツアーモーダルも非表示にする
     await page.addInitScript(() => {
       localStorage.setItem("roamble_beta_unlocked", "1");
+      localStorage.setItem("home_tour_seen", "true");
     });
   });
 
