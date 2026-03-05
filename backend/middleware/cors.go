@@ -10,14 +10,11 @@ import (
 )
 
 func CORS() gin.HandlerFunc {
-	// 環境変数からオリジンを取得
 	allowedOrigin := os.Getenv("ALLOWED_ORIGIN")
 	if allowedOrigin == "" {
-		// デフォルト値を設定
 		allowedOrigin = "http://localhost:5173"
 	}
 
-	// カンマ区切りの場合、複数オリジンに対応
 	origins := strings.Split(allowedOrigin, ",")
 	for i, origin := range origins {
 		origins[i] = strings.TrimSpace(origin)

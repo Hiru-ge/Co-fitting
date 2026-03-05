@@ -46,7 +46,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	ctx := context.Background()
 
-	// リフレッシュトークンがブラックリスト化されているかチェック
 	isBlacklisted, err := utils.IsTokenBlacklisted(ctx, h.RedisClient, req.RefreshToken)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check token blacklist"})
@@ -57,20 +56,17 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	// リフレッシュトークンを検証
 	claims, err := utils.ValidateToken(req.RefreshToken, h.JWTCfg.Secret)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid or expired refresh token"})
 		return
 	}
 
-	// トークンタイプが "refresh" であることを確認
 	if claims.TokenType != "refresh" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token type"})
 		return
 	}
 
-	// 新しいアクセストークンを生成
 	accessToken, err := utils.GenerateAccessToken(
 		claims.UserID,
 		h.JWTCfg.Secret,
@@ -97,7 +93,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 // @Failure      500  {object}  map[string]string
 // @Router       /api/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	// Authorization ヘッダーからアクセストークンを取得
 	authHeader := c.GetHeader("Authorization")
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 || parts[0] != "Bearer" {
@@ -106,7 +101,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	}
 	accessToken := parts[1]
 
-	// アクセストークンの Claims を取得してTTLを算出
 	accessClaims, err := utils.ValidateToken(accessToken, h.JWTCfg.Secret)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
@@ -115,17 +109,14 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 	ctx := context.Background()
 
-	// アクセストークンをブラックリスト登録（TTL: トークンの残り有効期限）
 	accessTTL := time.Until(accessClaims.ExpiresAt.Time)
 	if err := utils.AddTokenToBlacklist(ctx, h.RedisClient, accessToken, accessTTL); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to revoke access token"})
 		return
 	}
 
-	// リクエストボディからリフレッシュトークンを取得（オプション）
 	var logoutReq logoutRequest
 	if err := c.ShouldBindJSON(&logoutReq); err == nil && logoutReq.RefreshToken != "" {
-		// リフレッシュトークンが提供された場合はブラックリスト化
 		refreshClaims, err := utils.ValidateToken(logoutReq.RefreshToken, h.JWTCfg.Secret)
 		if err == nil {
 			refreshTTL := time.Until(refreshClaims.ExpiresAt.Time)
@@ -134,7 +125,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 				return
 			}
 		}
-		// リフレッシュトークンの検証失敗は無視（既に期限切れの可能性があるため）
+		// 検証失敗は無視（既に期限切れの可能性があるため）
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})

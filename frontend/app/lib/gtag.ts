@@ -12,13 +12,9 @@ function gtag(...args: unknown[]) {
   window.gtag(...args);
 }
 
-// ── ページビュー ──
-
 export function sendPageView(path: string) {
   gtag("event", "page_view", { page_path: path });
 }
-
-// ── ユーザーライフサイクル ──
 
 export function sendLogin(method: string, isNewUser: boolean) {
   gtag("event", "login", { method, is_new_user: isNewUser });
@@ -42,8 +38,6 @@ export function sendInterestsUpdated(tagCount: number) {
 export function sendSearchRadiusUpdated(radiusKm: number) {
   gtag("event", "search_radius_updated", { radius_km: radiusKm });
 }
-
-// ── 提案ファネル ──
 
 export function sendSuggestionGenerated(params: {
   placesCount: number;
@@ -97,8 +91,6 @@ export function sendSuggestionReloaded(reloadCountRemaining: number) {
   });
 }
 
-// ── 訪問記録 ──
-
 export function sendVisitRecorded(params: {
   placeName: string;
   category: string;
@@ -132,8 +124,6 @@ export function sendVisitMemoSaved(params: {
     rating: params.rating,
   });
 }
-
-// ── エンゲージメント ──
 
 export function sendBadgeEarned(badgeName: string) {
   gtag("event", "badge_earned", { badge_name: badgeName });

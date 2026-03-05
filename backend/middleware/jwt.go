@@ -40,7 +40,6 @@ func JWTAuth(secret string, redisClient *redis.Client) gin.HandlerFunc {
 			return
 		}
 
-		// Redis ブラックリストチェック
 		ctx := context.Background()
 		key := fmt.Sprintf("blacklist:%s", tokenString)
 		_, err = redisClient.Get(ctx, key).Result()

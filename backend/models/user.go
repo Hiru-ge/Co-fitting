@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// User represents a user in the system
 type User struct {
 	ID           uint64     `gorm:"primaryKey" json:"id"`
 	Email        string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
@@ -17,16 +16,13 @@ type User struct {
 	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 
-	// Relations
 	Visits []Visit `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }
 
-// TableName specifies the table name for User model
 func (User) TableName() string {
 	return "users"
 }
 
-// Visit represents a place visit record for a user
 type Visit struct {
 	ID            uint64    `gorm:"primaryKey" json:"id"`
 	UserID        uint64    `gorm:"not null;index:idx_user_visited" json:"user_id"`
@@ -44,12 +40,10 @@ type Visit struct {
 	VisitedAt     time.Time `gorm:"not null;index:idx_user_visited" json:"visited_at"`
 	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
 
-	// Relations
 	User     *User     `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	GenreTag *GenreTag `gorm:"foreignKey:GenreTagID;constraint:OnDelete:SET NULL" json:"-"`
 }
 
-// TableName specifies the table name for Visit model
 func (Visit) TableName() string {
 	return "visit_history"
 }

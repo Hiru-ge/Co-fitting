@@ -17,7 +17,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// GoogleUserInfo はGoogleから取得したユーザー情報を表す
 type GoogleUserInfo struct {
 	Sub           string `json:"sub"`
 	Email         string `json:"email"`
@@ -26,18 +25,15 @@ type GoogleUserInfo struct {
 	Picture       string `json:"picture"`
 }
 
-// GoogleTokenVerifier はGoogle IDトークンの検証インターフェース
 type GoogleTokenVerifier interface {
 	VerifyIDToken(ctx context.Context, idToken string) (*GoogleUserInfo, error)
 }
 
-// GoogleHTTPVerifier はHTTP経由でGoogle IDトークンを検証する実装
 type GoogleHTTPVerifier struct {
 	ClientID   string
 	HTTPClient *http.Client
 }
 
-// VerifyIDToken はGoogle tokeninfo APIでIDトークンを検証する
 func (v *GoogleHTTPVerifier) VerifyIDToken(ctx context.Context, idToken string) (*GoogleUserInfo, error) {
 	url := fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", idToken)
 
@@ -87,7 +83,6 @@ func (v *GoogleHTTPVerifier) VerifyIDToken(ctx context.Context, idToken string) 
 	}, nil
 }
 
-// OAuthHandler はOAuth認証を処理するハンドラー
 type OAuthHandler struct {
 	DB             *gorm.DB
 	JWTCfg         *config.JWTConfig
@@ -126,7 +121,6 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Google IDトークンを検証
 	userInfo, err := h.GoogleVerifier.VerifyIDToken(ctx, req.IDToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid id_token"})
@@ -138,7 +132,6 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 		return
 	}
 
-	// ユーザー検索（メールアドレスで）
 	var user models.User
 	isNewUser := false
 
@@ -149,7 +142,6 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 			return
 		}
 
-		// 新規ユーザー作成
 		displayName := userInfo.Name
 		if displayName == "" {
 			displayName = strings.Split(userInfo.Email, "@")[0]
@@ -173,7 +165,6 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 		isNewUser = true
 	}
 
-	// JWTトークンペア生成
 	tokenPair, err := utils.GenerateTokenPair(
 		user.ID,
 		h.JWTCfg.Secret,

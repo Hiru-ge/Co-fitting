@@ -9,7 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// XP計算ルール定数
 const (
 	XPNormalVisit        = 50  // 通常訪問
 	XPComfortBreak       = 100 // 脱却訪問
@@ -22,7 +21,6 @@ const (
 // エリアパイオニアバッジの距離閾値（メートル）
 const AreaPioneerDistanceM = 10000.0
 
-// haversineDistance は2点間の大圏距離をメートルで返す
 func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
 	const earthRadiusM = 6371000.0
 	dLat := (lat2 - lat1) * math.Pi / 180
@@ -70,7 +68,6 @@ var levelThresholds = []int{
 	30000, // Lv.30: 30,000 XP〜
 }
 
-// GamificationResult はゲーミフィケーション処理の結果
 type GamificationResult struct {
 	XPEarned    int
 	TotalXP     int
@@ -80,7 +77,6 @@ type GamificationResult struct {
 	XPBreakdown *XPBreakdown
 }
 
-// XPBreakdown はXP獲得の内訳
 type XPBreakdown struct {
 	BaseXP         int `json:"base_xp"`          // ベースXP（通常50 or 脱却100）
 	FirstAreaBonus int `json:"first_area_bonus"` // 初エリアボーナス
@@ -88,7 +84,6 @@ type XPBreakdown struct {
 	StreakBonus    int `json:"streak_bonus"`     // ストリークボーナス
 }
 
-// badgeCondition はConditionJSONのデコード用
 type badgeCondition struct {
 	Type      string `json:"type"`
 	Threshold int    `json:"threshold"`
@@ -112,7 +107,6 @@ func CalcXP(isComfortZone bool, isFirstArea bool, hasMemo bool) int {
 	return xp
 }
 
-// CalcLevel はtotalXPからレベルを算出する（1〜30）
 func CalcLevel(totalXP int) int {
 	level := 1
 	for i, threshold := range levelThresholds {
@@ -156,11 +150,9 @@ func UpdateStreak(db *gorm.DB, userID uint64, visitedAt time.Time) error {
 		return err
 	}
 
-	// 訪問週の月曜日（週の開始）を計算
 	visitWeekStart := weekStart(visitedAt)
 
 	if user.StreakLast == nil {
-		// 初回訪問
 		now := visitedAt
 		return db.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 1,
@@ -193,7 +185,6 @@ func UpdateStreak(db *gorm.DB, userID uint64, visitedAt time.Time) error {
 	}
 }
 
-// jst はJSTタイムゾーン
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
 
 // isNightVisitJST はJST時刻で深夜帯（23:00〜翌5:00未満）かどうかを返す
@@ -231,7 +222,6 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 	result := db.Where("user_id = ? AND genre_tag_id = ?", userID, *genreTagID).First(&prof)
 
 	if result.Error != nil && result.Error == gorm.ErrRecordNotFound {
-		// 新規作成
 		newXP := xpEarned
 		prof = models.GenreProficiency{
 			UserID:     userID,
@@ -244,7 +234,6 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 		return result.Error
 	}
 
-	// 既存レコードを更新
 	newXP := prof.XP + xpEarned
 	newLevel := calcGenreLevel(newXP)
 	return db.Model(&prof).Updates(map[string]interface{}{
@@ -259,7 +248,6 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 // visitedAt: 今回の訪問日時
 // coords: 今回の訪問地点の緯度・経度（省略可。new_area判定に使用）
 func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCount int, visitedAt time.Time, coords ...float64) ([]models.Badge, error) {
-	// 既獲得バッジIDを取得
 	var existingBadgeIDs []uint64
 	db.Model(&models.UserBadge{}).
 		Where("user_id = ?", userID).
@@ -269,7 +257,6 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		existingSet[id] = true
 	}
 
-	// 全バッジを取得
 	var allBadges []models.Badge
 	if err := db.Find(&allBadges).Error; err != nil {
 		return nil, err
@@ -292,14 +279,12 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		Where("user_id = ? AND is_comfort_zone = ?", userID, true).
 		Count(&comfortBreakCount)
 
-	// new_area・weekend_visits判定用: 全訪問の座標・日時を一括取得
 	var allVisits []models.Visit
 	db.Model(&models.Visit{}).
 		Where("user_id = ?", userID).
 		Select("lat, lng, visited_at").
 		Find(&allVisits)
 
-	// 新規獲得バッジを追加
 	var newBadges []models.Badge
 	now := time.Now()
 
@@ -366,117 +351,125 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 	return newBadges, nil
 }
 
+// isFirstAreaVisit は過去の訪問履歴にある地点から10km以上離れていれば true を返す
+func isFirstAreaVisit(tx *gorm.DB, userID uint64, visit models.Visit) bool {
+	if visit.Latitude == 0 && visit.Longitude == 0 {
+		return false
+	}
+	var prevVisits []models.Visit
+	tx.Model(&models.Visit{}).
+		Where("user_id = ? AND id != ?", userID, visit.ID).
+		Select("lat, lng").
+		Find(&prevVisits)
+	for _, pv := range prevVisits {
+		if pv.Latitude == 0 && pv.Longitude == 0 {
+			continue
+		}
+		if haversineDistance(visit.Latitude, visit.Longitude, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
+			return true
+		}
+	}
+	return false
+}
+
+// buildXPBreakdown はXP計算内訳を構築して返す（副作用なし）
+func buildXPBreakdown(isComfortZone, isFirstArea, hasMemo bool, streakBonus int) *XPBreakdown {
+	baseXP := XPNormalVisit
+	if isComfortZone {
+		baseXP = XPComfortBreak
+	}
+	firstAreaBonusXP := 0
+	if isFirstArea {
+		firstAreaBonusXP = XPFirstArea
+	}
+	memoBonusXP := 0
+	if hasMemo {
+		memoBonusXP = XPMemoBonus
+	}
+	return &XPBreakdown{
+		BaseXP:         baseXP,
+		FirstAreaBonus: firstAreaBonusXP,
+		MemoBonus:      memoBonusXP,
+		StreakBonus:    streakBonus,
+	}
+}
+
+// applyXPAndProgression はXP・レベル・熟練度・ストリークをDBに反映し、
+// 最終XP・newTotalXP・newLevel・levelUp・streakBonus を返す
+func applyXPAndProgression(tx *gorm.DB, userID uint64, visit models.Visit, xpEarned int) (finalXP, newTotalXP, newLevel int, levelUp bool, streakBonus int, err error) {
+	if err = tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
+		return
+	}
+
+	var user models.User
+	if err = tx.Where("id = ?", userID).First(&user).Error; err != nil {
+		return
+	}
+
+	oldLevel := user.Level
+	newTotalXP = user.TotalXP + xpEarned
+	newLevel = CalcLevel(newTotalXP)
+
+	if err = tx.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"total_xp": newTotalXP,
+		"level":    newLevel,
+	}).Error; err != nil {
+		return
+	}
+
+	if err = UpdateGenreProficiency(tx, userID, visit.GenreTagID, xpEarned); err != nil {
+		return
+	}
+
+	if err = UpdateStreak(tx, userID, visit.VisitedAt); err != nil {
+		return
+	}
+
+	var updatedUser models.User
+	if err = tx.Where("id = ?", userID).First(&updatedUser).Error; err != nil {
+		return
+	}
+	streakBonus = CalcStreakBonus(updatedUser.StreakCount)
+	finalXP = xpEarned + streakBonus
+	if streakBonus > 0 {
+		newTotalXP += streakBonus
+		newLevel = CalcLevel(newTotalXP)
+		if err = tx.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+			"total_xp": newTotalXP,
+			"level":    newLevel,
+		}).Error; err != nil {
+			return
+		}
+		if err = tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", finalXP).Error; err != nil {
+			return
+		}
+	}
+
+	levelUp = newLevel > oldLevel
+	return
+}
+
 // ProcessGamification は訪問記録に対してゲーミフィケーション処理を行い、結果を返す
 // トランザクション内で: XP計算・users更新・ジャンル熟練度更新・バッジ付与・ストリーク更新を実行
 func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*GamificationResult, error) {
 	var result GamificationResult
 
 	err := db.Transaction(func(tx *gorm.DB) error {
-		// 初めてのエリア訪問かチェック（過去訪問のいずれかから10km以上離れていればtrue）
-		isFirstArea := false
-		if visit.Latitude != 0 || visit.Longitude != 0 {
-			var prevVisits []models.Visit
-			tx.Model(&models.Visit{}).
-				Where("user_id = ? AND id != ?", userID, visit.ID).
-				Select("lat, lng").
-				Find(&prevVisits)
-			for _, pv := range prevVisits {
-				if pv.Latitude == 0 && pv.Longitude == 0 {
-					continue
-				}
-				if haversineDistance(visit.Latitude, visit.Longitude, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
-					isFirstArea = true
-					break
-				}
-			}
-		}
-
-		// 感想メモの有無
+		isFirstArea := isFirstAreaVisit(tx, userID, visit)
 		hasMemo := visit.Memo != nil && *visit.Memo != ""
-
-		// XP計算
 		xpEarned := CalcXP(visit.IsComfortZone, isFirstArea, hasMemo)
 
-		// 内訳を記録
-		baseXP := XPNormalVisit
-		if visit.IsComfortZone {
-			baseXP = XPComfortBreak
-		}
-		firstAreaBonusXP := 0
-		if isFirstArea {
-			firstAreaBonusXP = XPFirstArea
-		}
-		memoBonusXP := 0
-		if hasMemo {
-			memoBonusXP = XPMemoBonus
-		}
-
-		// 訪問記録にXPを保存
-		if err := tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
+		finalXP, newTotalXP, newLevel, levelUp, streakBonus, err := applyXPAndProgression(tx, userID, visit, xpEarned)
+		if err != nil {
 			return err
 		}
 
-		// ユーザーのtotal_xpとlevelを更新
-		var user models.User
-		if err := tx.Where("id = ?", userID).First(&user).Error; err != nil {
-			return err
-		}
-
-		oldLevel := user.Level
-		newTotalXP := user.TotalXP + xpEarned
-		newLevel := CalcLevel(newTotalXP)
-
-		if err := tx.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
-			"total_xp": newTotalXP,
-			"level":    newLevel,
-		}).Error; err != nil {
-			return err
-		}
-
-		// ジャンル熟練度更新
-		if err := UpdateGenreProficiency(tx, userID, visit.GenreTagID, xpEarned); err != nil {
-			return err
-		}
-
-		// ストリーク更新
-		if err := UpdateStreak(tx, userID, visit.VisitedAt); err != nil {
-			return err
-		}
-
-		// ストリーク更新後のstreakCountを取得してXPボーナスを付与
-		var updatedUser models.User
-		if err := tx.Where("id = ?", userID).First(&updatedUser).Error; err != nil {
-			return err
-		}
-		streakBonus := CalcStreakBonus(updatedUser.StreakCount)
-		if streakBonus > 0 {
-			xpEarned += streakBonus
-			newTotalXP += streakBonus
-			newLevel = CalcLevel(newTotalXP)
-			if err := tx.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
-				"total_xp": newTotalXP,
-				"level":    newLevel,
-			}).Error; err != nil {
-				return err
-			}
-			// 訪問記録のXPもストリークボーナスを含めて更新
-			if err := tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
-				return err
-			}
-		}
-
-		result.XPEarned = xpEarned
+		result.XPEarned = finalXP
 		result.TotalXP = newTotalXP
 		result.NewLevel = newLevel
-		result.LevelUp = newLevel > oldLevel
-		result.XPBreakdown = &XPBreakdown{
-			BaseXP:         baseXP,
-			FirstAreaBonus: firstAreaBonusXP,
-			MemoBonus:      memoBonusXP,
-			StreakBonus:    streakBonus,
-		}
+		result.LevelUp = levelUp
+		result.XPBreakdown = buildXPBreakdown(visit.IsComfortZone, isFirstArea, hasMemo, streakBonus)
 
-		// バッジチェック
 		var visitCount int64
 		tx.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&visitCount)
 		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsComfortZone, int(visitCount), visit.VisitedAt, visit.Latitude, visit.Longitude)

@@ -12,7 +12,47 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/gorm"
 )
+
+func initOAuthHandler(db *gorm.DB, jwtCfg *config.JWTConfig, redisClient *redis.Client) *handlers.OAuthHandler {
+	googleClientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
+	if googleClientID == "" {
+		log.Println("Warning: GOOGLE_OAUTH_CLIENT_ID not set, Google OAuth endpoint disabled")
+		return nil
+	}
+	log.Println("Google OAuth handler initialized")
+	return &handlers.OAuthHandler{
+		DB:          db,
+		JWTCfg:      jwtCfg,
+		RedisClient: redisClient,
+		GoogleVerifier: &handlers.GoogleHTTPVerifier{
+			ClientID: googleClientID,
+		},
+	}
+}
+
+func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client) (*handlers.SuggestionHandler, *handlers.PlacePhotoHandler) {
+	placesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
+	if placesAPIKey == "" {
+		log.Println("Warning: GOOGLE_PLACES_API_KEY not set, suggestions endpoint disabled")
+		return nil, nil
+	}
+	placesClient, err := handlers.NewGooglePlacesClient(placesAPIKey)
+	if err != nil {
+		log.Fatalf("Failed to create Google Places client: %v", err)
+	}
+	log.Println("Google Places API client initialized")
+	return &handlers.SuggestionHandler{
+			DB:          db,
+			RedisClient: redisClient,
+			Places:      placesClient,
+		}, &handlers.PlacePhotoHandler{
+			RedisClient: redisClient,
+			APIKey:      placesAPIKey,
+		}
+}
 
 // @title           Roamble API
 // @version         1.0
@@ -24,7 +64,6 @@ import (
 // @name Authorization
 // @description JWTアクセストークン（Bearer形式）
 func main() {
-	// .envファイルから環境変数を読み込む
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, using system environment variables")
 	}
@@ -46,7 +85,6 @@ func main() {
 		}
 	}()
 
-	// Redis初期化
 	redisClient, err := database.InitRedis()
 	if err != nil {
 		log.Fatalf("Failed to initialize Redis: %v", err)
@@ -73,47 +111,9 @@ func main() {
 	genreHandler := &handlers.GenreHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db}
 
-	// Google OAuth Handler
-	var oauthHandler *handlers.OAuthHandler
-	googleClientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
-	if googleClientID != "" {
-		oauthHandler = &handlers.OAuthHandler{
-			DB:          db,
-			JWTCfg:      jwtCfg,
-			RedisClient: redisClient,
-			GoogleVerifier: &handlers.GoogleHTTPVerifier{
-				ClientID: googleClientID,
-			},
-		}
-		log.Println("Google OAuth handler initialized")
-	} else {
-		log.Println("Warning: GOOGLE_OAUTH_CLIENT_ID not set, Google OAuth endpoint disabled")
-	}
+	oauthHandler := initOAuthHandler(db, jwtCfg, redisClient)
+	suggestionHandler, placePhotoHandler := initPlacesHandlers(db, redisClient)
 
-	// Google Places APIクライアント初期化
-	var suggestionHandler *handlers.SuggestionHandler
-	var placePhotoHandler *handlers.PlacePhotoHandler
-	placesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
-	if placesAPIKey != "" {
-		placesClient, err := handlers.NewGooglePlacesClient(placesAPIKey)
-		if err != nil {
-			log.Fatalf("Failed to create Google Places client: %v", err)
-		}
-		suggestionHandler = &handlers.SuggestionHandler{
-			DB:          db,
-			RedisClient: redisClient,
-			Places:      placesClient,
-		}
-		placePhotoHandler = &handlers.PlacePhotoHandler{
-			RedisClient: redisClient,
-			APIKey:      placesAPIKey,
-		}
-		log.Println("Google Places API client initialized")
-	} else {
-		log.Println("Warning: GOOGLE_PLACES_API_KEY not set, suggestions endpoint disabled")
-	}
-
-	// 環境変数の読み取り
 	environment := os.Getenv("ENVIRONMENT")
 	if environment == "" {
 		environment = "development"
@@ -124,7 +124,6 @@ func main() {
 		RedisClient: redisClient,
 	}
 
-	// 開発用ハンドラー
 	devHandler := &handlers.DevHandler{
 		RedisClient: redisClient,
 		DB:          db,

@@ -28,11 +28,9 @@ export async function apiCall(
     return res.json();
   }
 
-  // 401: トークンリフレッシュを試行
   if (res.status === 401) {
     const refreshed = await tryRefreshToken();
     if (refreshed) {
-      // リフレッシュ成功 → 新しいトークンでリトライ
       const newToken = getToken();
       if (newToken) {
         const retryRes = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -50,13 +48,11 @@ export async function apiCall(
       }
     }
 
-    // リフレッシュ失敗 → トークンクリアして /login へリダイレクト
     clearToken();
     window.location.href = "/login";
     throw new ApiError(401, "認証の有効期限が切れました。再ログインしてください");
   }
 
-  // その他のエラー → ApiError を throw
   throw await parseApiError(res);
 }
 

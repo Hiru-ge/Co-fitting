@@ -26,10 +26,30 @@ const (
 	MaxDailyVisits = 3
 )
 
-// jst は日次訪問カウントのJST基準計算用タイムゾーン
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
 
-// countTodayVisitsJST はJST基準で当日の訪問件数を返す
+type genreResolution struct {
+	IsComfortZone bool
+	GenreTagID    *uint64
+}
+
+func resolveGenreInfo(db *gorm.DB, userID uint64, placeTypes []string) genreResolution {
+	if len(placeTypes) == 0 {
+		return genreResolution{}
+	}
+	genreName := getGenreNameFromTypes(placeTypes)
+	resolution := genreResolution{
+		IsComfortZone: isComfortZoneVisit(db, userID, genreName),
+	}
+	if genreName != "" {
+		var genreTag models.GenreTag
+		if err := db.Where("name = ?", genreName).First(&genreTag).Error; err == nil {
+			resolution.GenreTagID = &genreTag.ID
+		}
+	}
+	return resolution
+}
+
 func countTodayVisitsJST(db *gorm.DB, userID uint64) (int64, error) {
 	now := time.Now().In(jst)
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
@@ -102,7 +122,6 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// 日次訪問上限チェック（JST基準で当日3件まで）
 	todayCount, err := countTodayVisitsJST(h.DB, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check daily visit count"})
@@ -121,18 +140,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	// is_comfort_zone の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
 	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
-	isComfortZone := false
-	var genreTagID *uint64
-	if len(req.PlaceTypes) > 0 {
-		genreName := getGenreNameFromTypes(req.PlaceTypes)
-		isComfortZone = isComfortZoneVisit(h.DB, userID, genreName)
-		if genreName != "" {
-			var genreTag models.GenreTag
-			if err := h.DB.Where("name = ?", genreName).First(&genreTag).Error; err == nil {
-				genreTagID = &genreTag.ID
-			}
-		}
-	}
+	genre := resolveGenreInfo(h.DB, userID, req.PlaceTypes)
 
 	visit := models.Visit{
 		UserID:        userID,
@@ -144,8 +152,8 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		Longitude:     req.Lng,
 		Rating:        req.Rating,
 		Memo:          req.Memo,
-		IsComfortZone: isComfortZone,
-		GenreTagID:    genreTagID,
+		IsComfortZone: genre.IsComfortZone,
+		GenreTagID:    genre.GenreTagID,
 		VisitedAt:     visitedAt,
 	}
 
@@ -157,7 +165,6 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	// DB保存後の当日訪問件数でコンプリート判定（todayCount は保存前の件数なので +1 が保存後の件数）
 	dailyCompleted := todayCount+1 >= MaxDailyVisits
 
-	// ゲーミフィケーション処理（XP計算・レベルアップ判定・バッジ付与・ジャンル熟練度更新・ストリーク更新）
 	gamifResult, err := services.ProcessGamification(h.DB, userID, visit)
 	if err != nil {
 		// ゲーミフィケーション処理失敗は訪問記録自体を無効化しない（ログのみ）
@@ -173,7 +180,6 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// visit.XpEarned をゲーミフィケーション処理結果で更新（レスポンスに反映）
 	visit.XpEarned = gamifResult.XPEarned
 
 	newBadges := gamifResult.NewBadges
@@ -204,13 +210,11 @@ type mapVisitItem struct {
 	VisitedAt  string  `json:"visited_at"`
 }
 
-// listVisitsResponse は訪問履歴一覧取得APIのレスポンス
 type listVisitsResponse struct {
 	Visits []models.Visit `json:"visits"`
 	Total  int64          `json:"total"`
 }
 
-// mapVisitsResponse はマップ表示用訪問データ取得APIのレスポンス
 type mapVisitsResponse struct {
 	Visits []mapVisitItem `json:"visits"`
 	Total  int64          `json:"total"`

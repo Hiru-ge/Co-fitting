@@ -21,7 +21,6 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to migrate master tables: %w", err)
 	}
 
-	// ユーザー・訪問記録テーブル
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Visit{},
@@ -29,7 +28,6 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to migrate core tables: %w", err)
 	}
 
-	// ユーザー関連テーブル（user_idへの外部キーを持つ）
 	if err := db.AutoMigrate(
 		&models.UserInterest{},
 		&models.GenreProficiency{},
@@ -38,7 +36,6 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to migrate user relation tables: %w", err)
 	}
 
-	// Clean up deprecated columns
 	if db.Migrator().HasColumn(&models.Visit{}, "latitude") {
 		db.Migrator().DropColumn(&models.Visit{}, "latitude")
 	}
@@ -51,7 +48,6 @@ func Migrate(db *gorm.DB) error {
 		db.Migrator().DropColumn(&models.User{}, "password_hash")
 	}
 
-	// マスタデータ投入
 	if err := SeedMasterData(db); err != nil {
 		return fmt.Errorf("failed to seed master data: %w", err)
 	}

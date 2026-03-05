@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// windowEntry は固定ウィンドウのカウンタと期限を保持する。
 type windowEntry struct {
 	mu       sync.Mutex
 	count    int
@@ -26,7 +25,6 @@ type RateLimiter struct {
 	lastGC   time.Time
 }
 
-// NewRateLimiter は指定した固定ウィンドウ内の上限リクエスト数でレートリミッターを生成する。
 func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 	return &RateLimiter{
 		entries: make(map[string]*windowEntry),

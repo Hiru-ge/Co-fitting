@@ -89,8 +89,6 @@ func ScanKeysByPattern(ctx context.Context, client *redis.Client, pattern string
 	return allKeys, nil
 }
 
-// --- 日次提案キャッシュ ---
-
 // DailySuggestionCacheKey は日次提案キャッシュのキーを生成する
 // フォーマット: suggestion:daily:{userID}:{date}:{lat}_{lng}
 func DailySuggestionCacheKey(userID string, date string, lat, lng float64) string {
@@ -124,7 +122,6 @@ func ClearDailySuggestionsCache(ctx context.Context, client *redis.Client, userI
 	return DeleteKeysByPattern(ctx, client, pattern)
 }
 
-// --- 日次提案上限到達フラグ ---
 // 上限到達フラグはリストキャッシュ(「suggest:daily:*」)とは独立したキーで管理される。
 // 「ClearDailySuggestionsCache」でリストキャッシュが削除されてもこのフラグは消えない。
 // これにより、「全提案を訪問後に興味タグを変更」しても当日の提案権利が復活しない。
@@ -155,7 +152,6 @@ func SetDailyLimitReached(ctx context.Context, client *redis.Client, userID stri
 	return client.Set(ctx, key, 1, ttl).Err()
 }
 
-// --- 日次リロードカウント ---
 // リロード回数は提案リストキャッシュ・上限到達フラグとは独立して管理される。
 // キーフォーマット: suggestion:reload:{userID}:{date}
 
