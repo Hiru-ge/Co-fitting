@@ -1,6 +1,32 @@
+import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 
+type FormState = "idle" | "submitting" | "success" | "error";
+
 export default function LP() {
+  const [email, setEmail] = useState("");
+  const [formState, setFormState] = useState<FormState>("idle");
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFormState("submitting");
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: import.meta.env.VITE_WEB3FORMS_KEY,
+          email,
+          subject: "Roamble ベータ版アクセスリクエスト",
+        }),
+      });
+      const data = await res.json();
+      setFormState(data.success ? "success" : "error");
+    } catch {
+      setFormState("error");
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-bg-light dark:bg-bg-dark text-text-main dark:text-white">
       {/* ── Hero ── */}
@@ -18,12 +44,12 @@ export default function LP() {
           <span className="font-semibold text-primary"> 経験値（XP）</span>
           に変える。
         </p>
-        <Link
-          to="/login"
+        <a
+          href="#request-access"
           className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
         >
-          さっそく始める
-        </Link>
+          ベータ版アクセスをリクエスト
+        </a>
 
         {/* Hero Screenshots */}
         <div className="mt-12 flex items-end justify-center gap-3 px-2">
@@ -210,21 +236,50 @@ export default function LP() {
       {/* ── Divider ── */}
       <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
 
-      {/* ── Final CTA ── */}
-      <section className="px-6 py-12 text-center">
+      {/* ── Request Access ── */}
+      <section id="request-access" className="px-6 py-12">
         <div className="max-w-md mx-auto">
-          <h2 className="text-xl font-bold font-display mb-3">
-            さっそく始めよう
+          <h2 className="text-xl font-bold font-display mb-3 text-center">
+            ベータ版アクセスをリクエスト
           </h2>
-          <p className="text-sm text-text-main/60 dark:text-white/60 mb-6">
-            コンフォートゾーンの外に、まだ見ぬ世界が待っている。
+          <p className="text-sm text-text-main/60 dark:text-white/60 mb-6 text-center">
+            現在Webベータ版公開中です。<br/>メールでアクセス用合言葉をお知らせしますので、以下のフォームからメールアドレスを登録してください。
           </p>
-          <Link
-            to="/login"
-            className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
-          >
-            さっそく始める
-          </Link>
+
+          {formState === "success" ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <span className="material-symbols-outlined text-primary text-4xl">check_circle</span>
+              <p className="font-semibold">登録しました！</p>
+              <p className="text-sm text-text-main/60 dark:text-white/60">
+                アクセス権が開放されたらメールでお知らせします。
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="メールアドレスを入力"
+                required
+                disabled={formState === "submitting"}
+                className="flex-1 px-4 py-3 rounded-lg bg-text-main/5 dark:bg-white/5 border border-text-main/15 dark:border-white/15 text-sm placeholder-text-main/40 dark:placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={formState === "submitting" || !email.trim()}
+                className="px-6 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {formState === "submitting" ? "送信中..." : "登録する"}
+              </button>
+            </form>
+          )}
+
+          {formState === "error" && (
+            <p className="mt-3 text-sm text-red-500 dark:text-red-400 text-center">
+              送信に失敗しました。しばらく時間をおいて再度お試しください。
+            </p>
+          )}
         </div>
       </section>
 
