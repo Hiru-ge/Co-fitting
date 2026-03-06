@@ -91,9 +91,11 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 
 - `docs/requirements.md` — 要件定義書（機能要件・非機能要件・技術スタック・データモデル・API設計）
 - `docs/product-strategy.md` — プロダクト戦略書（ビジョン・ターゲット・競合分析・検証計画・KPI・リテンション）
-- `docs/marketing/marketing-strategy.md` — マーケティング戦略（ブランド・コンセプト・コンテンツ戦略・ロードマップ）
-- `docs/validation-strategy.md` — ニーズ検証・プレローンチ戦略（Makers Guild折衷案）
+- `docs/marketing/marketing-strategy.md` — マーケティング戦略（ブランド・コンセプト・コンテンツ戦略・ロードマップ・LPコピー語彙）
 - `docs/todo.md` — TODO（ドッグフーディング・品質改善・ローンチ準備のタスク一覧）
+- `docs/infra/deploy.md` — デプロイセットアップ手順（Cloud Run・Cloudflare Pages）
+- `docs/infra/google-oauth.md` — Google OAuth設定ガイド
+- `docs/infra/domain-email.md` — ドメイン取得・メール設定手順
 
 ## 関連ドキュメント（Obsidian Vault）
 

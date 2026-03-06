@@ -7,7 +7,7 @@
 
 ## GCP 設定チェックリスト
 
-> `docs/google-oauth-setup.md` および `docs/domain-email-setup.md` に設定手順あり。
+> `docs/infra/google-oauth.md` および `docs/infra/domain-email.md` に設定手順あり。
 > ベータ版公開前に必ず全項目を GCP コンソールで目視確認すること。
 
 ### OAuth 同意画面（GCP → APIs & Services → OAuth consent screen）
