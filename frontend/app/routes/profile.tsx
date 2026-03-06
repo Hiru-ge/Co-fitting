@@ -382,7 +382,7 @@ function ProfileTourStep({ onClose }: { onClose: () => void }) {
           aria-hidden="true"
           style={{
             position: "fixed",
-            top: targetRect.top - SPOTLIGHT_PADDING,
+            top: targetRect.top - SPOTLIGHT_PADDING + 24,
             left: targetRect.left - SPOTLIGHT_PADDING,
             width: targetRect.width + SPOTLIGHT_PADDING * 2,
             height: targetRect.height + SPOTLIGHT_PADDING * 2,
