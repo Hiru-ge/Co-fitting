@@ -19,7 +19,7 @@
 |------|--------|
 | ユーザーの種類 | 外部 |
 | アプリ名 | Roamble |
-| ユーザーサポートメール | roamble.official@gmail.com |
+| ユーザーサポートメール | official@roamble.app |
 | スコープ | `email`, `profile`, `openid`（デフォルトで含まれる） |
 
 > **テスト段階**では「公開ステータス：テスト」のままでよい。
@@ -39,6 +39,9 @@ http://localhost:3000
 
 # 本番環境（デプロイ後に追加）
 https://roamble.pages.dev
+
+# 取得したドメイン
+https://roamble.app
 ```
 
 **承認済みのリダイレクト URI**（今回は不要）

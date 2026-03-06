@@ -310,8 +310,8 @@ export default function Privacy() {
             <p className="font-semibold">Roamble 運営者</p>
             <p className="mt-1">
               メール:{" "}
-              <a href="mailto:roamble.official@gmail.com" className="text-primary underline">
-                roamble.official@gmail.com
+              <a href="mailto:official@roamble.app" className="text-primary underline">
+                official@roamble.app
               </a>
             </p>
           </div>
