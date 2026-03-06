@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
-import { getPositionWithFallback, watchCurrentPosition, isWithinCheckInRange } from "~/utils/geolocation";
+import { getPositionWithFallback, startPositionPolling, isWithinCheckInRange } from "~/utils/geolocation";
 import { DEFAULT_RADIUS } from "~/utils/constants";
 import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
@@ -133,10 +133,10 @@ export function useSuggestions(token: string) {
   useEffect(() => {
     if (!hasCards) return;
 
-    const watchId = watchCurrentPosition(setUserPos);
+    const intervalId = startPositionPolling(setUserPos);
     return () => {
-      if (watchId !== null) {
-        navigator.geolocation?.clearWatch(watchId);
+      if (intervalId !== null) {
+        clearInterval(intervalId);
       }
     };
   }, [hasCards]);

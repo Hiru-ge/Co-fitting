@@ -60,7 +60,7 @@ const mockPlaces = [
 vi.mock("~/utils/geolocation", () => ({
   getPositionWithFallback: vi.fn().mockResolvedValue({ lat: 35.658, lng: 139.7016 }),
   calcDistance: vi.fn().mockReturnValue(500),
-  watchCurrentPosition: vi.fn().mockReturnValue(1),
+  startPositionPolling: vi.fn().mockReturnValue(1),
 }));
 
 let callCount = 0;
@@ -823,9 +823,9 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     expect(vi.mocked(getSuggestions).mock.calls.length).toBe(1);
   });
 
-  // === Issue #262: 施設カード表示中は watchCurrentPosition が呼ばれる ===
-  test("施設カード表示中は watchCurrentPosition が呼ばれる（距離リアルタイム更新）", async () => {
-    const { watchCurrentPosition } = await import("~/utils/geolocation");
+  // === Issue #262: 施設カード表示中は startPositionPolling が呼ばれる ===
+  test("施設カード表示中は startPositionPolling が呼ばれる（距離定期更新）", async () => {
+    const { startPositionPolling } = await import("~/utils/geolocation");
 
     renderHome();
 
@@ -833,8 +833,8 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    // 施設カードが表示されている → watchCurrentPosition が呼ばれる
-    expect(vi.mocked(watchCurrentPosition)).toHaveBeenCalled();
+    // 施設カードが表示されている → startPositionPolling が呼ばれる
+    expect(vi.mocked(startPositionPolling)).toHaveBeenCalled();
     // 位置更新が getSuggestions の再呼び出しを引き起こさない
     const { getSuggestions } = await import("~/api/suggestions");
     expect(vi.mocked(getSuggestions).mock.calls.length).toBe(1);

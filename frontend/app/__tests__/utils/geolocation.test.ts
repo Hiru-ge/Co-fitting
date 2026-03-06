@@ -1,5 +1,5 @@
-import { describe, test, expect, vi, beforeEach } from "vitest";
-import { calcDistance, getPositionWithFallback, calcMapCenter, isWithinCheckInRange, watchCurrentPosition } from "~/utils/geolocation";
+import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { calcDistance, getPositionWithFallback, calcMapCenter, isWithinCheckInRange, startPositionPolling } from "~/utils/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 describe("calcDistance", () => {
@@ -124,47 +124,67 @@ describe("calcMapCenter", () => {
   });
 });
 
-// === Issue #262: 訪問ボタン距離判定のリアルタイム更新 ===
-describe("watchCurrentPosition", () => {
+// === Issue #262: 訪問ボタン距離判定の定期更新 ===
+describe("startPositionPolling", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useFakeTimers();
   });
 
-  test("GPS監視を開始し、位置更新コールバックが呼ばれる", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  test("起動直後に1回取得し、コールバックが呼ばれる", () => {
     const onPosition = vi.fn();
-    const watchId = 42;
-    const watchPositionMock = vi.fn().mockImplementation(
+    const getCurrentPositionMock = vi.fn().mockImplementation(
       (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
         success({ coords: { latitude: 35.68, longitude: 139.76 } });
-        return watchId;
       }
     );
     vi.stubGlobal("navigator", {
-      geolocation: { watchPosition: watchPositionMock },
+      geolocation: { getCurrentPosition: getCurrentPositionMock },
     });
 
-    const result = watchCurrentPosition(onPosition);
+    startPositionPolling(onPosition);
 
-    expect(watchPositionMock).toHaveBeenCalledWith(
+    expect(getCurrentPositionMock).toHaveBeenCalledWith(
       expect.any(Function),
       undefined,
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
     );
     expect(onPosition).toHaveBeenCalledWith({ lat: 35.68, lng: 139.76 });
-    expect(result).toBe(watchId);
   });
 
-  test("onError コールバックが渡された場合、watchPosition に転送される", () => {
+  test("30秒後に再度取得される", () => {
     const onPosition = vi.fn();
-    const onError = vi.fn();
-    const watchPositionMock = vi.fn().mockReturnValue(1);
+    const getCurrentPositionMock = vi.fn().mockImplementation(
+      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
+        success({ coords: { latitude: 35.68, longitude: 139.76 } });
+      }
+    );
     vi.stubGlobal("navigator", {
-      geolocation: { watchPosition: watchPositionMock },
+      geolocation: { getCurrentPosition: getCurrentPositionMock },
     });
 
-    watchCurrentPosition(onPosition, onError);
+    startPositionPolling(onPosition);
+    expect(getCurrentPositionMock).toHaveBeenCalledTimes(1);
 
-    expect(watchPositionMock).toHaveBeenCalledWith(
+    vi.advanceTimersByTime(30000);
+    expect(getCurrentPositionMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("onError コールバックが渡された場合、getCurrentPosition に転送される", () => {
+    const onPosition = vi.fn();
+    const onError = vi.fn();
+    const getCurrentPositionMock = vi.fn();
+    vi.stubGlobal("navigator", {
+      geolocation: { getCurrentPosition: getCurrentPositionMock },
+    });
+
+    startPositionPolling(onPosition, onError);
+
+    expect(getCurrentPositionMock).toHaveBeenCalledWith(
       expect.any(Function),
       onError,
       expect.any(Object)
@@ -173,6 +193,6 @@ describe("watchCurrentPosition", () => {
 
   test("Geolocation非対応の場合は null を返す", () => {
     vi.stubGlobal("navigator", { geolocation: undefined });
-    expect(watchCurrentPosition(vi.fn())).toBeNull();
+    expect(startPositionPolling(vi.fn())).toBeNull();
   });
 });

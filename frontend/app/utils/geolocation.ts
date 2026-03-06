@@ -41,20 +41,27 @@ export async function getPositionWithFallback(): Promise<Position> {
 }
 
 /**
- * GPS位置を継続監視し、10秒おきの更新のたびに onPosition を呼び出す。
- * 返り値の watch ID を clearWatch() に渡すと監視を停止できる。
+ * 30秒ごとに getCurrentPosition を呼び出し、onPosition に結果を渡す。
+ * 起動直後に1回即時取得し、以降30秒間隔でポーリングする。
+ * 返り値の interval ID を clearInterval() に渡すと停止できる。
  * Geolocation非対応の環境では null を返す。
  */
-export function watchCurrentPosition(
+export function startPositionPolling(
   onPosition: (pos: Position) => void,
   onError?: (err: GeolocationPositionError) => void
-): number | null {
+): ReturnType<typeof setInterval> | null {
   if (!navigator.geolocation) return null;
-  return navigator.geolocation.watchPosition(
-    (pos) => onPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-    onError,
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
+
+  const fetch = () => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => onPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      onError,
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+    );
+  };
+
+  fetch();
+  return setInterval(fetch, 30000);
 }
 
 /**
