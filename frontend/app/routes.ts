@@ -11,6 +11,9 @@ export default [
   // オンボーディング（ボトムナビなし）
   route("onboarding", "routes/onboarding.tsx"),
 
+  // PWAインストール促進
+  route("pwa-prompt", "routes/pwa-prompt.tsx"),
+
   // ベータ版ゲート（合言葉入力）
   route("beta-gate", "routes/beta-gate.tsx"),
 

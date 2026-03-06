@@ -44,6 +44,12 @@ export default function Root() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        {/* beforeinstallprompt を早期キャプチャ */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__installPrompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__installPrompt=e;});`,
+          }}
+        />
         {/* PWA */}
         <meta name="theme-color" content="#525BBB" />
         <meta name="mobile-web-app-capable" content="yes" />

@@ -62,10 +62,11 @@ test.describe("主要ユーザーフロー", () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
-    // ベータゲートをスキップ、ツアーモーダルも非表示にする
+    // ベータゲートをスキップ、ツアーモーダルも非表示にする、PWAプロンプトもスキップ
     await page.addInitScript(() => {
       localStorage.setItem("roamble_beta_unlocked", "1");
       localStorage.setItem("home_tour_seen", "true");
+      localStorage.setItem("pwa-install-dismissed", "true");
     });
   });
 

@@ -7,6 +7,12 @@ vi.mock("~/lib/auth", () => ({
   getToken: vi.fn(),
 }));
 
+// pwa モジュールのモック（window.matchMedia が jsdom で未定義のため）
+vi.mock("~/lib/pwa", () => ({
+  isStandalone: vi.fn().mockReturnValue(true),
+  isPWAPromptDismissed: vi.fn().mockReturnValue(true),
+}));
+
 import { getToken } from "~/lib/auth";
 
 describe("ランディングページ", () => {

@@ -1,10 +1,14 @@
 import { Link, redirect } from "react-router";
 import { getToken } from "~/lib/auth";
+import { isStandalone, isPWAPromptDismissed } from "~/lib/pwa";
 
 export async function clientLoader() {
   const token = getToken();
   if (token) {
     throw redirect("/home");
+  }
+  if (!isStandalone() && !isPWAPromptDismissed()) {
+    throw redirect("/pwa-prompt");
   }
   return null;
 }
