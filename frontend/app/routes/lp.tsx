@@ -1,5 +1,25 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
+import type { MetaFunction } from "react-router";
+
+export const meta: MetaFunction = () => [
+  { title: "Roamble - 一歩踏み出す体験を経験値に" },
+  { name: "description", content: "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" },
+  { property: "og:title", content: "Roamble - 一歩踏み出す体験を経験値に" },
+  { property: "og:description", content: "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" },
+  { property: "og:type", content: "website" },
+  { property: "og:url", content: "https://roamble.app/lp" },
+  { property: "og:image", content: "https://roamble.app/ogp.png" },
+  { property: "og:image:width", content: "1200" },
+  { property: "og:image:height", content: "630" },
+  { property: "og:site_name", content: "Roamble" },
+  { property: "og:locale", content: "ja_JP" },
+  { name: "twitter:card", content: "summary_large_image" },
+  { name: "twitter:site", content: "@roamble_app" },
+  { name: "twitter:title", content: "Roamble - 一歩踏み出す体験を経験値に" },
+  { name: "twitter:description", content: "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" },
+  { name: "twitter:image", content: "https://roamble.app/ogp.png" },
+];
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
