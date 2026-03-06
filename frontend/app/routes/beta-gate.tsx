@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, redirect } from "react-router";
+import { Link, useNavigate, redirect } from "react-router";
 import { isBetaUnlocked, unlockBeta } from "~/lib/beta-access";
 
 export async function clientLoader() {
@@ -76,6 +76,19 @@ export default function BetaGate() {
               入力する
             </button>
           </form>
+        </div>
+
+        {/* LPリンク */}
+        <div className="max-w-sm mx-auto">
+          <Link
+            to="/lp"
+            className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 transition-colors hover:bg-white/10"
+          >
+            <span className="text-sm text-white/70">Roamble ってなに？</span>
+            <span className="material-symbols-outlined text-white/40 text-lg">
+              arrow_forward
+            </span>
+          </Link>
         </div>
 
         {/* フッター */}
