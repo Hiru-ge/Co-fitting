@@ -83,17 +83,13 @@ export default function PWAPrompt() {
               <span className="text-primary">✓</span>
               全画面表示でスッキリ
             </li>
-            <li className="flex items-center gap-2">
-              <span className="text-primary">✓</span>
-              アプリストア不要・無料
-            </li>
           </ul>
 
           {/* プラットフォーム別のインストール手順 */}
           {platform === "ios" && (
             <div className="bg-white/5 rounded-xl p-4 space-y-3">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
-                追加手順（Safari）
+                追加手順
               </p>
               <ol className="space-y-2 text-sm text-white/70">
                 <li className="flex items-start gap-2">
@@ -102,10 +98,7 @@ export default function PWAPrompt() {
                   </span>
                   <span>
                     画面下の
-                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 bg-white/10 rounded text-xs mx-0.5">
-                      <span className="material-symbols-outlined text-sm leading-none">ios_share</span>
-                      共有
-                    </span>
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 bg-white/10 rounded text-xs mx-0.5">共有</span>
                     をタップ
                   </span>
                 </li>
