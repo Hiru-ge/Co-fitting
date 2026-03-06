@@ -88,10 +88,10 @@ test.describe("主要ユーザーフロー", () => {
     // CTA ボタン
     await expect(page.getByRole("link", { name: "さっそく始める" })).toBeVisible();
 
-    // 外部リンク
-    const notionLink = page.getByRole("link", { name: /Roamble ってなに/ });
-    await expect(notionLink).toBeVisible();
-    await expect(notionLink).toHaveAttribute("href", "https://hiruge.notion.site/roamble-lp");
+    // LP リンク
+    const lpLink = page.getByRole("link", { name: /Roamble ってなに/ });
+    await expect(lpLink).toBeVisible();
+    await expect(lpLink).toHaveAttribute("href", "/lp");
   });
 
   // 2. 「さっそく始める」→ ログイン画面遷移

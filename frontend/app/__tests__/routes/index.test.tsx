@@ -52,7 +52,7 @@ describe("ランディングページ", () => {
     expect(screen.getByText("記録")).toBeInTheDocument();
   });
 
-  test("「Roamble ってなに？」リンクが Notion LP へ遷移する", async () => {
+  test("「Roamble ってなに？」リンクが LP ページへ遷移する", async () => {
     const { default: Index } = await import("~/routes/index");
     render(
       <MemoryRouter>
@@ -62,8 +62,7 @@ describe("ランディングページ", () => {
 
     const aboutLink = screen.getByText(/Roamble ってなに/);
     const anchor = aboutLink.closest("a");
-    expect(anchor).toHaveAttribute("href", "https://hiruge.notion.site/roamble-lp");
-    expect(anchor).toHaveAttribute("target", "_blank");
+    expect(anchor).toHaveAttribute("href", "/lp");
   });
 
   test("「さっそく始める」ボタンが /login へのリンクである", async () => {

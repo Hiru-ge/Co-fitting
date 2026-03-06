@@ -15,6 +15,7 @@ export default [
   route("beta-gate", "routes/beta-gate.tsx"),
 
   // 公開ページ（認証不要）
+  route("lp", "routes/lp.tsx"),
   route("privacy", "routes/privacy.tsx"),
 
   // アプリレイアウト（認証必須）

@@ -75,17 +75,15 @@ export default function Index() {
       {/* ── About ── */}
       <section className="px-6 pb-8">
         <div className="max-w-sm mx-auto">
-          <a
-            href="https://hiruge.notion.site/roamble-lp"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/lp"
             className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-text-main/5 dark:bg-white/5 border border-text-main/10 dark:border-white/10 transition-colors hover:bg-text-main/10 dark:hover:bg-white/10"
           >
             <span className="text-sm text-text-main/70 dark:text-white/70">Roamble ってなに？</span>
             <span className="material-symbols-outlined text-text-main/40 dark:text-white/40 text-lg">
-              open_in_new
+              arrow_forward
             </span>
-          </a>
+          </Link>
         </div>
       </section>
 

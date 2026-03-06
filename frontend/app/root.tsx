@@ -16,7 +16,7 @@ import { GA4_ID, sendPageView } from "~/lib/gtag";
 /** /beta-gate 以外の全ルートでベータ版合言葉を確認する */
 export async function clientLoader({ request }: { request: Request }) {
   const { pathname } = new URL(request.url);
-  if (pathname !== "/beta-gate" && !isBetaUnlocked()) {
+  if (pathname !== "/beta-gate" && pathname !== "/lp" && !isBetaUnlocked()) {
     throw redirect("/beta-gate");
   }
   return null;

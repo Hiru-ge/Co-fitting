@@ -44,7 +44,7 @@
 
 ### 3/8〜: Optional（ひと段落後）
 
-- [ ] LPをNotionから独自ページに移行（Cloudflare Pagesで同一ドメインに設置可能）
+- [x] LPをNotionから独自ページに移行（Cloudflare Pagesで同一ドメインに設置可能）
 - [ ] Product Hunt "Upcoming" ページの活用
 
 ---
