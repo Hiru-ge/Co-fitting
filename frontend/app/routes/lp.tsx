@@ -302,6 +302,27 @@ export default function LP() {
           )}
         </div>
       </section>
+      
+      {/* ── Divider ── */}
+      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+
+      {/* ── Start Now CTA ── */}
+      <section className="px-6 py-12 text-center">
+        <div className="max-w-md mx-auto">
+          <h2 className="text-xl font-bold font-display mb-4">
+            さっそく始める
+          </h2>
+          <p className="text-sm text-text-main/60 dark:text-white/60 mb-6">
+            現在Webベータ版を公開中です。<br />合言葉をお持ちの方はそのまま始められます。
+          </p>
+          <a
+            href="/beta-gate"
+            className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
+          >
+            さっそく始める
+          </a>
+        </div>
+      </section>
 
       {/* ── Footer ── */}
       <footer className="px-6 py-6 text-center text-xs text-text-main/40 dark:text-white/30">

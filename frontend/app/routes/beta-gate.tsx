@@ -93,16 +93,11 @@ export default function BetaGate() {
 
         {/* フッター */}
         <p className="text-center text-xs text-white/30">
-          ベータテスターへの参加は
-          <a
-            href="https://x.com/roamble_app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-white/50"
-          >
-            @roamble_app
-          </a>
-          をご確認ください。
+          ベータ版への参加は
+          <Link to="/lp#request-access" className="underline hover:text-white/50">
+            紹介ページ
+          </Link>
+          からリクエストを送信してください
         </p>
       </div>
     </div>

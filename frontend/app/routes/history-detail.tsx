@@ -237,7 +237,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
             onChange={(e) => setMemo(e.target.value)}
             placeholder="どんな体験でしたか？"
             rows={5}
-            className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-text-main-purple placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary resize-none"
+            className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-text-main-purple dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary resize-none"
           />
         </div>
 
