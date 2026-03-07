@@ -168,7 +168,7 @@
   - **対象ファイル**: `backend/services/gamification.go`（`calcGenreLevel` のキャップ変更、`UpdateGenreProficiency` のXP加算ロジック変更）、`backend/handlers/visit.go`
   - **ドキュメント更新**: `docs/requirements.md`（ジャンル熟練度セクション、XP付与ルールセクション）、`CLAUDE.md`
 
-- [ ] **複数端末同時利用未サポートの注記追加**（Issue #266）
+- [x] **複数端末同時利用未サポートの注記追加**（Issue #266）
   - **問題**: JWT方式で複数端末同時ログインが可能だが、フロントエンドキャッシュの整合性が保証されない（端末Aで訪問記録→端末Bに反映されない等）
   - **方針**: ドキュメントに注記を追加するのみ。根本対応はiOS版（Phase 2）で検討
   - **ドキュメント更新**: `docs/requirements.md`（非機能要件 or 既知の制約セクション）
