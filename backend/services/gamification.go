@@ -128,7 +128,7 @@ func CalcStreakBonus(streakCount int) int {
 }
 
 // calcGenreLevel はジャンル熟練度XPからジャンルレベルを算出する
-// ユーザーレベルと同じ levelThresholds テーブルを使用し、最大Lv.20でキャップ
+// ユーザーレベルと同じ levelThresholds テーブルを使用し、最大Lv.30でキャップ
 func calcGenreLevel(xp int) int {
 	level := 1
 	for i, threshold := range levelThresholds {
@@ -136,8 +136,8 @@ func calcGenreLevel(xp int) int {
 			level = i + 1
 		}
 	}
-	if level > 20 {
-		level = 20
+	if level > 30 {
+		level = 30
 	}
 	return level
 }
@@ -441,6 +441,10 @@ func applyXPAndProgression(tx *gorm.DB, userID uint64, visit models.Visit, xpEar
 			return
 		}
 		if err = tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", finalXP).Error; err != nil {
+			return
+		}
+		// ストリークボーナスもジャンル熟練度に反映（ユーザーXPと同一にする）
+		if err = UpdateGenreProficiency(tx, userID, visit.GenreTagID, streakBonus); err != nil {
 			return
 		}
 	}

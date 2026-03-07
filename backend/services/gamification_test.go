@@ -1349,24 +1349,23 @@ func TestCalcLevelAdditionalBoundaries(t *testing.T) {
 }
 
 // =============================================
-// UpdateGenreProficiency Lv.20キャップテスト
+// UpdateGenreProficiency Lv.30キャップテスト
 // =============================================
 
-func TestUpdateGenreProficiencyLevel20Cap(t *testing.T) {
-	t.Run("ジャンルXPがLv.21相当（14730 XP）でもLv.20にキャップされる", func(t *testing.T) {
+func TestUpdateGenreProficiencyLevel30Cap(t *testing.T) {
+	t.Run("ジャンルXPがLv.21相当（14730 XP）でLv.21になる（Lv.20キャップは解除済み）", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "prof_cap1@example.com")
 		tag := getOrCreateGenreTag(t, "映画館")
 
-		// Lv.20閾値（20892）以上のXPを与えても genre level は 20 でキャップ
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
 			GenreTagID: tag.ID,
 			XP:         14700,
-			Level:      20, // 既に20にキャップ済み
+			Level:      20,
 		})
 
-		// さらにXPを加算してLv.21相当（14730）に
+		// 30XPを加算してLv.21閾値（14730）を超える
 		err := services.UpdateGenreProficiency(testDB, user.ID, &tag.ID, 30)
 		if err != nil {
 			t.Fatalf("UpdateGenreProficiency failed: %v", err)
@@ -1377,12 +1376,13 @@ func TestUpdateGenreProficiencyLevel20Cap(t *testing.T) {
 		if prof.XP != 14730 {
 			t.Errorf("expected xp=14730, got %d", prof.XP)
 		}
-		if prof.Level != 20 {
-			t.Errorf("expected level=20 (Lv.20キャップ), got %d", prof.Level)
+		// Lv.20キャップが解除されているので、14730 XP → Lv.21 になるはず
+		if prof.Level != 21 {
+			t.Errorf("expected level=21 (Lv.20キャップ解除), got %d", prof.Level)
 		}
 	})
 
-	t.Run("ジャンルXPがLv.30相当（30000 XP以上）でもLv.20にキャップされる", func(t *testing.T) {
+	t.Run("ジャンルXPがLv.30閾値（30000 XP）でLv.30になる", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "prof_cap2@example.com")
 		tag := getOrCreateGenreTag(t, "カラオケ")
@@ -1394,11 +1394,84 @@ func TestUpdateGenreProficiencyLevel20Cap(t *testing.T) {
 
 		var prof models.GenreProficiency
 		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, tag.ID).First(&prof)
-		if prof.Level > 20 {
-			t.Errorf("expected level <= 20 (Lv.20キャップ), got %d", prof.Level)
+		if prof.Level != 30 {
+			t.Errorf("expected level=30 (Lv.30上限), got %d", prof.Level)
 		}
-		if prof.Level != 20 {
-			t.Errorf("expected level=20, got %d", prof.Level)
+	})
+
+	t.Run("ジャンルXPがLv.30を超えるXP（50000 XP）でもLv.30にキャップされる", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "prof_cap3@example.com")
+		tag := getOrCreateGenreTag(t, "居酒屋")
+
+		err := services.UpdateGenreProficiency(testDB, user.ID, &tag.ID, 50000)
+		if err != nil {
+			t.Fatalf("UpdateGenreProficiency failed: %v", err)
+		}
+
+		var prof models.GenreProficiency
+		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, tag.ID).First(&prof)
+		if prof.Level > 30 {
+			t.Errorf("expected level <= 30 (Lv.30キャップ), got %d", prof.Level)
+		}
+		if prof.Level != 30 {
+			t.Errorf("expected level=30, got %d", prof.Level)
+		}
+	})
+}
+
+// =============================================
+// Issue #265: ストリークボーナスのジャンル熟練度反映テスト
+// =============================================
+
+func TestGenreProficiencyIncludesStreakBonus(t *testing.T) {
+	t.Run("ProcessGamificationのストリークボーナスXPがジャンル熟練度に反映される", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "genre_streak@example.com")
+		database.SeedMasterData(testDB)
+
+		tag := getOrCreateGenreTag(t, "カフェ")
+
+		// streak=4 を事前設定（UpdateStreak後に5になる）
+		lastWeek := time.Now().AddDate(0, 0, -7)
+		testDB.Model(&user).Updates(map[string]interface{}{
+			"streak_count": 4,
+			"streak_last":  lastWeek,
+		})
+
+		visit := models.Visit{
+			UserID:        user.ID,
+			PlaceID:       "place_genre_streak",
+			PlaceName:     "ストリークカフェ",
+			Category:      "cafe",
+			Latitude:      35.6895,
+			Longitude:     139.6917,
+			IsComfortZone: false,
+			GenreTagID:    &tag.ID,
+			VisitedAt:     time.Now(),
+		}
+		testDB.Create(&visit)
+
+		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		if err != nil {
+			t.Fatalf("ProcessGamification failed: %v", err)
+		}
+
+		// ストリーク5週×10XP = 50XP のボーナスが発生する
+		// 通常訪問50XP + ストリーク50XP = 100XP total
+		if result.XPBreakdown == nil {
+			t.Fatal("expected XPBreakdown to be non-nil")
+		}
+		if result.XPBreakdown.StreakBonus != 50 {
+			t.Fatalf("expected streak bonus=50, got %d (test precondition failed)", result.XPBreakdown.StreakBonus)
+		}
+
+		var prof models.GenreProficiency
+		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, tag.ID).First(&prof)
+
+		// ジャンル熟練度XPはユーザーが獲得したXP（ストリーク含む）と一致するはず
+		if prof.XP != result.XPEarned {
+			t.Errorf("genre proficiency XP (%d) should match XPEarned (%d) including streak bonus", prof.XP, result.XPEarned)
 		}
 	})
 }

@@ -162,7 +162,7 @@
   - **対象ファイル**: `backend/handlers/user.go`, `backend/database/redis.go`, `frontend/app/routes/settings.tsx`, `frontend/app/hooks/use-suggestions.ts`
   - **ドキュメント更新**: `docs/requirements.md`（設定変更の即時反映セクション）
 
-- [ ] **ジャンル熟練度上限をLv.30に統一 + ボーナスXP反映**（Issue #265）
+- [x] **ジャンル熟練度上限をLv.30に統一 + ボーナスXP反映**（Issue #265）
   - **問題**: ユーザーレベル（最大Lv.30）とジャンル熟練度（最大Lv.20）で上限が異なり、一貫性がない。また、初エリアボーナス（+30XP）・メモボーナス（+10XP）・ストリークボーナスがユーザーXPには加算されるがジャンル熟練度には反映されない
   - **方針**: ジャンル熟練度の上限をLv.30に変更。ボーナスXP（初エリア・メモ・ストリーク）もジャンル熟練度に加算し、ユーザーXPと一致させる
   - **対象ファイル**: `backend/services/gamification.go`（`calcGenreLevel` のキャップ変更、`UpdateGenreProficiency` のXP加算ロジック変更）、`backend/handlers/visit.go`
