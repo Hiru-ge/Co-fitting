@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/settings";
 import { useNavigate, Link } from "react-router";
 import { clearToken } from "~/lib/auth";
@@ -279,6 +279,104 @@ function UserInfoTab({
   );
 }
 
+// === 位置情報許可セクション ===
+function LocationPermissionSection() {
+  const [permState, setPermState] = useState<PermissionState | "unsupported" | null>(null);
+  const [isRequesting, setIsRequesting] = useState(false);
+
+  useEffect(() => {
+    if (!navigator.permissions) {
+      setPermState("unsupported");
+      return;
+    }
+    navigator.permissions
+      .query({ name: "geolocation" })
+      .then((result) => {
+        setPermState(result.state);
+        result.onchange = () => setPermState(result.state);
+      })
+      .catch(() => setPermState("unsupported"));
+  }, []);
+
+  async function handleRequestPermission() {
+    setIsRequesting(true);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(() => resolve(), reject, { timeout: 10000 });
+      });
+      setPermState("granted");
+    } catch {
+      // ユーザーが拒否した場合はpermissions APIのonchangeが発火するため再取得は不要
+    } finally {
+      setIsRequesting(false);
+    }
+  }
+
+  // OSの判定（denied時の案内用）
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+
+  const statusDisplay = () => {
+    if (permState === null) return null;
+    if (permState === "granted") {
+      return (
+        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium">
+          <span className="material-symbols-outlined text-base">check_circle</span>
+          許可済み — 現在地を使って提案しています
+        </div>
+      );
+    }
+    if (permState === "denied") {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
+            <span className="material-symbols-outlined text-base">location_off</span>
+            拒否されています
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {isIOS
+              ? "「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」から「このAppの使用中のみ許可」に変更してください。"
+              : "ブラウザのアドレスバー左の鍵マーク（または情報アイコン）→「サイトの設定」→「位置情報」→「許可」に変更してください。"}
+          </p>
+        </div>
+      );
+    }
+    if (permState === "unsupported") {
+      return (
+        <p className="text-sm text-gray-400">このブラウザは位置情報に対応していません。</p>
+      );
+    }
+    // "prompt" state
+    return (
+      <div className="space-y-3">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          まだ許可されていません。ボタンを押すとブラウザの確認ダイアログが表示されます。
+        </p>
+        <button
+          type="button"
+          onClick={handleRequestPermission}
+          disabled={isRequesting}
+          className="w-full py-3 rounded-full bg-primary text-black font-bold text-sm transition-colors active:scale-95 disabled:opacity-50"
+        >
+          {isRequesting ? "確認中..." : "位置情報を許可する"}
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
+      <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+        <span className="material-symbols-outlined text-primary text-xl">my_location</span>
+        位置情報
+      </h2>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        現在地をもとにスポットを提案します。許可しない場合はデフォルト位置（渋谷駅付近）が使われます。
+      </p>
+      {statusDisplay()}
+    </section>
+  );
+}
+
 // === 提案設定タブ ===
 function SuggestionTab({
   token,
@@ -341,6 +439,9 @@ function SuggestionTab({
 
   return (
     <div className="space-y-6">
+      {/* 位置情報セクション */}
+      <LocationPermissionSection />
+
       {/* 提案半径セクション */}
       <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
