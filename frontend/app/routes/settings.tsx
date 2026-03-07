@@ -282,9 +282,9 @@ function UserInfoTab({
 // === 位置情報許可セクション ===
 function LocationPermissionSection() {
   const [permState, setPermState] = useState<PermissionState | "unsupported" | null>(null);
-  const [isRequesting, setIsRequesting] = useState(false);
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const isIOSChrome = /CriOS/.test(navigator.userAgent);
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as { standalone?: boolean }).standalone === true;
@@ -303,20 +303,6 @@ function LocationPermissionSection() {
       .catch(() => setPermState("unsupported"));
   }, []);
 
-  async function handleRequestPermission() {
-    setIsRequesting(true);
-    try {
-      await new Promise<void>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(() => resolve(), reject, { timeout: 10000 });
-      });
-      setPermState("granted");
-    } catch {
-      // 拒否された場合は permissions API の onchange が発火して permState が更新される
-    } finally {
-      setIsRequesting(false);
-    }
-  }
-
   const deniedSteps: string[] = (() => {
     if (isIOS && isStandalone) {
       // PWA（ホーム画面から起動）→ Location Services に「Roamble」として独立表示される
@@ -328,8 +314,18 @@ function LocationPermissionSection() {
         "Roambleに戻って確認する",
       ];
     }
-    if (isIOS && !isStandalone) {
-      // Safari ブラウザ → Location Services の「Safari ウェブサイト」配下
+    if (isIOS && isIOSChrome) {
+      // iOS Chrome → Location Services の「Chrome」配下
+      return [
+        "iPhoneの「設定」を開く",
+        "「プライバシーとセキュリティ」→「位置情報サービス」",
+        "「Chrome」をタップ",
+        "「このAppの使用中のみ許可」を選択",
+        "Chromeに戻り「位置情報を許可する」を押す",
+      ];
+    }
+    if (isIOS) {
+      // iOS Safari → Location Services の「Safari ウェブサイト」配下
       return [
         "iPhoneの「設定」を開く",
         "「プライバシーとセキュリティ」→「位置情報サービス」",
@@ -367,10 +363,8 @@ function LocationPermissionSection() {
             位置情報が拒否されています
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {isIOS && isStandalone
-              ? "アプリからは再許可できません。iPhoneの設定から変更してください。"
-              : isIOS
-              ? "ブラウザからは再許可できません。iPhoneの設定から変更してください。"
+            {isIOS
+              ? "アプリ・ブラウザからは再許可できません。iPhoneの設定から変更してください。"
               : "ブラウザからは再許可できません。端末の設定から変更してください。"}
           </p>
           <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
@@ -400,25 +394,16 @@ function LocationPermissionSection() {
 
     // "prompt" state
     return (
-      <div className="space-y-3">
-        {isIOS && (
-          <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
-            <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">info</span>
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              {isStandalone
-                ? "ホーム画面から起動中のため、iPhoneのネイティブな位置情報権限が使われます。許可すると「設定 → 位置情報サービス → Roamble」で管理できます。"
-                : "Safariブラウザで開いているため、Safariの位置情報権限が使われます。許可すると「設定 → 位置情報サービス → Safari ウェブサイト」で管理できます。"}
-            </p>
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={handleRequestPermission}
-          disabled={isRequesting}
-          className="w-full py-3 rounded-full bg-primary text-black font-bold text-sm transition-colors active:scale-95 disabled:opacity-50"
-        >
-          {isRequesting ? "確認中..." : "位置情報を許可する"}
-        </button>
+      <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+        <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">info</span>
+        <p className="text-xs text-blue-700 dark:text-blue-300">
+          まだ許可されていません。ホーム画面でスポットを読み込む際に許可ダイアログが表示されます。
+          {isIOS && (isStandalone
+            ? "許可後は「設定 → 位置情報サービス → Roamble」で管理できます。"
+            : isIOSChrome
+            ? "許可後は「設定 → 位置情報サービス → Chrome」で管理できます。"
+            : "許可後は「設定 → 位置情報サービス → Safari ウェブサイト」で管理できます。")}
+        </p>
       </div>
     );
   };
