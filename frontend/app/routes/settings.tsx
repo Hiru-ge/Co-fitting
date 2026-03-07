@@ -318,8 +318,8 @@ function LocationPermissionSection() {
     if (isIOS) {
       const steps = [
         "iPhoneの「設定」を開く",
-        "「Safari」→「位置情報」をタップ",
-        "「roamble.app」の位置情報アクセスを許可",
+        "「Chrome / Safari」→「位置情報」をタップ",
+        "「roamble.app」の位置情報アクセスを許可(Chromeの場合は「次回確認」等を選択)",
         "ブラウザに戻って提案カードをリロード",
       ];
       return (
