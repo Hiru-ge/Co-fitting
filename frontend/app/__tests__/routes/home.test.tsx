@@ -58,9 +58,10 @@ const mockPlaces = [
 ];
 
 vi.mock("~/utils/geolocation", () => ({
-  getPositionWithFallback: vi.fn().mockResolvedValue({ lat: 35.658, lng: 139.7016 }),
+  getCurrentPosition: vi.fn().mockResolvedValue({ lat: 35.658, lng: 139.7016 }),
   calcDistance: vi.fn().mockReturnValue(500),
   startPositionPolling: vi.fn().mockReturnValue(1),
+  isWithinCheckInRange: vi.fn().mockReturnValue(true),
 }));
 
 let callCount = 0;
@@ -842,10 +843,10 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
 
   test("提案取得後にアンマウント→再マウントしても getSuggestions が再呼び出しされない（位置変化に関係なく）", async () => {
     const { getSuggestions, } = await import("~/api/suggestions");
-    const { getPositionWithFallback } = await import("~/utils/geolocation");
+    const { getCurrentPosition } = await import("~/utils/geolocation");
 
     // 初回: 位置A
-    vi.mocked(getPositionWithFallback).mockResolvedValue({ lat: 35.658, lng: 139.7016 });
+    vi.mocked(getCurrentPosition).mockResolvedValue({ lat: 35.658, lng: 139.7016 });
 
     const { unmount } = renderHome();
 
@@ -860,7 +861,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     unmount();
 
     // 位置が変わった（B地点）状態で再マウント
-    vi.mocked(getPositionWithFallback).mockResolvedValue({ lat: 35.680, lng: 139.760 });
+    vi.mocked(getCurrentPosition).mockResolvedValue({ lat: 35.680, lng: 139.760 });
     renderHome();
 
     // sessionStorageキャッシュから復元されるため、提案カードはすぐに表示される

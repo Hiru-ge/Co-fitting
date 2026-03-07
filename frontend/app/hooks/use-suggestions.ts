@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
-import { getPositionWithFallback, startPositionPolling, isWithinCheckInRange } from "~/utils/geolocation";
-import { DEFAULT_RADIUS } from "~/utils/constants";
+import { getCurrentPosition, startPositionPolling, isWithinCheckInRange } from "~/utils/geolocation";
+import { DEFAULT_LOCATION, DEFAULT_RADIUS } from "~/utils/constants";
 import { getBestCategoryKey } from "~/utils/category-map";
 import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/toast";
@@ -106,6 +107,7 @@ function markCompletedToday(): void {
 
 export function useSuggestions(token: string) {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const completedFromStorage = isCompletedToday();
   // コンプリート済みでなければ当日の提案キャッシュを確認（初期化時に1回のみ呼ぶ）
   const initialCache = completedFromStorage ? null : getSuggestionsCache();
@@ -154,7 +156,19 @@ export function useSuggestions(token: string) {
         setOriginalOrder(cached.places.map((p) => p.place_id));
         setReloadCountRemaining(cached.reloadCountRemaining);
         // userPos は現在地を取得し直す（距離表示を最新に保つため）
-        getPositionWithFallback().then(setUserPos);
+        getCurrentPosition().then(setUserPos).catch((locErr) => {
+          const isDenied =
+            locErr instanceof GeolocationPositionError &&
+            locErr.code === GeolocationPositionError.PERMISSION_DENIED;
+          if (isDenied) {
+            showToast(
+              "位置情報が許可されていません。現在地の代わりにデフォルト位置を使用します。",
+              "info",
+              { label: "設定で許可する", onClick: () => navigate("/settings") }
+            );
+          }
+          setUserPos({ lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng });
+        });
         setIsLoading(false);
         return;
       }
@@ -163,7 +177,21 @@ export function useSuggestions(token: string) {
     setError(null);
     setIsCompleted(false);
     try {
-      const pos = await getPositionWithFallback();
+      let pos = { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
+      try {
+        pos = await getCurrentPosition();
+      } catch (locErr) {
+        const isDenied =
+          locErr instanceof GeolocationPositionError &&
+          locErr.code === GeolocationPositionError.PERMISSION_DENIED;
+        if (isDenied) {
+          showToast(
+            "位置情報が許可されていません。現在地の代わりにデフォルト位置を使用します。",
+            "info",
+            { label: "設定で許可する", onClick: () => navigate("/settings") }
+          );
+        }
+      }
       setUserPos(pos);
 
       const { places: collected, notice, completed, reload_count_remaining } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS, forceReload);

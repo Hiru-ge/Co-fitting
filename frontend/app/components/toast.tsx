@@ -3,14 +3,20 @@ import type { ReactNode } from "react";
 
 export type ToastType = "success" | "error" | "info";
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: number;
   type: ToastType;
   message: string;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
-  showToast: (message: string, type?: ToastType) => void;
+  showToast: (message: string, type?: ToastType, action?: ToastAction) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
@@ -33,9 +39,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showToast = useCallback(
-    (message: string, type: ToastType = "error") => {
+    (message: string, type: ToastType = "error", action?: ToastAction) => {
       const id = nextId++;
-      setToasts((prev) => [...prev, { id, type, message }]);
+      setToasts((prev) => [...prev, { id, type, message, action }]);
 
       const timer = setTimeout(() => {
         removeToast(id);
@@ -77,15 +83,25 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
   return (
     <div
-      className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg backdrop-blur-md transition-all animate-slide-in ${config.bg}`}
+      className={`pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg backdrop-blur-md transition-all animate-slide-in ${config.bg}`}
       role="alert"
     >
-      <span className={`material-symbols-outlined text-xl ${config.iconColor}`}>
+      <span className={`material-symbols-outlined text-xl shrink-0 mt-0.5 ${config.iconColor}`}>
         {config.icon}
       </span>
-      <p className={`flex-1 text-sm font-medium ${config.textColor}`}>
-        {toast.message}
-      </p>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium ${config.textColor}`}>
+          {toast.message}
+        </p>
+        {toast.action && (
+          <button
+            onClick={() => { toast.action!.onClick(); onClose(); }}
+            className={`mt-1.5 text-xs font-bold underline underline-offset-2 ${config.iconColor}`}
+          >
+            {toast.action.label}
+          </button>
+        )}
+      </div>
       <button
         onClick={onClose}
         className={`shrink-0 rounded-full p-1 transition-colors ${config.closeHover}`}
