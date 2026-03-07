@@ -30,6 +30,24 @@ import "@fontsource/material-symbols-outlined/400.css";
 
 import "./app.css";
 
+function GA4Initializer() {
+  useEffect(() => {
+    if (!GA4_ID) return;
+    // ReactのJSXインラインスクリプトは実行されないためuseEffectで初期化する
+    window.dataLayer = window.dataLayer || [];
+    // GA4はargumentsオブジェクトをdataLayerにpushする必要がある
+    // eslint-disable-next-line prefer-rest-params
+    window.gtag = function () { window.dataLayer.push(arguments); } as typeof window.gtag;
+    window.gtag("js", new Date());
+    window.gtag("config", GA4_ID);
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = `https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`;
+    document.head.appendChild(script);
+  }, []);
+  return null;
+}
+
 function PageViewTracker() {
   const location = useLocation();
   useEffect(() => {
@@ -79,19 +97,6 @@ export default function Root() {
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        {GA4_ID && (
-          <>
-            <script
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA4_ID}`}
-            />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA4_ID}');`,
-              }}
-            />
-          </>
-        )}
         <Meta />
         <Links />
       </head>
@@ -100,6 +105,7 @@ export default function Root() {
           clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}
         >
           <ToastProvider>
+            <GA4Initializer />
             <PageViewTracker />
             <Outlet />
           </ToastProvider>

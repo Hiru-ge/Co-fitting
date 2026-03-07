@@ -213,6 +213,7 @@ curl -w "\nTTFB: %{time_starttransfer}s\n" -o /dev/null -s \
 | `VITE_GOOGLE_CLIENT_ID` | Google Cloud の OAuth クライアントID |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Cloud の Maps API キー |
 | `VITE_BETA_PASSPHRASE` | ベータ版合言葉（ベータテスター通知時に決定） |
+| `VITE_GA4_ID` | GA4 測定ID（例: `G-XXXXXXXXXX`） |
 
 > `VITE_API_BASE_URL` の値は `gcloud run deploy` 完了時にターミナルに表示される Service URL
 
