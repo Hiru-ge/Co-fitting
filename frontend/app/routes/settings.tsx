@@ -284,6 +284,8 @@ function LocationPermissionSection() {
   const [permState, setPermState] = useState<PermissionState | "unsupported" | null>(null);
   const [isRequesting, setIsRequesting] = useState(false);
 
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+
   useEffect(() => {
     if (!navigator.permissions) {
       setPermState("unsupported");
@@ -306,17 +308,56 @@ function LocationPermissionSection() {
       });
       setPermState("granted");
     } catch {
-      // ユーザーが拒否した場合はpermissions APIのonchangeが発火するため再取得は不要
+      // 拒否された場合は permissions API の onchange が発火して permState が更新される
     } finally {
       setIsRequesting(false);
     }
   }
 
-  // OSの判定（denied時の案内用）
-  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const DeniedSteps = () => {
+    if (isIOS) {
+      const steps = [
+        "iPhoneの「設定」を開く",
+        "「Safari」→「位置情報」をタップ",
+        "「roamble.app」の位置情報アクセスを許可",
+        "ブラウザに戻って提案カードをリロード",
+      ];
+      return (
+        <ol className="space-y-2">
+          {steps.map((step, i) => (
+            <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
+                {i + 1}
+              </span>
+              {step}
+            </li>
+          ))}
+        </ol>
+      );
+    }
+    // Android Chrome
+    return (
+      <ol className="space-y-2">
+        {[
+          "アドレスバー左の鍵マーク（または「i」）をタップ",
+          "「サイトの設定」をタップ",
+          "「位置情報」のアクセス許可を「許可」に変更",
+          "ブラウザに戻って提案カードをリロード",
+        ].map((step, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+            <span className="shrink-0 w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
+              {i + 1}
+            </span>
+            {step}
+          </li>
+        ))}
+      </ol>
+    );
+  };
 
   const statusDisplay = () => {
     if (permState === null) return null;
+
     if (permState === "granted") {
       return (
         <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium">
@@ -325,32 +366,36 @@ function LocationPermissionSection() {
         </div>
       );
     }
+
     if (permState === "denied") {
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
             <span className="material-symbols-outlined text-base">location_off</span>
-            拒否されています
+            位置情報が拒否されています
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {isIOS
-              ? "「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」から「このAppの使用中のみ許可」に変更してください。"
-              : "ブラウザのアドレスバー左の鍵マーク（または情報アイコン）→「サイトの設定」→「位置情報」→「許可」に変更してください。"}
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            ブラウザからは再許可できません。端末の設定から変更してください。
           </p>
+          <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              変更手順
+            </p>
+            <DeniedSteps />
+          </div>
         </div>
       );
     }
+
     if (permState === "unsupported") {
       return (
         <p className="text-sm text-gray-400">このブラウザは位置情報に対応していません。</p>
       );
     }
+
     // "prompt" state
     return (
       <div className="space-y-3">
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          まだ許可されていません。ボタンを押すとブラウザの確認ダイアログが表示されます。
-        </p>
         <button
           type="button"
           onClick={handleRequestPermission}
