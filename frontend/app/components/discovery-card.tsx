@@ -150,7 +150,7 @@ export default function DiscoveryCard({
         >
           {category.label}
         </span>
-        {place.is_comfort_zone === true && (
+        {place.is_breakout === true && (
           <span className="bg-red-600 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
             脱却モード
           </span>

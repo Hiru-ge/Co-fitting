@@ -242,7 +242,7 @@ export function useSuggestions(token: string) {
         sendSuggestionGenerated({
           placesCount: placesWithPhotos.length,
           interestMatchCount: placesWithPhotos.filter((p) => p.is_interest_match).length,
-          comfortZoneCount: placesWithPhotos.filter((p) => p.is_comfort_zone).length,
+          breakoutCount: placesWithPhotos.filter((p) => p.is_breakout).length,
           categories: placesWithPhotos.map((p) => getBestCategoryKey(p.types ?? [])),
           isReload: !!forceReload,
         });
@@ -284,7 +284,7 @@ export function useSuggestions(token: string) {
         placeName: skipped.name,
         category: getBestCategoryKey(skipped.types ?? []),
         isInterestMatch: !!skipped.is_interest_match,
-        isComfortZone: !!skipped.is_comfort_zone,
+        isBreakout: !!skipped.is_breakout,
       });
     }
     setPlaces((prev) => {
@@ -295,7 +295,7 @@ export function useSuggestions(token: string) {
           placeName: nextPlace.name,
           category: getBestCategoryKey(nextPlace.types ?? []),
           isInterestMatch: !!nextPlace.is_interest_match,
-          isComfortZone: !!nextPlace.is_comfort_zone,
+          isBreakout: !!nextPlace.is_breakout,
           cardIndex: originalOrder.indexOf(nextPlace.place_id),
         });
       }
@@ -339,7 +339,7 @@ export function useSuggestions(token: string) {
       sendVisitRecorded({
         placeName: place.name,
         category,
-        isComfortZone: !!place.is_comfort_zone,
+        isBreakout: !!place.is_breakout,
         xpEarned: result.xp_earned,
         xpBase: result.xp_breakdown?.base_xp,
         firstAreaBonus: result.xp_breakdown?.first_area_bonus,

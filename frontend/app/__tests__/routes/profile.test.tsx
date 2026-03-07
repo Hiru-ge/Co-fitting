@@ -63,7 +63,7 @@ vi.mock("~/api/users", () => ({
     streak_count: 3,
     streak_last: "2025-12-01T10:00:00Z",
     total_visits: 48,
-    comfort_zone_visits: 10,
+    breakout_visits: 10,
     challenge_visits: 38,
   }),
   getUserBadges: vi.fn().mockResolvedValue([

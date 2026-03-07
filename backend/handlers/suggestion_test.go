@@ -2064,7 +2064,7 @@ func TestCorruptedCacheHandling(t *testing.T) {
 }
 
 // TestProficiencyBasedComfortZone は Issue #198 の熟練度ベース脱却判定テスト
-// 提案APIレスポンスに is_comfort_zone フラグが設定されることを確認する
+// 提案APIレスポンスに is_breakout フラグが設定されることを確認する
 func TestProficiencyBasedComfortZone(t *testing.T) {
 	cafePlaces := []PlaceResult{
 		{PlaceID: "cafe_prof_1", Name: "カフェX", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
@@ -2072,7 +2072,7 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		{PlaceID: "cafe_prof_3", Name: "カフェZ", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
 	}
 
-	t.Run("初回訪問ユーザーへの提案にis_comfort_zone=trueが設定される（熟練度Lv.1）", func(t *testing.T) {
+	t.Run("初回訪問ユーザーへの提案にis_breakout=trueが設定される（熟練度Lv.1）", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2100,11 +2100,11 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		// is_comfort_zone フィールドを確認するために生のJSONをデコード
+		// is_breakout フィールドを確認するために生のJSONをデコード
 		var result struct {
 			Places []struct {
 				PlaceID       string `json:"place_id"`
-				IsComfortZone *bool  `json:"is_comfort_zone"`
+				IsBreakout *bool  `json:"is_breakout"`
 			} `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
@@ -2115,19 +2115,19 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 			t.Fatal("Expected at least 1 place")
 		}
 
-		// 全施設に is_comfort_zone が設定されており、熟練度Lv.1（初回）は true であること
+		// 全施設に is_breakout が設定されており、熟練度Lv.1（初回）は true であること
 		for _, p := range result.Places {
-			if p.IsComfortZone == nil {
-				t.Errorf("Place %s: expected is_comfort_zone to be set (not nil) for first-time visitor", p.PlaceID)
+			if p.IsBreakout == nil {
+				t.Errorf("Place %s: expected is_breakout to be set (not nil) for first-time visitor", p.PlaceID)
 				continue
 			}
-			if !*p.IsComfortZone {
-				t.Errorf("Place %s: expected is_comfort_zone=true for first-time visitor (proficiency Lv.1), got false", p.PlaceID)
+			if !*p.IsBreakout {
+				t.Errorf("Place %s: expected is_breakout=true for first-time visitor (proficiency Lv.1), got false", p.PlaceID)
 			}
 		}
 	})
 
-	t.Run("熟練度Lv.2ジャンルの提案でもLv.5以下なのでis_comfort_zone=trueになる", func(t *testing.T) {
+	t.Run("熟練度Lv.2ジャンルの提案でもLv.5以下なのでis_breakout=trueになる", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2169,7 +2169,7 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		var result struct {
 			Places []struct {
 				PlaceID       string `json:"place_id"`
-				IsComfortZone *bool  `json:"is_comfort_zone"`
+				IsBreakout *bool  `json:"is_breakout"`
 			} `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
@@ -2177,12 +2177,12 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		}
 
 		for _, p := range result.Places {
-			if p.IsComfortZone == nil {
-				t.Errorf("Place %s: expected is_comfort_zone to be set (not nil)", p.PlaceID)
+			if p.IsBreakout == nil {
+				t.Errorf("Place %s: expected is_breakout to be set (not nil)", p.PlaceID)
 				continue
 			}
-			if !*p.IsComfortZone {
-				t.Errorf("Place %s: expected is_comfort_zone=true for cafe with proficiency Lv.2 (Lv.5以下), got false", p.PlaceID)
+			if !*p.IsBreakout {
+				t.Errorf("Place %s: expected is_breakout=true for cafe with proficiency Lv.2 (Lv.5以下), got false", p.PlaceID)
 			}
 		}
 	})

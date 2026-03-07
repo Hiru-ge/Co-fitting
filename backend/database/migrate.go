@@ -21,6 +21,16 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to migrate master tables: %w", err)
 	}
 
+	// is_comfort_zone → is_breakout カラム改名（Issue #269）
+	// AutoMigrate(Visit) より前に実行すること: AutoMigrate が is_breakout を先に追加すると
+	// CHANGE COLUMN が "Duplicate column name" エラーになるため。
+	if db.Migrator().HasColumn(&models.Visit{}, "is_comfort_zone") &&
+		!db.Migrator().HasColumn(&models.Visit{}, "is_breakout") {
+		if err := db.Exec("ALTER TABLE visit_history CHANGE COLUMN is_comfort_zone is_breakout TINYINT(1) NOT NULL DEFAULT 0").Error; err != nil {
+			return fmt.Errorf("failed to rename is_comfort_zone to is_breakout: %w", err)
+		}
+	}
+
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.Visit{},

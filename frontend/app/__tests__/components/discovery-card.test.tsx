@@ -72,13 +72,13 @@ describe("DiscoveryCard ジャンルバッジ", () => {
 
 // === Issue #198: 熟練度ベース脱却モードバッジテスト ===
 describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () => {
-  test("is_comfort_zone=true の場合に脱却モードバッジが表示される", () => {
-    renderCard({ is_comfort_zone: true });
+  test("is_breakout=true の場合に脱却モードバッジが表示される", () => {
+    renderCard({ is_breakout: true });
     expect(screen.getByText("脱却モード")).toBeTruthy();
   });
 
-  test("is_comfort_zone=true の場合、脱却モードバッジに赤系カラーが適用される（Issue #222: 視認性改善）", () => {
-    const { container } = renderCard({ is_comfort_zone: true });
+  test("is_breakout=true の場合、脱却モードバッジに赤系カラーが適用される（Issue #222: 視認性改善）", () => {
+    const { container } = renderCard({ is_breakout: true });
     const badge = Array.from(container.querySelectorAll("span")).find(
       (el) => el.textContent === "脱却モード"
     );
@@ -86,17 +86,17 @@ describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () =>
     expect(badge?.className).toMatch(/red/);
   });
 
-  test("is_comfort_zone=false の場合は脱却モードバッジが表示されない", () => {
-    renderCard({ is_comfort_zone: false });
+  test("is_breakout=false の場合は脱却モードバッジが表示されない", () => {
+    renderCard({ is_breakout: false });
     expect(screen.queryByText("脱却モード")).toBeNull();
   });
 
-  test("is_comfort_zone 未指定の場合は脱却モードバッジが表示されない", () => {
+  test("is_breakout 未指定の場合は脱却モードバッジが表示されない", () => {
     renderCard();
     expect(screen.queryByText("脱却モード")).toBeNull();
   });
 
-  test("is_interest_match=false でも is_comfort_zone が設定されていなければ脱却モードバッジは表示されない", () => {
+  test("is_interest_match=false でも is_breakout が設定されていなければ脱却モードバッジは表示されない", () => {
     renderCard({ is_interest_match: false });
     expect(screen.queryByText("脱却モード")).toBeNull();
   });

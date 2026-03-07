@@ -185,7 +185,7 @@
   - **対象ファイル**: `frontend/app/hooks/use-suggestions.ts`, `frontend/app/routes/home.tsx`（モーダル・バナーUI追加）
   - **ドキュメント更新**: `docs/requirements.md`（位置情報取得セクション）
 
-- [ ] **`is_comfort_zone` カラムを `is_breakout` に改名**（Issue #269）
+- [x] **`is_comfort_zone` カラムを `is_breakout` に改名**（Issue #269）
   - **問題**: `visit_history.is_comfort_zone` カラムの名前が実態（コンフォートゾーンの「外」= 脱却訪問かどうか）と逆の意味に読める
   - **方針**: `is_breakout` に改名。ベータ版公開済みのためDBマイグレーション（`ALTER TABLE`）で対応。GORM モデル・ハンドラ・フロントエンドのフィールド名も全て変更
   - **実装順序**: 他のタスク（#265, #264, #267）が `IsComfortZone` を参照しているため、このタスクを最初に実施すること

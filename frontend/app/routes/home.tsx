@@ -59,7 +59,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       placeName: currentPlace.name,
       category: getBestCategoryKey(currentPlace.types ?? []),
       isInterestMatch: !!currentPlace.is_interest_match,
-      isComfortZone: !!currentPlace.is_comfort_zone,
+      isBreakout: !!currentPlace.is_breakout,
       cardIndex: 0,
     });
   }, [currentPlace]);

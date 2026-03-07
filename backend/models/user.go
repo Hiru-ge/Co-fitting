@@ -24,21 +24,21 @@ func (User) TableName() string {
 }
 
 type Visit struct {
-	ID            uint64    `gorm:"primaryKey" json:"id"`
-	UserID        uint64    `gorm:"not null;index:idx_user_visited" json:"user_id"`
-	PlaceID       string    `gorm:"not null" json:"place_id"`
-	PlaceName     string    `gorm:"not null" json:"place_name"`
-	Vicinity      string    `gorm:"type:varchar(255)" json:"vicinity"`
-	Category      string    `gorm:"type:varchar(100)" json:"category"`
-	Latitude      float64   `gorm:"column:lat;type:decimal(10,8)" json:"lat"`
-	Longitude     float64   `gorm:"column:lng;type:decimal(11,8)" json:"lng"`
-	GenreTagID    *uint64   `gorm:"index" json:"genre_tag_id"`
-	Rating        *float32  `json:"rating"`
-	Memo          *string   `json:"memo"`
-	XpEarned      int       `gorm:"default:0;not null" json:"xp_earned"`
-	IsComfortZone bool      `gorm:"default:false" json:"is_comfort_zone"`
-	VisitedAt     time.Time `gorm:"not null;index:idx_user_visited" json:"visited_at"`
-	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
+	ID         uint64    `gorm:"primaryKey" json:"id"`
+	UserID     uint64    `gorm:"not null;index:idx_user_visited" json:"user_id"`
+	PlaceID    string    `gorm:"not null" json:"place_id"`
+	PlaceName  string    `gorm:"not null" json:"place_name"`
+	Vicinity   string    `gorm:"type:varchar(255)" json:"vicinity"`
+	Category   string    `gorm:"type:varchar(100)" json:"category"`
+	Latitude   float64   `gorm:"column:lat;type:decimal(10,8)" json:"lat"`
+	Longitude  float64   `gorm:"column:lng;type:decimal(11,8)" json:"lng"`
+	GenreTagID *uint64   `gorm:"index" json:"genre_tag_id"`
+	Rating     *float32  `json:"rating"`
+	Memo       *string   `json:"memo"`
+	XpEarned   int       `gorm:"default:0;not null" json:"xp_earned"`
+	IsBreakout bool      `gorm:"default:false" json:"is_breakout"`
+	VisitedAt  time.Time `gorm:"not null;index:idx_user_visited" json:"visited_at"`
+	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
 
 	User     *User     `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 	GenreTag *GenreTag `gorm:"foreignKey:GenreTagID;constraint:OnDelete:SET NULL" json:"-"`

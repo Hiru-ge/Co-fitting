@@ -103,7 +103,7 @@ export default function VisitMap({ visits }: Props) {
           >
             <PinMarker
               category={visit.category}
-              isComfortZone={visit.is_comfort_zone}
+              isBreakout={visit.is_breakout}
             />
           </AdvancedMarker>
         ))}
@@ -125,10 +125,10 @@ export default function VisitMap({ visits }: Props) {
 // カスタムピンマーカー
 function PinMarker({
   category,
-  isComfortZone,
+  isBreakout,
 }: {
   category: string;
-  isComfortZone: boolean;
+  isBreakout: boolean;
 }) {
   const color = getPinColor(category);
   const categoryInfo = getCategoryInfoByKey(category);
@@ -151,7 +151,7 @@ function PinMarker({
         </span>
       </div>
       {/* 脱却バッジ */}
-      {isComfortZone && (
+      {isBreakout && (
         <div
           className="absolute -top-1 -right-1 size-3.5 rounded-full bg-yellow-400 border border-white flex items-center justify-center"
           title="コンフォートゾーン脱却！"
@@ -193,7 +193,7 @@ function VisitInfoContent({ visit }: { visit: MapVisit }) {
         <span className="mx-0.5">·</span>
         <span>{formatShortDate(visit.visited_at)}</span>
       </div>
-      {visit.is_comfort_zone && (
+      {visit.is_breakout && (
         <p className="text-[10px] text-yellow-600 font-medium mb-2">
           ⭐ コンフォートゾーン脱却！
         </p>

@@ -42,14 +42,14 @@ export function sendSearchRadiusUpdated(radiusKm: number) {
 export function sendSuggestionGenerated(params: {
   placesCount: number;
   interestMatchCount: number;
-  comfortZoneCount: number;
+  breakoutCount: number;
   categories: string[];
   isReload: boolean;
 }) {
   gtag("event", "suggestion_generated", {
     places_count: params.placesCount,
     interest_match_count: params.interestMatchCount,
-    comfort_zone_count: params.comfortZoneCount,
+    breakout_count: params.breakoutCount,
     categories: params.categories.join(","),
     is_reload: params.isReload,
   });
@@ -59,14 +59,14 @@ export function sendSuggestionViewed(params: {
   placeName: string;
   category: string;
   isInterestMatch: boolean;
-  isComfortZone: boolean;
+  isBreakout: boolean;
   cardIndex: number;
 }) {
   gtag("event", "suggestion_viewed", {
     place_name: params.placeName,
     category: params.category,
     is_interest_match: params.isInterestMatch,
-    is_comfort_zone: params.isComfortZone,
+    is_breakout: params.isBreakout,
     card_index: params.cardIndex,
   });
 }
@@ -75,13 +75,13 @@ export function sendSuggestionSkipped(params: {
   placeName: string;
   category: string;
   isInterestMatch: boolean;
-  isComfortZone: boolean;
+  isBreakout: boolean;
 }) {
   gtag("event", "suggestion_skipped", {
     place_name: params.placeName,
     category: params.category,
     is_interest_match: params.isInterestMatch,
-    is_comfort_zone: params.isComfortZone,
+    is_breakout: params.isBreakout,
   });
 }
 
@@ -94,7 +94,7 @@ export function sendSuggestionReloaded(reloadCountRemaining: number) {
 export function sendVisitRecorded(params: {
   placeName: string;
   category: string;
-  isComfortZone: boolean;
+  isBreakout: boolean;
   xpEarned?: number;
   xpBase?: number;
   firstAreaBonus?: number;
@@ -103,7 +103,7 @@ export function sendVisitRecorded(params: {
   gtag("event", "visit_recorded", {
     place_name: params.placeName,
     category: params.category,
-    is_comfort_zone: params.isComfortZone,
+    is_breakout: params.isBreakout,
     xp_earned: params.xpEarned,
     xp_base: params.xpBase,
     first_area_bonus: params.firstAreaBonus,

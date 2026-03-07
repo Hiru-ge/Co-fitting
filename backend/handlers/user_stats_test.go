@@ -36,11 +36,11 @@ func TestGetStats(t *testing.T) {
 		}
 		testDB.Create(&user)
 
-		// IsComfortZone=true は「興味ジャンル外＝脱却訪問」を意味する
+		// IsBreakout=true は「興味ジャンル外＝脱却訪問」を意味する
 		visits := []models.Visit{
-			{UserID: user.ID, PlaceID: "place1", PlaceName: "カフェA", Category: "cafe", Latitude: 35.0, Longitude: 139.0, IsComfortZone: false, XpEarned: 50, VisitedAt: time.Now()},
-			{UserID: user.ID, PlaceID: "place2", PlaceName: "バーB", Category: "bar", Latitude: 35.1, Longitude: 139.1, IsComfortZone: true, XpEarned: 100, VisitedAt: time.Now()},
-			{UserID: user.ID, PlaceID: "place3", PlaceName: "美術館C", Category: "museum", Latitude: 35.2, Longitude: 139.2, IsComfortZone: true, XpEarned: 100, VisitedAt: time.Now()},
+			{UserID: user.ID, PlaceID: "place1", PlaceName: "カフェA", Category: "cafe", Latitude: 35.0, Longitude: 139.0, IsBreakout: false, XpEarned: 50, VisitedAt: time.Now()},
+			{UserID: user.ID, PlaceID: "place2", PlaceName: "バーB", Category: "bar", Latitude: 35.1, Longitude: 139.1, IsBreakout: true, XpEarned: 100, VisitedAt: time.Now()},
+			{UserID: user.ID, PlaceID: "place3", PlaceName: "美術館C", Category: "museum", Latitude: 35.2, Longitude: 139.2, IsBreakout: true, XpEarned: 100, VisitedAt: time.Now()},
 		}
 		for i := range visits {
 			testDB.Create(&visits[i])
@@ -74,8 +74,8 @@ func TestGetStats(t *testing.T) {
 		if resp["total_visits"] != float64(3) {
 			t.Errorf("Expected total_visits 3, got %v", resp["total_visits"])
 		}
-		if resp["comfort_zone_visits"] != float64(1) {
-			t.Errorf("Expected comfort_zone_visits 1, got %v", resp["comfort_zone_visits"])
+		if resp["breakout_visits"] != float64(2) {
+			t.Errorf("Expected breakout_visits 2, got %v", resp["breakout_visits"])
 		}
 		if resp["challenge_visits"] != float64(2) {
 			t.Errorf("Expected challenge_visits 2, got %v", resp["challenge_visits"])
@@ -129,8 +129,8 @@ func TestGetStats(t *testing.T) {
 		if resp["total_visits"] != float64(0) {
 			t.Errorf("Expected initial total_visits 0, got %v", resp["total_visits"])
 		}
-		if resp["comfort_zone_visits"] != float64(0) {
-			t.Errorf("Expected initial comfort_zone_visits 0, got %v", resp["comfort_zone_visits"])
+		if resp["breakout_visits"] != float64(0) {
+			t.Errorf("Expected initial breakout_visits 0, got %v", resp["breakout_visits"])
 		}
 		if resp["challenge_visits"] != float64(0) {
 			t.Errorf("Expected initial challenge_visits 0, got %v", resp["challenge_visits"])

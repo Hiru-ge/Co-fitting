@@ -29,8 +29,8 @@ const (
 var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
 
 type genreResolution struct {
-	IsComfortZone bool
-	GenreTagID    *uint64
+	IsBreakout bool
+	GenreTagID *uint64
 }
 
 func resolveGenreInfo(db *gorm.DB, userID uint64, placeTypes []string) genreResolution {
@@ -39,7 +39,7 @@ func resolveGenreInfo(db *gorm.DB, userID uint64, placeTypes []string) genreReso
 	}
 	genreName := getGenreNameFromTypes(placeTypes)
 	resolution := genreResolution{
-		IsComfortZone: isComfortZoneVisit(db, userID, genreName),
+		IsBreakout: isBreakoutVisit(db, userID, genreName),
 	}
 	if genreName != "" {
 		var genreTag models.GenreTag
@@ -73,7 +73,7 @@ type createVisitRequest struct {
 	Category   string   `json:"category" binding:"required"`
 	Lat        float64  `json:"lat" binding:"required"`
 	Lng        float64  `json:"lng" binding:"required"`
-	PlaceTypes []string `json:"place_types"` // 任意: is_comfort_zone自動判定に使用
+	PlaceTypes []string `json:"place_types"` // 任意: is_breakout自動判定に使用
 	Rating     *float32 `json:"rating"`
 	Memo       *string  `json:"memo"`
 	VisitedAt  string   `json:"visited_at" binding:"required"`
@@ -138,23 +138,23 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// is_comfort_zone の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
+	// is_breakout の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
 	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
 	genre := resolveGenreInfo(h.DB, userID, req.PlaceTypes)
 
 	visit := models.Visit{
-		UserID:        userID,
-		PlaceID:       req.PlaceID,
-		PlaceName:     req.PlaceName,
-		Vicinity:      req.Vicinity,
-		Category:      req.Category,
-		Latitude:      req.Lat,
-		Longitude:     req.Lng,
-		Rating:        req.Rating,
-		Memo:          req.Memo,
-		IsComfortZone: genre.IsComfortZone,
-		GenreTagID:    genre.GenreTagID,
-		VisitedAt:     visitedAt,
+		UserID:     userID,
+		PlaceID:    req.PlaceID,
+		PlaceName:  req.PlaceName,
+		Vicinity:   req.Vicinity,
+		Category:   req.Category,
+		Latitude:   req.Lat,
+		Longitude:  req.Lng,
+		Rating:     req.Rating,
+		Memo:       req.Memo,
+		IsBreakout: genre.IsBreakout,
+		GenreTagID: genre.GenreTagID,
+		VisitedAt:  visitedAt,
 	}
 
 	if err := h.DB.Create(&visit).Error; err != nil {

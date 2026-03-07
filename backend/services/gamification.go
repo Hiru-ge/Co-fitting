@@ -90,12 +90,12 @@ type badgeCondition struct {
 }
 
 // CalcXP はXPを計算して返す
-// isComfortZone: 興味ジャンル外ならtrue（脱却訪問）
+// isBreakout: 興味ジャンル外ならtrue（脱却訪問）
 // isFirstArea: 初めてのエリア訪問ならtrue
 // hasMemo: 感想メモありならtrue
-func CalcXP(isComfortZone bool, isFirstArea bool, hasMemo bool) int {
+func CalcXP(isBreakout bool, isFirstArea bool, hasMemo bool) int {
 	xp := XPNormalVisit
-	if isComfortZone {
+	if isBreakout {
 		xp = XPComfortBreak
 	}
 	if isFirstArea {
@@ -243,11 +243,11 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 }
 
 // CheckAndAwardBadges はバッジ条件をチェックして未獲得バッジを付与し、新規獲得バッジを返す
-// isComfortZone: 今回の訪問が脱却訪問かどうか
+// isBreakout: 今回の訪問が脱却訪問かどうか
 // visitCount: 現在の総訪問数（今回の訪問含む）
 // visitedAt: 今回の訪問日時
 // coords: 今回の訪問地点の緯度・経度（省略可。new_area判定に使用）
-func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCount int, visitedAt time.Time, coords ...float64) ([]models.Badge, error) {
+func CheckAndAwardBadges(db *gorm.DB, userID uint64, isBreakout bool, visitCount int, visitedAt time.Time, coords ...float64) ([]models.Badge, error) {
 	var existingBadgeIDs []uint64
 	db.Model(&models.UserBadge{}).
 		Where("user_id = ?", userID).
@@ -274,10 +274,10 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		Distinct("genre_tag_id").
 		Count(&uniqueGenreCount)
 
-	var comfortBreakCount int64
+	var breakoutCount int64
 	db.Model(&models.Visit{}).
-		Where("user_id = ? AND is_comfort_zone = ?", userID, true).
-		Count(&comfortBreakCount)
+		Where("user_id = ? AND is_breakout = ?", userID, true).
+		Count(&breakoutCount)
 
 	var allVisits []models.Visit
 	db.Model(&models.Visit{}).
@@ -302,8 +302,8 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isComfortZone bool, visitCo
 		switch cond.Type {
 		case "visit_count":
 			earned = visitCount >= cond.Threshold
-		case "comfort_zone_break":
-			earned = isComfortZone && comfortBreakCount >= int64(cond.Threshold)
+		case "comfort_zone_break", "breakout":
+			earned = isBreakout && breakoutCount >= int64(cond.Threshold)
 		case "genre_count":
 			earned = int(uniqueGenreCount) >= cond.Threshold
 		case "streak_weeks":
@@ -373,9 +373,9 @@ func isFirstAreaVisit(tx *gorm.DB, userID uint64, visit models.Visit) bool {
 }
 
 // buildXPBreakdown はXP計算内訳を構築して返す（副作用なし）
-func buildXPBreakdown(isComfortZone, isFirstArea, hasMemo bool, streakBonus int) *XPBreakdown {
+func buildXPBreakdown(isBreakout, isFirstArea, hasMemo bool, streakBonus int) *XPBreakdown {
 	baseXP := XPNormalVisit
-	if isComfortZone {
+	if isBreakout {
 		baseXP = XPComfortBreak
 	}
 	firstAreaBonusXP := 0
@@ -461,7 +461,7 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 	err := db.Transaction(func(tx *gorm.DB) error {
 		isFirstArea := isFirstAreaVisit(tx, userID, visit)
 		hasMemo := visit.Memo != nil && *visit.Memo != ""
-		xpEarned := CalcXP(visit.IsComfortZone, isFirstArea, hasMemo)
+		xpEarned := CalcXP(visit.IsBreakout, isFirstArea, hasMemo)
 
 		finalXP, newTotalXP, newLevel, levelUp, streakBonus, err := applyXPAndProgression(tx, userID, visit, xpEarned)
 		if err != nil {
@@ -472,11 +472,11 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		result.TotalXP = newTotalXP
 		result.NewLevel = newLevel
 		result.LevelUp = levelUp
-		result.XPBreakdown = buildXPBreakdown(visit.IsComfortZone, isFirstArea, hasMemo, streakBonus)
+		result.XPBreakdown = buildXPBreakdown(visit.IsBreakout, isFirstArea, hasMemo, streakBonus)
 
 		var visitCount int64
 		tx.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&visitCount)
-		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsComfortZone, int(visitCount), visit.VisitedAt, visit.Latitude, visit.Longitude)
+		newBadges, err := CheckAndAwardBadges(tx, userID, visit.IsBreakout, int(visitCount), visit.VisitedAt, visit.Latitude, visit.Longitude)
 		if err != nil {
 			return err
 		}

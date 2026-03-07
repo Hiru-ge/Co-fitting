@@ -55,7 +55,7 @@ const mockVisit: Visit = {
   rating: null,
   memo: null,
   xp_earned: 50,
-  is_comfort_zone: false,
+  is_breakout: false,
   visited_at: "2026-02-15T10:00:00Z",
   created_at: "2026-02-15T10:00:00Z",
 };

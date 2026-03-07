@@ -70,7 +70,7 @@ const mockVisits: MapVisit[] = [
     lat: 35.6762,
     lng: 139.6503,
     category: "cafe",
-    is_comfort_zone: false,
+    is_breakout: false,
     visited_at: "2024-02-10T12:00:00Z",
   },
   {
@@ -80,7 +80,7 @@ const mockVisits: MapVisit[] = [
     lat: 35.68,
     lng: 139.66,
     category: "park",
-    is_comfort_zone: true,
+    is_breakout: true,
     visited_at: "2024-02-11T10:00:00Z",
   },
 ];
@@ -191,7 +191,7 @@ describe("VisitMap", () => {
     expect(screen.queryByText("カフェA")).toBeNull();
   });
 
-  test("is_comfort_zone=true のピンにも詳細リンクが表示される", async () => {
+  test("is_breakout=true のピンにも詳細リンクが表示される", async () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />

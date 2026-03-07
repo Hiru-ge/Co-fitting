@@ -14,7 +14,7 @@ export interface UserStats {
   streak_count: number;
   streak_last: string | null;
   total_visits: number;
-  comfort_zone_visits: number;
+  breakout_visits: number;
   challenge_visits: number;
 }
 

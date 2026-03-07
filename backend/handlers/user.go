@@ -54,13 +54,13 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 }
 
 type userStatsResponse struct {
-	Level             int        `json:"level"`
-	TotalXP           int        `json:"total_xp"`
-	StreakCount       int        `json:"streak_count"`
-	StreakLast        *time.Time `json:"streak_last"`
-	TotalVisits       int64      `json:"total_visits"`
-	ComfortZoneVisits int64      `json:"comfort_zone_visits"`
-	ChallengeVisits   int64      `json:"challenge_visits"`
+	Level           int        `json:"level"`
+	TotalXP         int        `json:"total_xp"`
+	StreakCount     int        `json:"streak_count"`
+	StreakLast      *time.Time `json:"streak_last"`
+	TotalVisits     int64      `json:"total_visits"`
+	BreakoutVisits  int64      `json:"breakout_visits"`
+	ChallengeVisits int64      `json:"challenge_visits"`
 }
 
 // GetStats godoc
@@ -92,18 +92,18 @@ func (h *UserHandler) GetStats(c *gin.Context) {
 	var totalVisits int64
 	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&totalVisits)
 
-	// is_comfort_zone=true は「興味ジャンル外＝脱却訪問」を意味する
-	var challengeVisits int64
-	h.DB.Model(&models.Visit{}).Where("user_id = ? AND is_comfort_zone = ?", userID, true).Count(&challengeVisits)
+	// is_breakout=true は「興味ジャンル外＝脱却訪問」を意味する
+	var breakoutVisits int64
+	h.DB.Model(&models.Visit{}).Where("user_id = ? AND is_breakout = ?", userID, true).Count(&breakoutVisits)
 
 	c.JSON(http.StatusOK, userStatsResponse{
-		Level:             user.Level,
-		TotalXP:           user.TotalXP,
-		StreakCount:       user.StreakCount,
-		StreakLast:        user.StreakLast,
-		TotalVisits:       totalVisits,
-		ComfortZoneVisits: totalVisits - challengeVisits,
-		ChallengeVisits:   challengeVisits,
+		Level:           user.Level,
+		TotalXP:         user.TotalXP,
+		StreakCount:     user.StreakCount,
+		StreakLast:      user.StreakLast,
+		TotalVisits:     totalVisits,
+		BreakoutVisits:  breakoutVisits,
+		ChallengeVisits: breakoutVisits,
 	})
 }
 

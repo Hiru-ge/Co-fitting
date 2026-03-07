@@ -412,7 +412,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
                      │ rating           │  │  │    badges        │   │
                      │ memo             │  │  ├──────────────────┤   │
                      │ xp_earned        │  │  │ id (PK)          │───┘
-                     │ is_comfort_zone  │  │  │ name             │
+                     │ is_breakout      │  │  │ name             │
                      │ visited_at       │  │  │ description      │
                      │ created_at       │  │  │ icon_url         │
                      └──────────────────┘  │  │ condition_json   │

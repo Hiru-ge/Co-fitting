@@ -10,7 +10,7 @@ export interface Visit {
   rating: number | null;
   memo: string | null;
   xp_earned: number;
-  is_comfort_zone: boolean;
+  is_breakout: boolean;
   visited_at: string;
   created_at: string;
 }
@@ -34,7 +34,7 @@ export interface CreateVisitRequest {
   lng: number;
   rating?: number;
   memo?: string;
-  place_types?: string[]; // バックエンドの is_comfort_zone 自動判定に使用
+  place_types?: string[]; // バックエンドの is_breakout 自動判定に使用
   visited_at: string;
 }
 
@@ -61,7 +61,7 @@ export interface MapVisit {
   lat: number;
   lng: number;
   category: string;
-  is_comfort_zone: boolean;
+  is_breakout: boolean;
   visited_at: string;
 }
 

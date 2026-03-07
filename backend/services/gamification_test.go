@@ -69,14 +69,14 @@ func getOrCreateGenreTag(t *testing.T, name string) models.GenreTag {
 // =============================================
 
 func TestCalcXP(t *testing.T) {
-	t.Run("通常訪問（is_comfort_zone=false）は50XP", func(t *testing.T) {
+	t.Run("通常訪問（is_breakout=false）は50XP", func(t *testing.T) {
 		xp := services.CalcXP(false, false, false)
 		if xp != 50 {
 			t.Errorf("expected 50, got %d", xp)
 		}
 	})
 
-	t.Run("脱却訪問（is_comfort_zone=true）は100XP", func(t *testing.T) {
+	t.Run("脱却訪問（is_breakout=true）は100XP", func(t *testing.T) {
 		xp := services.CalcXP(true, false, false)
 		if xp != 100 {
 			t.Errorf("expected 100, got %d", xp)
@@ -469,7 +469,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 				Category:      "museum",
 				Latitude:      35.67,
 				Longitude:     139.65,
-				IsComfortZone: true,
+				IsBreakout: true,
 				VisitedAt:     time.Now(),
 			})
 		}
@@ -499,7 +499,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 				Category:      "museum",
 				Latitude:      35.67,
 				Longitude:     139.65,
-				IsComfortZone: true,
+				IsBreakout: true,
 				VisitedAt:     time.Now(),
 			})
 		}
@@ -1042,7 +1042,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.67,
 			Longitude:     139.65,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&visit)
@@ -1072,7 +1072,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "museum",
 			Latitude:      35.67,
 			Longitude:     139.65,
-			IsComfortZone: true,
+			IsBreakout: true,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&visit)
@@ -1104,7 +1104,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.67,
 			Longitude:     139.65,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&visit)
@@ -1134,7 +1134,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.67,
 			Longitude:     139.65,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&visit)
@@ -1170,7 +1170,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.67,
 			Longitude:     139.65,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&visit)
@@ -1206,7 +1206,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.67,
 			Longitude:     139.65,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&visit)
@@ -1235,7 +1235,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.6812,
 			Longitude:     139.7671,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now().Add(-24 * time.Hour),
 		}
 		testDB.Create(&pastVisit)
@@ -1250,7 +1250,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.4660,
 			Longitude:     139.6225,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&newVisit)
@@ -1279,7 +1279,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.6812,
 			Longitude:     139.7671,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now().Add(-24 * time.Hour),
 		}
 		testDB.Create(&pastVisit)
@@ -1292,7 +1292,7 @@ func TestProcessGamification(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.6896,
 			Longitude:     139.7006,
-			IsComfortZone: false,
+			IsBreakout: false,
 			VisitedAt:     time.Now(),
 		}
 		testDB.Create(&nearVisit)
@@ -1446,7 +1446,7 @@ func TestGenreProficiencyIncludesStreakBonus(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.6895,
 			Longitude:     139.6917,
-			IsComfortZone: false,
+			IsBreakout: false,
 			GenreTagID:    &tag.ID,
 			VisitedAt:     time.Now(),
 		}
@@ -1593,7 +1593,7 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.6895,
 			Longitude:     139.6917,
-			IsComfortZone: false,
+			IsBreakout: false,
 			GenreTagID:    &tag.ID,
 			VisitedAt:     time.Now(),
 		}
@@ -1631,7 +1631,7 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 			Category:      "cafe",
 			Latitude:      35.6895,
 			Longitude:     139.6917,
-			IsComfortZone: true, // 脱却訪問
+			IsBreakout: true, // 脱却訪問
 			GenreTagID:    &tag.ID,
 			VisitedAt:     time.Now(),
 		}

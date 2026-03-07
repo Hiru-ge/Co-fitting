@@ -193,7 +193,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
                 </span>
                 <span>{categoryInfo.label}</span>
               </div>
-              {visit.is_comfort_zone && (
+              {visit.is_breakout && (
                 <div className="flex items-center gap-1 text-primary">
                   <span className="material-symbols-outlined text-sm">
                     emoji_events

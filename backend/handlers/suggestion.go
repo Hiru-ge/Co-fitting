@@ -31,7 +31,7 @@ type PlaceResult struct {
 	Types           []string `json:"types"`
 	PhotoReference  string   `json:"photo_reference,omitempty"`
 	IsInterestMatch *bool    `json:"is_interest_match"`
-	IsComfortZone   *bool    `json:"is_comfort_zone"`
+	IsBreakout      *bool    `json:"is_breakout"`
 	OpenNow         *bool    `json:"open_now,omitempty"`
 }
 
@@ -293,11 +293,11 @@ func getUserInterestGenreNames(db *gorm.DB, userID uint64) (map[string]bool, err
 	return names, nil
 }
 
-// isComfortZoneVisit はジャンル熟練度と興味タグに基づいて脱却訪問かどうかを判定する
+// isBreakoutVisit はジャンル熟練度と興味タグに基づいて脱却訪問かどうかを判定する
 // 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
 // 興味タグ内のジャンルへの訪問は脱却扱いしない
 // genreName が空の場合や genreTag が見つからない場合は false を返す
-func isComfortZoneVisit(db *gorm.DB, userID uint64, genreName string) bool {
+func isBreakoutVisit(db *gorm.DB, userID uint64, genreName string) bool {
 	if genreName == "" {
 		return false
 	}
@@ -315,8 +315,8 @@ func isComfortZoneVisit(db *gorm.DB, userID uint64, genreName string) bool {
 	}
 	var prof models.GenreProficiency
 	result := db.Where("user_id = ? AND genre_tag_id = ?", userID, genreTag.ID).First(&prof)
-	// レコードなし or Level < comfortZoneLevelThreshold → 脱却扱い
-	return result.Error != nil || prof.Level < comfortZoneLevelThreshold
+	// レコードなし or Level < breakoutLevelThreshold → 脱却扱い
+	return result.Error != nil || prof.Level < breakoutLevelThreshold
 }
 
 // classifyByInterest は候補を興味内・興味外に分類し、興味内にはIsInterestMatch=trueを設定する
@@ -468,10 +468,10 @@ type suggestionRequest struct {
 // 日次キャッシュで返す最大施設数
 const maxDailySuggestions = 3
 
-// comfortZoneLevelThreshold は脱却判定の熟練度閾値
+// breakoutLevelThreshold は脱却判定の熟練度閾値
 // ジャンル熟練度がこのレベル未満（Lv.5以下 = 0〜499XP）なら脱却扱い
 // ジャンル熟練度の最大はLv.20だが、Lv.6以上になれば興味タグ外でも通常扱い
-const comfortZoneLevelThreshold = 6
+const breakoutLevelThreshold = 6
 
 // デフォルトの検索半径（メートル）
 const defaultSearchRadius uint = 3000
@@ -662,8 +662,8 @@ func (h *SuggestionHandler) checkDailyCacheResult(ctx context.Context, userID ui
 					} else {
 						filtered[i].IsInterestMatch = nil
 					}
-					isComfort := isComfortZoneVisit(h.DB, userID, genreName)
-					filtered[i].IsComfortZone = &isComfort
+					isBreakout := isBreakoutVisit(h.DB, userID, genreName)
+					filtered[i].IsBreakout = &isBreakout
 				}
 				return &SuggestionResult{Places: filtered, ReloadCountRemaining: &reloadRemaining}, true
 			}
@@ -723,7 +723,7 @@ func (h *SuggestionHandler) fetchPlacesFromCacheOrAPI(ctx context.Context, req s
 }
 
 // buildPersonalizedSelections は未訪問施設から興味タグに基づいて提案施設を選出し、
-// is_interest_match・is_comfort_zone フラグを設定して返す。
+// is_interest_match・is_breakout フラグを設定して返す。
 func (h *SuggestionHandler) buildPersonalizedSelections(userID uint64, unvisited []PlaceResult) ([]PlaceResult, string) {
 	var selected []PlaceResult
 	var notice string
@@ -746,8 +746,8 @@ func (h *SuggestionHandler) buildPersonalizedSelections(userID uint64, unvisited
 
 	for i := range selected {
 		genreName := getGenreNameFromTypes(selected[i].Types)
-		isComfort := isComfortZoneVisit(h.DB, userID, genreName)
-		selected[i].IsComfortZone = &isComfort
+		isBreakout := isBreakoutVisit(h.DB, userID, genreName)
+		selected[i].IsBreakout = &isBreakout
 	}
 
 	return selected, notice

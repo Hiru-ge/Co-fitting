@@ -343,10 +343,10 @@ func TestCreateVisit(t *testing.T) {
 	})
 }
 
-func TestCreateVisitIsComfortZone(t *testing.T) {
+func TestCreateVisitIsBreakout(t *testing.T) {
 	router := setupVisitRouter()
 
-	t.Run("興味外ジャンル(museum)の訪問でis_comfort_zone=trueになる", func(t *testing.T) {
+	t.Run("興味外ジャンル(museum)の訪問でis_breakout=trueになる", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -381,17 +381,17 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
 		}
 
-		// DBのis_comfort_zoneがtrueであることを確認
+		// DBのis_breakoutがtrueであることを確認
 		var visit models.Visit
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for out-of-interest genre (museum), got false")
+		if !visit.IsBreakout {
+			t.Error("Expected is_breakout=true for out-of-interest genre (museum), got false")
 		}
 	})
 
-	t.Run("興味内ジャンル(cafe)の初回訪問は興味タグ内なのでis_comfort_zone=false（Issue #255）", func(t *testing.T) {
+	t.Run("興味内ジャンル(cafe)の初回訪問は興味タグ内なのでis_breakout=false（Issue #255）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -430,12 +430,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false for interest-tag genre (cafe) even at Lv.1 (Issue #255), got true")
+		if visit.IsBreakout {
+			t.Error("Expected is_breakout=false for interest-tag genre (cafe) even at Lv.1 (Issue #255), got true")
 		}
 	})
 
-	t.Run("興味タグ未設定ユーザーの初回訪問でも熟練度Lv.1のためis_comfort_zone=trueになる", func(t *testing.T) {
+	t.Run("興味タグ未設定ユーザーの初回訪問でも熟練度Lv.1のためis_breakout=trueになる", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -468,12 +468,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_nointerest_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for first visit without interest tags (proficiency Lv.1), got false")
+		if !visit.IsBreakout {
+			t.Error("Expected is_breakout=true for first visit without interest tags (proficiency Lv.1), got false")
 		}
 	})
 
-	t.Run("興味タグ外ジャンルの熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_comfort_zone=true）", func(t *testing.T) {
+	t.Run("興味タグ外ジャンルの熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_breakout=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -518,12 +518,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_2nd_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for Lv.2 proficiency without interest tags (Lv.5以下), got false")
+		if !visit.IsBreakout {
+			t.Error("Expected is_breakout=true for Lv.2 proficiency without interest tags (Lv.5以下), got false")
 		}
 	})
 
-	t.Run("興味外ジャンルで熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_comfort_zone=true）", func(t *testing.T) {
+	t.Run("興味外ジャンルで熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_breakout=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -573,12 +573,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv2_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for museum with proficiency Lv.2 (Lv.5以下なので脱却扱い), got false")
+		if !visit.IsBreakout {
+			t.Error("Expected is_breakout=true for museum with proficiency Lv.2 (Lv.5以下なので脱却扱い), got false")
 		}
 	})
 
-	t.Run("place_types未指定の訪問はis_comfort_zone=falseになる", func(t *testing.T) {
+	t.Run("place_types未指定の訪問はis_breakout=falseになる", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -616,14 +616,14 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_notypes_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false when place_types not provided, got true")
+		if visit.IsBreakout {
+			t.Error("Expected is_breakout=false when place_types not provided, got true")
 		}
 	})
 
 	// === 境界テスト: 脱却判定の熟練度閾値（Lv.5以下=脱却、Lv.6以上=通常）と最大レベル（Lv.20） ===
 
-	t.Run("興味タグ外×熟練度Lv.5（閾値上限）は脱却扱い（is_comfort_zone=true）", func(t *testing.T) {
+	t.Run("興味タグ外×熟練度Lv.5（閾値上限）は脱却扱い（is_breakout=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -673,12 +673,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv5_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for out-of-interest genre at Lv.5 (threshold boundary), got false")
+		if !visit.IsBreakout {
+			t.Error("Expected is_breakout=true for out-of-interest genre at Lv.5 (threshold boundary), got false")
 		}
 	})
 
-	t.Run("興味タグ外×熟練度Lv.6（閾値超え）は通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+	t.Run("興味タグ外×熟練度Lv.6（閾値超え）は通常扱い（is_breakout=false）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -728,12 +728,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv6_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false for out-of-interest genre at Lv.6 (above threshold), got true")
+		if visit.IsBreakout {
+			t.Error("Expected is_breakout=false for out-of-interest genre at Lv.6 (above threshold), got true")
 		}
 	})
 
-	t.Run("興味タグ内×熟練度Lv.5は通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+	t.Run("興味タグ内×熟練度Lv.5は通常扱い（is_breakout=false）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -778,8 +778,8 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_cafe_lv5_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false for interest-tag genre at Lv.5, got true")
+		if visit.IsBreakout {
+			t.Error("Expected is_breakout=false for interest-tag genre at Lv.5, got true")
 		}
 	})
 
@@ -832,12 +832,12 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv4_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if !visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=true for out-of-interest genre at Lv.4 (XP=801), got false")
+		if !visit.IsBreakout {
+			t.Error("Expected is_breakout=true for out-of-interest genre at Lv.4 (XP=801), got false")
 		}
 	})
 
-	t.Run("興味タグ外×熟練度Lv.20（最大）は通常扱い（is_comfort_zone=false）", func(t *testing.T) {
+	t.Run("興味タグ外×熟練度Lv.20（最大）は通常扱い（is_breakout=false）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -887,8 +887,8 @@ func TestCreateVisitIsComfortZone(t *testing.T) {
 		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv20_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
-		if visit.IsComfortZone {
-			t.Error("Expected is_comfort_zone=false for out-of-interest genre at max Lv.20, got true")
+		if visit.IsBreakout {
+			t.Error("Expected is_breakout=false for out-of-interest genre at max Lv.20, got true")
 		}
 	})
 }
@@ -1617,7 +1617,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 	})
 
-	t.Run("通常訪問（is_comfort_zone=false）で50XP基本値", func(t *testing.T) {
+	t.Run("通常訪問（is_breakout=false）で50XP基本値", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
@@ -1663,7 +1663,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 	})
 
-	t.Run("脱却訪問（is_comfort_zone=true）で100XP基本値", func(t *testing.T) {
+	t.Run("脱却訪問（is_breakout=true）で100XP基本値", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
