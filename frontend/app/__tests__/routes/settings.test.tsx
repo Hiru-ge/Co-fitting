@@ -121,6 +121,18 @@ function renderSettings() {
 describe("設定画面", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // jsdom は matchMedia 未実装のためスタブを注入
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockReturnValue({ matches: false }),
+    });
+    // Permissions API スタブ
+    Object.defineProperty(navigator, "permissions", {
+      writable: true,
+      value: {
+        query: vi.fn().mockResolvedValue({ state: "prompt", onchange: null }),
+      },
+    });
   });
 
   // === タブナビゲーション ===

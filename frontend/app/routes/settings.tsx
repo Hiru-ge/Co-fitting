@@ -285,6 +285,9 @@ function LocationPermissionSection() {
   const [isRequesting, setIsRequesting] = useState(false);
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as { standalone?: boolean }).standalone === true;
 
   useEffect(() => {
     if (!navigator.permissions) {
@@ -314,46 +317,35 @@ function LocationPermissionSection() {
     }
   }
 
-  const DeniedSteps = () => {
-    if (isIOS) {
-      const steps = [
+  const deniedSteps: string[] = (() => {
+    if (isIOS && isStandalone) {
+      // PWA（ホーム画面から起動）→ Location Services に「Roamble」として独立表示される
+      return [
         "iPhoneの「設定」を開く",
-        "「Chrome / Safari」→「位置情報」をタップ",
-        "「roamble.app」の位置情報アクセスを許可(Chromeの場合は「次回確認」等を選択)",
-        "ブラウザに戻って提案カードをリロード",
+        "「プライバシーとセキュリティ」→「位置情報サービス」",
+        "「Roamble」をタップ",
+        "「このAppの使用中のみ許可」を選択",
+        "Roambleに戻って確認する",
       ];
-      return (
-        <ol className="space-y-2">
-          {steps.map((step, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
-                {i + 1}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
-      );
+    }
+    if (isIOS && !isStandalone) {
+      // Safari ブラウザ → Location Services の「Safari ウェブサイト」配下
+      return [
+        "iPhoneの「設定」を開く",
+        "「プライバシーとセキュリティ」→「位置情報サービス」",
+        "「Safari ウェブサイト」をタップ",
+        "「次回確認」を選択",
+        "Safariに戻り「位置情報を許可する」を押す",
+      ];
     }
     // Android Chrome
-    return (
-      <ol className="space-y-2">
-        {[
-          "アドレスバー左の鍵マーク（または「i」）をタップ",
-          "「サイトの設定」をタップ",
-          "「位置情報」のアクセス許可を「許可」に変更",
-          "ブラウザに戻って提案カードをリロード",
-        ].map((step, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <span className="shrink-0 w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
-              {i + 1}
-            </span>
-            {step}
-          </li>
-        ))}
-      </ol>
-    );
-  };
+    return [
+      "アドレスバー左の鍵マーク（または「i」）をタップ",
+      "「サイトの設定」→「位置情報」",
+      "「許可」に変更",
+      "ページをリロード",
+    ];
+  })();
 
   const statusDisplay = () => {
     if (permState === null) return null;
@@ -375,13 +367,26 @@ function LocationPermissionSection() {
             位置情報が拒否されています
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            ブラウザからは再許可できません。端末の設定から変更してください。
+            {isIOS && isStandalone
+              ? "アプリからは再許可できません。iPhoneの設定から変更してください。"
+              : isIOS
+              ? "ブラウザからは再許可できません。iPhoneの設定から変更してください。"
+              : "ブラウザからは再許可できません。端末の設定から変更してください。"}
           </p>
           <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               変更手順
             </p>
-            <DeniedSteps />
+            <ol className="space-y-2">
+              {deniedSteps.map((step, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       );
@@ -396,6 +401,16 @@ function LocationPermissionSection() {
     // "prompt" state
     return (
       <div className="space-y-3">
+        {isIOS && (
+          <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+            <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">info</span>
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              {isStandalone
+                ? "ホーム画面から起動中のため、iPhoneのネイティブな位置情報権限が使われます。許可すると「設定 → 位置情報サービス → Roamble」で管理できます。"
+                : "Safariブラウザで開いているため、Safariの位置情報権限が使われます。許可すると「設定 → 位置情報サービス → Safari ウェブサイト」で管理できます。"}
+            </p>
+          </div>
+        )}
         <button
           type="button"
           onClick={handleRequestPermission}
