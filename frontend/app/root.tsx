@@ -62,23 +62,8 @@ export default function Root() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {/* Default SEO / OGP (SPAモードでクローラーが読む静的タグ) */}
-        <title>Roamble - 一歩踏み出す体験を経験値に</title>
+        <title>Roamble：一歩踏み出す体験を経験値に</title>
         <meta name="description" content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" />
-        <meta property="og:title" content="Roamble - 一歩踏み出す体験を経験値に" />
-        <meta property="og:description" content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" />
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://roamble.app/lp" />
-        <meta property="og:image" content="https://roamble.app/ogp.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:site_name" content="Roamble" />
-        <meta property="og:locale" content="ja_JP" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@roamble_app" />
-        <meta name="twitter:title" content="Roamble - 一歩踏み出す体験を経験値に" />
-        <meta name="twitter:description" content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" />
-        <meta name="twitter:image" content="https://roamble.app/ogp.png" />
         {/* beforeinstallprompt を早期キャプチャ */}
         <script
           dangerouslySetInnerHTML={{
