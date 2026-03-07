@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { formatDate, formatMonth, formatShortDate, groupByMonth, formatDistance } from "~/utils/helpers";
+import { formatDate, formatMonth, formatShortDate, groupByMonth, formatDistance, buildGoogleMapsPlaceUrl } from "~/utils/helpers";
 
 describe("formatDate", () => {
   test("ISO文字列を「YYYY年M月D日」形式に変換する", () => {
@@ -82,5 +82,37 @@ describe("formatDistance", () => {
   test("端数は四捨五入される（メートル）", () => {
     expect(formatDistance(500.6)).toBe("501m");
     expect(formatDistance(499.4)).toBe("499m");
+  });
+
+  test("0m はメートル表示", () => {
+    expect(formatDistance(0)).toBe("0m");
+  });
+
+  test("999.5m は四捨五入で 1000m 表示（< 1000 のため km 変換されない）", () => {
+    // 999.5 < 1000 なので else 分岐に入り、Math.round(999.5) = 1000 → "1000m"
+    expect(formatDistance(999.5)).toBe("1000m");
+  });
+
+  test("999.4m は四捨五入で 999m 表示", () => {
+    expect(formatDistance(999.4)).toBe("999m");
+  });
+});
+
+describe("buildGoogleMapsPlaceUrl", () => {
+  test("place_id を埋め込んだ Google Maps URL を返す", () => {
+    const url = buildGoogleMapsPlaceUrl("ChIJN1t_tDeuEmsRUsoyG83frY4");
+    expect(url).toBe(
+      "https://www.google.com/maps/place/?q=place_id:ChIJN1t_tDeuEmsRUsoyG83frY4"
+    );
+  });
+
+  test("空文字列の place_id でも URL 形式を維持する", () => {
+    const url = buildGoogleMapsPlaceUrl("");
+    expect(url).toBe("https://www.google.com/maps/place/?q=place_id:");
+  });
+
+  test("特殊文字を含む place_id でも文字列をそのまま埋め込む", () => {
+    const url = buildGoogleMapsPlaceUrl("abc_123-XYZ");
+    expect(url).toContain("place_id:abc_123-XYZ");
   });
 });

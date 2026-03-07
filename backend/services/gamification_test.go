@@ -1315,6 +1315,196 @@ func TestProcessGamification(t *testing.T) {
 	})
 }
 
+// =============================================
+// CalcLevel 追加境界値テスト
+// =============================================
+
+func TestCalcLevelAdditionalBoundaries(t *testing.T) {
+	tests := []struct {
+		name      string
+		totalXP   int
+		wantLevel int
+	}{
+		// Lv.5境界（802 XP）
+		{"801XPはレベル4（Lv.5境界直前）", 801, 4},
+		{"802XPはレベル5（Lv.5到達）", 802, 5},
+		// Lv.2境界（100 XP）と直前（99 XP）は既存テストで網羅済みだが確認
+		{"266XPはレベル2（Lv.3直前）", 266, 2},
+		{"267XPはレベル3（Lv.3到達）", 267, 3},
+		// Lv.15境界（7497 XP）
+		{"7496XPはレベル14", 7496, 14},
+		{"7497XPはレベル15", 7497, 15},
+		// 負のXPはレベル1（0未満でも最低Lv.1）
+		{"負のXPはレベル1", -1, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			level := services.CalcLevel(tt.totalXP)
+			if level != tt.wantLevel {
+				t.Errorf("CalcLevel(%d) = %d, want %d", tt.totalXP, level, tt.wantLevel)
+			}
+		})
+	}
+}
+
+// =============================================
+// UpdateGenreProficiency Lv.20キャップテスト
+// =============================================
+
+func TestUpdateGenreProficiencyLevel20Cap(t *testing.T) {
+	t.Run("ジャンルXPがLv.21相当（14730 XP）でもLv.20にキャップされる", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "prof_cap1@example.com")
+		tag := getOrCreateGenreTag(t, "映画館")
+
+		// Lv.20閾値（20892）以上のXPを与えても genre level は 20 でキャップ
+		testDB.Create(&models.GenreProficiency{
+			UserID:     user.ID,
+			GenreTagID: tag.ID,
+			XP:         14700,
+			Level:      20, // 既に20にキャップ済み
+		})
+
+		// さらにXPを加算してLv.21相当（14730）に
+		err := services.UpdateGenreProficiency(testDB, user.ID, &tag.ID, 30)
+		if err != nil {
+			t.Fatalf("UpdateGenreProficiency failed: %v", err)
+		}
+
+		var prof models.GenreProficiency
+		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, tag.ID).First(&prof)
+		if prof.XP != 14730 {
+			t.Errorf("expected xp=14730, got %d", prof.XP)
+		}
+		if prof.Level != 20 {
+			t.Errorf("expected level=20 (Lv.20キャップ), got %d", prof.Level)
+		}
+	})
+
+	t.Run("ジャンルXPがLv.30相当（30000 XP以上）でもLv.20にキャップされる", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "prof_cap2@example.com")
+		tag := getOrCreateGenreTag(t, "カラオケ")
+
+		err := services.UpdateGenreProficiency(testDB, user.ID, &tag.ID, 30000)
+		if err != nil {
+			t.Fatalf("UpdateGenreProficiency failed: %v", err)
+		}
+
+		var prof models.GenreProficiency
+		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, tag.ID).First(&prof)
+		if prof.Level > 20 {
+			t.Errorf("expected level <= 20 (Lv.20キャップ), got %d", prof.Level)
+		}
+		if prof.Level != 20 {
+			t.Errorf("expected level=20, got %d", prof.Level)
+		}
+	})
+}
+
+// =============================================
+// isNightVisitJST 境界値テスト（CheckAndAwardBadges 経由）
+// =============================================
+
+func TestNightVisitBoundaries(t *testing.T) {
+	jstZone := time.FixedZone("Asia/Tokyo", 9*60*60)
+
+	t.Run("22時59分JSTの訪問ではナイトウォーカーバッジを獲得しない（h=22 → false）", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "night_boundary1@example.com")
+		database.SeedMasterData(testDB)
+
+		// 2024-01-15 22:59 JST（深夜帯の1分前）
+		visitTime := time.Date(2024, 1, 15, 22, 59, 0, 0, jstZone)
+
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_night_22_59",
+			PlaceName: "22時59分の場所",
+			Category:  "cafe",
+			Latitude:  35.67,
+			Longitude: 139.65,
+			VisitedAt: visitTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, visitTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "ナイトウォーカー" {
+				t.Errorf("should not award 'ナイトウォーカー' badge for 22:59 JST visit (h=22 < 23)")
+			}
+		}
+	})
+
+	t.Run("5時00分JSTの訪問ではナイトウォーカーバッジを獲得しない（h=5 → false）", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "night_boundary2@example.com")
+		database.SeedMasterData(testDB)
+
+		// 2024-01-16 5:00 JST（深夜帯終了後の境界）
+		visitTime := time.Date(2024, 1, 16, 5, 0, 0, 0, jstZone)
+
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_night_5_00",
+			PlaceName: "5時00分の場所",
+			Category:  "cafe",
+			Latitude:  35.67,
+			Longitude: 139.65,
+			VisitedAt: visitTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, visitTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		for _, b := range newBadges {
+			if b.Name == "ナイトウォーカー" {
+				t.Errorf("should not award 'ナイトウォーカー' badge for 5:00 JST visit (h=5, not < 5)")
+			}
+		}
+	})
+
+	t.Run("4時59分JSTの訪問ではナイトウォーカーバッジを獲得する（h=4 → true）", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createUser(t, "night_boundary3@example.com")
+		database.SeedMasterData(testDB)
+
+		// 2024-01-16 4:59 JST（深夜帯終了の1分前）
+		visitTime := time.Date(2024, 1, 16, 4, 59, 0, 0, jstZone)
+
+		testDB.Create(&models.Visit{
+			UserID:    user.ID,
+			PlaceID:   "place_night_4_59",
+			PlaceName: "4時59分の場所",
+			Category:  "cafe",
+			Latitude:  35.67,
+			Longitude: 139.65,
+			VisitedAt: visitTime,
+		})
+
+		newBadges, err := services.CheckAndAwardBadges(testDB, user.ID, false, 1, visitTime)
+		if err != nil {
+			t.Fatalf("CheckAndAwardBadges failed: %v", err)
+		}
+
+		found := false
+		for _, b := range newBadges {
+			if b.Name == "ナイトウォーカー" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected 'ナイトウォーカー' badge for 4:59 JST visit (h=4 < 5), got %v", newBadges)
+		}
+	})
+}
+
 // Issue #227: XP計算内訳テスト
 func TestProcessGamificationXPBreakdown(t *testing.T) {
 	t.Run("ProcessGamificationはXP内訳情報(XPBreakdown)を返す", func(t *testing.T) {

@@ -346,6 +346,85 @@ func TestUpdateSearchRadius(t *testing.T) {
 		}
 	})
 
+	t.Run("search_radiusが最小値（3000）のとき更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "radius-min@example.com",
+			DisplayName: "Min Radius User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"search_radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("search_radiusが最大値（30000）のとき更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "radius-max@example.com",
+			DisplayName: "Max Radius User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"search_radius": 30000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("display_nameもsearch_radiusも指定しないとエラー", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:       "no-fields@example.com",
+			DisplayName: "No Fields User",
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("display_nameとsearch_radiusを同時に更新できる", func(t *testing.T) {
 		cleanupUsers(t)
 

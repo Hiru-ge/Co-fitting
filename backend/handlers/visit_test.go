@@ -2039,3 +2039,294 @@ func TestDailyVisitLimit(t *testing.T) {
 		}
 	})
 }
+
+// TestCreateVisitCoordinateValidation は座標バリデーション（境界値含む）のテスト
+func TestCreateVisitCoordinateValidation(t *testing.T) {
+	router := setupVisitRouter()
+
+	validBase := map[string]interface{}{
+		"place_id":   "ChIJl_coord_test",
+		"place_name": "座標テスト",
+		"category":   "cafe",
+		"visited_at": "2024-02-07T15:30:00Z",
+	}
+
+	makeBody := func(lat, lng float64) []byte {
+		body := make(map[string]interface{})
+		for k, v := range validBase {
+			body[k] = v
+		}
+		body["lat"] = lat
+		body["lng"] = lng
+		b, _ := json.Marshal(body)
+		return b
+	}
+
+	t.Run("lat=91（上限超え）で400 INVALID_COORDINATES", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(91.0, 139.65)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
+		}
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["code"] != "INVALID_COORDINATES" {
+			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
+		}
+	})
+
+	t.Run("lat=-91（下限超え）で400 INVALID_COORDINATES", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(-91.0, 139.65)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
+		}
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["code"] != "INVALID_COORDINATES" {
+			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
+		}
+	})
+
+	t.Run("lng=181（上限超え）で400 INVALID_COORDINATES", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(35.677, 181.0)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
+		}
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["code"] != "INVALID_COORDINATES" {
+			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
+		}
+	})
+
+	t.Run("lng=-181（下限超え）で400 INVALID_COORDINATES", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(35.677, -181.0)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
+		}
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["code"] != "INVALID_COORDINATES" {
+			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
+		}
+	})
+
+	t.Run("lat=90（上限境界値、有効）で201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(90.0, 139.65)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected 201, got %d. Body: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("lat=-90（下限境界値、有効）で201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(-90.0, 139.65)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected 201, got %d. Body: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("lng=180（上限境界値、有効）で201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(35.677, 180.0)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected 201, got %d. Body: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("lng=-180（下限境界値、有効）で201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeBody(35.677, -180.0)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected 201, got %d. Body: %s", w.Code, w.Body.String())
+		}
+	})
+}
+
+// TestCreateVisitInvalidVisitedAt は visited_at フォーマット不正のテスト
+func TestCreateVisitInvalidVisitedAt(t *testing.T) {
+	router := setupVisitRouter()
+
+	tests := []struct {
+		name      string
+		visitedAt string
+	}{
+		{"RFC3339ではない文字列（not-a-date）", "not-a-date"},
+		{"日付のみ（時刻なし）", "2024-02-07"},
+		{"空文字列は必須バリデーションで弾かれる", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanupUsers(t)
+			user := createTestUserForVisit(t)
+			token := generateTestToken(user.ID)
+
+			body := map[string]interface{}{
+				"place_id":   "ChIJl_invtime",
+				"place_name": "テスト",
+				"category":   "cafe",
+				"lat":        35.677,
+				"lng":        139.650,
+				"visited_at": tt.visitedAt,
+			}
+			jsonBody, _ := json.Marshal(body)
+
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+			router.ServeHTTP(w, req)
+
+			if w.Code != http.StatusBadRequest {
+				t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+// TestCreateVisitDailyCompletedFlag は daily_completed フラグの境界値テスト
+func TestCreateVisitDailyCompletedFlag(t *testing.T) {
+	router := setupVisitRouter()
+	database.SeedMasterData(testDB)
+
+	makeVisitBody := func(placeID string) []byte {
+		body := map[string]interface{}{
+			"place_id":   placeID,
+			"place_name": "テスト",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": time.Now().UTC().Format(time.RFC3339),
+		}
+		b, _ := json.Marshal(body)
+		return b
+	}
+
+	t.Run("1件目の訪問では daily_completed=false", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeVisitBody("ChIJl_daily1_1")))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected 201, got %d. Body: %s", w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["daily_completed"] != false {
+			t.Errorf("Expected daily_completed=false on 1st visit, got %v", resp["daily_completed"])
+		}
+	})
+
+	t.Run("3件目の訪問では daily_completed=true", func(t *testing.T) {
+		cleanupUsers(t)
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 1件目、2件目を直接DBに作成（今日のJST内）
+		now := time.Now().In(jst)
+		for i := 0; i < 2; i++ {
+			testDB.Create(&models.Visit{
+				UserID:    user.ID,
+				PlaceID:   fmt.Sprintf("ChIJl_daily3_pre%d", i),
+				PlaceName: fmt.Sprintf("事前訪問%d", i),
+				Category:  "cafe",
+				Latitude:  35.677,
+				Longitude: 139.650,
+				VisitedAt: now.Add(-time.Duration(i+1) * time.Minute),
+			})
+		}
+
+		// 3件目（上限到達）
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeVisitBody("ChIJl_daily3_3rd")))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Fatalf("Expected 201 on 3rd visit, got %d. Body: %s", w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["daily_completed"] != true {
+			t.Errorf("Expected daily_completed=true on 3rd visit, got %v", resp["daily_completed"])
+		}
+	})
+}
