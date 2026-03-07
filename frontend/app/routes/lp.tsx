@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Link } from "react-router";
 import type { MetaFunction } from "react-router";
 
@@ -9,9 +9,33 @@ export const meta: MetaFunction = () => [
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
+// 3/14 23:59:59 JST
+const DEADLINE = new Date("2026-03-14T23:59:59+09:00");
+
+function useCountdown() {
+  const [remaining, setRemaining] = useState(() => Math.max(0, DEADLINE.getTime() - Date.now()));
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRemaining(Math.max(0, DEADLINE.getTime() - Date.now()));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const totalSeconds = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const expired = remaining === 0;
+
+  return { days, hours, minutes, seconds, expired };
+}
+
 export default function LP() {
   const [email, setEmail] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
+  const { days, hours, minutes, seconds, expired } = useCountdown();
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,6 +80,36 @@ export default function LP() {
         >
           ベータ版アクセスをリクエスト
         </a>
+
+        {/* Countdown Banner */}
+        <div className="mt-6 w-full max-w-sm rounded-xl border border-accent-orange/40 bg-accent-orange/10 px-4 py-3 text-center">
+          {expired ? (
+            <p className="text-sm font-semibold text-accent-orange">リクエスト受付を終了しました</p>
+          ) : (
+            <>
+              <p className="text-xs text-accent-orange/80 mb-2 font-medium">リクエスト受付終了まで</p>
+              <div className="flex items-center justify-center gap-2">
+                {[
+                  { value: days, label: "日" },
+                  { value: hours, label: "時間" },
+                  { value: minutes, label: "分" },
+                  { value: seconds, label: "秒" },
+                ].map(({ value, label }) => (
+                  <div key={label} className="flex flex-col items-center">
+                    <span className="text-2xl font-bold font-display-alt text-accent-orange tabular-nums leading-none">
+                      {String(value).padStart(2, "0")}
+                    </span>
+                    <span className="text-xs text-accent-orange/70 mt-0.5">{label}</span>
+                  </div>
+                )).reduce<React.ReactNode[]>((acc, el, i) => {
+                  if (i === 0) return [el];
+                  return [...acc, <span key={`sep-${i}`} className="text-accent-orange/50 text-xl font-bold self-start mt-1">:</span>, el];
+                }, [])}
+              </div>
+              <p className="text-xs text-accent-orange/60 mt-2">3月14日（土）23:59 JST まで</p>
+            </>
+          )}
+        </div>
 
         {/* Hero Screenshots */}
         <div className="mt-12 flex items-end justify-center gap-3 px-2">
@@ -249,7 +303,9 @@ export default function LP() {
             ベータ版アクセスをリクエスト
           </h2>
           <p className="text-sm text-text-main/60 dark:text-white/60 mb-6 text-center">
-            現在Webベータ版公開中です。<br/>メールでアクセス用合言葉をお知らせしますので、以下のフォームからメールアドレスを登録してください。
+            現在Webベータ版公開中です。<br/>
+            <span className="font-semibold text-accent-orange">リクエスト受付は3月14日（土）23:59 JSTまで。</span><br/>
+            メールでアクセス用合言葉をお知らせしますので、以下のフォームからメールアドレスを登録してください。
           </p>
 
           {formState === "success" ? (
