@@ -211,7 +211,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | 検索半径設定 | 3km〜30km のスライダーで選択（デフォルト10km）|
 | ~~脱却頻度設定~~ | ~~低・中・高 で調整~~ → **廃止**（強制挿入ロジックを削除。3件全てをランダム/パーソナライズで提案し、興味タグ外のジャンルで自然に脱却が発生する設計に変更）|
 | 提案リロード | ホーム画面のリロードボタンで当日の提案を再取得できる。**Web β版: 3回（制限なし）**。iOS版: Free=1回/日、Premium=3回/日。残り回数をUIに表示 |
-| 設定変更の即時反映 | 興味タグ・提案半径の変更は即時キャッシュをクリアし、次のリロード時に新設定を反映（翌日待機なし） |
+| 設定変更の即時反映 | 興味タグ・提案半径の変更時にリロード1回分を消費してキャッシュをクリアし、新設定で提案を即時更新できる。リロード残0の場合はキャッシュクリアなしで設定のみ保存し、翌日リセット時に反映（確認モーダルでユーザーに通知。クエリパラメータ `refresh_suggestions=true` でバックエンドがキャッシュクリア + リロードカウントをインクリメント） |
 | 訪問ボタンの有効条件 | 現在地と施設の距離が **200m以内** の場合のみ「行ってきた！」ボタンを有効化。距離が遠い場合はボタンをグレーアウトし「この場所に到着してから記録できます」と表示。`ENVIRONMENT=development` の場合は距離制限なしで常に有効（開発・テスト用） |
 
 #### D. 記録・可視化の強化
@@ -461,7 +461,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | Method | Path | Phase |
 |--------|------|-------|
 | GET | `/api/users/me` | Phase 0 | |
-| PATCH | `/api/users/me` | Phase 1 | display_nameのみ更新可（avatar_urlはGoogle提供） |
+| PATCH | `/api/users/me` | Phase 1 | display_name・search_radius を更新可（avatar_urlはGoogle提供）。`?refresh_suggestions=true` を付与 + search_radius 変更時はキャッシュクリア + リロードカウントインクリメント。レスポンスに `reload_count_remaining` を含む |
 | ~~PATCH~~ | ~~`/api/users/me/email`~~ | ~~Phase 1~~ | **廃止** — Google OAuth移行により削除 |
 | GET | `/api/users/me/stats` | Phase 1 | |
 | DELETE | `/api/users/me` | Phase 1 | |
@@ -472,7 +472,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 |--------|------|-------|
 | GET | `/api/genres` | Phase 1 |
 | GET | `/api/users/me/interests` | Phase 1 |
-| PUT | `/api/users/me/interests` | Phase 1 |
+| PUT | `/api/users/me/interests` | Phase 1 | `?refresh_suggestions=true` を付与するとキャッシュクリア + リロードカウントインクリメント。レスポンス: `{ interests: Interest[], reload_count_remaining: number }` |
 
 ### 5.4 提案
 

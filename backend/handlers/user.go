@@ -240,14 +240,20 @@ type updateInterestsRequest struct {
 	GenreTagIDs []uint64 `json:"genre_tag_ids" binding:"required"`
 }
 
+type updateInterestsResponse struct {
+	Interests            []interestResponse `json:"interests"`
+	ReloadCountRemaining int                `json:"reload_count_remaining"`
+}
+
 // UpdateInterests godoc
 // @Summary      ユーザー興味タグ更新
-// @Description  JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）
+// @Description  JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）。refresh_suggestions=true を指定するとリロード1回分を消費して提案キャッシュをクリアする。
 // @Tags         Users
 // @Accept       json
 // @Produce      json
+// @Param        refresh_suggestions  query  bool  false  "true の場合、提案キャッシュをクリアしリロードカウントを消費する"
 // @Param        body  body  updateInterestsRequest  true  "興味タグIDリスト"
-// @Success      200  {array}   interestResponse
+// @Success      200  {object}  updateInterestsResponse
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Router       /api/users/me/interests [put]
@@ -290,6 +296,24 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 		return
 	}
 
+	// refresh_suggestions=true の場合、提案キャッシュをクリアしリロードカウントを消費する
+	reloadCountRemaining := database.MaxDailyReloads
+	if c.Query("refresh_suggestions") == "true" && h.RedisClient != nil {
+		ctx := c.Request.Context()
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		today := time.Now().In(jst).Format("2006-01-02")
+		userIDStr := fmt.Sprintf("%d", userID)
+
+		currentCount, _ := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
+		if currentCount < database.MaxDailyReloads {
+			database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr) //nolint:errcheck
+			newCount, _ := database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
+			reloadCountRemaining = database.MaxDailyReloads - newCount
+		} else {
+			reloadCountRemaining = 0
+		}
+	}
+
 	var interests []interestResponse
 	result := h.DB.Table("user_interests").
 		Select("user_interests.genre_tag_id, genre_tags.name, genre_tags.category, genre_tags.icon").
@@ -307,7 +331,10 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 		interests = []interestResponse{}
 	}
 
-	c.JSON(http.StatusOK, interests)
+	c.JSON(http.StatusOK, updateInterestsResponse{
+		Interests:            interests,
+		ReloadCountRemaining: reloadCountRemaining,
+	})
 }
 
 // 提案半径の最小・最大値（メートル）
@@ -319,14 +346,20 @@ type updateMeRequest struct {
 	SearchRadius *uint   `json:"search_radius"`
 }
 
+type updateMeResponse struct {
+	models.User
+	ReloadCountRemaining int `json:"reload_count_remaining"`
+}
+
 // UpdateMe godoc
 // @Summary      ユーザー情報更新
-// @Description  JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）
+// @Description  JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius 変更時はリロード1回分を消費して提案キャッシュをクリアする。
 // @Tags         Users
 // @Accept       json
 // @Produce      json
+// @Param        refresh_suggestions  query  bool  false  "true の場合（提案半径変更時）、提案キャッシュをクリアしリロードカウントを消費する"
 // @Param        body  body  updateMeRequest  true  "更新情報"
-// @Success      200  {object}  models.User
+// @Success      200  {object}  updateMeResponse
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
@@ -391,7 +424,28 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	// refresh_suggestions=true かつ提案半径変更時は提案キャッシュをクリアしリロードカウントを消費する
+	reloadCountRemaining := database.MaxDailyReloads
+	if c.Query("refresh_suggestions") == "true" && req.SearchRadius != nil && h.RedisClient != nil {
+		ctx := c.Request.Context()
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		today := time.Now().In(jst).Format("2006-01-02")
+		userIDStr := fmt.Sprintf("%d", userID)
+
+		currentCount, _ := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
+		if currentCount < database.MaxDailyReloads {
+			database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr) //nolint:errcheck
+			newCount, _ := database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
+			reloadCountRemaining = database.MaxDailyReloads - newCount
+		} else {
+			reloadCountRemaining = 0
+		}
+	}
+
+	c.JSON(http.StatusOK, updateMeResponse{
+		User:                 user,
+		ReloadCountRemaining: reloadCountRemaining,
+	})
 }
 
 // DeleteMe godoc

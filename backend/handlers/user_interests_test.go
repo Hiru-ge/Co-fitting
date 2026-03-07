@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/gin-gonic/gin"
@@ -18,6 +21,14 @@ func setupInterestsRouter() *gin.Engine {
 
 	r := gin.New()
 	r.GET("/api/users/me/interests", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.GetInterests)
+	r.PUT("/api/users/me/interests", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.UpdateInterests)
+	return r
+}
+
+func setupInterestsRouterWithRedis() *gin.Engine {
+	userHandler := &UserHandler{DB: testDB, RedisClient: testRedisClient}
+
+	r := gin.New()
 	r.PUT("/api/users/me/interests", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), userHandler.UpdateInterests)
 	return r
 }
@@ -160,13 +171,20 @@ func TestUpdateInterests(t *testing.T) {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
 		}
 
-		var resp []map[string]interface{}
+		var resp map[string]interface{}
 		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
 			t.Fatalf("レスポンスのパースに失敗: %v", err)
 		}
 
-		if len(resp) != 3 {
-			t.Errorf("Expected 3 interest items, got %d", len(resp))
+		interestsList, ok := resp["interests"].([]interface{})
+		if !ok {
+			t.Fatalf("レスポンスに interests フィールドがありません。body: %s", w.Body.String())
+		}
+		if len(interestsList) != 3 {
+			t.Errorf("Expected 3 interest items, got %d", len(interestsList))
+		}
+		if _, ok := resp["reload_count_remaining"]; !ok {
+			t.Error("レスポンスに reload_count_remaining が含まれていません")
 		}
 
 		// DBに反映されていることを確認
@@ -302,6 +320,131 @@ func TestUpdateInterests(t *testing.T) {
 
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+		}
+	})
+}
+
+// TestUpdateInterestsWithRefreshSuggestions は refresh_suggestions=true パラメータ付きで興味タグを更新すると
+// 提案キャッシュがクリアされ、リロードカウントが消費されることを確認する
+func TestUpdateInterestsWithRefreshSuggestions(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redisクライアントが設定されていません")
+	}
+
+	router := setupInterestsRouterWithRedis()
+
+	t.Run("refresh_suggestions=true でキャッシュがクリアされリロードカウントが消費される", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := models.User{Email: "refresh-interests@example.com", DisplayName: "Refresh User"}
+		testDB.Create(&user)
+
+		var genreTags []models.GenreTag
+		testDB.Limit(3).Find(&genreTags)
+		if len(genreTags) < 3 {
+			t.Skip("ジャンルタグのシードデータが不足しています")
+		}
+
+		// 事前に日次キャッシュを擬似的に設定しておく
+		ctx := context.Background()
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		today := time.Now().In(jst).Format("2006-01-02")
+		userIDStr := fmt.Sprintf("%d", user.ID)
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.67, 139.65, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
+
+		token := generateTestToken(user.ID)
+		body := map[string]interface{}{
+			"genre_tag_ids": []uint64{genreTags[0].ID, genreTags[1].ID, genreTags[2].ID},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PUT", "/api/users/me/interests?refresh_suggestions=true", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("レスポンスのパースに失敗: %v", err)
+		}
+
+		// reload_count_remaining が MaxDailyReloads-1 = 2 になっていることを確認
+		remaining, ok := resp["reload_count_remaining"].(float64)
+		if !ok {
+			t.Fatalf("reload_count_remaining が数値ではありません: %v", resp["reload_count_remaining"])
+		}
+		if int(remaining) != database.MaxDailyReloads-1 {
+			t.Errorf("Expected reload_count_remaining=%d, got %d", database.MaxDailyReloads-1, int(remaining))
+		}
+
+		// 日次提案キャッシュが削除されていることを確認
+		keys, _ := database.ScanKeysByPattern(ctx, testRedisClient, fmt.Sprintf("suggestion:daily:%s:*", userIDStr))
+		if len(keys) != 0 {
+			t.Errorf("日次提案キャッシュが削除されていません: %v", keys)
+		}
+	})
+
+	t.Run("リロード上限到達時は refresh_suggestions=true でもキャッシュはクリアされない", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+
+		user := models.User{Email: "refresh-limit@example.com", DisplayName: "Limit User"}
+		testDB.Create(&user)
+
+		var genreTags []models.GenreTag
+		testDB.Limit(3).Find(&genreTags)
+		if len(genreTags) < 3 {
+			t.Skip("ジャンルタグのシードデータが不足しています")
+		}
+
+		ctx := context.Background()
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		today := time.Now().In(jst).Format("2006-01-02")
+		userIDStr := fmt.Sprintf("%d", user.ID)
+
+		// リロード上限まで消費済みにする
+		for i := 0; i < database.MaxDailyReloads; i++ {
+			database.IncrementDailyReloadCount(ctx, testRedisClient, userIDStr, today, 24*time.Hour) //nolint:errcheck
+		}
+
+		// 日次キャッシュを設定
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.67, 139.65, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
+
+		token := generateTestToken(user.ID)
+		body := map[string]interface{}{
+			"genre_tag_ids": []uint64{genreTags[0].ID, genreTags[1].ID, genreTags[2].ID},
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PUT", "/api/users/me/interests?refresh_suggestions=true", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
+
+		// reload_count_remaining が 0 であることを確認
+		remaining, _ := resp["reload_count_remaining"].(float64)
+		if int(remaining) != 0 {
+			t.Errorf("Expected reload_count_remaining=0 when limit reached, got %d", int(remaining))
+		}
+
+		// 日次提案キャッシュが残っていることを確認（クリアされていない）
+		keys, _ := database.ScanKeysByPattern(ctx, testRedisClient, fmt.Sprintf("suggestion:daily:%s:*", userIDStr))
+		if len(keys) == 0 {
+			t.Error("リロード上限到達時は日次提案キャッシュが残っているべきです")
 		}
 	})
 }

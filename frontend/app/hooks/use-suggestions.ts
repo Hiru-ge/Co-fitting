@@ -68,12 +68,20 @@ function setSuggestionsCache(places: PlaceWithPhoto[], reloadCountRemaining: num
   }
 }
 
-function clearSuggestionsCache(): void {
+export function clearSuggestionsCache(): void {
   try {
     localStorage.removeItem(SUGGESTIONS_CACHE_KEY);
   } catch {
     // ignore
   }
+}
+
+/**
+ * localStorage の提案キャッシュからリロード残回数を返す。
+ * キャッシュがない・期限切れの場合はデフォルト値（3）を返す。
+ */
+export function getReloadCountRemaining(): number {
+  return getSuggestionsCache()?.reloadCountRemaining ?? 3;
 }
 
 /**

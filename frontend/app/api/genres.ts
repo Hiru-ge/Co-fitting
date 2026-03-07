@@ -11,9 +11,13 @@ export async function getInterests(token: string): Promise<Interest[]> {
 
 export async function updateInterests(
   token: string,
-  genreTagIds: number[]
-): Promise<Interest[]> {
-  return apiCall("/api/users/me/interests", token, {
+  genreTagIds: number[],
+  refreshSuggestions?: boolean
+): Promise<{ interests: Interest[]; reload_count_remaining: number }> {
+  const url = refreshSuggestions
+    ? "/api/users/me/interests?refresh_suggestions=true"
+    : "/api/users/me/interests";
+  return apiCall(url, token, {
     method: "PUT",
     body: JSON.stringify({ genre_tag_ids: genreTagIds }),
   });

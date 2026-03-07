@@ -9,6 +9,7 @@ import type { GenreTag, Interest } from "~/types/genre";
 import { useModalClose } from "~/hooks/use-modal-close";
 import { useFormMessage } from "~/hooks/use-form-message";
 import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
+import { clearSuggestionsCache, getReloadCountRemaining } from "~/hooks/use-suggestions";
 
 type TabId = "user" | "suggestion";
 
@@ -444,21 +445,29 @@ function SuggestionTab({
   const { msg: radiusMsg, error: radiusError, setMsg: setRadiusMsg, setError: setRadiusError, reset: resetRadiusMsg } = useFormMessage();
   const [isSavingRadius, setIsSavingRadius] = useState(false);
 
+  // 確認モーダル管理
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [pendingSave, setPendingSave] = useState<"interests" | "radius" | null>(null);
+
   function toggleGenre(id: number) {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   }
 
-  async function handleSaveInterests(e: React.FormEvent) {
-    e.preventDefault();
-    resetInterestMsg();
-
+  async function doSaveInterests(withRefresh: boolean) {
     setIsSaving(true);
     try {
-      await updateInterests(token, selectedIds);
+      await updateInterests(token, selectedIds, withRefresh);
+      if (withRefresh) {
+        clearSuggestionsCache();
+      }
       sendInterestsUpdated(selectedIds.length);
-      setInterestMsg("興味タグを保存しました");
+      setInterestMsg(
+        withRefresh
+          ? "興味タグを保存しました"
+          : "設定は保存されました。提案は明日リセット時に反映されます"
+      );
     } catch {
       setInterestError("興味タグの保存に失敗しました");
     } finally {
@@ -466,20 +475,58 @@ function SuggestionTab({
     }
   }
 
-  async function handleSaveRadius(e: React.FormEvent) {
-    e.preventDefault();
-    resetRadiusMsg();
-
+  async function doSaveRadius(withRefresh: boolean) {
     setIsSavingRadius(true);
     try {
-      await updateSearchRadius(token, selectedRadius);
+      await updateSearchRadius(token, selectedRadius, withRefresh);
+      if (withRefresh) {
+        clearSuggestionsCache();
+      }
       sendSearchRadiusUpdated(selectedRadius / 1000);
-      setRadiusMsg("提案半径を保存しました");
+      setRadiusMsg(
+        withRefresh
+          ? "提案半径を保存しました"
+          : "設定は保存されました。提案は明日リセット時に反映されます"
+      );
     } catch {
       setRadiusError("提案半径の保存に失敗しました");
     } finally {
       setIsSavingRadius(false);
     }
+  }
+
+  async function handleSaveInterests(e: React.FormEvent) {
+    e.preventDefault();
+    resetInterestMsg();
+    const remaining = getReloadCountRemaining();
+    if (remaining > 0) {
+      setPendingSave("interests");
+      setShowRefreshModal(true);
+      return;
+    }
+    await doSaveInterests(false);
+  }
+
+  async function handleSaveRadius(e: React.FormEvent) {
+    e.preventDefault();
+    resetRadiusMsg();
+    const remaining = getReloadCountRemaining();
+    if (remaining > 0) {
+      setPendingSave("radius");
+      setShowRefreshModal(true);
+      return;
+    }
+    await doSaveRadius(false);
+  }
+
+  async function handleConfirmRefresh() {
+    setShowRefreshModal(false);
+    if (pendingSave === "interests") {
+      await doSaveInterests(true);
+    } else if (pendingSave === "radius") {
+      await doSaveRadius(true);
+    }
+    setPendingSave(null);
   }
 
   return (
@@ -570,6 +617,58 @@ function SuggestionTab({
           </button>
         </form>
       </section>
+
+      {/* 提案更新確認モーダル */}
+      {showRefreshModal && (
+        <RefreshSuggestionsModal
+          onClose={() => {
+            setShowRefreshModal(false);
+            setPendingSave(null);
+          }}
+          onConfirm={handleConfirmRefresh}
+          isSaving={isSaving || isSavingRadius}
+        />
+      )}
+    </div>
+  );
+}
+
+function RefreshSuggestionsModal({
+  onClose,
+  onConfirm,
+  isSaving,
+}: {
+  onClose: () => void;
+  onConfirm: () => void;
+  isSaving: boolean;
+}) {
+  useModalClose(onClose);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">
+          提案が更新されます
+        </h3>
+        <p className="text-sm text-gray-500 mb-6">
+          設定を保存すると、新しい設定で提案が更新されます。リロード1回分を消費します。
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold text-sm transition-colors active:scale-95"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isSaving}
+            className="flex-1 py-3 rounded-full bg-primary text-black font-bold text-sm transition-colors active:scale-95 disabled:opacity-50"
+          >
+            {isSaving ? "保存中..." : "保存する"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -71,16 +71,25 @@ vi.mock("~/api/genres", () => ({
     { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
     { genre_tag_id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
   ]),
-  updateInterests: vi.fn().mockResolvedValue([
-    { genre_tag_id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
-    { genre_tag_id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
-    { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
-  ]),
+  updateInterests: vi.fn().mockResolvedValue({
+    interests: [
+      { genre_tag_id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
+      { genre_tag_id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
+      { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
+    ],
+    reload_count_remaining: 2,
+  }),
+}));
+
+vi.mock("~/hooks/use-suggestions", () => ({
+  clearSuggestionsCache: vi.fn(),
+  getReloadCountRemaining: vi.fn().mockReturnValue(3),
 }));
 
 import Settings from "~/routes/settings";
 import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
 import { updateInterests } from "~/api/genres";
+import { clearSuggestionsCache, getReloadCountRemaining } from "~/hooks/use-suggestions";
 
 const mockUser = {
   id: 1,
@@ -121,6 +130,8 @@ function renderSettings() {
 describe("設定画面", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // テストごとにリロード残回数のデフォルト値を復元する
+    vi.mocked(getReloadCountRemaining).mockReturnValue(3);
     // jsdom は matchMedia 未実装のためスタブを注入
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -296,27 +307,99 @@ describe("設定画面", () => {
       expect(bookstoreChip).toHaveAttribute("aria-pressed", "false");
     });
 
-    test("興味タグの保存でAPIが呼ばれる", async () => {
+    test("興味タグの保存で提案更新確認モーダルが表示される（リロード残あり）", async () => {
+      const user = await switchToSuggestionTab();
+
+      await user.click(screen.getByRole("button", { name: /レストラン/ }));
+      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+
+      // 確認モーダルが表示される
+      await waitFor(() => {
+        expect(screen.getByText("提案が更新されます")).toBeInTheDocument();
+      });
+      expect(screen.getByRole("button", { name: "保存する" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
+    });
+
+    test("興味タグの保存でAPIが呼ばれる（モーダル確認後）", async () => {
       const user = await switchToSuggestionTab();
 
       // レストランを追加選択
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
       await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
 
+      // モーダル確認
+      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await user.click(screen.getByRole("button", { name: "保存する" }));
+
       await waitFor(() => {
-        expect(updateInterests).toHaveBeenCalledWith("test-token", [1, 3, 4, 2]);
+        expect(updateInterests).toHaveBeenCalledWith("test-token", [1, 3, 4, 2], true);
       });
     });
 
-    test("興味タグ保存成功でメッセージが表示される", async () => {
+    test("興味タグ保存成功でメッセージが表示される（モーダル確認後）", async () => {
+      const user = await switchToSuggestionTab();
+
+      await user.click(screen.getByRole("button", { name: /レストラン/ }));
+      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+
+      // モーダル確認
+      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await user.click(screen.getByRole("button", { name: "保存する" }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/興味タグを保存しました/)).toBeInTheDocument();
+      });
+    });
+
+    test("モーダルキャンセルでAPIが呼ばれない", async () => {
+      const user = await switchToSuggestionTab();
+
+      await user.click(screen.getByRole("button", { name: /レストラン/ }));
+      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+
+      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await user.click(screen.getByRole("button", { name: "キャンセル" }));
+
+      expect(updateInterests).not.toHaveBeenCalled();
+      expect(screen.queryByText("提案が更新されます")).not.toBeInTheDocument();
+    });
+
+    test("リロード残0の場合はモーダルなしで保存される", async () => {
+      vi.mocked(getReloadCountRemaining).mockReturnValue(0);
+      const user = await switchToSuggestionTab();
+
+      await user.click(screen.getByRole("button", { name: /レストラン/ }));
+      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+
+      // モーダルは表示されぺにダイレクト保存
+      await waitFor(() => {
+        expect(updateInterests).toHaveBeenCalledWith("test-token", [1, 3, 4, 2], false);
+      });
+      expect(screen.queryByText("提案が更新されます")).not.toBeInTheDocument();
+    });
+
+    test("リロード残0の場合、翔日反映メッセージが表示される", async () => {
+      vi.mocked(getReloadCountRemaining).mockReturnValue(0);
       const user = await switchToSuggestionTab();
 
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
       await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
 
       await waitFor(() => {
-        expect(screen.getByText(/興味タグを保存しました/)).toBeInTheDocument();
+        expect(screen.getByText(/明日リセット時に反映されます/)).toBeInTheDocument();
       });
+    });
+
+    test("リロード残0の場合、clearSuggestionsCacheは呼ばれない", async () => {
+      vi.mocked(getReloadCountRemaining).mockReturnValue(0);
+      const user = await switchToSuggestionTab();
+
+      await user.click(screen.getByRole("button", { name: /レストラン/ }));
+      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+
+      await waitFor(() => expect(updateInterests).toHaveBeenCalled());
+      expect(clearSuggestionsCache).not.toHaveBeenCalled();
     });
 
     test("興味タグが3つ未満だと保存ボタンが無効", async () => {
@@ -343,22 +426,30 @@ describe("設定画面", () => {
       expect(slider.value).toBe("5000");
     });
 
-    test("半径変更でupdateSearchRadiusが呼ばれる", async () => {
+    test("半径変更でupdateSearchRadiusが呼ばれる（モーダル確認後）", async () => {
       const user = await switchToSuggestionTab();
 
       const slider = screen.getByRole("slider", { name: "提案半径" });
       await user.type(slider, "{ArrowRight}".repeat(5));
       await user.click(screen.getByRole("button", { name: "半径を保存" }));
 
+      // モーダル確認
+      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await user.click(screen.getByRole("button", { name: "保存する" }));
+
       await waitFor(() => {
         expect(updateSearchRadius).toHaveBeenCalled();
       });
     });
 
-    test("半径保存成功でメッセージが表示される", async () => {
+    test("半径保存成功でメッセージが表示される（モーダル確認後）", async () => {
       const user = await switchToSuggestionTab();
 
       await user.click(screen.getByRole("button", { name: "半径を保存" }));
+
+      // モーダル確認
+      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await user.click(screen.getByRole("button", { name: "保存する" }));
 
       await waitFor(() => {
         expect(screen.getByText(/提案半径を保存しました/)).toBeInTheDocument();

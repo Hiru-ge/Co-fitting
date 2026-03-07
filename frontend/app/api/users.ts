@@ -13,9 +13,13 @@ export async function updateDisplayName(
 
 export async function updateSearchRadius(
   token: string,
-  searchRadius: number
-): Promise<User> {
-  return apiCall("/api/users/me", token, {
+  searchRadius: number,
+  refreshSuggestions?: boolean
+): Promise<{ reload_count_remaining: number }> {
+  const url = refreshSuggestions
+    ? "/api/users/me?refresh_suggestions=true"
+    : "/api/users/me";
+  return apiCall(url, token, {
     method: "PATCH",
     body: JSON.stringify({ search_radius: searchRadius }),
   });
