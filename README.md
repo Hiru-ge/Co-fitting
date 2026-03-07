@@ -75,18 +75,42 @@ make db-shell
 ## アーキテクチャ
 
 ```
-├── backend/          # Go + Gin API
-│   ├── main.go
+├── backend/                    # Go + Gin API
+│   ├── main.go                 # エントリーポイント・サーバー起動
+│   ├── config/                 # 環境変数・設定読み込み
+│   ├── database/               # DB接続・マイグレーション・Redis
+│   ├── handlers/               # HTTPハンドラー（auth, user, visit, suggestion, badge, genre...）
+│   ├── middleware/             # JWT認証・CORS・レートリミット・エラーハンドリング
+│   ├── models/                 # データモデル（user, gamification）
+│   ├── routes/                 # ルーティング定義
+│   ├── services/               # ビジネスロジック（ゲーミフィケーション計算など）
+│   ├── utils/                  # ユーティリティ（JWTブラックリストなど）
+│   ├── testutil/               # テスト用ヘルパー
+│   ├── docs/                   # Swagger / OpenAPI 仕様
 │   ├── Dockerfile
+│   ├── Dockerfile.prod
 │   └── go.mod
-├── frontend/         # React + TypeScript + React Router v7
+├── frontend/                   # React + TypeScript + React Router v7 (SPA)
 │   ├── app/
+│   │   ├── root.tsx            # アプリルート・グローバルレイアウト
+│   │   ├── routes.ts           # ルート定義
+│   │   ├── routes/             # ページコンポーネント（home, login, history, profile, settings, lp...）
+│   │   ├── layouts/            # 共通レイアウト（app-layout, auth-layout）
+│   │   ├── components/         # 再利用UIコンポーネント（card, modal, toast, nav...）
+│   │   ├── hooks/              # カスタムフック
+│   │   ├── api/                # APIクライアント（client.ts + 各エンドポイント）
+│   │   ├── lib/                # 認証・トークン管理・GA・PWA などのユーティリティ
+│   │   ├── types/              # TypeScript型定義
+│   │   ├── utils/              # 汎用ユーティリティ（level, badge-icon, geolocation...）
+│   │   └── __tests__/          # Vitest ユニットテスト
+│   ├── e2e/                    # Playwright E2Eテスト
 │   ├── Dockerfile
 │   └── package.json
-├── mysql/            # MySQL 初期化スクリプト
+├── mysql/                      # MySQL 初期化スクリプト
 │   └── init/
 │       └── 01_schema.sql
+├── docs/                       # プロジェクトドキュメント
 ├── docker-compose.yml
 ├── Makefile
-└── .env              # 環境変数
+└── .env                        # 環境変数
 ```
