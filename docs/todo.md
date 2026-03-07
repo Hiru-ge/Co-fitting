@@ -147,6 +147,152 @@
 
 ---
 
+## 仕様レビュー指摘事項（2026-03-07）
+
+> ベータ版公開後の仕様レビューで発見された、コンセプトと仕様の不一致・一貫性の問題を修正するタスク。
+> TDD（RED→GREEN→REFACTOR）で進行。各タスクの実装完了後、関連ドキュメント（requirements.md等）も更新すること。
+
+### タスク一覧
+
+- [ ] **設定変更時のリロード消費 + キャッシュクリア**（Issue #264）
+  - **問題**: 興味タグ・提案半径を変更しても提案キャッシュがクリアされず、古い提案が表示され続ける（requirements.md:214の「即時反映」仕様に違反）。一方、無条件にキャッシュクリアするとリロード制限を迂回できてしまう
+  - **方針**: 設定変更時にリロード1回分を消費してキャッシュクリア。リロード残0の場合は設定保存のみ行い、提案は翌日リセット時に反映
+  - **フロントエンド**: 設定保存時に確認モーダル表示。リロード残ありなら「提案が更新されます（リロード1回分を消費します）」、残0なら「設定は保存されました。提案は明日リセット時に反映されます」
+  - **バックエンド**: `PUT /api/users/me/interests` および `PATCH /api/users/me`（半径変更時）でキャッシュクリア + リロードカウントインクリメントを行う新規パラメータ or エンドポイント設計が必要
+  - **対象ファイル**: `backend/handlers/user.go`, `backend/database/redis.go`, `frontend/app/routes/settings.tsx`, `frontend/app/hooks/use-suggestions.ts`
+  - **ドキュメント更新**: `docs/requirements.md`（設定変更の即時反映セクション）
+
+- [ ] **ジャンル熟練度上限をLv.30に統一 + ボーナスXP反映**（Issue #265）
+  - **問題**: ユーザーレベル（最大Lv.30）とジャンル熟練度（最大Lv.20）で上限が異なり、一貫性がない。また、初エリアボーナス（+30XP）・メモボーナス（+10XP）・ストリークボーナスがユーザーXPには加算されるがジャンル熟練度には反映されない
+  - **方針**: ジャンル熟練度の上限をLv.30に変更。ボーナスXP（初エリア・メモ・ストリーク）もジャンル熟練度に加算し、ユーザーXPと一致させる
+  - **対象ファイル**: `backend/services/gamification.go`（`calcGenreLevel` のキャップ変更、`UpdateGenreProficiency` のXP加算ロジック変更）、`backend/handlers/visit.go`
+  - **ドキュメント更新**: `docs/requirements.md`（ジャンル熟練度セクション、XP付与ルールセクション）、`CLAUDE.md`
+
+- [ ] **複数端末同時利用未サポートの注記追加**（Issue #266）
+  - **問題**: JWT方式で複数端末同時ログインが可能だが、フロントエンドキャッシュの整合性が保証されない（端末Aで訪問記録→端末Bに反映されない等）
+  - **方針**: ドキュメントに注記を追加するのみ。根本対応はiOS版（Phase 2）で検討
+  - **ドキュメント更新**: `docs/requirements.md`（非機能要件 or 既知の制約セクション）
+
+- [ ] **バックエンド距離検証追加（訪問記録API）**（Issue #267）
+  - **問題**: 訪問ボタンの200m距離制限がフロントエンドのみで実装されており、APIを直接叩けば距離制限を迂回してXPを不正取得できる
+  - **方針**: `POST /api/visits` のリクエストボディに `user_lat`, `user_lng` を追加。バックエンドでHaversine距離計算を行い、200m超なら400 Bad Requestを返す。`ENVIRONMENT=development` では検証スキップ
+  - **対象ファイル**: `backend/handlers/visit.go`（リクエスト構造体追加、距離計算ロジック）、`frontend/app/hooks/use-suggestions.ts`（訪問記録送信時に現在地座標を含める）
+  - **ドキュメント更新**: `docs/requirements.md`（訪問ボタンの有効条件セクション）
+
+- [ ] **位置情報未許可時のUX改善**（Issue #268）
+  - **問題**: 位置情報が未許可の場合、デフォルト位置（渋谷駅周辺）で提案が生成されるが、ユーザーに十分な説明がない
+  - **方針**: 位置情報が拒否された場合にモーダルを表示。選択肢: (1)「設定で許可する」→設定画面へ (2)「渋谷駅周辺で試す」→デフォルト位置で提案生成。(2)を選んだ場合、カード上部に「デフォルト位置（渋谷駅周辺）で表示中」バナーを常時表示
+  - **対象ファイル**: `frontend/app/hooks/use-suggestions.ts`, `frontend/app/routes/home.tsx`（モーダル・バナーUI追加）
+  - **ドキュメント更新**: `docs/requirements.md`（位置情報取得セクション）
+
+- [ ] **`is_comfort_zone` カラムを `is_breakout` に改名**（Issue #269）
+  - **問題**: `visit_history.is_comfort_zone` カラムの名前が実態（コンフォートゾーンの「外」= 脱却訪問かどうか）と逆の意味に読める
+  - **方針**: `is_breakout` に改名。ベータ版公開済みのためDBマイグレーション（`ALTER TABLE`）で対応。GORM モデル・ハンドラ・フロントエンドのフィールド名も全て変更
+  - **実装順序**: 他のタスク（#265, #264, #267）が `IsComfortZone` を参照しているため、このタスクを最初に実施すること
+  - **対象ファイル**: `backend/models/visit.go`, `backend/handlers/visit.go`, `backend/handlers/suggestion.go`, `backend/services/gamification.go`, `frontend/app/types/`, マイグレーションSQL
+  - **ドキュメント更新**: `docs/requirements.md`（データモデルセクション）、`CLAUDE.md`
+
+### 実装引き継ぎコンテキスト
+
+> 以下は仕様レビュー会話で決定した内容のうち、タスク詳細に含まれない判断・背景情報。
+
+#### 実装順序（依存関係順）
+
+1. **#269** `is_comfort_zone` → `is_breakout`（基盤変更。他タスクが参照するフィールド名が変わる）
+2. **#265** ジャンル熟練度Lv.30統一（XPロジック変更）
+3. **#264** 設定変更キャッシュクリア（バックエンド+フロントエンド）
+4. **#267** バックエンド距離検証（バックエンド+フロントエンド）
+5. **#268** 位置情報未許可UX（フロントエンドのみ）
+6. **#266** 複数端末注記（ドキュメントのみ）
+
+#### #269 影響範囲（コード上の変更箇所）
+
+**リネーム対応表:**
+| 変更前 | 変更後 |
+|--------|--------|
+| `IsComfortZone` (Go struct field) | `IsBreakout` |
+| `is_comfort_zone` (JSON/DB column) | `is_breakout` |
+| `isComfortZone` (TS/Go variable) | `isBreakout` |
+| `isComfortZoneVisit()` (Go func) | `isBreakoutVisit()` |
+| `comfort_zone_visits` (JSON key) | `breakout_visits` |
+| `ComfortZoneVisits` (Go struct field) | `BreakoutVisits` |
+| `comfortZoneCount` (TS variable) | `breakoutCount` |
+| `comfortZoneLevelThreshold` (Go const) | `breakoutLevelThreshold` |
+| `comfort_zone_break` (badge condition type) | `breakout` |
+| `comfort_zone_count` (GA event param) | `breakout_count` |
+
+**バックエンド対象ファイル（30箇所以上）:**
+- `backend/models/user.go:39` — GORMモデル定義
+- `backend/handlers/visit.go:32,42,76,141,155` — 訪問記録ハンドラ
+- `backend/handlers/suggestion.go:34,296-300,665-666,726,749-750` — 提案ハンドラ + `isComfortZoneVisit()` 関数
+- `backend/services/gamification.go:93-98,246-250,279,306,376-378,460,471,475` — XP計算・バッジ判定
+- `backend/handlers/user.go:62,95,97` — ユーザー統計（`comfort_zone_visits`）
+- `backend/database/seed.go:81` — バッジシードデータ（`comfort_zone_break` → `breakout`）
+- `backend/handlers/visit_test.go` — 訪問テスト（約20箇所）
+- `backend/services/gamification_test.go` — ゲーミフィケーションテスト（約15箇所）
+- `backend/handlers/user_stats_test.go:39-133` — 統計テスト
+- `backend/handlers/suggestion_test.go` — 提案テスト
+- `backend/docs/docs.go`, `swagger.yaml`, `swagger.json` — API仕様
+
+**フロントエンド対象ファイル（40箇所以上）:**
+- `frontend/app/types/suggestion.ts:13` — `is_comfort_zone?: boolean`
+- `frontend/app/types/visit.ts:13,37,64` — 訪問型定義
+- `frontend/app/types/auth.ts:17` — `comfort_zone_visits: number`
+- `frontend/app/hooks/use-suggestions.ts:237,279,290,334` — 提案フック
+- `frontend/app/routes/home.tsx:62` — ホーム画面
+- `frontend/app/routes/history-detail.tsx:196` — 履歴詳細
+- `frontend/app/components/discovery-card.tsx:153` — 提案カード
+- `frontend/app/components/visit-map.tsx:106,128,131,154,196` — 訪問マップ
+- `frontend/app/lib/gtag.ts:52,62,69,78,84,97,106` — GA イベント
+- 各テストファイル
+
+**DBマイグレーション:**
+```sql
+ALTER TABLE visit_history CHANGE COLUMN is_comfort_zone is_breakout TINYINT(1) NOT NULL DEFAULT 0;
+```
+※ GORMの `AutoMigrate` ではカラム改名ができないため、手動マイグレーションが必要。`backend/database/migration.go` に追加するか、起動時に `db.Exec()` で実行。
+
+#### #264 設計詳細
+
+**フロー:**
+1. ユーザーが設定画面で興味タグ or 半径を変更し「保存」をタップ
+2. フロントエンドが現在のリロード残回数を確認
+3. リロード残 > 0 → 確認モーダル「提案が更新されます（リロード1回分を消費します）」→ OK で API 呼び出し
+4. リロード残 = 0 → 設定保存後にトースト「設定は保存されました。提案は明日リセット時に反映されます」
+5. バックエンド: 設定更新 API にクエリパラメータ `refresh_suggestions=true` を追加。true の場合にキャッシュクリア + リロードカウントインクリメント
+
+**バックエンド変更案:**
+- `PUT /api/users/me/interests?refresh_suggestions=true` — 既存エンドポイントにクエリパラメータ追加
+- `PATCH /api/users/me?refresh_suggestions=true` — 同上
+- `refresh_suggestions=true` の場合: `ClearDailySuggestionsCache()` + `IncrementDailyReloadCount()` を呼び出し
+- レスポンスに `reload_count_remaining` を含める
+
+#### #265 設計詳細
+
+**変更点:**
+- `backend/services/gamification.go` の `calcGenreLevel()`: `if level > 20` → `if level > 30` に変更（実質キャップ削除。テーブルが30エントリなので自然にLv.30が上限）
+- `UpdateGenreProficiency()`: 現在は `xpEarned`（base XP のみ）を加算しているが、ボーナスXP（`firstAreaBonus + memoBonus + streakBonus`）も含めた合計値を加算するように変更
+- `backend/handlers/visit.go` または `backend/services/gamification.go` の `RecordVisitWithXP()` 内で、ジャンル熟練度に渡すXP値をボーナス込みに変更
+
+#### #267 設計詳細
+
+**バックエンド:**
+- `CreateVisitRequest` 構造体に `UserLat float64` / `UserLng float64` を追加
+- Haversine距離計算関数を `backend/services/` または `backend/handlers/visit.go` に追加（フロントエンドの `calcDistance` と同じロジック）
+- 距離 > 200m かつ `ENVIRONMENT != "development"` → `400 Bad Request` + `{"error": "too far from place", "code": "TOO_FAR_FROM_PLACE"}`
+
+**フロントエンド:**
+- `frontend/app/hooks/use-suggestions.ts` の訪問記録送信部分で、`user_lat` / `user_lng` をリクエストボディに含める
+
+#### 仕様レビューで「変更しない」と決めた事項
+
+- **1日3件の提案枚数**: 維持。選択肢を絞ることでUX向上。将来的にプレミアムプランで制限解放を検討
+- **興味内2枠+ランダム1枠の配分**: 意図的。緩やかな脱却を狙う設計
+- **ストリーク週次の敷居**: 適切と判断。ベータFBで再検討
+- **Web版廃止方針**: 維持。iOS版リリース後に廃止
+
+---
+
 ## Phase 2 計画（MVPベータFB次第）
 
 > ベータ版テストのFBを見てから優先順位を決定する。
