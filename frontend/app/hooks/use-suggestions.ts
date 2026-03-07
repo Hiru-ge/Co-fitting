@@ -320,6 +320,8 @@ export function useSuggestions(token: string) {
         lng: place.lng,
         place_types: place.types,
         visited_at: new Date().toISOString(),
+        user_lat: userPos.lat,
+        user_lng: userPos.lng,
       });
 
       const remainingPlaces = places.filter((p) => p.place_id !== place.place_id);

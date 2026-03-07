@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -63,7 +64,23 @@ func countTodayVisitsJST(db *gorm.DB, userID uint64) (int64, error) {
 }
 
 type VisitHandler struct {
-	DB *gorm.DB
+	DB          *gorm.DB
+	Environment string
+}
+
+// checkinDistanceThreshold は訪問記録を受け付ける施設からの最大距離（メートル）
+const checkinDistanceThreshold = 200.0
+
+// haversineDistance は2点間の距離をメートル単位で返す（Haversine公式）
+func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
+	const R = 6371000.0
+	toRad := func(deg float64) float64 { return deg * math.Pi / 180 }
+	dLat := toRad(lat2 - lat1)
+	dLng := toRad(lng2 - lng1)
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(toRad(lat1))*math.Cos(toRad(lat2))*math.Sin(dLng/2)*math.Sin(dLng/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	return R * c
 }
 
 type createVisitRequest struct {
@@ -77,6 +94,8 @@ type createVisitRequest struct {
 	Rating     *float32 `json:"rating"`
 	Memo       *string  `json:"memo"`
 	VisitedAt  string   `json:"visited_at" binding:"required"`
+	UserLat    float64  `json:"user_lat"` // ユーザーの現在緯度（距離検証用）
+	UserLng    float64  `json:"user_lng"` // ユーザーの現在経度（距離検証用）
 }
 
 // createVisitResponse はゲーミフィケーション情報を含むCreateVisitのレスポンス
@@ -120,6 +139,15 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	if req.Lat < -90 || req.Lat > 90 || req.Lng < -180 || req.Lng > 180 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid coordinates", "code": "INVALID_COORDINATES"})
 		return
+	}
+
+	// バックエンド距離検証（production環境のみ、GPS未取得(0,0)の場合はスキップ）
+	if h.Environment != "development" && (req.UserLat != 0 || req.UserLng != 0) {
+		dist := haversineDistance(req.UserLat, req.UserLng, req.Lat, req.Lng)
+		if dist > checkinDistanceThreshold {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "too far from place", "code": "TOO_FAR_FROM_PLACE"})
+			return
+		}
 	}
 
 	todayCount, err := countTodayVisitsJST(h.DB, userID)

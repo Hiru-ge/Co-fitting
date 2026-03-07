@@ -173,7 +173,7 @@
   - **方針**: ドキュメントに注記を追加するのみ。根本対応はiOS版（Phase 2）で検討
   - **ドキュメント更新**: `docs/requirements.md`（非機能要件 or 既知の制約セクション）
 
-- [ ] **バックエンド距離検証追加（訪問記録API）**（Issue #267）
+- [x] **バックエンド距離検証追加（訪問記録API）**（Issue #267）
   - **問題**: 訪問ボタンの200m距離制限がフロントエンドのみで実装されており、APIを直接叩けば距離制限を迂回してXPを不正取得できる
   - **方針**: `POST /api/visits` のリクエストボディに `user_lat`, `user_lng` を追加。バックエンドでHaversine距離計算を行い、200m超なら400 Bad Requestを返す。`ENVIRONMENT=development` では検証スキップ
   - **対象ファイル**: `backend/handlers/visit.go`（リクエスト構造体追加、距離計算ロジック）、`frontend/app/hooks/use-suggestions.ts`（訪問記録送信時に現在地座標を含める）

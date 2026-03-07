@@ -109,15 +109,16 @@ func main() {
 	userHandler := &handlers.UserHandler{DB: db, RedisClient: redisClient, JWTCfg: jwtCfg}
 	badgeHandler := &handlers.BadgeHandler{DB: db}
 	genreHandler := &handlers.GenreHandler{DB: db}
-	visitHandler := &handlers.VisitHandler{DB: db}
-
-	oauthHandler := initOAuthHandler(db, jwtCfg, redisClient)
-	suggestionHandler, placePhotoHandler := initPlacesHandlers(db, redisClient)
 
 	environment := os.Getenv("ENVIRONMENT")
 	if environment == "" {
 		environment = "development"
 	}
+
+	visitHandler := &handlers.VisitHandler{DB: db, Environment: environment}
+
+	oauthHandler := initOAuthHandler(db, jwtCfg, redisClient)
+	suggestionHandler, placePhotoHandler := initPlacesHandlers(db, redisClient)
 
 	healthHandler := &handlers.HealthHandler{
 		DB:          db,

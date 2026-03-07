@@ -16,7 +16,11 @@ import (
 )
 
 func setupVisitRouter() *gin.Engine {
-	visitHandler := &VisitHandler{DB: testDB}
+	return setupVisitRouterWithEnv("development")
+}
+
+func setupVisitRouterWithEnv(env string) *gin.Engine {
+	visitHandler := &VisitHandler{DB: testDB, Environment: env}
 
 	r := gin.New()
 	r.POST("/api/visits", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.CreateVisit)
@@ -2327,6 +2331,115 @@ func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp)
 		if resp["daily_completed"] != true {
 			t.Errorf("Expected daily_completed=true on 3rd visit, got %v", resp["daily_completed"])
+		}
+	})
+}
+
+func TestCreateVisitDistanceValidation(t *testing.T) {
+	// 施設座標（渋谷駅付近）
+	const placeLat = 35.658034
+	const placeLng = 139.701636
+
+	makeDistanceBody := func(placeID string, userLat, userLng float64) []byte {
+		body := map[string]interface{}{
+			"place_id":   placeID,
+			"place_name": "距離テストカフェ",
+			"category":   "cafe",
+			"lat":        placeLat,
+			"lng":        placeLng,
+			"visited_at": "2024-02-07T15:30:00Z",
+		}
+		if userLat != 0 || userLng != 0 {
+			body["user_lat"] = userLat
+			body["user_lng"] = userLng
+		}
+		b, _ := json.Marshal(body)
+		return b
+	}
+
+	t.Run("production環境：施設から150m以内なら201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		router := setupVisitRouterWithEnv("production")
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 約130m離れた位置（渋谷駅周辺内）
+		nearLat := 35.659200
+		nearLng := 139.701636
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeDistanceBody("ChIJl_dist_near", nearLat, nearLng)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status 201, got %d. Body: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("production環境：施設から250m超なら400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+		router := setupVisitRouterWithEnv("production")
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 約3km離れた位置（新宿駅付近）
+		farLat := 35.689592
+		farLng := 139.700413
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeDistanceBody("ChIJl_dist_far", farLat, farLng)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status 400, got %d. Body: %s", w.Code, w.Body.String())
+		}
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["code"] != "TOO_FAR_FROM_PLACE" {
+			t.Errorf("Expected code 'TOO_FAR_FROM_PLACE', got '%v'", resp["code"])
+		}
+	})
+
+	t.Run("production環境：user_lat/user_lng=0,0（GPS未取得）なら201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		router := setupVisitRouterWithEnv("production")
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// user_lat/user_lng を送らない（0,0扱い＝GPS未取得）
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeDistanceBody("ChIJl_dist_gps_skip", 0, 0)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status 201 (GPS未取得はスキップ), got %d. Body: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("development環境：施設から1km離れていても201 Created", func(t *testing.T) {
+		cleanupUsers(t)
+		router := setupVisitRouterWithEnv("development")
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 約1km離れた位置
+		farLat := 35.666895
+		farLng := 139.701636
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(makeDistanceBody("ChIJl_dist_dev", farLat, farLng)))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status 201 (dev環境はスキップ), got %d. Body: %s", w.Code, w.Body.String())
 		}
 	})
 }
