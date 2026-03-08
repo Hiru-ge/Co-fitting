@@ -179,10 +179,10 @@
   - **対象ファイル**: `backend/handlers/visit.go`（リクエスト構造体追加、距離計算ロジック）、`frontend/app/hooks/use-suggestions.ts`（訪問記録送信時に現在地座標を含める）
   - **ドキュメント更新**: `docs/requirements.md`（訪問ボタンの有効条件セクション）
 
-- [ ] **位置情報未許可時のUX改善**（Issue #268）
+- [x] **位置情報未許可時のUX改善**（Issue #268）
   - **問題**: 位置情報が未許可の場合、デフォルト位置（渋谷駅周辺）で提案が生成されるが、ユーザーに十分な説明がない
-  - **方針**: 位置情報が拒否された場合にモーダルを表示。選択肢: (1)「設定で許可する」→設定画面へ (2)「渋谷駅周辺で試す」→デフォルト位置で提案生成。(2)を選んだ場合、カード上部に「デフォルト位置（渋谷駅周辺）で表示中」バナーを常時表示
-  - **対象ファイル**: `frontend/app/hooks/use-suggestions.ts`, `frontend/app/routes/home.tsx`（モーダル・バナーUI追加）
+  - **方針**: 位置情報が拒否された場合にモーダルを表示。選択肢: (1)「設定で許可する」→設定画面へ (2)「渋谷駅周辺で試す」→デフォルト位置で提案生成。(2)を選んだ場合、AppHeader の位置アイコンを黄色の `location_off` に切り替え、かつトースト「現在地を取得できないため、渋谷駅周辺で表示しています」を表示（別画面から戻った時にも再通知）。カード上部バナーは実装せず
+  - **対象ファイル**: `frontend/app/hooks/use-suggestions.ts`, `frontend/app/routes/home.tsx`（モーダルUI追加）, `frontend/app/components/app-header.tsx`（`isDefaultLocation` prop追加）
   - **ドキュメント更新**: `docs/requirements.md`（位置情報取得セクション）
 
 - [x] **`is_comfort_zone` カラムを `is_breakout` に改名**（Issue #269）

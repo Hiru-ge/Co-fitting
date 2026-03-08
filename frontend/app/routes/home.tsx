@@ -15,6 +15,7 @@ import XpModal from "~/components/xp-modal";
 import BadgeModal from "~/components/badge-modal";
 import CompleteCard from "~/components/complete-card";
 import HomeTourModal from "~/components/HomeTourModal";
+import LocationPermissionModal from "~/components/location-permission-modal";
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   const { user, token } = await protectedLoader();
@@ -39,12 +40,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     badgeQueue,
     reloadCountRemaining,
     isReloading,
+    showLocationDeniedModal,
+    isUsingDefaultLocation,
     currentPlace,
     isCurrentVisited,
     currentIndex,
     isNearCurrentPlace,
     loadSuggestions,
     handleReload,
+    handleUseDefaultLocation,
+    handleGoToSettings,
     handleSwipe,
     handleCheckIn,
     handleXpModalClose,
@@ -100,7 +105,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </>
       ) : (
         <>
-          <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace!.vicinity)} />
+          <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace!.vicinity)} isDefaultLocation={isUsingDefaultLocation} />
 
           <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
             {places.length > 0 && (
@@ -166,6 +171,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       {/* チュートリアルツアーモーダル: 初回のみ表示 */}
       {showTour && <HomeTourModal onClose={() => setShowTour(false)} />}
+
+      {/* 位置情報拒否時モーダル */}
+      {showLocationDeniedModal && (
+        <LocationPermissionModal
+          onUseDefault={handleUseDefaultLocation}
+          onGoToSettings={handleGoToSettings}
+        />
+      )}
     </div>
   );
 }

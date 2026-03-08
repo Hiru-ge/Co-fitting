@@ -136,7 +136,11 @@ export function useSuggestions(token: string) {
   const [badgeQueue, setBadgeQueue] = useState<BadgeInfo[]>([]);
   const [reloadCountRemaining, setReloadCountRemaining] = useState(initialCache?.reloadCountRemaining ?? 3);
   const [isReloading, setIsReloading] = useState(false);
+  const [showLocationDeniedModal, setShowLocationDeniedModal] = useState(false);
+  const [isUsingDefaultLocation, setIsUsingDefaultLocation] = useState(false);
   const initialLoadDoneRef = useRef(false);
+  // 位置情報拒否・タイムアウト時にデフォルト位置を使うかどうかのフラグ（Refで保持し再レンダーの影響を受けない）
+  const useDefaultLocationRef = useRef(false);
 
   // === Issue #262: 施設カード表示中のみ位置を継続監視し、訪問ボタンの距離判定をリアルタイム更新する ===
   const hasCards = places.length > 0;
@@ -164,18 +168,13 @@ export function useSuggestions(token: string) {
         setOriginalOrder(cached.places.map((p) => p.place_id));
         setReloadCountRemaining(cached.reloadCountRemaining);
         // userPos は現在地を取得し直す（距離表示を最新に保つため）
-        getCurrentPosition().then(setUserPos).catch((locErr) => {
-          const isDenied =
-            locErr instanceof GeolocationPositionError &&
-            locErr.code === GeolocationPositionError.PERMISSION_DENIED;
-          if (isDenied) {
-            showToast(
-              "位置情報が許可されていません。現在地の代わりにデフォルト位置を使用します。",
-              "info",
-              { label: "設定で許可する", onClick: () => navigate("/settings") }
-            );
-          }
+        // 拒否・エラー時はデフォルト位置を使用（カードはキャッシュから表示済みのためモーダルは出さない）
+        getCurrentPosition().then(setUserPos).catch(() => {
           setUserPos({ lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng });
+          useDefaultLocationRef.current = true;
+          setIsUsingDefaultLocation(true);
+          showToast("現在地を取得できないため、渋谷駅周辺で表示しています",
+              "info", { label: "設定で許可する", onClick: () => navigate("/settings") });
         });
         setIsLoading(false);
         return;
@@ -186,18 +185,21 @@ export function useSuggestions(token: string) {
     setIsCompleted(false);
     try {
       let pos = { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
-      try {
-        pos = await getCurrentPosition();
-      } catch (locErr) {
-        const isDenied =
-          locErr instanceof GeolocationPositionError &&
-          locErr.code === GeolocationPositionError.PERMISSION_DENIED;
-        if (isDenied) {
-          showToast(
-            "位置情報が許可されていません。現在地の代わりにデフォルト位置を使用します。",
-            "info",
-            { label: "設定で許可する", onClick: () => navigate("/settings") }
-          );
+      if (!useDefaultLocationRef.current) {
+        try {
+          pos = await getCurrentPosition();
+        } catch (locErr) {
+          // GeolocationPositionError.PERMISSION_DENIED = 1
+          const isDenied = (locErr as { code?: number } | null)?.code === 1;
+          if (isDenied) {
+            setShowLocationDeniedModal(true);
+            setIsLoading(false);
+            setIsReloading(false);
+            return;
+          }
+          // タイムアウト等の非拒否エラー: デフォルト位置を使用
+          useDefaultLocationRef.current = true;
+          setIsUsingDefaultLocation(true);
         }
       }
       setUserPos(pos);
@@ -274,6 +276,18 @@ export function useSuggestions(token: string) {
   function handleReload() {
     sendSuggestionReloaded(reloadCountRemaining);
     loadSuggestions(true);
+  }
+
+  function handleUseDefaultLocation() {
+    useDefaultLocationRef.current = true;
+    setShowLocationDeniedModal(false);
+    setIsUsingDefaultLocation(true);
+    loadSuggestions();
+  }
+
+  function handleGoToSettings() {
+    setShowLocationDeniedModal(false);
+    navigate("/settings");
   }
 
   function handleSwipe() {
@@ -414,12 +428,16 @@ export function useSuggestions(token: string) {
     badgeQueue,
     reloadCountRemaining,
     isReloading,
+    showLocationDeniedModal,
+    isUsingDefaultLocation,
     currentPlace,
     isCurrentVisited,
     currentIndex,
     isNearCurrentPlace,
     loadSuggestions,
     handleReload,
+    handleUseDefaultLocation,
+    handleGoToSettings,
     handleSwipe,
     handleCheckIn,
     handleXpModalClose,

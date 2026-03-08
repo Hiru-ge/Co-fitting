@@ -64,6 +64,8 @@ vi.mock("~/utils/geolocation", () => ({
   isWithinCheckInRange: vi.fn().mockReturnValue(true),
 }));
 
+const mockNavigate = vi.hoisted(() => vi.fn());
+
 let callCount = 0;
 vi.mock("~/api/suggestions", () => ({
   getSuggestions: vi.fn().mockImplementation(() => {
@@ -81,7 +83,7 @@ vi.mock("react-router", async () => {
   return {
     ...actual,
     redirect: vi.fn(),
-    useNavigate: vi.fn().mockReturnValue(vi.fn()),
+    useNavigate: vi.fn().mockReturnValue(mockNavigate),
     Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
       <a href={to} {...props}>{children}</a>
     ),
@@ -545,6 +547,64 @@ describe("Home画面", () => {
     });
 
     expect(mockShowToast).toHaveBeenCalledTimes(1);
+  });
+
+  // === Issue #268: 位置情報未許可時のUX改善 ===
+  test("位置情報が拒否された場合、位置情報モーダルが表示される", async () => {
+    const { getCurrentPosition } = await import("~/utils/geolocation");
+    vi.mocked(getCurrentPosition).mockRejectedValueOnce(
+      Object.assign(new Error("User denied Geolocation"), { code: 1 })
+    );
+
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "位置情報が利用できません" })).toBeInTheDocument();
+    });
+  });
+
+  test("位置情報モーダルで「渋谷駅周辺で試す」を選ぶと提案が表示される", async () => {
+    // 前のテストで mockRejectedValue が設定されている可能性があるため明示的にリセット
+    const { getSuggestions } = await import("~/api/suggestions");
+    vi.mocked(getSuggestions).mockResolvedValue({ places: [...mockPlaces], reload_count_remaining: 3 });
+
+    const { getCurrentPosition } = await import("~/utils/geolocation");
+    vi.mocked(getCurrentPosition).mockRejectedValueOnce(
+      Object.assign(new Error("User denied Geolocation"), { code: 1 })
+    );
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "位置情報が利用できません" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "渋谷駅周辺で試す" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("テストカフェ")).toBeInTheDocument();
+    });
+    // isDefaultLocation=true のとき AppHeader のアイコンが location_off に切り替わる
+    expect(screen.getByText("location_off")).toBeInTheDocument();
+  });
+
+  test("位置情報モーダルで「設定で許可する」を選ぶと設定画面へ遷移する", async () => {
+    const { getCurrentPosition } = await import("~/utils/geolocation");
+    vi.mocked(getCurrentPosition).mockRejectedValueOnce(
+      Object.assign(new Error("User denied Geolocation"), { code: 1 })
+    );
+
+    const user = userEvent.setup();
+    renderHome();
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "位置情報が利用できません" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "設定で許可する" }));
+
+    expect(mockNavigate).toHaveBeenCalledWith("/settings");
   });
 });
 
