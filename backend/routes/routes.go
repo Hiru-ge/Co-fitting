@@ -23,6 +23,7 @@ type Deps struct {
 	PlacePhotoHandler *handlers.PlacePhotoHandler
 	HealthHandler     *handlers.HealthHandler
 	DevHandler        *handlers.DevHandler
+	BetaHandler       *handlers.BetaHandler
 	JWTSecret         string
 	RedisClient       *redis.Client
 	Environment       string
@@ -40,6 +41,9 @@ func Setup(router *gin.Engine, deps Deps) {
 
 	// Swagger
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// ベータ合言葉照合（JWT不要）
+	router.POST("/api/beta/verify", deps.BetaHandler.VerifyPassphrase)
 
 	// 認証（JWT不要）
 	auth := router.Group("/api/auth")

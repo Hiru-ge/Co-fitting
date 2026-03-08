@@ -13,12 +13,17 @@ export default function BetaGate() {
   const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setLoading(true);
 
-    if (unlockBeta(input)) {
+    const ok = await unlockBeta(input);
+    setLoading(false);
+
+    if (ok) {
       navigate("/", { replace: true });
     } else {
       setError("合言葉が違います。もう一度お試しください");
@@ -70,10 +75,10 @@ export default function BetaGate() {
 
             <button
               type="submit"
-              disabled={!input.trim()}
+              disabled={!input.trim() || loading}
               className="w-full py-3 rounded-lg bg-primary text-white font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
             >
-              入力する
+              {loading ? "確認中..." : "入力する"}
             </button>
           </form>
         </div>

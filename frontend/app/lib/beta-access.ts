@@ -1,11 +1,6 @@
-export const BETA_STORAGE_KEY = "roamble_beta_unlocked";
+import { API_BASE_URL } from "~/utils/constants";
 
-/**
- * 合言葉の正解（環境変数から取得。未設定時は仮の合言葉を使用）
- * ベータ版公開時に VITE_BETA_PASSPHRASE を設定する
- */
-const BETA_PASSPHRASE =
-  import.meta.env.VITE_BETA_PASSPHRASE ?? "ROAMBLE_BETA";
+export const BETA_STORAGE_KEY = "roamble_beta_unlocked";
 
 /**
  * ベータ版へのアクセスがアンロック済みか確認する
@@ -14,23 +9,37 @@ export function isBetaUnlocked(): boolean {
   try {
     return localStorage.getItem(BETA_STORAGE_KEY) === "1";
   } catch {
-    // SSR や localStorage 利用不可環境では常に false
     return false;
   }
 }
 
 /**
- * 合言葉を照合し、正しければ localStorage にフラグを保存する
+ * バックエンドで合言葉を照合し、正しければ localStorage にフラグを保存する
  * @returns 合言葉が正しければ true
  */
-export function unlockBeta(input: string): boolean {
-  if (input.trim() === BETA_PASSPHRASE) {
-    try {
-      localStorage.setItem(BETA_STORAGE_KEY, "1");
-    } catch {
-      // localStorage 利用不可環境では無視
+export async function unlockBeta(input: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/beta/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passphrase: input.trim() }),
+    });
+
+    if (!res.ok) {
+      return false;
     }
+
+    localStorage.setItem(BETA_STORAGE_KEY, "1");
     return true;
+  } catch {
+    return false;
   }
-  return false;
+}
+
+export function lockBeta(): void {
+  try {
+    localStorage.removeItem(BETA_STORAGE_KEY);
+  } catch {
+    // localStorage 利用不可環境では無視
+  }
 }

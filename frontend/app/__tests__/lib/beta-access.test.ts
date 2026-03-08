@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import {
   isBetaUnlocked,
   unlockBeta,
+  lockBeta,
   BETA_STORAGE_KEY,
 } from "~/lib/beta-access";
 
@@ -49,35 +50,70 @@ describe("beta-access", () => {
   });
 
   describe("unlockBeta", () => {
-    test("正しい合言葉を入力した場合は true を返し、localStorageにフラグを保存する", () => {
-      const result = unlockBeta(import.meta.env.VITE_BETA_PASSPHRASE ?? "ROAMBLE_BETA");
+    test("APIが200を返すと true を返し localStorageにフラグを保存する", async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: true });
+
+      const result = await unlockBeta("EARLYROAMER");
+
       expect(result).toBe(true);
       expect(localStorage.getItem(BETA_STORAGE_KEY)).toBe("1");
     });
 
-    test("誤った合言葉を入力した場合は false を返し、localStorageは変化しない", () => {
-      const result = unlockBeta("wrong-passphrase");
+    test("APIが401を返すと false を返し localStorageは変化しない", async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 401 });
+
+      const result = await unlockBeta("WRONGPASS");
+
       expect(result).toBe(false);
       expect(localStorage.getItem(BETA_STORAGE_KEY)).toBeNull();
     });
 
-    test("連続して誤った合言葉を入力しても false を返し続ける", () => {
-      expect(unlockBeta("abc")).toBe(false);
-      expect(unlockBeta("def")).toBe(false);
-      expect(isBetaUnlocked()).toBe(false);
+    test("ネットワークエラー時は false を返す（throw しない）", async () => {
+      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
+
+      const result = await unlockBeta("EARLYROAMER");
+
+      expect(result).toBe(false);
     });
 
-    test("大文字・小文字を区別する", () => {
-      const passphrase = import.meta.env.VITE_BETA_PASSPHRASE ?? "ROAMBLE_BETA";
-      expect(unlockBeta(passphrase.toLowerCase())).toBe(false);
-      expect(isBetaUnlocked()).toBe(false);
+    test("入力の前後スペースをトリムして API に送信する", async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: true });
+
+      await unlockBeta("  EARLYROAMER  ");
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/beta/verify"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ passphrase: "EARLYROAMER" }),
+        })
+      );
     });
 
-    test("前後の空白を無視して合言葉を照合する", () => {
-      const passphrase = import.meta.env.VITE_BETA_PASSPHRASE ?? "ROAMBLE_BETA";
-      const result = unlockBeta(`  ${passphrase}  `);
-      expect(result).toBe(true);
-      expect(isBetaUnlocked()).toBe(true);
+    test("正しいエンドポイントに POST リクエストを送信する", async () => {
+      global.fetch = vi.fn().mockResolvedValue({ ok: true });
+
+      await unlockBeta("EARLYROAMER");
+
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/beta/verify"),
+        expect.objectContaining({
+          method: "POST",
+          headers: expect.objectContaining({ "Content-Type": "application/json" }),
+        })
+      );
+    });
+  });
+
+  describe("lockBeta", () => {
+    test("localStorageからフラグが削除される", () => {
+      localStorage.setItem(BETA_STORAGE_KEY, "1");
+      lockBeta();
+      expect(localStorage.getItem(BETA_STORAGE_KEY)).toBeNull();
+    });
+
+    test("フラグがなくても呼び出しがエラーにならない", () => {
+      expect(() => lockBeta()).not.toThrow();
     });
   });
 });

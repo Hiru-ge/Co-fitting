@@ -131,6 +131,8 @@ func main() {
 		JWTCfg:      jwtCfg,
 	}
 
+	betaHandler := &handlers.BetaHandler{}
+
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{
 		AuthHandler:       authHandler,
@@ -143,6 +145,7 @@ func main() {
 		PlacePhotoHandler: placePhotoHandler,
 		HealthHandler:     healthHandler,
 		DevHandler:        devHandler,
+		BetaHandler:       betaHandler,
 		JWTSecret:         jwtCfg.Secret,
 		RedisClient:       redisClient,
 		Environment:       environment,
