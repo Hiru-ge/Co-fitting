@@ -221,12 +221,27 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | マップ表示 | Google Maps上に訪問済みピンを表示。マップ初期表示時の中心位置はユーザーの現在地（Geolocation API）を基準とする。現在地が取得できない場合は訪問履歴の座標平均を使用する |
 | 訪問詳細画面 | 履歴画面の各アイテムをタップすると詳細画面に遷移。一言メモ（任意）と5段階評価を入力・表示 |
 | タイムライン | 訪問履歴を時系列で閲覧（一覧表示は現在のまま維持） |
+| Google Maps で開く | 提案カードから施設の Google Maps ページを開くリンクを表示（`https://www.google.com/maps/place/?q=place_id:{id}`）。ナビゲーション起動・施設詳細確認に活用できる。Issue #200、Phase 1 ファイナル実装済み |
+| 営業時間表示 | 提案 API が Places API の `currentOpeningHours` を取得し、現在営業中か否か（`open_now`）をレスポンスに含める。フロントエンドで営業状況をカード上に表示。Issue #201、Phase 1 ファイナル実装済み |
+
+#### E. 公開ページ・運用機能
+
+| 項目 | 詳細 |
+|------|------|
+| ベータ合言葉アクセス制限 | `VITE_BETA_PASSPHRASE` 環境変数で設定した合言葉を入力したユーザーのみ `/home` へアクセスできる。規定外のユーザーは `root.tsx` clientLoader で `/beta-gate` にリダイレクトされる。ベータ期間終了後は本変数を削除し beta-gate ルートを廃止 |
+| GA4 アナリティクス | `VITE_GA4_ID` 環境変数で GA4 測定 ID を設定。ページビュー・訪問記録・バッジ獲得・脱却訪問などのイベントを送信。未設定時は noop（ローカル開発では送信されない） |
+| PWA 対応 | `vite-plugin-pwa` による Service Worker + Web App Manifest。ホーム画面にインストール可能。インストール後は `display: standalone` でアプリライクな UI で動作。インストール促進のための `/pwa-prompt` 画面あり |
+| OGP / SNS シェア | `og:title` / `og:image` / Twitter Card を `vite.config.ts` の `injectOgpPlugin` でビルド時に静的注入。OGP メイン画像は `https://roamble.app/ogp.png` |
 
 #### Phase 1の追加画面
 
 | 画面 | パス | 説明 |
 |------|------|------|
 | ログイン | `/login` | Google OAuthボタンのみ（メール/パスワードログイン廃止） |
+| ランディングページ（LP） | `/lp` | SEO・OGP対応のプロダクト紹介ページ。認証不要 |
+| プライバシーポリシー | `/privacy` | 個人情報保護法・Google API 要件準拠。認証不要 |
+| ベータゲート | `/beta-gate` | ベータ期間中の合言葉入力画面。`root.tsx` clientLoader で未解錠ユーザーをリダイレクト。認証不要 |
+| PWAインストール促進 | `/pwa-prompt` | 初回アクセス時（未インストール・プロンプト未却下）に表示。認証不要 |
 | オンボーディング | `/onboarding` | 興味タグ選択（1ステップ） |
 | ホームチュートリアルツアー | `/home`（モーダル） | 初回ホーム到達時にスポットライト付きモーダルで操作説明を表示。`localStorage` の `home_tour_seen` フラグで制御（未設定時のみ表示）。オンボーディング（`onboarding_skipped`）とは独立した仕組み。ステップ: ①近くの場所が提案される → ②訪問記録の方法（施設周辺200m以内で記録可能）→ ③XP・バッジの仕組み → 「はじめる」 |
 | マップ画面 | `/history`（リスト/マップタブ） | 訪問済みピン表示。独立ルートは廃止し、`/history` 内のタブ切替として実装 |
@@ -327,6 +342,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | パスワード | ~~bcryptでハッシュ化（Phase 0〜）~~ → Google OAuth移行により不要 |
 | 位置情報 | 明示的な同意のもと取得。訪問記録には施設の緯度経度（公開情報）を保存する（ユーザー自身の精密な移動履歴ではなく施設の公開座標のため、プライバシーリスクは小さい）|
 | 個人情報保護 | 個人情報保護法に準拠。データエクスポート・削除機能を実装 |
+| Content-Security-Policy (CSP) | `public/_headers` 未設定。XSS による localStorage トークン窃取リスク軽減のため、ベータ版後の正式リリース前に追加する（todo.md に未チェック項目あり） |
 
 ### 2.4 スケーラビリティ
 
@@ -350,7 +366,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 ## 3. 技術スタック
 
-> **方針**: 学習目的を兼ねるため、技術スタックは React + Go + MySQL + AWS を維持する。
+> **方针**: 学習目的を兼ねるため、コアの技術スタック（React + Go + MySQL 互換）は維持する。インフラは Phase 0、1 においてコスト最小化（$0 運用）と低レイテンシ（東京リージョン、API 50–100ms）を優先し、当初想定の AWS から Google Cloud Run + TiDB Cloud + Upstash Redis + Cloudflare へ移行済み（`docs/infra/deploy.md` 参照）。Phase 2 以降に規模拡大時の費用対効果を見て再検討。
 
 ### 3.1 MVP技術構成
 
@@ -371,12 +387,15 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 │  MySQL 8.x                      │
 ├─────────────────────────────────┤
 │          Infrastructure         │
-│  AWS (ECS or EC2)               │
-│  Route 53 (DNS)                 │
+│  Cloud Run (asia-northeast1)    │
+│  TiDB Cloud Starter (MySQL互換)  │
+│  Upstash Redis (TLS)            │
+│  Cloudflare Pages / DNS         │
 ├─────────────────────────────────┤
 │          External APIs          │
 │  Google Maps Places API         │
 │  Google OAuth                   │
+│  Google Analytics 4 (GA4)       │
 │  Gemini API (Phase 3〜)         │
 └─────────────────────────────────┘
 ```
