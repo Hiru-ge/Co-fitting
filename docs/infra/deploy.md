@@ -212,7 +212,6 @@ curl -w "\nTTFB: %{time_starttransfer}s\n" -o /dev/null -s \
 | `VITE_API_BASE_URL` | Cloud Run のサービス URL（例: `https://roamble-backend-XXXXXXXXXX.asia-northeast1.run.app`） |
 | `VITE_GOOGLE_CLIENT_ID` | Google Cloud の OAuth クライアントID |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Cloud の Maps API キー |
-| `VITE_BETA_PASSPHRASE` | ベータ版合言葉（ベータテスター通知時に決定） |
 | `VITE_GA4_ID` | GA4 測定ID（例: `G-XXXXXXXXXX`） |
 
 > `VITE_API_BASE_URL` の値は `gcloud run deploy` 完了時にターミナルに表示される Service URL
@@ -277,6 +276,47 @@ if os.Getenv("REDIS_TLS") == "true" {
 
 ---
 
+## 再デプロイ手順（Apple Silicon Mac）
+
+`Dockerfile.prod` はマルチステージビルドでコンテナ内クロスコンパイルを行うが、**Colima（Apple Silicon Mac）では QEMU エミュレーションに対応していないため `--platform linux/amd64` 指定時に segfault する**。以下の手順で回避する。
+
+```bash
+# 1. ホスト側でクロスコンパイル
+cd backend
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o roamble_amd64 main.go
+
+# 2. 最小 Dockerfile を一時作成（Dockerfile.deploy）
+cat > Dockerfile.deploy << 'EOF'
+FROM alpine:latest
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY roamble_amd64 roamble
+EXPOSE 8080
+CMD ["./roamble"]
+EOF
+
+# 3. amd64 シングルプラットフォームイメージとしてビルド＆プッシュ
+# ※ --provenance=false --sbom=false を付けないと OCI manifest list になり Cloud Run が拒否する
+docker buildx build \
+  --platform linux/amd64 \
+  --provenance=false \
+  --sbom=false \
+  --push \
+  -t asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest \
+  -f Dockerfile.deploy .
+
+# 4. Cloud Run にデプロイ
+gcloud run deploy roamble-backend \
+  --image asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest \
+  --region asia-northeast1 \
+  --allow-unauthenticated
+
+# 5. 後片付け
+rm Dockerfile.deploy roamble_amd64
+```
+
+---
+
 ## トラブルシューティング
 
 ### `No open ports detected` でデプロイが進まない
@@ -294,6 +334,33 @@ if os.Getenv("REDIS_TLS") == "true" {
 ### `EOF` — Redis 接続失敗
 
 Upstash が TLS を要求しているのにプレーンTCPで接続している。Render の Environment に **`REDIS_TLS=true`** を追加する。
+
+### 新しいコードをデプロイしても API が 404 のまま — トラフィックが古いリビジョンに向いている
+
+`gcloud run deploy` は新しいリビジョンを**作成するが、トラフィックを自動で切り替えないことがある**（特にコンソールから環境変数を変更した後など）。
+
+現在のトラフィック配分とリビジョン一覧を確認して、最新リビジョンに切り替える：
+
+```bash
+# リビジョン一覧とイメージを確認
+gcloud run revisions list \
+  --service roamble-backend \
+  --region asia-northeast1 \
+  --format="table(name,status.conditions[0].status,spec.containers[0].image)" \
+  --limit 5
+
+# 最新リビジョンにトラフィックを切り替え（リビジョン名は上記で確認）
+gcloud run services update-traffic roamble-backend \
+  --region asia-northeast1 \
+  --to-revisions <リビジョン名>=100
+
+# または常に最新へ（推奨: これを実行しておくと以降は自動切り替えになる）
+gcloud run services update-traffic roamble-backend \
+  --region asia-northeast1 \
+  --to-latest
+```
+
+> **補足**: `--to-latest` を一度実行すると、`spec.traffic` が `latestRevision: true` に変わり、以降のデプロイで自動的に最新リビジョンへ切り替わるようになる。特定リビジョンに固定（`revisionName: xxx`）されている場合は自動切り替えされないため、初回デプロイ後に一度実行しておくこと。
 
 ### UptimeRobot が `Monitor is Down`（404）になる — ブラウザでは正常応答
 
