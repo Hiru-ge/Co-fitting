@@ -37,6 +37,16 @@ export default function LP() {
   const [formState, setFormState] = useState<FormState>("idle");
   const { days, hours, minutes, seconds, expired } = useCountdown();
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://www.tiktok.com/embed.js";
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      if (document.body.contains(script)) document.body.removeChild(script);
+    };
+  }, []);
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormState("submitting");
@@ -249,6 +259,38 @@ export default function LP() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Divider ── */}
+      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+
+      {/* ── Demo Video ── */}
+      <section className="px-6 py-12">
+        <div className="max-w-md mx-auto">
+          <h2 className="text-xl font-bold font-display mb-6 text-center">
+            使ってみた動画
+          </h2>
+          <div className="flex justify-center">
+            <blockquote
+              className="tiktok-embed"
+              cite="https://www.tiktok.com/@roamble/video/7613356529164504341"
+              data-video-id="7613356529164504341"
+              style={{ maxWidth: "325px", minWidth: "325px" }}
+            >
+              <section />
+            </blockquote>
+          </div>
+          <p className="mt-3 text-center text-sm">
+            <a
+              href="https://www.tiktok.com/@roamble/video/7613356529164504341"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              TikTokで見る →
+            </a>
+          </p>
         </div>
       </section>
 
