@@ -15,17 +15,17 @@ export default function LocationPermissionModal({ onUseDefault, onGoToSettings }
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* モーダル本体 */}
-      <div className="relative z-10 w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl p-6 flex flex-col gap-4 shadow-xl">
+      <div className="relative z-10 w-full max-w-sm bg-gray-900 rounded-2xl p-6 flex flex-col gap-4 shadow-xl">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-3xl text-amber-500" aria-hidden="true">
             location_off
           </span>
-          <h2 className="text-base font-bold text-gray-900 dark:text-white">
+          <h2 className="text-base font-bold text-white">
             現在地を取得できません
           </h2>
         </div>
 
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-sm text-gray-400 leading-relaxed">
           位置情報の利用が許可されていません。
           <br />
           ブラウザの設定から許可するか、渋谷駅周辺の提案で試すことができます。
@@ -40,7 +40,7 @@ export default function LocationPermissionModal({ onUseDefault, onGoToSettings }
           </button>
           <button
             onClick={onUseDefault}
-            className="w-full py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm"
+            className="w-full py-3 rounded-xl bg-gray-800 text-gray-300 font-semibold text-sm"
           >
             渋谷駅周辺で試す
           </button>

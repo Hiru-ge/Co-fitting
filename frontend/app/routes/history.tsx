@@ -101,7 +101,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
+      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-white/10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <button
@@ -131,7 +131,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
             className={`flex items-center gap-1.5 flex-1 justify-center h-9 rounded-full text-sm font-medium transition-colors ${
               viewMode === "list"
                 ? "bg-primary-purple text-white"
-                : "bg-bg-light-purple text-text-main-purple"
+                : "bg-white/10 text-white/70"
             }`}
           >
             <span className="material-symbols-outlined text-base">list</span>
@@ -143,7 +143,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
             className={`flex items-center gap-1.5 flex-1 justify-center h-9 rounded-full text-sm font-medium transition-colors ${
               viewMode === "map"
                 ? "bg-primary-purple text-white"
-                : "bg-bg-light-purple text-text-main-purple"
+                : "bg-white/10 text-white/70"
             }`}
           >
             <span className="material-symbols-outlined text-base">map</span>
@@ -160,7 +160,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
             className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
               activeFilter === "all"
                 ? "bg-primary-purple text-white"
-                : "bg-bg-light-purple text-text-main-purple"
+                : "bg-white/10 text-white/70"
             }`}
           >
             <span className="text-sm font-medium">すべて</span>
@@ -177,7 +177,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
                 className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
                   isActive
                     ? "bg-primary-purple text-white"
-                    : "bg-bg-light-purple text-text-main-purple"
+                    : "bg-white/10 text-white/70"
                 }`}
               >
                 <span className="material-symbols-outlined text-lg">
@@ -248,7 +248,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="px-6 py-2 rounded-full bg-bg-light-purple text-text-main-purple text-sm font-medium transition-opacity disabled:opacity-50"
+                    className="px-6 py-2 rounded-full bg-white/10 text-white text-sm font-medium transition-opacity disabled:opacity-50"
                   >
                     {isLoadingMore ? "読み込み中..." : "もっと見る"}
                   </button>
@@ -269,7 +269,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
   return (
     <Link
       to={`/history/${visit.id}`}
-      className="flex items-center gap-4 bg-white dark:bg-white/10 p-3 rounded-lg border border-gray-100 dark:border-white/10 shadow-sm transition-transform active:scale-[0.98]"
+      className="flex items-center gap-4 bg-white/10 p-3 rounded-lg border border-white/10 shadow-sm transition-transform active:scale-[0.98]"
     >
       {/* サムネイル */}
       <div
@@ -292,14 +292,14 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
       {/* テキスト情報 */}
       <div className="flex flex-1 flex-col min-w-0">
         <div className="flex justify-between items-start">
-          <p className="text-text-main-purple dark:text-white text-base font-bold truncate">
+          <p className="text-white text-base font-bold truncate">
             {visit.place_name}
           </p>
         </div>
-        <p className="text-[#75608a] dark:text-gray-400 text-xs mt-0.5">
+        <p className="text-gray-400 text-xs mt-0.5">
           {visit.vicinity}
         </p>
-        <div className="flex items-center gap-1 mt-2 text-[#75608a] dark:text-gray-400">
+        <div className="flex items-center gap-1 mt-2 text-gray-400">
           <span className="material-symbols-outlined text-xs">
             calendar_today
           </span>

@@ -22,10 +22,10 @@ export default function CompleteCard() {
 
       {/* メッセージ */}
       <div className="flex flex-col gap-3">
-        <h2 className="text-2xl font-extrabold tracking-tight text-text-main dark:text-white">
+        <h2 className="text-2xl font-extrabold tracking-tight text-white">
           今日の3件コンプリート！
         </h2>
-        <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+        <p className="text-gray-400 text-sm leading-relaxed">
           今日の冒険はすべて達成しました。
           <br />
           明日また新しいスポットが待っています！
@@ -35,7 +35,7 @@ export default function CompleteCard() {
       {/* 履歴リンク */}
       <Link
         to="/history"
-        className="flex items-center gap-2 px-6 py-3 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 transition-colors rounded-full text-text-main dark:text-white font-bold text-sm"
+        className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-full text-white font-bold text-sm"
       >
         <span className="material-symbols-outlined text-base">history</span>
         訪問した場所を振り返る

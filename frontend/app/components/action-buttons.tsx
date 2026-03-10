@@ -27,9 +27,9 @@ export default function ActionButtons({
           onClick={onReload}
           disabled={isReloadDisabled}
           aria-label="リロード"
-          className="size-12 flex items-center justify-center rounded-full bg-white/90 dark:bg-white/20 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          className="size-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
-          <span className={`material-symbols-outlined text-xl text-gray-600 dark:text-gray-300 ${isReloading ? "animate-spin" : ""}`}>
+          <span className={`material-symbols-outlined text-xl text-gray-300 ${isReloading ? "animate-spin" : ""}`}>
             {isReloading ? "progress_activity" : "refresh"}
           </span>
         </button>

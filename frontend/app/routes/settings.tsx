@@ -14,7 +14,7 @@ import { clearSuggestionsCache, getReloadCountRemaining } from "~/hooks/use-sugg
 type TabId = "user" | "suggestion";
 
 const INPUT_CLASS =
-  "w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm text-black dark:text-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
+  "w-full px-4 py-3 rounded-xl border border-gray-700 text-sm text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
 const SUBMIT_CLASS =
   "w-full py-3 rounded-full bg-primary text-black font-bold text-sm transition-colors active:scale-95 disabled:opacity-50";
 
@@ -60,11 +60,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
+      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-white/10">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
+            className="flex size-10 items-center justify-center rounded-full bg-white/10"
             aria-label="戻る"
           >
             <span className="material-symbols-outlined text-xl text-gray-600">
@@ -78,7 +78,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 
       {/* Tab Navigation */}
       <div className="px-4 pt-4" role="tablist">
-        <div className="flex gap-1 bg-gray-100 dark:bg-white/10 rounded-xl p-1">
+        <div className="flex gap-1 bg-white/10 rounded-xl p-1">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -87,8 +87,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1 py-2.5 px-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === tab.id
-                  ? "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  ? "bg-gray-800 text-gray-200 shadow-sm"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
             >
               <span className="material-symbols-outlined text-base" aria-hidden="true">
@@ -173,8 +173,8 @@ function UserInfoTab({
   return (
     <div className="space-y-6">
       {/* 表示名変更セクション */}
-      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+      <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-200 mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             badge
           </span>
@@ -209,8 +209,8 @@ function UserInfoTab({
       </section>
 
       {/* プライバシーポリシー・法的情報 */}
-      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
+      <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-200 mb-4 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             policy
           </span>
@@ -218,7 +218,7 @@ function UserInfoTab({
         </h2>
         <Link
           to="/privacy"
-          className="flex items-center justify-between py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+          className="flex items-center justify-between py-3 text-sm text-gray-300 hover:text-primary transition-colors"
         >
           <span className="flex items-center gap-2">
             <span className="material-symbols-outlined text-lg text-gray-400">
@@ -230,12 +230,12 @@ function UserInfoTab({
             chevron_right
           </span>
         </Link>
-        <div className="border-t border-gray-100 dark:border-white/10" />
+        <div className="border-t border-white/10" />
         <a
           href="https://forms.gle/upcMz6uV97hmLn9n9"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between py-3 text-sm text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+          className="flex items-center justify-between py-3 text-sm text-gray-300 hover:text-primary transition-colors"
         >
           <span className="flex items-center gap-2">
             <span className="material-symbols-outlined text-lg text-gray-400">
@@ -250,14 +250,14 @@ function UserInfoTab({
       </section>
 
       {/* アカウント削除セクション */}
-      <section className="bg-white dark:bg-white/5 rounded-2xl border border-red-100 dark:border-red-900/30 shadow-sm p-5">
-        <h2 className="text-base font-bold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+      <section className="bg-white/5 rounded-2xl border border-red-900/30 shadow-sm p-5">
+        <h2 className="text-base font-bold text-red-400 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-red-500 text-xl">
             warning
           </span>
           アカウントの削除
         </h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p className="text-sm text-gray-400 mb-4">
           アカウントを削除すると、すべてのデータが完全に削除されます。この操作は取り消せません。
         </p>
         <button
@@ -349,7 +349,7 @@ function LocationPermissionSection() {
 
     if (permState === "granted") {
       return (
-        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-medium">
+        <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
           <span className="material-symbols-outlined text-base">check_circle</span>
           許可済み — 現在地を使って提案しています
         </div>
@@ -363,19 +363,19 @@ function LocationPermissionSection() {
             <span className="material-symbols-outlined text-base">location_off</span>
             位置情報が拒否されています
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-400">
             {isIOS
               ? "アプリ・ブラウザからは再許可できません。iPhoneの設定から変更してください。"
               : "ブラウザからは再許可できません。端末の設定から変更してください。"}
           </p>
-          <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4">
+          <div className="bg-white/5 rounded-xl p-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
               変更手順
             </p>
             <ol className="space-y-2">
               {deniedSteps.map((step, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
+                <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
                     {i + 1}
                   </span>
                   {step}
@@ -395,9 +395,9 @@ function LocationPermissionSection() {
 
     // "prompt" state
     return (
-      <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3">
+      <div className="flex items-start gap-2 bg-blue-900/20 rounded-xl p-3">
         <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">info</span>
-        <p className="text-xs text-blue-700 dark:text-blue-300">
+        <p className="text-xs text-blue-300">
           まだ許可されていません。ホーム画面でスポットを読み込む際に許可ダイアログが表示されます。
           {isIOS && (isStandalone
             ? "許可後は「設定 → 位置情報サービス → Roamble」で管理できます。"
@@ -410,12 +410,12 @@ function LocationPermissionSection() {
   };
 
   return (
-    <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
-      <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+    <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
+      <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
         <span className="material-symbols-outlined text-primary text-xl">my_location</span>
         位置情報
       </h2>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+      <p className="text-sm text-gray-400 mb-4">
         現在地をもとにスポットを提案します。許可しない場合はデフォルト位置（渋谷駅付近）が使われます。
       </p>
       {statusDisplay()}
@@ -535,8 +535,8 @@ function SuggestionTab({
       <LocationPermissionSection />
 
       {/* 提案半径セクション */}
-      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+      <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             radar
           </span>
@@ -576,8 +576,8 @@ function SuggestionTab({
         </form>
       </section>
 
-      <section className="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-5">
-        <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
+      <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">
             interests
           </span>
@@ -599,7 +599,7 @@ function SuggestionTab({
                   className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                     selected
                       ? "bg-primary text-bg-dark border-primary"
-                      : "bg-gray-50 dark:bg-white/10 border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/20 hover:border-primary/60"
+                      : "bg-white/10 border-gray-600 text-gray-200 hover:bg-white/20 hover:border-primary/60"
                   }`}
                 >
                   {genre.name}
@@ -646,8 +646,8 @@ function RefreshSuggestionsModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
-        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">
+      <div className="relative bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold text-gray-200 mb-2">
           提案が更新されます
         </h3>
         <p className="text-sm text-gray-500 mb-6">
@@ -656,7 +656,7 @@ function RefreshSuggestionsModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold text-sm transition-colors active:scale-95"
+            className="flex-1 py-3 rounded-full border border-gray-700 text-gray-300 font-bold text-sm transition-colors active:scale-95"
           >
             キャンセル
           </button>
@@ -686,8 +686,8 @@ function DeleteAccountModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
-        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">
+      <div className="relative bg-gray-900 rounded-2xl p-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold text-gray-200 mb-2">
           本当にアカウントを削除しますか？
         </h3>
         <p className="text-sm text-gray-500 mb-6">
@@ -696,7 +696,7 @@ function DeleteAccountModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold text-sm transition-colors active:scale-95"
+            className="flex-1 py-3 rounded-full border border-gray-700 text-gray-300 font-bold text-sm transition-colors active:scale-95"
           >
             キャンセル
           </button>

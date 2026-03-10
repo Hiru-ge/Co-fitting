@@ -81,7 +81,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <>
           <AppHeader />
           <div className="flex-1 flex items-center justify-center px-6">
-            <div className="w-full aspect-3/5 rounded-3xl bg-gray-200 dark:bg-gray-800 animate-pulse" />
+            <div className="w-full aspect-3/5 rounded-3xl bg-gray-800 animate-pulse" />
           </div>
         </>
       ) : isCompleted ? (

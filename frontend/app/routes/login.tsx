@@ -48,10 +48,10 @@ export default function Login() {
   }
 
   return (
-    <div className="w-full space-y-6 bg-white/95 rounded-lg p-6 shadow-md">
+    <div className="w-full space-y-6 bg-white/5 rounded-lg p-6 shadow-md border border-white/10">
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-text-main">Roambleへようこそ</h2>
-        <p className="text-sm text-text-main/60">
+        <h2 className="text-2xl font-bold text-white">Roambleへようこそ</h2>
+        <p className="text-sm text-white/60">
           Googleアカウントでログイン / 新規登録
         </p>
       </div>
@@ -74,9 +74,9 @@ export default function Login() {
         </p>
       )}
 
-      <p className="text-center text-xs text-text-main/40">
+      <p className="text-center text-xs text-white/40">
         ログインすることで、
-        <Link to="/privacy" className="underline hover:text-text-main/60">
+        <Link to="/privacy" className="underline hover:text-white/60">
           プライバシーポリシー
         </Link>
         に同意したものとみなされます。

@@ -9,14 +9,8 @@
   --color-brand: #525BBB;
 
   /* Colors — Background */
-  --color-bg-light: #e8ecec;
   --color-bg-dark: #102222;
-  --color-bg-light-purple: #f7f5f8;
   --color-bg-dark-purple: #191022;
-
-  /* Colors — Text */
-  --color-text-main: #111818;
-  --color-text-main-purple: #141118;
 
   /* Font families */
   --font-sans: "Plus Jakarta Sans", "Noto Sans JP", ui-sans-serif, system-ui,
@@ -35,15 +29,8 @@
 /* ── Global styles ── */
 html,
 body {
-  @apply bg-bg-light text-text-main antialiased;
-}
-
-@media (prefers-color-scheme: dark) {
-  html,
-  body {
-    @apply bg-bg-dark text-white;
-    color-scheme: dark;
-  }
+  @apply bg-bg-dark text-white antialiased;
+  color-scheme: dark;
 }
 
 /* ── Utility classes (design tokens from screen-design) ── */

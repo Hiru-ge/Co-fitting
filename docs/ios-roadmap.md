@@ -80,7 +80,6 @@
   - 位置情報: `NSLocationWhenInUseUsageDescription`
 - [ ] ディープリンク設定（将来的な共有機能向け）
 - [ ] Safe Area 対応（ノッチ・Dynamic Island）
-- [ ] ダークモード対応（または明示的に非対応と明記）
 
 ### C-2. PWA関連の削除
 - [ ] `vite-plugin-pwa` 関連コードの削除（Web版のみ対象のため影響なし）

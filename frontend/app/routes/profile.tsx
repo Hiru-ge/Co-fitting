@@ -66,11 +66,11 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-col pb-12">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
+      <header className="sticky top-0 z-2 backdrop-blur-md px-4 pt-6 pb-4 border-b border-white/10">
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/settings")}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
+            className="flex size-10 items-center justify-center rounded-full bg-white/10"
             aria-label="設定"
           >
             <span className="material-symbols-outlined text-xl text-gray-600">
@@ -80,7 +80,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <h1 className="text-lg font-bold text-center">マイページ</h1>
           <button
             onClick={() => {/* TODO: 共有機能 */}}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 btn-unimplemented"
+            className="flex size-10 items-center justify-center rounded-full bg-white/10 btn-unimplemented"
             aria-label="共有"
             disabled
           >
@@ -95,7 +95,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       <div className="flex flex-col items-center px-4 pt-8 pb-4">
         {/* アバター（レベルバッジ付き） */}
         <div className="relative">
-          <div className="size-28 rounded-full border-4 border-primary p-1 bg-white dark:bg-gray-900 overflow-hidden shadow-xl">
+          <div className="size-28 rounded-full border-4 border-primary p-1 bg-gray-900 overflow-hidden shadow-xl">
             {user.avatar_url ? (
               <img
                 alt="ユーザーアイコン"
@@ -111,7 +111,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             )}
           </div>
           {stats && (
-            <div className="absolute bottom-0 right-0 bg-primary text-black text-[10px] font-black px-2 py-1 rounded-full border-2 border-white dark:border-gray-900 shadow">
+            <div className="absolute bottom-0 right-0 bg-primary text-black text-[10px] font-black px-2 py-1 rounded-full border-2 border-gray-900 shadow">
               LV.{stats.level}
             </div>
           )}
@@ -167,7 +167,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       <div className="px-4 py-4 grid grid-cols-2 gap-3">
         <Link
           to="/history"
-          className="flex items-center gap-3 p-4 bg-white dark:bg-white/10 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm active:scale-95 transition-transform border-l-4 border-l-primary"
+          className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/10 shadow-sm active:scale-95 transition-transform border-l-4 border-l-primary"
         >
           <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center">
             <span className="material-symbols-outlined text-primary text-xl">
@@ -178,12 +178,12 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               Activity
             </p>
-            <p className="font-bold text-sm text-gray-800 dark:text-gray-200">探索履歴</p>
+            <p className="font-bold text-sm text-gray-200">探索履歴</p>
           </div>
         </Link>
         <button
           onClick={() => {/* TODO: ランキング機能 */}}
-          className="flex items-center gap-3 p-4 bg-white dark:bg-white/10 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm active:scale-95 transition-transform btn-unimplemented"
+          className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/10 shadow-sm active:scale-95 transition-transform btn-unimplemented"
           disabled
         >
           <div className="size-10 rounded-full bg-amber-400/20 flex items-center justify-center">
@@ -195,7 +195,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
               Rank
             </p>
-            <p className="font-bold text-sm text-gray-800 dark:text-gray-200">ランキング</p>
+            <p className="font-bold text-sm text-gray-200">ランキング</p>
           </div>
         </button>
       </div>
@@ -203,7 +203,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       {/* ── 脱却チャレンジ統計 ── */}
       {!isLoading && stats && (
         <div className="px-4 pb-2">
-          <div className="bg-gray-50 dark:bg-white/5 rounded-2xl p-4 border border-gray-100 dark:border-white/10">
+          <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Challenge Stats</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
@@ -229,7 +229,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           <h3 className="text-base font-bold tracking-tight mb-3 px-1">得意ジャンル</h3>
           <div className="space-y-2">
             {proficiency.slice(0, 3).map((p) => (
-              <div key={p.genre_tag_id} className="flex items-center gap-3 bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-gray-100 dark:border-white/10">
+              <div key={p.genre_tag_id} className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10">
                 <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
                   <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
                     {p.icon}
@@ -259,7 +259,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         <div className="flex items-center justify-between mb-4 px-1">
           <h3 className="text-base font-bold tracking-tight">獲得バッジ</h3>
           {!isLoading && (
-            <span className="text-xs text-gray-500 font-bold bg-gray-200 dark:bg-white/10 px-2 py-1 rounded-full">
+            <span className="text-xs text-gray-500 font-bold bg-white/10 px-2 py-1 rounded-full">
               {badges.length} 個
             </span>
           )}
@@ -458,8 +458,8 @@ function LogoutModal({
         className="absolute inset-0"
         onClick={onClose}
       />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 mx-6 w-full max-w-sm shadow-xl">
-        <h3 className="text-lg font-bold text-center mb-2 text-black dark:text-white">
+      <div className="relative bg-gray-900 rounded-2xl p-6 mx-6 w-full max-w-sm shadow-xl">
+        <h3 className="text-lg font-bold text-center mb-2 text-white">
           ログアウトしますか？
         </h3>
         <p className="text-sm text-gray-500 text-center mb-6">
@@ -468,7 +468,7 @@ function LogoutModal({
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-full border border-gray-200 dark:border-gray-700 font-bold text-sm text-gray-600 dark:text-gray-300 transition-colors active:bg-gray-50 dark:active:bg-gray-800"
+            className="flex-1 py-3 rounded-full border border-gray-700 font-bold text-sm text-gray-300 transition-colors active:bg-gray-800"
           >
             キャンセル
           </button>

@@ -111,7 +111,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
         <button
           onClick={() => navigate(-1)}
           aria-label="戻る"
-          className="px-6 py-2 rounded-full bg-bg-light-purple text-text-main-purple text-sm font-medium"
+          className="px-6 py-2 rounded-full bg-white/10 text-white text-sm font-medium"
         >
           戻る
         </button>
@@ -124,7 +124,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-20 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
+      <header className="sticky top-0 z-20 backdrop-blur-md px-4 pt-6 pb-4 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
@@ -145,10 +145,10 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
 
       <main className="flex flex-col gap-6 px-4 pt-6 pb-20">
         {/* ── 場所情報カード ── */}
-        <div className="rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm overflow-hidden">
+        <div className="rounded-2xl border border-white/10 bg-white/5 shadow-sm overflow-hidden">
           {/* 写真 */}
           <div
-            className="w-full h-48 bg-gray-200 dark:bg-gray-700 bg-center bg-cover bg-no-repeat"
+            className="w-full h-48 bg-gray-700 bg-center bg-cover bg-no-repeat"
             style={
               photoUrl
                 ? { backgroundImage: `url("${photoUrl}")` }
@@ -165,7 +165,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
           </div>
 
           {/* 詳細情報 */}
-          <div className="p-4 space-y-3 text-gray-600 dark:text-gray-200">
+          <div className="p-4 space-y-3 text-gray-200">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <h2 className="text-lg font-bold truncate">
@@ -180,7 +180,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-3 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex flex-wrap gap-3 text-xs text-gray-400">
               <div className="flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">
                   calendar_today
@@ -220,7 +220,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
                 className={`text-3xl transition-colors ${
                   rating !== null && rating >= star
                     ? "text-yellow-400"
-                    : "text-gray-200 dark:text-gray-600"
+                    : "text-gray-600"
                 }`}
               >
                 ★
@@ -237,7 +237,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
             onChange={(e) => setMemo(e.target.value)}
             placeholder="どんな体験でしたか？"
             rows={5}
-            className="w-full rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-text-main-purple dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary resize-none"
+            className="w-full rounded-2xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-purple/30 focus:border-primary resize-none"
           />
         </div>
 
@@ -259,28 +259,28 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
 function SkeletonLoader() {
   return (
     <div className="flex flex-col animate-pulse">
-      <header className="px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10">
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32" />
+      <header className="px-4 pt-6 pb-4 border-b border-white/10">
+        <div className="h-8 bg-gray-700 rounded w-32" />
       </header>
       <main className="flex flex-col gap-6 px-4 pt-6">
-        <div className="rounded-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
-          <div className="w-full h-48 bg-gray-200 dark:bg-gray-700" />
+        <div className="rounded-2xl border border-white/10 overflow-hidden">
+          <div className="w-full h-48 bg-gray-700" />
           <div className="p-4 space-y-3">
-            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+            <div className="h-5 bg-gray-700 rounded w-2/3" />
+            <div className="h-4 bg-gray-700 rounded w-1/2" />
           </div>
         </div>
         <div className="space-y-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+          <div className="h-4 bg-gray-700 rounded w-16" />
           <div className="flex gap-2">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="size-8 bg-gray-200 dark:bg-gray-700 rounded" />
+              <div key={i} className="size-8 bg-gray-700 rounded" />
             ))}
           </div>
         </div>
         <div className="space-y-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20" />
-          <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded-xl" />
+          <div className="h-4 bg-gray-700 rounded w-20" />
+          <div className="h-32 bg-gray-700 rounded-xl" />
         </div>
       </main>
     </div>

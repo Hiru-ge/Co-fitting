@@ -4,16 +4,16 @@ export default function Privacy() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-bg-dark text-gray-800 dark:text-gray-200">
+    <div className="min-h-screen bg-bg-dark text-gray-200">
       {/* Header */}
-      <header className="sticky top-0 z-10 backdrop-blur-md px-4 pt-6 pb-4 border-b border-gray-100 dark:border-white/10 bg-white/80 dark:bg-bg-dark/80">
+      <header className="sticky top-0 z-10 backdrop-blur-md px-4 pt-6 pb-4 border-b border-white/10 bg-bg-dark/80">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <button
             onClick={() => navigate(-1)}
-            className="flex size-10 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
+            className="flex size-10 items-center justify-center rounded-full bg-white/10"
             aria-label="戻る"
           >
-            <span className="material-symbols-outlined text-xl text-gray-600 dark:text-gray-300">
+            <span className="material-symbols-outlined text-xl text-gray-300">
               arrow_back
             </span>
           </button>
@@ -24,7 +24,7 @@ export default function Privacy() {
 
       {/* Content */}
       <main className="max-w-2xl mx-auto px-5 py-8 space-y-8 text-sm leading-relaxed">
-        <p className="text-gray-600 dark:text-gray-400 text-xs">最終更新日: 2026年2月28日</p>
+        <p className="text-gray-400 text-xs">最終更新日: 2026年2月28日</p>
 
         <p>
           Roamble（以下「本サービス」）は、運営者が提供するWebアプリケーションです。
@@ -42,7 +42,7 @@ export default function Privacy() {
               <li>表示名</li>
               <li>プロフィール画像URL</li>
             </ul>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-gray-400">
               本サービスはGoogleの認証機能（OAuth 2.0）を利用してログインを行います。
               Googleアカウントのパスワードは本サービスには送信・保存されません。
             </p>
@@ -52,9 +52,9 @@ export default function Privacy() {
             <ul className="list-disc list-inside space-y-1 ml-2">
               <li>ブラウザの位置情報API（Geolocation API）を通じて取得する現在地の緯度・経度</li>
             </ul>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-gray-400">
               現在地の緯度・経度は、周辺施設の提案を行うためにのみ使用し、
-              <strong className="text-gray-700 dark:text-gray-300">サーバーには保存しません</strong>。
+              <strong className="text-gray-300">サーバーには保存しません</strong>。
               提案処理の完了後、サーバー上から即座に破棄されます。
             </p>
           </SubSection>
@@ -87,7 +87,7 @@ export default function Privacy() {
               <li>ページ閲覧履歴・滞在時間</li>
               <li>カスタムイベント（提案生成、訪問記録、バッジ獲得などの操作）</li>
             </ul>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
+            <p className="mt-2 text-gray-400">
               これらの情報はGoogleのサーバーに送信されます。
               詳細は
               <a
@@ -142,19 +142,19 @@ export default function Privacy() {
           <div className="overflow-x-auto mt-3">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
+                <tr className="border-b border-gray-700">
                   <th className="py-2 pr-4 font-semibold">保存データ</th>
                   <th className="py-2 pr-4 font-semibold">目的</th>
                   <th className="py-2 font-semibold">必須/任意</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-600 dark:text-gray-400">
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+              <tbody className="text-gray-400">
+                <tr className="border-b border-gray-800">
                   <td className="py-2 pr-4">JWT認証トークン</td>
                   <td className="py-2 pr-4">ログイン状態の維持</td>
                   <td className="py-2">必須</td>
                 </tr>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+                <tr className="border-b border-gray-800">
                   <td className="py-2 pr-4">オンボーディング完了フラグ</td>
                   <td className="py-2 pr-4">初回設定の管理</td>
                   <td className="py-2">必須</td>
@@ -162,7 +162,7 @@ export default function Privacy() {
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-gray-500 dark:text-gray-400">
+          <p className="mt-3 text-gray-400">
             Google Analytics（GA4）導入後は、Googleが設定するCookieも使用されます。
             ブラウザの設定でCookieを無効にすることが可能ですが、本サービスの一部機能が利用できなくなる場合があります。
           </p>
@@ -178,7 +178,7 @@ export default function Privacy() {
             <li>法令に基づく場合</li>
             <li>人の生命、身体または財産の保護のために必要がある場合であって、本人の同意を得ることが困難である場合</li>
           </ul>
-          <p className="mt-3 text-gray-500 dark:text-gray-400">
+          <p className="mt-3 text-gray-400">
             ただし、本サービスの提供にあたり、以下の外部サービスを利用しており、
             各サービスのプライバシーポリシーに従って情報が処理される場合があります。
           </p>
@@ -202,29 +202,29 @@ export default function Privacy() {
           <div className="overflow-x-auto mt-3">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
+                <tr className="border-b border-gray-700">
                   <th className="py-2 pr-4 font-semibold">サービス</th>
                   <th className="py-2 pr-4 font-semibold">用途</th>
                   <th className="py-2 font-semibold">所在国</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-600 dark:text-gray-400">
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+              <tbody className="text-gray-400">
+                <tr className="border-b border-gray-800">
                   <td className="py-2 pr-4">Render</td>
                   <td className="py-2 pr-4">バックエンドサーバー</td>
                   <td className="py-2">米国</td>
                 </tr>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+                <tr className="border-b border-gray-800">
                   <td className="py-2 pr-4">TiDB Cloud</td>
                   <td className="py-2 pr-4">データベース</td>
                   <td className="py-2">米国</td>
                 </tr>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+                <tr className="border-b border-gray-800">
                   <td className="py-2 pr-4">Upstash</td>
                   <td className="py-2 pr-4">キャッシュ（Redis）</td>
                   <td className="py-2">米国</td>
                 </tr>
-                <tr className="border-b border-gray-100 dark:border-gray-800">
+                <tr className="border-b border-gray-800">
                   <td className="py-2 pr-4">Cloudflare</td>
                   <td className="py-2 pr-4">フロントエンド配信</td>
                   <td className="py-2">米国（CDNは世界各地）</td>
@@ -232,7 +232,7 @@ export default function Privacy() {
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-gray-500 dark:text-gray-400">
+          <p className="mt-3 text-gray-400">
             米国には、個人情報の保護に関する包括的な連邦法は存在しませんが、
             各サービスの利用規約およびセキュリティ対策に基づき、適切な保護措置が講じられています。
           </p>
@@ -277,7 +277,7 @@ export default function Privacy() {
             <li><strong>利用停止・消去</strong> — 個人情報の利用停止・消去を請求できます</li>
             <li><strong>アカウント削除</strong> — 設定画面からいつでもアカウントを削除できます。削除により全データが完全に消去されます</li>
           </ul>
-          <p className="mt-2 text-gray-500 dark:text-gray-400">
+          <p className="mt-2 text-gray-400">
             上記権利の行使をご希望の場合は、末尾のお問い合わせ先までご連絡ください。
           </p>
         </Section>
@@ -306,7 +306,7 @@ export default function Privacy() {
           <p>
             本ポリシーに関するお問い合わせは、以下の連絡先までお願いいたします。
           </p>
-          <div className="mt-3 p-4 bg-gray-50 dark:bg-white/5 rounded-4xl border border-gray-100 dark:border-white/10">
+          <div className="mt-3 p-4 bg-white/5 rounded-4xl border border-white/10">
             <p className="font-semibold">Roamble 運営者</p>
             <p className="mt-1">
               メール:{" "}
@@ -317,7 +317,7 @@ export default function Privacy() {
           </div>
         </Section>
 
-        <p className="text-center text-xs text-gray-400 dark:text-gray-500 pt-4 pb-8 border-t border-gray-100 dark:border-white/10">
+        <p className="text-center text-xs text-gray-500 pt-4 pb-8 border-t border-white/10">
           制定日: 2026年2月28日
         </p>
       </main>
@@ -336,7 +336,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-3">
+      <h2 className="text-base font-bold text-gray-200 mb-3">
         第{number}条 {title}
       </h2>
       <div className="space-y-2">{children}</div>
@@ -353,7 +353,7 @@ function SubSection({
 }) {
   return (
     <div className="mt-3">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{title}</h3>
+      <h3 className="text-sm font-semibold text-gray-300 mb-2">{title}</h3>
       {children}
     </div>
   );

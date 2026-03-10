@@ -68,7 +68,7 @@ export default function LP() {
   }
 
   return (
-    <div className="min-h-dvh bg-bg-light dark:bg-bg-dark text-text-main dark:text-white">
+    <div className="min-h-dvh bg-bg-dark text-white">
       {/* ── Hero ── */}
       <section className="flex flex-col items-center justify-center px-6 pt-16 pb-12 text-center">
         <h1 className="text-5xl font-bold font-display-alt tracking-tight text-primary mb-4">
@@ -77,7 +77,7 @@ export default function LP() {
         <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6">
           一歩踏み出す体験を経験値に
         </p>
-        <p className="text-base text-text-main/70 dark:text-white/70 max-w-sm leading-relaxed mb-8">
+        <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8">
           「新しい場所に行きたいけど、勇気が出ない」
           <br />
           そんなあなたの背中を押し、一歩踏み出す体験を
@@ -142,7 +142,7 @@ export default function LP() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+      <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Pain Points ── */}
       <section className="px-6 py-12">
@@ -150,7 +150,7 @@ export default function LP() {
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             こんな経験、ありませんか？
           </h2>
-          <ul className="space-y-4 text-sm text-text-main/80 dark:text-white/80">
+          <ul className="space-y-4 text-sm text-white/80">
             {[
               "気になる店があるのに一人で入る勇気が出ない",
               "結局いつものチェーン店、いつもの行動範囲に落ち着く",
@@ -165,16 +165,16 @@ export default function LP() {
               </li>
             ))}
           </ul>
-          <p className="mt-6 text-sm text-center text-text-main/60 dark:text-white/60 leading-relaxed">
+          <p className="mt-6 text-sm text-center text-white/60 leading-relaxed">
             それは、あなたの
-            <span className="font-semibold text-text-main dark:text-white">「コンフォートゾーン」</span>
+            <span className="font-semibold text-white">「コンフォートゾーン」</span>
             が壁になっているサインです。
           </p>
         </div>
       </section>
 
       {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+      <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Features ── */}
       <section className="px-6 py-12">
@@ -193,7 +193,7 @@ export default function LP() {
               </div>
               <div>
                 <h3 className="font-bold text-base mb-1">1. 背中を押す</h3>
-                <p className="text-sm text-text-main/70 dark:text-white/70 leading-relaxed">
+                <p className="text-sm text-white/70 leading-relaxed">
                   現在地の近くから「まだ行ったことのない場所」を提案します。それはただの目的地ではなく、コンフォートゾーンを広げるための小さなクエストになります。
                 </p>
               </div>
@@ -215,7 +215,7 @@ export default function LP() {
               </div>
               <div>
                 <h3 className="font-bold text-base mb-1">2. 一歩を記録する</h3>
-                <p className="text-sm text-text-main/70 dark:text-white/70 leading-relaxed">
+                <p className="text-sm text-white/70 leading-relaxed">
                   提案された場所に実際に行き、「行った！」ボタンを押すことで
                   <span className="font-semibold text-primary"> XP（経験値）</span>
                   を獲得できます。「怖かったけど行けた」という成功体験が、確かな数値として積み上がります。
@@ -244,9 +244,9 @@ export default function LP() {
               </div>
               <div>
                 <h3 className="font-bold text-base mb-1">3. 成長を実感する</h3>
-                <p className="text-sm text-text-main/70 dark:text-white/70 leading-relaxed">
+                <p className="text-sm text-white/70 leading-relaxed">
                   訪問履歴が増えるたび、レベルアップやバッジ獲得を通じて、行動範囲とともに
-                  <span className="font-semibold text-text-main dark:text-white">自分自身の可能性</span>
+                  <span className="font-semibold text-white">自分自身の可能性</span>
                   も広がっていく実感が得られます。
                 </p>
               </div>
@@ -263,7 +263,7 @@ export default function LP() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+      <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Demo Video ── */}
       <section className="px-6 py-12">
@@ -295,7 +295,7 @@ export default function LP() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+      <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── About the Developer ── */}
       <section className="px-6 py-12">
@@ -303,7 +303,7 @@ export default function LP() {
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             作っている人
           </h2>
-          <p className="text-sm text-text-main/70 dark:text-white/70 leading-relaxed text-center mb-6">
+          <p className="text-sm text-white/70 leading-relaxed text-center mb-6">
             コンフォートゾーンから出られない課題を持つ個人開発者が、「自分自身が使いたいと思えるアプリを作る」前提で開発に取り組んでいます。
             <br />
             開発の過程は X (Twitter) で #BuildInPublic として公開しています。
@@ -313,7 +313,7 @@ export default function LP() {
               href="https://x.com/Hiru_ge"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-text-main/5 dark:bg-white/5 border border-text-main/10 dark:border-white/10 text-sm transition-colors hover:bg-text-main/10 dark:hover:bg-white/10"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm transition-colors hover:bg-white/10"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -324,7 +324,7 @@ export default function LP() {
               href="https://x.com/roamble_app"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-text-main/5 dark:bg-white/5 border border-text-main/10 dark:border-white/10 text-sm transition-colors hover:bg-text-main/10 dark:hover:bg-white/10"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm transition-colors hover:bg-white/10"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -336,7 +336,7 @@ export default function LP() {
       </section>
 
       {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+      <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Request Access ── */}
       <section id="request-access" className="px-6 py-12">
@@ -344,7 +344,7 @@ export default function LP() {
           <h2 className="text-xl font-bold font-display mb-3 text-center">
             ベータ版アクセスをリクエスト
           </h2>
-          <p className="text-sm text-text-main/60 dark:text-white/60 mb-6 text-center">
+          <p className="text-sm text-white/60 mb-6 text-center">
             現在Webベータ版公開中です。<br/>
             <span className="font-semibold text-accent-orange">リクエスト受付は3月14日（土）23:59 JSTまで。</span><br/>
             メールでアクセス用合言葉をお知らせしますので、以下のフォームからメールアドレスを登録してください。
@@ -354,7 +354,7 @@ export default function LP() {
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <span className="material-symbols-outlined text-primary text-4xl">check_circle</span>
               <p className="font-semibold">登録しました！</p>
-              <p className="text-sm text-text-main/60 dark:text-white/60">
+              <p className="text-sm text-white/60">
                 アクセス権が開放されたらメールでお知らせします。
               </p>
             </div>
@@ -367,7 +367,7 @@ export default function LP() {
                 placeholder="メールアドレスを入力"
                 required
                 disabled={formState === "submitting"}
-                className="flex-1 px-4 py-3 rounded-lg bg-text-main/5 dark:bg-white/5 border border-text-main/15 dark:border-white/15 text-sm placeholder-text-main/40 dark:placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+                className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
               />
               <button
                 type="submit"
@@ -380,7 +380,7 @@ export default function LP() {
           )}
 
           {formState === "error" && (
-            <p className="mt-3 text-sm text-red-500 dark:text-red-400 text-center">
+            <p className="mt-3 text-sm text-red-400 text-center">
               送信に失敗しました。しばらく時間をおいて再度お試しください。
             </p>
           )}
@@ -388,7 +388,7 @@ export default function LP() {
       </section>
       
       {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-text-main/10 dark:bg-white/10" />
+      <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Start Now CTA ── */}
       <section className="px-6 py-12 text-center">
@@ -396,7 +396,7 @@ export default function LP() {
           <h2 className="text-xl font-bold font-display mb-4">
             さっそく始める
           </h2>
-          <p className="text-sm text-text-main/60 dark:text-white/60 mb-6">
+          <p className="text-sm text-white/60 mb-6">
             現在Webベータ版を公開中です。<br />合言葉をお持ちの方はそのまま始められます。
           </p>
           <a
@@ -409,7 +409,7 @@ export default function LP() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="px-6 py-6 text-center text-xs text-text-main/40 dark:text-white/30">
+      <footer className="px-6 py-6 text-center text-xs text-white/30">
         <Link to="/privacy" className="hover:underline">
           プライバシーポリシー
         </Link>
