@@ -155,6 +155,110 @@ describe("Home clientLoader", () => {
     sessionStorageMock.clear();
   });
 
+  test("トークンがない場合は /login にリダイレクトし、API 呼び出しは行わない", async () => {
+    const { getToken, getUser } = await import("~/lib/auth");
+    vi.mocked(getToken).mockReturnValueOnce(null);
+    const { redirect } = await import("react-router");
+    const { clientLoader } = await import("~/routes/home");
+
+    try {
+      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    } catch {
+      // throw redirect を使う
+    }
+
+    expect(redirect).toHaveBeenCalledWith("/login");
+    expect(redirect).toHaveBeenCalledTimes(1);
+    expect(getUser).not.toHaveBeenCalled();
+  });
+
+  test("getUser が失敗した場合は /login にのみリダイレクトする", async () => {
+    const { getUser } = await import("~/lib/auth");
+    vi.mocked(getUser).mockRejectedValueOnce(new Error("unauthorized"));
+    const { redirect } = await import("react-router");
+    const { clientLoader } = await import("~/routes/home");
+
+    try {
+      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    } catch {
+      // throw redirect を使う
+    }
+
+    expect(redirect).toHaveBeenCalledWith("/login");
+    expect(redirect).not.toHaveBeenCalledWith("/onboarding");
+  });
+
+  test("getInterests が失敗した場合は /login にのみリダイレクトする", async () => {
+    const { getInterests } = await import("~/api/genres");
+    vi.mocked(getInterests).mockRejectedValueOnce(new Error("network error"));
+    const { redirect } = await import("react-router");
+    const { clientLoader } = await import("~/routes/home");
+
+    try {
+      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    } catch {
+      // throw redirect を使う
+    }
+
+    expect(redirect).toHaveBeenCalledWith("/login");
+    expect(redirect).not.toHaveBeenCalledWith("/onboarding");
+  });
+
+  test("interests < 3 で /onboarding にリダイレクトする場合、/login へはリダイレクトしない", async () => {
+    const { getInterests } = await import("~/api/genres");
+    vi.mocked(getInterests).mockResolvedValueOnce([
+      { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
+    ]);
+    const { redirect } = await import("react-router");
+    const { clientLoader } = await import("~/routes/home");
+
+    try {
+      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    } catch {
+      // throw redirect を使う
+    }
+
+    expect(redirect).toHaveBeenCalledWith("/onboarding");
+    expect(redirect).not.toHaveBeenCalledWith("/login");
+  });
+
+  test("getUser と getInterests が並列実行される（Promise.all）", async () => {
+    const { getUser } = await import("~/lib/auth");
+    const { getInterests } = await import("~/api/genres");
+
+    let getUserStarted = false;
+    let getInterestsStarted = false;
+    let getUserStartedBeforeInterestsDone = false;
+
+    vi.mocked(getUser).mockImplementationOnce(async () => {
+      getUserStarted = true;
+      await new Promise(resolve => setTimeout(resolve, 10));
+      return {
+        id: 1, email: "test@example.com", display_name: "テスト",
+        avatar_url: null, created_at: "2024-01-01", updated_at: "2024-01-01",
+        search_radius: 500,
+      };
+    });
+    vi.mocked(getInterests).mockImplementationOnce(async () => {
+      getInterestsStarted = true;
+      // getUser が既に開始している（並列）ことを確認
+      getUserStartedBeforeInterestsDone = getUserStarted;
+      await new Promise(resolve => setTimeout(resolve, 10));
+      return [
+        { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
+        { genre_tag_id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
+        { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
+      ];
+    });
+
+    const { clientLoader } = await import("~/routes/home");
+    await clientLoader({} as Parameters<typeof clientLoader>[0]);
+
+    expect(getUserStarted).toBe(true);
+    expect(getInterestsStarted).toBe(true);
+    expect(getUserStartedBeforeInterestsDone).toBe(true);
+  });
+
   test("interests < 3 かつ onboarding_skipped フラグなしなら /onboarding にリダイレクトする", async () => {
     const { getInterests } = await import("~/api/genres");
     vi.mocked(getInterests).mockResolvedValueOnce([

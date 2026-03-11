@@ -22,6 +22,36 @@ export async function clientLoader({ request }: { request: Request }) {
   return null;
 }
 
+/** clientLoader 実行中（API 待機中）に表示するスプラッシュ画面 */
+export function HydrateFallback() {
+  return (
+    <html lang="ja">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Roamble</title>
+        <meta name="theme-color" content="#525BBB" />
+        <Links />
+        <style>{`
+          *{box-sizing:border-box;margin:0;padding:0}
+          body{background:#102222;display:flex;align-items:center;justify-content:center;height:100dvh}
+          .splash{display:flex;flex-direction:column;align-items:center;gap:24px}
+          .splash-logo{width:80px;height:80px;border-radius:18px}
+          .splash-spinner{width:28px;height:28px;border:3px solid rgba(82,91,187,.3);border-top-color:#525BBB;border-radius:50%;animation:spin .8s linear infinite}
+          @keyframes spin{to{transform:rotate(360deg)}}
+        `}</style>
+      </head>
+      <body>
+        <div className="splash">
+          <img className="splash-logo" src="/icons/icon-192x192.png" alt="Roamble" />
+          <div className="splash-spinner" />
+        </div>
+        <Scripts />
+      </body>
+    </html>
+  );
+}
+
 // ── Local font imports (@fontsource) ──
 import "@fontsource/plus-jakarta-sans";
 import "@fontsource/space-grotesk";

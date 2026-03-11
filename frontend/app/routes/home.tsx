@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
-import { protectedLoader } from "~/lib/protected-loader";
+import { getToken, getUser } from "~/lib/auth";
 import { getInterests } from "~/api/genres";
 import { ONBOARDING_SKIPPED_KEY, HOME_TOUR_SEEN_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
@@ -18,8 +18,17 @@ import HomeTourModal from "~/components/HomeTourModal";
 import LocationPermissionModal from "~/components/location-permission-modal";
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
-  const { user, token } = await protectedLoader();
-  const interests = await getInterests(token);
+  const token = getToken();
+  if (!token) throw redirect("/login");
+
+  let apiResult: [Awaited<ReturnType<typeof getUser>>, Awaited<ReturnType<typeof getInterests>>];
+  try {
+    apiResult = await Promise.all([getUser(token), getInterests(token)]);
+  } catch {
+    throw redirect("/login");
+  }
+
+  const [user, interests] = apiResult;
   const onboardingSkipped = localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
   if (interests.length < 3 && !onboardingSkipped) throw redirect("/onboarding");
   return { user, token };
