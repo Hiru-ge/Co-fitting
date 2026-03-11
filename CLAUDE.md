@@ -26,6 +26,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 タスク追加時はdocs/todo.mdのTODOリストに、優先度・工数・担当者・フェーズを明記して追加する。コードに変更が発生する場合はGitHub Issuesにもタスクを追加する。
 GitHub Issuesにタスクを追加する際はghコマンドを用い、タスクタイトルと簡単なタスク概要のみを記載する。タスクの詳細はdocs/todo.mdにのみ記載する。
 開発は全てt-wadaのTDDに従って、「RED→GREEN→REFACTOR」のサイクルで進行。
+
+### GitHub Issue命名規則
+
+Issue名は「〇〇エンドポイント実装」「〇〇画面実装」「〇〇サービス実装」「〇〇DBモデル実装」のように、**実装対象を明確にした体言止め**で命名する。「Step X:」などのフェーズ番号表記は使わない。過去のIssue（#88「Google OAuth認証エンドポイント実装」、#107「訪問詳細画面実装」等）のスタイルに従うこと。
+
+### docs/todo.md の記述粒度
+
+TDDで実装するタスクは `docs/todo.md` に以下の形式で記載する。ファイル名・関数名・引数型レベルまで明記すること。
+
+```
+**🔴 RED**
+- [ ] `xxx_test.go` に `TestFuncName_Case` テスト作成（期待するHTTPステータス・戻り値を明記）
+
+**🟢 GREEN**
+- [ ] `xxx.go` に `FuncName(args Type) ReturnType` 実装
+- [ ] `routes.go` にルート追加
+
+**🔵 REFACTOR**
+- [ ] 重複コードの切り出し・型定義の整理
+```
 ブランチはmain/masterと、機能ごとのfeatureブランチ(feat/xxx)を使用。
 **git操作について**: Issue作成（`gh issue create`）以外のgit操作（commit・push・PR作成など）は行わないこと。タスクが完了したら `docs/todo.md` の該当項目にチェックを入れること。Issue作成時は、`Phase0`, `Phase1`, `Phase2`, `Phase3`, `Phase4`, `frontend`, `backend` の中から適切なラベルを付与すること。
 現在のフェーズ: **Phase 1（ドッグフーディング中）** — ゲーミフィケーション（XP・レベル・バッジ）・Google OAuth・興味タグ/パーソナライズ提案などを実装済み。現在はPhase 1最終段階としてベータ版公開中。ユーザーフィードバックをもとに品質改善とバグ修正を継続中。Phase 2以降の機能（Gemini API連携、リマインダー、ソーシャル機能など）は一切実装せず、Phase 1の完成度向上に集中すること。
