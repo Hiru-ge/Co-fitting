@@ -384,32 +384,32 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/lib/push.test.ts` 作成
+- [x] `frontend/app/lib/push.test.ts` 作成
   - `subscribePush` — ServiceWorkerとPushManagerをモック → `subscribePushToBackend` が呼ばれるか
   - `unsubscribePush` — `unsubscribePushFromBackend` が呼ばれるか
   - `getPushPermissionState` — `Notification.permission` の値を返すか
 
 **🟢 GREEN**
 
-- [ ] `frontend/vite.config.ts` の PWA設定を `strategy: "injectManifest"` に変更（`srcDir: "public"`, `filename: "sw.js"` を指定）
-- [ ] `frontend/public/sw.js` 作成
+- [x] `frontend/vite.config.ts` の PWA設定を `strategy: "injectManifest"` に変更（`srcDir: "public"`, `filename: "sw.js"` を指定）
+- [x] `frontend/public/sw.js` 作成
   - `precacheAndRoute(self.__WB_MANIFEST)` で既存キャッシュ設定を移植
   - `push` イベント: `showNotification(title, { body, icon, badge, data: { url } })`
   - `notificationclick` イベント: `clients.openWindow(event.notification.data.url)`
-- [ ] `frontend/app/lib/push.ts` 作成
+- [x] `frontend/app/lib/push.ts` 作成
   - `subscribePush(token: string): Promise<boolean>`
   - `unsubscribePush(token: string): Promise<void>`
   - `getPushPermissionState(): Promise<NotificationPermission>`
-- [ ] `frontend/app/api/notifications.ts` 作成
+- [x] `frontend/app/api/notifications.ts` 作成
   - `getNotificationSettings(token: string): Promise<NotificationSettings>`
   - `updateNotificationSettings(token: string, settings: Partial<NotificationSettings>): Promise<void>`
   - `subscribePushToBackend(token: string, subscription: PushSubscriptionJSON): Promise<void>`
   - `unsubscribePushFromBackend(token: string, endpoint: string): Promise<void>`
-- [ ] `frontend/app/types/notification.ts` 作成（`NotificationSettings` 型定義）
+- [x] `frontend/app/types/notification.ts` 作成（`NotificationSettings` 型定義）
 
 **🔵 REFACTOR**
 
-- [ ] VAPID公開鍵取得をキャッシュして毎回APIを叩かないよう最適化
+- [x] VAPID公開鍵取得をキャッシュして毎回APIを叩かないよう最適化
 
 ---
 
