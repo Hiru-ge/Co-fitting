@@ -40,7 +40,8 @@
       "Bash(docker compose down:*)",
       "Bash(docker system prune:*)",
       "Bash(rm:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Read(.env*)"
     ]
   }
 }

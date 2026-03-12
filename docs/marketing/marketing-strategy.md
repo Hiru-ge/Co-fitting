@@ -210,6 +210,7 @@
 | 3/10 | TikTok | 「ベータ版想定以上の反響」プロダクト紹介 | https://www.tiktok.com/@roamble/video/7615554008542924050 |
 | 3/11 | TikTok | 「残り3日」静止画リマインド | https://www.tiktok.com/@roamble/photo/7615935227617103112 |
 | 3/12 | X | 「残り2日」+ 通知機能開発着手 | https://x.com/roamble_app/status/2031912531967746290 |
+| 3/12 | TikTok | 「残り2日」+「通知機能をつけることにしました」ドッグフーディング系 | https://www.tiktok.com/@roamble/video/7616307559728827666 |
 
 * [x] **ドッグフーディング動画**（TikTok/Reels）を1本以上投稿
   * 「ベータ版を実際に使ってみた」系のPOV動画（4.2のフォーマット参照）
