@@ -1,0 +1,392 @@
+package services
+
+import (
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/Hiru-ge/roamble/models"
+	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
+)
+
+// PushSender はプッシュ通知送信の抽象インターフェース
+type PushSender interface {
+	SendToUser(userID uint64, payload PushPayload) error
+}
+
+// EmailSender はメール送信の抽象インターフェース
+type EmailSender interface {
+	SendStreakReminder(toEmail, userName string, streakWeeks int) error
+	SendWeeklySummary(toEmail string, data WeeklySummaryData) error
+	SendMonthlySummary(toEmail string, data MonthlySummaryData) error
+}
+
+// NotificationScheduler は通知スケジューラーを表す
+type NotificationScheduler struct {
+	cron  *cron.Cron
+	push  PushSender
+	email EmailSender
+	db    *gorm.DB
+}
+
+// NewNotificationScheduler は NotificationScheduler を初期化して返す
+func NewNotificationScheduler(push PushSender, email EmailSender, db *gorm.DB) *NotificationScheduler {
+	c := cron.New(cron.WithLocation(jst))
+	return &NotificationScheduler{
+		cron:  c,
+		push:  push,
+		email: email,
+		db:    db,
+	}
+}
+
+// Start は4つの通知ジョブを登録してスケジューラーを起動する
+func (s *NotificationScheduler) Start() {
+	// デイリーサジェスション: 毎朝7時 JST
+	s.cron.AddFunc("0 7 * * *", func() { //nolint:errcheck
+		s.RunDailySuggestionNotification()
+	})
+	// ストリークリマインダー: 毎週日曜朝7時 JST（#284 でローリングウィンドウ方式に変更予定）
+	s.cron.AddFunc("0 7 * * 0", func() { //nolint:errcheck
+		s.RunStreakReminderNotification()
+	})
+	// 週次サマリー: 毎週月曜朝10時 JST
+	s.cron.AddFunc("0 10 * * 1", func() { //nolint:errcheck
+		s.RunWeeklySummaryNotification()
+	})
+	// 月次サマリー: 毎月1日朝10時 JST
+	s.cron.AddFunc("0 10 1 * *", func() { //nolint:errcheck
+		s.RunMonthlySummaryNotification()
+	})
+	s.cron.Start()
+}
+
+// Stop はスケジューラーを停止する
+func (s *NotificationScheduler) Stop() {
+	s.cron.Stop()
+}
+
+// EntryCount は登録済みジョブ数を返す
+func (s *NotificationScheduler) EntryCount() int {
+	return len(s.cron.Entries())
+}
+
+// RunDailySuggestionNotification はPush購読ユーザー全員にデイリーサジェスション通知を送信する
+func (s *NotificationScheduler) RunDailySuggestionNotification() {
+	userIDs, err := fetchDailySuggestionTargetUserIDs(s.db)
+	if err != nil {
+		log.Printf("scheduler: daily suggestion: fetch targets: %v", err)
+		return
+	}
+
+	payload := PushPayload{
+		Title: "今日のおすすめスポット",
+		Body:  "新しい場所への一歩を踏み出してみませんか？",
+		URL:   "/home",
+	}
+
+	for _, userID := range userIDs {
+		if err := s.push.SendToUser(userID, payload); err != nil {
+			log.Printf("scheduler: daily suggestion: send to user %d: %v", userID, err)
+		}
+	}
+}
+
+// RunStreakReminderNotification は今週未訪問かつstreak>0のユーザーにリマインダーを送信する
+// （#284 でローリングウィンドウ方式に変更予定）
+func (s *NotificationScheduler) RunStreakReminderNotification() {
+	targets, err := fetchStreakReminderTargets(s.db)
+	if err != nil {
+		log.Printf("scheduler: streak reminder: fetch targets: %v", err)
+		return
+	}
+
+	pushPayload := PushPayload{
+		Title: "ストリークが切れちゃうよ！",
+		Body:  "今日中に新しい場所を訪れてストリークをつなごう",
+		URL:   "/home",
+	}
+
+	for _, target := range targets {
+		if target.PushEnabled && target.StreakReminder {
+			if err := s.push.SendToUser(target.UserID, pushPayload); err != nil {
+				log.Printf("scheduler: streak reminder: push to user %d: %v", target.UserID, err)
+			}
+		}
+		if s.email != nil && target.EmailEnabled && target.StreakReminder && target.Email != "" {
+			if err := s.email.SendStreakReminder(target.Email, target.DisplayName, target.StreakCount); err != nil {
+				log.Printf("scheduler: streak reminder: email to user %d: %v", target.UserID, err)
+			}
+		}
+	}
+}
+
+// RunWeeklySummaryNotification は週次サマリー設定ONのユーザー全員にサマリーを送信する
+func (s *NotificationScheduler) RunWeeklySummaryNotification() {
+	targets, err := fetchWeeklySummaryTargets(s.db)
+	if err != nil {
+		log.Printf("scheduler: weekly summary: fetch targets: %v", err)
+		return
+	}
+
+	weekStart := lastWeekStart()
+	weekEnd := weekStart.AddDate(0, 0, 7)
+
+	for _, target := range targets {
+		data, err := buildWeeklySummaryData(s.db, target, weekStart, weekEnd)
+		if err != nil {
+			log.Printf("scheduler: weekly summary: build data for user %d: %v", target.UserID, err)
+			continue
+		}
+
+		if target.PushEnabled && target.WeeklySummary {
+			payload := PushPayload{
+				Title: "今週の冒険まとめ",
+				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
+				URL:   "/history",
+			}
+			if err := s.push.SendToUser(target.UserID, payload); err != nil {
+				log.Printf("scheduler: weekly summary: push to user %d: %v", target.UserID, err)
+			}
+		}
+
+		if s.email != nil && target.EmailEnabled && target.WeeklySummary && target.Email != "" {
+			if err := s.email.SendWeeklySummary(target.Email, data); err != nil {
+				log.Printf("scheduler: weekly summary: email to user %d: %v", target.UserID, err)
+			}
+		}
+	}
+}
+
+// RunMonthlySummaryNotification は月次サマリー設定ONのユーザー全員にサマリーを送信する
+func (s *NotificationScheduler) RunMonthlySummaryNotification() {
+	targets, err := fetchMonthlySummaryTargets(s.db)
+	if err != nil {
+		log.Printf("scheduler: monthly summary: fetch targets: %v", err)
+		return
+	}
+
+	now := time.Now().In(jst)
+	// 前月の範囲を計算
+	lastMonth := now.AddDate(0, -1, 0)
+	monthStart := time.Date(lastMonth.Year(), lastMonth.Month(), 1, 0, 0, 0, 0, jst)
+	monthEnd := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, jst)
+	monthLabel := fmt.Sprintf("%d年%d月", lastMonth.Year(), int(lastMonth.Month()))
+
+	for _, target := range targets {
+		data, err := buildMonthlySummaryData(s.db, target, monthStart, monthEnd, monthLabel)
+		if err != nil {
+			log.Printf("scheduler: monthly summary: build data for user %d: %v", target.UserID, err)
+			continue
+		}
+
+		if target.PushEnabled && target.MonthlySummary {
+			payload := PushPayload{
+				Title: fmt.Sprintf("%sの冒険まとめ", monthLabel),
+				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
+				URL:   "/history",
+			}
+			if err := s.push.SendToUser(target.UserID, payload); err != nil {
+				log.Printf("scheduler: monthly summary: push to user %d: %v", target.UserID, err)
+			}
+		}
+
+		if s.email != nil && target.EmailEnabled && target.MonthlySummary && target.Email != "" {
+			if err := s.email.SendMonthlySummary(target.Email, data); err != nil {
+				log.Printf("scheduler: monthly summary: email to user %d: %v", target.UserID, err)
+			}
+		}
+	}
+}
+
+// --- リポジトリ関数 ---
+
+// fetchDailySuggestionTargetUserIDs はデイリーサジェスション通知対象ユーザーIDを返す
+// 条件: push_subscriptions に1件以上あり、通知設定で push_enabled=true かつ daily_suggestion=true
+func fetchDailySuggestionTargetUserIDs(db *gorm.DB) ([]uint64, error) {
+	var userIDs []uint64
+	err := db.Model(&models.PushSubscription{}).
+		Joins("JOIN notification_settings ns ON ns.user_id = push_subscriptions.user_id").
+		Where("ns.push_enabled = ? AND ns.daily_suggestion = ?", true, true).
+		Distinct("push_subscriptions.user_id").
+		Pluck("push_subscriptions.user_id", &userIDs).Error
+	return userIDs, err
+}
+
+// notificationTarget はストリーク/サマリー通知のターゲットユーザー情報を表す
+type notificationTarget struct {
+	UserID         uint64
+	Email          string
+	DisplayName    string
+	StreakCount     int
+	PushEnabled    bool
+	EmailEnabled   bool
+	StreakReminder  bool
+	WeeklySummary   bool
+	MonthlySummary  bool
+}
+
+// fetchStreakReminderTargets はストリークリマインダー対象ユーザーを返す
+// 条件: streak_count > 0、今週（月曜〜日曜）の訪問なし、streak_reminder=true
+func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
+	thisMonday := weekStart(time.Now())
+
+	type row struct {
+		UserID       uint64
+		Email        string
+		DisplayName  string
+		StreakCount  int
+		PushEnabled  bool
+		EmailEnabled bool
+		StreakReminder bool
+	}
+	var rows []row
+
+	err := db.Table("users u").
+		Select("u.id AS user_id, u.email, u.display_name, u.streak_count, "+
+			"ns.push_enabled, ns.email_enabled, ns.streak_reminder").
+		Joins("JOIN notification_settings ns ON ns.user_id = u.id").
+		Where("u.streak_count > 0 AND ns.streak_reminder = ?", true).
+		Where("NOT EXISTS (SELECT 1 FROM visit_history v WHERE v.user_id = u.id AND v.visited_at >= ?)", thisMonday).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	targets := make([]notificationTarget, len(rows))
+	for i, r := range rows {
+		targets[i] = notificationTarget{
+			UserID:        r.UserID,
+			Email:         r.Email,
+			DisplayName:   r.DisplayName,
+			StreakCount:   r.StreakCount,
+			PushEnabled:   r.PushEnabled,
+			EmailEnabled:  r.EmailEnabled,
+			StreakReminder: r.StreakReminder,
+		}
+	}
+	return targets, nil
+}
+
+// fetchWeeklySummaryTargets は週次サマリー通知対象ユーザーを返す
+func fetchWeeklySummaryTargets(db *gorm.DB) ([]notificationTarget, error) {
+	return fetchSummaryTargets(db, "weekly_summary")
+}
+
+// fetchMonthlySummaryTargets は月次サマリー通知対象ユーザーを返す
+func fetchMonthlySummaryTargets(db *gorm.DB) ([]notificationTarget, error) {
+	return fetchSummaryTargets(db, "monthly_summary")
+}
+
+// fetchSummaryTargets はサマリー通知対象ユーザーを返す汎用関数
+func fetchSummaryTargets(db *gorm.DB, settingColumn string) ([]notificationTarget, error) {
+	type row struct {
+		UserID         uint64
+		Email          string
+		DisplayName    string
+		PushEnabled    bool
+		EmailEnabled   bool
+		WeeklySummary   bool
+		MonthlySummary  bool
+	}
+	var rows []row
+
+	err := db.Table("users u").
+		Select("u.id AS user_id, u.email, u.display_name, "+
+			"ns.push_enabled, ns.email_enabled, ns.weekly_summary, ns.monthly_summary").
+		Joins("JOIN notification_settings ns ON ns.user_id = u.id").
+		Where(fmt.Sprintf("ns.%s = ?", settingColumn), true).
+		Where("(ns.push_enabled = ? OR ns.email_enabled = ?)", true, true).
+		Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+
+	targets := make([]notificationTarget, len(rows))
+	for i, r := range rows {
+		targets[i] = notificationTarget{
+			UserID:        r.UserID,
+			Email:         r.Email,
+			DisplayName:   r.DisplayName,
+			PushEnabled:   r.PushEnabled,
+			EmailEnabled:  r.EmailEnabled,
+			WeeklySummary:  r.WeeklySummary,
+			MonthlySummary: r.MonthlySummary,
+		}
+	}
+	return targets, nil
+}
+
+// buildWeeklySummaryData は週次サマリーのメールデータを構築する
+func buildWeeklySummaryData(db *gorm.DB, target notificationTarget, weekStart, weekEnd time.Time) (WeeklySummaryData, error) {
+	var visits []models.Visit
+	if err := db.Where("user_id = ? AND visited_at >= ? AND visited_at < ?", target.UserID, weekStart, weekEnd).
+		Find(&visits).Error; err != nil {
+		return WeeklySummaryData{}, err
+	}
+
+	totalXP := 0
+	for _, v := range visits {
+		totalXP += v.XpEarned
+	}
+
+	var newBadgeNames []string
+	var badges []models.UserBadge
+	if err := db.Preload("Badge").
+		Where("user_id = ? AND earned_at >= ? AND earned_at < ?", target.UserID, weekStart, weekEnd).
+		Find(&badges).Error; err == nil {
+		for _, ub := range badges {
+			if ub.Badge != nil {
+				newBadgeNames = append(newBadgeNames, ub.Badge.Name)
+			}
+		}
+	}
+
+	return WeeklySummaryData{
+		UserName:   target.DisplayName,
+		VisitCount: len(visits),
+		TotalXP:    totalXP,
+		NewBadges:  newBadgeNames,
+	}, nil
+}
+
+// buildMonthlySummaryData は月次サマリーのメールデータを構築する
+func buildMonthlySummaryData(db *gorm.DB, target notificationTarget, monthStart, monthEnd time.Time, monthLabel string) (MonthlySummaryData, error) {
+	var visits []models.Visit
+	if err := db.Where("user_id = ? AND visited_at >= ? AND visited_at < ?", target.UserID, monthStart, monthEnd).
+		Find(&visits).Error; err != nil {
+		return MonthlySummaryData{}, err
+	}
+
+	totalXP := 0
+	for _, v := range visits {
+		totalXP += v.XpEarned
+	}
+
+	var newBadgeNames []string
+	var badges []models.UserBadge
+	if err := db.Preload("Badge").
+		Where("user_id = ? AND earned_at >= ? AND earned_at < ?", target.UserID, monthStart, monthEnd).
+		Find(&badges).Error; err == nil {
+		for _, ub := range badges {
+			if ub.Badge != nil {
+				newBadgeNames = append(newBadgeNames, ub.Badge.Name)
+			}
+		}
+	}
+
+	return MonthlySummaryData{
+		UserName:   target.DisplayName,
+		VisitCount: len(visits),
+		TotalXP:    totalXP,
+		NewBadges:  newBadgeNames,
+		Month:      monthLabel,
+	}, nil
+}
+
+// lastWeekStart は先週の月曜日（JST 0:00）を返す
+func lastWeekStart() time.Time {
+	thisMonday := weekStart(time.Now())
+	return thisMonday.AddDate(0, 0, -7)
+}

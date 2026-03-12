@@ -356,14 +356,14 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/scheduler_test.go` 作成
+- [x] `backend/services/scheduler_test.go` 作成
   - `TestSchedulerJobsRegistered` — `NewNotificationScheduler().Start()` 後に4件のジョブが登録されているか
   - `TestRunDailySuggestionNotification_SendsToSubscribers` — Push購読ユーザーに `PushService.SendToUser` が呼ばれるか（PushServiceをモック）
 
 **🟢 GREEN**
 
-- [ ] `backend/services/scheduler.go` 作成
-  - `type NotificationScheduler struct { cron *cron.Cron; push *PushService; email *EmailService; db *gorm.DB }`
+- [x] `backend/services/scheduler.go` 作成
+  - `type NotificationScheduler struct { cron *cron.Cron; push PushSender; email EmailSender; db *gorm.DB }`
   - `func NewNotificationScheduler(push, email, db) *NotificationScheduler`
   - `func (s *NotificationScheduler) Start()` — `cron.WithLocation(jst)` で4ジョブを登録して起動
     - デイリーサジェスション: `0 7 * * *`（毎朝7時 JST）
@@ -375,12 +375,12 @@
   - `func (s *NotificationScheduler) RunStreakReminderNotification()` — 今週未訪問（暦週）+ streak>0 のユーザーにPush+メール（切れる当日=日曜朝7時に送信）
   - `func (s *NotificationScheduler) RunWeeklySummaryNotification()` — 週次サマリー設定ONのユーザー全員にPush+メール（訪問なしでも必ず送る）
   - `func (s *NotificationScheduler) RunMonthlySummaryNotification()` — 月次サマリー設定ONのユーザー全員にPush+メール（訪問なしでも必ず送る）
-- [ ] `backend/main.go` に `NotificationScheduler` 初期化・`Start()` 追加（`defer scheduler.Stop()`）
+- [x] `backend/main.go` に `NotificationScheduler` 初期化・`Start()` 追加（`defer scheduler.Stop()`）
 
 **🔵 REFACTOR**
 
-- [ ] 各ジョブのDB集計クエリをリポジトリ関数に切り出し
-- [ ] ジョブごとのエラーログ整備
+- [x] 各ジョブのDB集計クエリをリポジトリ関数に切り出し（`fetchDailySuggestionTargetUserIDs`, `fetchStreakReminderTargets`, `fetchSummaryTargets`）
+- [x] ジョブごとのエラーログ整備
 
 ---
 
