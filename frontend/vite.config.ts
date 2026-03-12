@@ -49,6 +49,9 @@ export default defineConfig({
     reactRouter(),
     tsconfigPaths(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "public",
+      filename: "sw.js",
       registerType: "autoUpdate",
       includeAssets: ["icons/apple-touch-icon.png"],
       manifest: {
@@ -81,27 +84,9 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
-        // ナビゲーション（SPAルーティング）は常にindex.htmlにフォールバック
-        navigateFallback: "index.html",
+      injectManifest: {
         // フォントを除外: JS/CSS/HTML/アイコンのみプリキャッシュ（フォントは_headersのimmutableキャッシュを使用）
         globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-        // 外部APIへのリクエストはキャッシュしない
-        navigateFallbackDenylist: [/^\/api\//],
-        // フォントはランタイムキャッシュ（CacheFirst）で配信
-        runtimeCaching: [
-          {
-            urlPattern: /\.(?:woff2?|ttf|otf)$/,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "fonts",
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 365 * 24 * 60 * 60,
-              },
-            },
-          },
-        ],
       },
     }),
   ],
