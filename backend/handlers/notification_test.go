@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/Hiru-ge/roamble/repositories"
 	"github.com/gin-gonic/gin"
 )
 
@@ -136,6 +137,94 @@ func TestSubscribePush_Upsert(t *testing.T) {
 
 	if w2.Code != http.StatusOK {
 		t.Errorf("2回目（Upsert）: Expected status %d, got %d. Body: %s", http.StatusOK, w2.Code, w2.Body.String())
+	}
+}
+
+func setupUnsubscribePushRouter(h *NotificationHandler) *gin.Engine {
+	r := gin.New()
+	r.DELETE("/api/notifications/push/subscribe",
+		middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient),
+		h.UnsubscribePush,
+	)
+	return r
+}
+
+func TestUnsubscribePush_Success(t *testing.T) {
+	cleanupUsers(t)
+	testDB.Exec("DELETE FROM push_subscriptions")
+
+	user := createTestUserByEmail(t, "unsub@example.com", "Unsub User")
+	token := generateTestToken(user.ID)
+
+	// 事前に購読を登録しておく
+	_, err := repositories.UpsertPushSubscription(testDB, user.ID, "https://fcm.googleapis.com/fcm/send/unsub-endpoint", "p256dh", "auth", "UA")
+	if err != nil {
+		t.Fatalf("購読登録に失敗: %v", err)
+	}
+
+	h := &NotificationHandler{VAPIDPublicKey: "test-key", DB: testDB}
+	router := setupUnsubscribePushRouter(h)
+
+	body := map[string]interface{}{
+		"endpoint": "https://fcm.googleapis.com/fcm/send/unsub-endpoint",
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/notifications/push/subscribe", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNoContent, w.Code, w.Body.String())
+	}
+}
+
+func TestUnsubscribePush_NotFound(t *testing.T) {
+	cleanupUsers(t)
+	testDB.Exec("DELETE FROM push_subscriptions")
+
+	user := createTestUserByEmail(t, "unsub-notfound@example.com", "Unsub NotFound User")
+	token := generateTestToken(user.ID)
+
+	h := &NotificationHandler{VAPIDPublicKey: "test-key", DB: testDB}
+	router := setupUnsubscribePushRouter(h)
+
+	body := map[string]interface{}{
+		"endpoint": "https://fcm.googleapis.com/fcm/send/nonexistent-endpoint",
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/notifications/push/subscribe", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, req)
+
+	// 冪等: 存在しないendpointでも204を返す
+	if w.Code != http.StatusNoContent {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusNoContent, w.Code, w.Body.String())
+	}
+}
+
+func TestUnsubscribePush_Unauthorized(t *testing.T) {
+	h := &NotificationHandler{VAPIDPublicKey: "test-key", DB: testDB}
+	router := setupUnsubscribePushRouter(h)
+
+	body := map[string]interface{}{
+		"endpoint": "https://fcm.googleapis.com/fcm/send/test",
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("DELETE", "/api/notifications/push/subscribe", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	// Authorization ヘッダーなし
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
 

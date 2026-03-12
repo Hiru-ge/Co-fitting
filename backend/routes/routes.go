@@ -13,21 +13,21 @@ import (
 )
 
 type Deps struct {
-	AuthHandler          *handlers.AuthHandler
-	OAuthHandler         *handlers.OAuthHandler
-	UserHandler          *handlers.UserHandler
-	BadgeHandler         *handlers.BadgeHandler
-	GenreHandler         *handlers.GenreHandler
-	VisitHandler         *handlers.VisitHandler
-	SuggestionHandler    *handlers.SuggestionHandler
-	PlacePhotoHandler    *handlers.PlacePhotoHandler
-	HealthHandler        *handlers.HealthHandler
-	DevHandler           *handlers.DevHandler
-	BetaHandler          *handlers.BetaHandler
-	NotificationHandler  *handlers.NotificationHandler
-	JWTSecret            string
-	RedisClient          *redis.Client
-	Environment          string
+	AuthHandler         *handlers.AuthHandler
+	OAuthHandler        *handlers.OAuthHandler
+	UserHandler         *handlers.UserHandler
+	BadgeHandler        *handlers.BadgeHandler
+	GenreHandler        *handlers.GenreHandler
+	VisitHandler        *handlers.VisitHandler
+	SuggestionHandler   *handlers.SuggestionHandler
+	PlacePhotoHandler   *handlers.PlacePhotoHandler
+	HealthHandler       *handlers.HealthHandler
+	DevHandler          *handlers.DevHandler
+	BetaHandler         *handlers.BetaHandler
+	NotificationHandler *handlers.NotificationHandler
+	JWTSecret           string
+	RedisClient         *redis.Client
+	Environment         string
 }
 
 func Setup(router *gin.Engine, deps Deps) {
@@ -56,6 +56,7 @@ func Setup(router *gin.Engine, deps Deps) {
 		notifications := router.Group("/api/notifications")
 		notifications.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 		notifications.POST("/push/subscribe", deps.NotificationHandler.SubscribePush)
+		notifications.DELETE("/push/subscribe", deps.NotificationHandler.UnsubscribePush)
 	}
 
 	// 認証（JWT不要）

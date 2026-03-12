@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/repositories"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -25,6 +26,11 @@ type SubscribePushRequest struct {
 	P256DH    string `json:"p256dh" binding:"required"`
 	Auth      string `json:"auth" binding:"required"`
 	UserAgent string `json:"user_agent"`
+}
+
+// UnsubscribePushRequest はPush購読解除リクエストの型。
+type UnsubscribePushRequest struct {
+	Endpoint string `json:"endpoint" binding:"required"`
 }
 
 // GetVAPIDPublicKey godoc
@@ -80,4 +86,36 @@ func (h *NotificationHandler) SubscribePush(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, gin.H{"message": "subscription updated"})
 	}
+}
+
+// UnsubscribePush godoc
+// @Summary      Push購読解除
+// @Description  指定endpointのPush通知購読をDBから削除する。存在しない場合も204を返す（冪等）。
+// @Tags         Notifications
+// @Accept       json
+// @Security     BearerAuth
+// @Param        body  body  UnsubscribePushRequest  true  "解除するendpoint"
+// @Success      204
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Router       /api/notifications/push/subscribe [delete]
+func (h *NotificationHandler) UnsubscribePush(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var req UnsubscribePushRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.DB.Where("endpoint = ? AND user_id = ?", req.Endpoint, userID).Delete(&models.PushSubscription{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to delete subscription"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

@@ -233,21 +233,21 @@
 
 **🔴 RED**
 
-- [ ] `handlers/notification_test.go` に追記
+- [x] `handlers/notification_test.go` に追記
   - `TestUnsubscribePush_Success` — 購読解除 → 204
   - `TestUnsubscribePush_NotFound` — 存在しない endpoint → 204（冪等）
   - `TestUnsubscribePush_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `UnsubscribePush` ハンドラ実装
+- [x] `handlers/notification.go` に `UnsubscribePush` ハンドラ実装
   - リクエスト: `UnsubscribePushRequest{ Endpoint string }`
   - `db.Where("endpoint = ? AND user_id = ?", endpoint, userID).Delete(&PushSubscription{})` で削除
-- [ ] `routes/routes.go` に `DELETE /api/notifications/push/subscribe` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `DELETE /api/notifications/push/subscribe` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] DELETE操作のエラーハンドリング統一
+- [x] DELETE操作のエラーハンドリング統一
 
 ---
 
