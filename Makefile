@@ -45,7 +45,7 @@ db-shell:
 
 # バックエンドのユニット・統合テスト
 test-be:
-	cd backend && go test ./...
+	cd backend && go test -p 1 ./...
 
 # フロントエンドのユニット・統合テスト（Vitest）
 test-fe:
