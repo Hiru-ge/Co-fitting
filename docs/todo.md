@@ -299,13 +299,13 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/push_test.go` 作成
+- [x] `backend/services/push_test.go` 作成
   - `TestSendPushToUser_410RemovesSubscription` — モックHTTPサーバーが410返却 → 該当購読がDBから削除される
   - `TestSendPushToUser_Success` — 200返却 → 購読を維持
 
 **🟢 GREEN**
 
-- [ ] `backend/services/push.go` 作成
+- [x] `backend/services/push.go` 作成
   - `type PushService struct { db *gorm.DB; vapidPublicKey, vapidPrivateKey, vapidSubject string }`
   - `type PushPayload struct { Title, Body, URL string }`
   - `func NewPushService(db, publicKey, privateKey, subject) *PushService`
@@ -314,8 +314,8 @@
 
 **🔵 REFACTOR**
 
-- [ ] 送信失敗ログ（endpoint単位）の整備
-- [ ] goroutineによる並行送信検討（ユーザーが多端末保有の場合）
+- [x] 送信失敗ログ（endpoint単位）の整備
+- [x] goroutineによる並行送信検討（ユーザーが多端末保有の場合）
 
 ---
 
