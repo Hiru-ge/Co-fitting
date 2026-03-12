@@ -479,6 +479,20 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
                      │ xp               │
                      │ level            │
                      └──────────────────┘
+
+┌──────────────┐     ┌────────────────────────┐     ┌───────────────────────────┐
+│    users     │     │  notification_settings │     │   push_subscriptions      │
+├──────────────┤     ├────────────────────────┤     ├───────────────────────────┤
+│ id (PK)      │──┐  │ user_id (PK, FK)       │  ┌──│ id (PK)                   │
+│ ...          │  └─→│ push_enabled           │  │  │ user_id (FK)              │
+└──────────────┘     │ email_enabled          │  │  │ endpoint (uniqueIndex)    │
+                     │ daily_suggestion       │  │  │ p256dh                    │
+                     │ weekly_summary         │  │  │ auth                      │
+                     │ monthly_summary        │  │  │ user_agent                │
+                     │ streak_reminder        │  │  │ created_at                │
+                     │ updated_at             │  │  └───────────────────────────┘
+                     └────────────────────────┘  │
+                                                  └── users.id
 ```
 
 ### 4.2 主要テーブル説明

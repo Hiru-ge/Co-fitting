@@ -58,6 +58,13 @@ func Migrate(db *gorm.DB) error {
 		db.Migrator().DropColumn(&models.User{}, "password_hash")
 	}
 
+	if err := db.AutoMigrate(
+		&models.PushSubscription{},
+		&models.NotificationSettings{},
+	); err != nil {
+		return fmt.Errorf("failed to migrate notification tables: %w", err)
+	}
+
 	if err := SeedMasterData(db); err != nil {
 		return fmt.Errorf("failed to seed master data: %w", err)
 	}

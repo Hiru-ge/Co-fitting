@@ -169,20 +169,20 @@
 
 **🔴 RED**
 
-- [ ] `backend/models/notification_test.go` 作成
+- [x] `backend/models/notification_test.go` 作成
   - `TestPushSubscriptionFields` — `PushSubscription` の各フィールドが期待するGORMタグを持つか検証
   - `TestNotificationSettingsDefaults` — `NotificationSettings` のデフォルト値が正しいか検証
 
 **🟢 GREEN**
 
-- [ ] `backend/models/notification.go` 作成
+- [x] `backend/models/notification.go` 作成
   - `type PushSubscription struct` — `ID`, `UserID`, `Endpoint`(uniqueIndex), `P256DH`, `Auth`, `UserAgent`, `CreatedAt`
   - `type NotificationSettings struct` — `UserID`(primaryKey), `PushEnabled`, `EmailEnabled`, `DailySuggestion`, `WeeklySummary`, `MonthlySummary`(default:false), `StreakReminder`, `UpdatedAt`
-- [ ] `backend/database/migrate.go` に `PushSubscription` / `NotificationSettings` の AutoMigrate 追加
+- [x] `backend/database/migrate.go` に `PushSubscription` / `NotificationSettings` の AutoMigrate 追加
 
 **🔵 REFACTOR**
 
-- [ ] フィールド名・型・GORMタグの見直し
+- [x] フィールド名・型・GORMタグの見直し（Endpoint: varchar(500) に変更。MySQLインデックス上限対応）
 
 ---
 
