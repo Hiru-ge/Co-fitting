@@ -10,8 +10,9 @@ import { useModalClose } from "~/hooks/use-modal-close";
 import { useFormMessage } from "~/hooks/use-form-message";
 import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
 import { clearSuggestionsCache, getReloadCountRemaining } from "~/hooks/use-suggestions";
+import NotificationTab from "~/components/NotificationTab";
 
-type TabId = "user" | "suggestion";
+type TabId = "user" | "suggestion" | "notification";
 
 const INPUT_CLASS =
   "w-full px-4 py-3 rounded-xl border border-gray-700 text-sm text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
@@ -39,8 +40,9 @@ function FormMessage({ success, error }: { success?: string; error?: string }) {
 }
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: "user", label: "ユーザー情報", icon: "person" },
+  { id: "user", label: "ユーザー", icon: "person" },
   { id: "suggestion", label: "提案設定", icon: "tune" },
+  { id: "notification", label: "通知", icon: "notifications" },
 ];
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
@@ -112,6 +114,9 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             initialInterests={interests}
             initialRadius={user.search_radius ?? 10000}
           />
+        )}
+        {activeTab === "notification" && (
+          <NotificationTab token={token} />
         )}
       </div>
     </div>

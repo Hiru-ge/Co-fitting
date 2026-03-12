@@ -423,7 +423,7 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/routes/settings.test.tsx` に追記
+- [x] `frontend/app/routes/settings.test.tsx` に追記
   - 通知タブが表示される
   - Push許可ステータス（許可済み/未許可/非対応）が表示される
   - 全体ONトグルをOFFにすると個別トグルがdisabledになる
@@ -431,18 +431,18 @@
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/routes/settings.tsx` に `"notification"` タブを追加（`TabId` 型拡張）
-- [ ] `frontend/app/components/NotificationTab.tsx` 作成
+- [x] `frontend/app/routes/settings.tsx` に `"notification"` タブを追加（`TabId` 型拡張）
+- [x] `frontend/app/components/NotificationTab.tsx` 作成
   - Push通知セクション: 許可ステータス表示・「通知を許可する」ボタン（未許可時のみ）
   - Push全体ON/OFFトグル（OFF時はサブトグルをdisabled）
   - 個別トグル: デイリーリフレッシュ・ストリークリマインダー・週次サマリー・月次サマリー
   - メール通知セクション（同構成。デイリーリフレッシュのみ非表示）
   - iOS非スタンドアロン時: 「ホーム画面に追加後に利用できます」案内を表示（`isStandalone()` で判定）
-- [ ] トグル変更で即時 `updateNotificationSettings()` を呼ぶ（debounce不要）
+- [x] トグル変更で即時 `updateNotificationSettings()` を呼ぶ（debounce不要）
 
 **🔵 REFACTOR**
 
-- [ ] ON/OFFトグルを `NotificationToggle` コンポーネントに切り出し
+- [x] ON/OFFトグルを `NotificationToggle` コンポーネントに切り出し
 
 ---
 
