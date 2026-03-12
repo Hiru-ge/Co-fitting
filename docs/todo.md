@@ -255,20 +255,22 @@
 
 **🔴 RED**
 
-- [ ] `handlers/notification_test.go` に追記
+- [x] `handlers/notification_test.go` に追記
   - `TestGetNotificationSettings_WithRecord` — レコードあり → 200 + 設定値
   - `TestGetNotificationSettings_NoRecord` — レコードなし → 200 + デフォルト値（`PushEnabled: true` 等）
   - `TestGetNotificationSettings_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `GetNotificationSettings` ハンドラ実装
+- [x] `handlers/notification.go` に `GetNotificationSettings` ハンドラ実装
   - `db.FirstOrCreate(&settings, NotificationSettings{UserID: userID})` でデフォルト値込みで取得
-- [ ] `routes/routes.go` に `GET /api/notifications/settings` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `GET /api/notifications/settings` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] `NotificationSettingsResponse` 型に切り出し
+- [x] `NotificationSettingsResponse` 型に切り出し
+
+> ⚠️ **懸念**: GETで `FirstOrCreate` によるレコード作成（副作用）が発生するのはRESTの観点では好ましくない。更新側（#276）を `FirstOrCreate` + `Updates` 構成にして、GETは単純な `First` + デフォルト値返却に変更することも検討余地あり。
 
 ---
 

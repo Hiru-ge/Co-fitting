@@ -33,6 +33,16 @@ type UnsubscribePushRequest struct {
 	Endpoint string `json:"endpoint" binding:"required"`
 }
 
+// NotificationSettingsResponse は通知設定取得エンドポイントのレスポンス型。
+type NotificationSettingsResponse struct {
+	PushEnabled     bool `json:"push_enabled"`
+	EmailEnabled    bool `json:"email_enabled"`
+	DailySuggestion bool `json:"daily_suggestion"`
+	WeeklySummary   bool `json:"weekly_summary"`
+	MonthlySummary  bool `json:"monthly_summary"`
+	StreakReminder  bool `json:"streak_reminder"`
+}
+
 // GetVAPIDPublicKey godoc
 // @Summary      VAPID公開鍵取得
 // @Description  Web Push通知用のVAPID公開鍵を返す
@@ -118,4 +128,37 @@ func (h *NotificationHandler) UnsubscribePush(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// GetNotificationSettings godoc
+// @Summary      通知設定取得
+// @Description  ユーザーの通知設定を取得する。レコードが存在しない場合はデフォルト値で自動作成して返す。
+// @Tags         Notifications
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  NotificationSettingsResponse
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/notifications/settings [get]
+func (h *NotificationHandler) GetNotificationSettings(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var settings models.NotificationSettings
+	if err := h.DB.FirstOrCreate(&settings, models.NotificationSettings{UserID: userID}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get notification settings"})
+		return
+	}
+
+	c.JSON(http.StatusOK, NotificationSettingsResponse{
+		PushEnabled:     settings.PushEnabled,
+		EmailEnabled:    settings.EmailEnabled,
+		DailySuggestion: settings.DailySuggestion,
+		WeeklySummary:   settings.WeeklySummary,
+		MonthlySummary:  settings.MonthlySummary,
+		StreakReminder:  settings.StreakReminder,
+	})
 }

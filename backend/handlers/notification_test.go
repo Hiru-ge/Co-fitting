@@ -250,3 +250,100 @@ func TestSubscribePush_Unauthorized(t *testing.T) {
 		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
+
+func setupGetNotificationSettingsRouter(h *NotificationHandler) *gin.Engine {
+	r := gin.New()
+	r.GET("/api/notifications/settings",
+		middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient),
+		h.GetNotificationSettings,
+	)
+	return r
+}
+
+func TestGetNotificationSettings_WithRecord(t *testing.T) {
+	cleanupUsers(t)
+	testDB.Exec("DELETE FROM notification_settings")
+
+	user := createTestUserByEmail(t, "ns-withrecord@example.com", "NS WithRecord User")
+	token := generateTestToken(user.ID)
+
+	// 事前にレコードを作成（PushEnabled=false に設定）
+	testDB.Exec(
+		"INSERT INTO notification_settings (user_id, push_enabled, email_enabled, daily_suggestion, weekly_summary, monthly_summary, streak_reminder) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		user.ID, false, true, false, true, true, false,
+	)
+
+	h := &NotificationHandler{DB: testDB}
+	router := setupGetNotificationSettingsRouter(h)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/notifications/settings", nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var resp NotificationSettingsResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("レスポンスのパースに失敗: %v", err)
+	}
+
+	if resp.PushEnabled != false {
+		t.Errorf("Expected PushEnabled=false, got %v", resp.PushEnabled)
+	}
+	if resp.EmailEnabled != true {
+		t.Errorf("Expected EmailEnabled=true, got %v", resp.EmailEnabled)
+	}
+}
+
+func TestGetNotificationSettings_NoRecord(t *testing.T) {
+	cleanupUsers(t)
+	testDB.Exec("DELETE FROM notification_settings")
+
+	user := createTestUserByEmail(t, "ns-norecord@example.com", "NS NoRecord User")
+	token := generateTestToken(user.ID)
+
+	h := &NotificationHandler{DB: testDB}
+	router := setupGetNotificationSettingsRouter(h)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/notifications/settings", nil)
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var resp NotificationSettingsResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("レスポンスのパースに失敗: %v", err)
+	}
+
+	// レコードなし → デフォルト値（PushEnabled: true）
+	if resp.PushEnabled != true {
+		t.Errorf("Expected PushEnabled=true (default), got %v", resp.PushEnabled)
+	}
+	if resp.StreakReminder != true {
+		t.Errorf("Expected StreakReminder=true (default), got %v", resp.StreakReminder)
+	}
+	if resp.MonthlySummary != false {
+		t.Errorf("Expected MonthlySummary=false (default), got %v", resp.MonthlySummary)
+	}
+}
+
+func TestGetNotificationSettings_Unauthorized(t *testing.T) {
+	h := &NotificationHandler{DB: testDB}
+	router := setupGetNotificationSettingsRouter(h)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/api/notifications/settings", nil)
+	// Authorization ヘッダーなし
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+	}
+}

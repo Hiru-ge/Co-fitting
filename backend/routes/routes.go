@@ -57,6 +57,7 @@ func Setup(router *gin.Engine, deps Deps) {
 		notifications.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 		notifications.POST("/push/subscribe", deps.NotificationHandler.SubscribePush)
 		notifications.DELETE("/push/subscribe", deps.NotificationHandler.UnsubscribePush)
+		notifications.GET("/settings", deps.NotificationHandler.GetNotificationSettings)
 	}
 
 	// 認証（JWT不要）
