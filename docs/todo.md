@@ -452,22 +452,22 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/routes/home.test.tsx` に追記
+- [x] `frontend/app/routes/home.test.tsx` に追記
   - `isStandalone=true` + `permission=default` + 未dismissed → バナーが表示される
   - `permission=granted` → バナーが表示されない
   - dismissed済み → バナーが表示されない
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/components/PushNotificationBanner.tsx` 作成
+- [x] `frontend/app/components/PushNotificationBanner.tsx` 作成
   - 「許可する」ボタン → `subscribePush(token)` 呼び出し
   - 「後で」ボタン → `localStorage.setItem("push-banner-dismissed", "1")` で非表示
-- [ ] `frontend/app/routes/home.tsx` に `PushNotificationBanner` を追加
+- [x] `frontend/app/routes/home.tsx` に `PushNotificationBanner` を追加
   - 表示条件: `isStandalone() && Notification.permission === "default" && !localStorage.getItem("push-banner-dismissed")`
 
 **🔵 REFACTOR**
 
-- [ ] 表示条件チェックを `usePushBannerVisible()` カスタムフックに切り出し
+- [x] 表示条件チェックを `usePushBannerVisible()` カスタムフックに切り出し
 
 ---
 
@@ -506,6 +506,7 @@
 **🔵 REFACTOR**
 
 - [ ] `notification-roadmap.md` のストリークリマインダー送信条件の記述を新仕様に合わせて更新
+- [ ] `requirements.md` のストリーク仕様を新仕様に更新
 
 ---
 
