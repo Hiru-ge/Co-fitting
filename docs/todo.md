@@ -323,13 +323,14 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/email_test.go` 作成
+- [x] `backend/services/email_test.go` 作成
   - `TestBuildStreakReminderEmail` — テンプレートレンダリング結果に期待する文字列が含まれるか検証
   - `TestBuildWeeklySummaryEmail` — 訪問件数・獲得XPが埋め込まれるか検証
+  - `TestBuildMonthlySummaryEmail` — 訪問件数・獲得XP・月が埋め込まれるか検証
 
 **🟢 GREEN**
 
-- [ ] `backend/services/email.go` 作成
+- [x] `backend/services/email.go` 作成
   - `type EmailService struct { client *resend.Client; fromAddress string }`
   - `type WeeklySummaryData struct { UserName string; VisitCount int; TotalXP int; NewBadges []string }`
   - `type MonthlySummaryData struct { ... }`
@@ -337,13 +338,13 @@
   - `func (s *EmailService) SendStreakReminder(toEmail, userName string, streakWeeks int) error`
   - `func (s *EmailService) SendWeeklySummary(toEmail string, data WeeklySummaryData) error`
   - `func (s *EmailService) SendMonthlySummary(toEmail string, data MonthlySummaryData) error`
-- [ ] `backend/templates/email/streak_reminder.html` 作成
-- [ ] `backend/templates/email/weekly_summary.html` 作成
-- [ ] `backend/templates/email/monthly_summary.html` 作成
+- [x] `backend/templates/email/streak_reminder.html` 作成
+- [x] `backend/templates/email/weekly_summary.html` 作成
+- [x] `backend/templates/email/monthly_summary.html` 作成
 
 **🔵 REFACTOR**
 
-- [ ] テンプレートの共通ヘッダー/フッターを `base.html` に切り出し
+- [x] テンプレートの共通ヘッダー/フッターを `base.html` に切り出し
 
 ---
 
@@ -461,6 +462,44 @@
 **🔵 REFACTOR**
 
 - [ ] 表示条件チェックを `usePushBannerVisible()` カスタムフックに切り出し
+
+---
+
+### ストリーク判定をローリングウィンドウ方式に変更（Issue #284）
+
+> **実施タイミング**: #270〜#282（通知機能）がすべて完了してから着手すること。
+> スケジューラー（#279）がストリーク判定に依存しており、途中変更すると二重対応が発生するため。
+
+**仕様変更の概要**:
+- **現在**: 月曜〜日曜の暦週単位で判定（同じ週に何度行っても1カウント、週をまたげばストリーク継続）
+- **変更後**: 前回訪問から7日以内に訪問すれば継続、7日以上空いたらリセット（ローリングウィンドウ）
+
+**変更後の挙動例**:
+- 月曜訪問 → 土曜訪問（5日後）: ストリーク継続（7日以内）
+- 月曜訪問 → 翌月曜訪問（7日後）: ストリーク継続（7日以内）
+- 月曜訪問 → 翌火曜訪問（8日後）: ストリークリセット
+
+**🔴 RED**
+
+- [ ] `backend/services/gamification_test.go` の `TestUpdateStreak` を新仕様に書き直す
+  - `前回から6日後に訪問 → 継続` / `前回から7日後に訪問 → 継続` / `前回から8日後に訪問 → リセット`
+  - 暦週をまたぐケース（例: 日曜訪問→翌月曜訪問=1日後）でリセットされないことを検証
+
+**🟢 GREEN**
+
+- [ ] `backend/services/gamification.go` の `UpdateStreak` を日数ベースに書き換え
+  - `weekStart()` ではなく `visitedAt.Sub(*user.StreakLast)` で日数差を計算
+  - `diff < 7日`: 同じ"期間"内 → 変化なし（ただし `StreakLast` は更新）
+  - `7日 ≤ diff < 14日`: ストリーク継続 → `streak_count++`
+  - `diff ≥ 14日`: リセット → `streak_count = 1`
+  - `weekStart()` ヘルパー関数を削除（他に使用箇所がなければ）
+- [ ] `backend/services/scheduler.go` のストリークリマインダー送信条件を「前回訪問から5日以上かつストリーク > 0」に変更
+  - 変更前: 今週未訪問（月曜〜現在）
+  - 変更後: `streak_last < NOW() - 5日` かつ `streak_count > 0`（7日の期限まで残り2日でリマインド）
+
+**🔵 REFACTOR**
+
+- [ ] `notification-roadmap.md` のストリークリマインダー送信条件の記述を新仕様に合わせて更新
 
 ---
 
