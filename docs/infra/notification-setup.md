@@ -10,11 +10,10 @@
 
 ```
 1. VAPID 鍵生成 → .env + Cloud Run に追加
-2. Resend アカウント作成・ドメイン認証
-3. Cloudflare に SPF / DKIM / DMARC レコード追加
-4. RESEND_API_KEY / NOTIFICATION_EMAIL_FROM を .env + Cloud Run に追加
-5. Cloud Run 最小インスタンス数を 0 → 1 に変更
-6. 動作確認
+2. Resend アカウント作成・ドメイン認証（Cloudflare 自動連携）
+3. RESEND_API_KEY / NOTIFICATION_EMAIL_FROM を .env + Cloud Run に追加
+4. Cloud Run 最小インスタンス数を 0 → 1 に変更
+5. 動作確認
 ```
 
 ---
@@ -26,7 +25,7 @@ Web Push 通知を送信するために必要な VAPID（Voluntary Application S
 ### 1-1. 鍵生成コマンド実行
 
 ```bash
-go run github.com/SherClockHolmes/webpush-go/cmd/webpush@latest
+npx web-push generate-vapid-keys
 ```
 
 実行すると以下の形式で出力される:
@@ -81,7 +80,7 @@ Resend はメール送信 SaaS。無料プランで月3,000通まで送信可能
 ### 2-1. アカウント作成
 
 1. https://resend.com にアクセス
-2. 「Sign Up」→ GitHub または Google アカウントでログイン
+2. 「Sign Up」→ GitHubでログイン
 3. メール認証が届く場合は確認して完了
 
 ### 2-2. ドメイン追加
@@ -92,124 +91,22 @@ Resend はメール送信 SaaS。無料プランで月3,000通まで送信可能
 4. Region は **Tokyo (ap-northeast-1)** を選択（日本ユーザー向けのため）
 5. 「Add」をクリック
 
-追加後、DNS レコードの設定画面が表示される。次のステップで Cloudflare に追加する。
+追加後、DNS レコードの設定画面が表示される。次のステップで Cloudflare と自動連携する。
 
-### 2-3. Resend が要求する DNS レコードを確認
+### 2-3. Cloudflare 自動連携で DNS レコードを追加
 
-Resend の Domains 画面に表示される以下のレコードをメモしておく（値は実際の画面の値を使うこと）:
+Resend のドメイン追加画面に「**Connect with Cloudflare**」オプションが表示される。これを使うと SPF・DKIM・DMARC・MX の全レコードが自動で追加される。
 
-| タイプ | 名前 | 値 |
-|--------|------|-----|
-| MX | `send` | `feedback-smtp.ap-northeast-1.amazonses.com` |
-| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
-| TXT | `resend._domainkey` | `p=<長い公開鍵文字列>` |
-| TXT | `_dmarc` | `v=DMARC1; p=none;` |
+1. 「**Connect with Cloudflare**」をクリック
+2. Cloudflare アカウントでの認証画面が表示されるので許可する
+3. 対象ゾーン（`roamble.app`）を選択して「**Allow**」
+4. Resend ダッシュボードに戻り、ドメインのステータスが「**Verified**」になるのを確認する
 
-> 実際の値は Resend ダッシュボードの Domains 画面に表示されるものを使用すること。上記はサンプル値。
+> Cloudflare 管理のドメインは自動連携後、通常数分以内に認証が完了する。
 
 ---
 
-## 3. Cloudflare に DNS レコード追加
-
-### 3-1. Cloudflare ダッシュボードを開く
-
-1. https://dash.cloudflare.com にアクセス
-2. 「roamble.app」ドメインを選択
-3. 左サイドバーの「**DNS**」→「**Records**」を開く
-
-### 3-2. SPF レコード追加
-
-> SPF (Sender Policy Framework): `roamble.app` からのメール送信を Amazon SES 経由で許可する設定。
-
-「Add record」をクリックして以下を入力:
-
-| 項目 | 値 |
-|------|-----|
-| Type | `TXT` |
-| Name | `send` |
-| Content | `v=spf1 include:amazonses.com ~all` |
-| TTL | Auto |
-| Proxy status | DNS only（オレンジ雲 OFF） |
-
-「Save」をクリック。
-
-### 3-3. DKIM レコード追加
-
-> DKIM (DomainKeys Identified Mail): メールが改ざんされていないことを証明する署名設定。
-
-「Add record」をクリックして以下を入力:
-
-| 項目 | 値 |
-|------|-----|
-| Type | `TXT` |
-| Name | `resend._domainkey` |
-| Content | Resend ダッシュボードに表示された `p=...` の値（長い文字列） |
-| TTL | Auto |
-| Proxy status | DNS only（オレンジ雲 OFF） |
-
-「Save」をクリック。
-
-> **注意**: DKIM の Content 値は非常に長い場合がある。Cloudflare は長い TXT レコードを自動的に分割して保存するため、そのまま貼り付けてよい。
-
-### 3-4. DMARC レコード追加
-
-> DMARC (Domain-based Message Authentication): SPF・DKIM の認証結果に基づくメール処理ポリシー設定。初期は `p=none`（モニタリングのみ）で設定し、問題ないことを確認してから `p=quarantine` → `p=reject` に強化する。
-
-「Add record」をクリックして以下を入力:
-
-| 項目 | 値 |
-|------|-----|
-| Type | `TXT` |
-| Name | `_dmarc` |
-| Content | `v=DMARC1; p=none; rua=mailto:official@roamble.app` |
-| TTL | Auto |
-| Proxy status | DNS only（オレンジ雲 OFF） |
-
-「Save」をクリック。
-
-### 3-5. MX レコード追加
-
-| 項目 | 値 |
-|------|-----|
-| Type | `MX` |
-| Name | `send` |
-| Mail server | `feedback-smtp.ap-northeast-1.amazonses.com` |
-| Priority | `10` |
-| TTL | Auto |
-| Proxy status | DNS only（オレンジ雲 OFF） |
-
-「Save」をクリック。
-
-### 3-6. DNS 伝播の確認
-
-Cloudflare の DNS 変更は通常数分〜数十分で伝播する。以下のコマンドで確認できる:
-
-```bash
-# SPF レコード確認
-dig TXT send.roamble.app
-
-# DKIM レコード確認
-dig TXT resend._domainkey.roamble.app
-
-# DMARC レコード確認
-dig TXT _dmarc.roamble.app
-```
-
-または https://mxtoolbox.com/SuperTool.aspx でドメインを入力して確認することもできる。
-
----
-
-## 4. Resend でドメイン認証を完了
-
-DNS レコード追加後、Resend 側で認証状態を確認する。
-
-1. Resend ダッシュボード → 「Domains」→ `roamble.app` を選択
-2. 「**Verify DNS Records**」ボタンをクリック
-3. 各レコードのステータスが「✓ Verified」になるまで待つ
-
-> DNS 伝播には最大 24〜48 時間かかる場合があるが、Cloudflare 管理のドメインは通常数分で反映される。
-
-### 4-1. API キーの発行
+## 3. Resend API キーの発行
 
 1. Resend ダッシュボード左サイドバーの「**API Keys**」をクリック
 2. 「**Create API Key**」をクリック
@@ -223,25 +120,23 @@ DNS レコード追加後、Resend 側で認証状態を確認する。
 
 ---
 
-## 5. .env + Cloud Run に Resend 環境変数を追加
+## 4. .env + Cloud Run に Resend 環境変数を追加
 
-### 5-1. .env への追加
+### 4-1. .env への追加
 
 `backend/.env` に以下を追記:
 
 ```dotenv
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-NOTIFICATION_EMAIL_FROM=Roamble <noreply@send.roamble.app>
+NOTIFICATION_EMAIL_FROM=Roamble <official@roamble.app>
 ```
 
-> `NOTIFICATION_EMAIL_FROM` のメールアドレスは `send.roamble.app` サブドメイン（Resend で設定したドメイン）にすること。`@roamble.app` 直接は送信できない。
-
-### 5-2. Cloud Run への環境変数追加
+### 4-2. Cloud Run への環境変数追加
 
 ```bash
 gcloud run services update roamble-backend \
   --region asia-northeast1 \
-  --update-env-vars "RESEND_API_KEY=re_xxxxxxxx,NOTIFICATION_EMAIL_FROM=Roamble <noreply@send.roamble.app>"
+  --update-env-vars "RESEND_API_KEY=re_xxxxxxxx,NOTIFICATION_EMAIL_FROM=Roamble <official@roamble.app>"
 ```
 
 または GCP コンソールから「Edit & Deploy New Revision」→「Variables & Secrets」で追加:
@@ -249,17 +144,17 @@ gcloud run services update roamble-backend \
 | 変数名 | 値 |
 |--------|-----|
 | `RESEND_API_KEY` | `re_` で始まる API キー |
-| `NOTIFICATION_EMAIL_FROM` | `Roamble <noreply@send.roamble.app>` |
+| `NOTIFICATION_EMAIL_FROM` | `Roamble <official@roamble.app>` |
 
 ---
 
-## 6. Cloud Run 最小インスタンス数を 0 → 1 に変更
+## 5. Cloud Run 最小インスタンス数を 0 → 1 に変更
 
 通知スケジューラー（Issue #279）はバックグラウンドで定期実行するため、インスタンスが 0 にスケールインするとスケジューラーが停止してしまう。最小インスタンス数を 1 に設定して常時起動を保証する。
 
 > **注意**: 最小インスタンス 1 に変更すると月額 $0 → 約 $3〜5/月（256MB, 1vCPU, Tokyo の場合）の料金が発生する。GCP 無料枠（月180,000 vCPU-seconds）を超えた分が課金される。
 
-### 6-1. gcloud CLI で変更
+### 5-1. gcloud CLI で変更
 
 ```bash
 gcloud run services update roamble-backend \
@@ -267,7 +162,7 @@ gcloud run services update roamble-backend \
   --min-instances 1
 ```
 
-### 6-2. GCP コンソールから変更する場合
+### 5-2. GCP コンソールから変更する場合
 
 1. GCP コンソール → 「Cloud Run」→「roamble-backend」
 2. 「Edit & Deploy New Revision」をクリック
@@ -275,7 +170,7 @@ gcloud run services update roamble-backend \
 4. **「Minimum number of instances」** を `0` → `1` に変更
 5. 「Deploy」をクリック
 
-### 6-3. 設定確認
+### 5-3. 設定確認
 
 ```bash
 gcloud run services describe roamble-backend \
@@ -287,36 +182,41 @@ gcloud run services describe roamble-backend \
 
 ---
 
-## 7. 動作確認チェックリスト
+## 6. 動作確認チェックリスト
 
 ### VAPID 鍵
 
-- [ ] `backend/.env` に `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` が設定されている
-- [ ] Cloud Run の環境変数に同じ3つの変数が設定されている
-- [ ] Cloud Run の最新リビジョンが新しい env 変数を読み込んでいる（`gcloud run revisions describe` で確認）
+- [x] `backend/.env` に `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` が設定されている
+- [x] Cloud Run の環境変数に同じ3つの変数が設定されている
+- [x] Cloud Run の最新リビジョンが新しい env 変数を読み込んでいる（`gcloud run revisions describe` で確認）
 
 ### Resend DNS 認証
 
-- [ ] Resend ダッシュボードで `roamble.app` のドメイン認証が完了（全レコード ✓ Verified）
-- [ ] `dig TXT send.roamble.app` で SPF レコードが返ってくる
-- [ ] `dig TXT resend._domainkey.roamble.app` で DKIM レコードが返ってくる
-- [ ] `dig TXT _dmarc.roamble.app` で DMARC レコードが返ってくる
+- [x] Resend ダッシュボードで `roamble.app` のドメイン認証が完了（全レコード ✓ Verified）
+- [x] `dig TXT send.roamble.app` で SPF レコードが返ってくる
+- [x] `dig TXT resend._domainkey.roamble.app` で DKIM レコードが返ってくる
+- [x] `dig TXT _dmarc.roamble.app` で DMARC レコードが返ってくる
 
 ### Resend 環境変数
 
-- [ ] `backend/.env` に `RESEND_API_KEY` / `NOTIFICATION_EMAIL_FROM` が設定されている
-- [ ] Cloud Run の環境変数に同じ2つの変数が設定されている
+- [x] `backend/.env` に `RESEND_API_KEY` / `NOTIFICATION_EMAIL_FROM` が設定されている
+- [x] Cloud Run の環境変数に同じ2つの変数が設定されている
 
 ### Cloud Run インスタンス設定
 
-- [ ] Cloud Run の最小インスタンス数が `1` になっている
-- [ ] デプロイが正常に完了し、サービスが `READY` 状態である
+- [x] Cloud Run の最小インスタンス数が `1` になっている
+- [x] デプロイが正常に完了し、サービスが `READY` 状態である
 
 ### 実機確認（テスト送信）
 
-- [ ] Resend ダッシュボードの「**Logs**」でテスト送信を試みてエラーが出ないか確認
-  - 「Testing」タブから `official@roamble.app` 宛にテストメールを送信できる
-- [ ] Cloud Run のログ（GCP → Cloud Run → roamble-backend → Logs）に env 関連のエラーが出ていないか確認
+- [x] Resend API でテスト送信を行い、エラーが出ないか確認（成功すると `{"id":"..."}` が返り Logs に履歴が表示される）
+  ```bash
+  curl -X POST https://api.resend.com/emails \
+    -H "Authorization: Bearer $RESEND_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"from":"Roamble <official@roamble.app>","to":["自分のメアド"],"subject":"テスト","text":"テスト送信"}'
+  ```
+- [x] Cloud Run のログ（GCP → Cloud Run → roamble-backend → Logs）に env 関連のエラーが出ていないか確認
 
 ---
 
@@ -324,31 +224,45 @@ gcloud run services describe roamble-backend \
 
 | 変数名 | 追加先 | 値の形式 |
 |--------|--------|---------|
-| `VAPID_PUBLIC_KEY` | `.env` + Cloud Run | base64url 文字列（`go run webpush` で生成） |
-| `VAPID_PRIVATE_KEY` | `.env` + Cloud Run | base64url 文字列（`go run webpush` で生成） |
+| `VAPID_PUBLIC_KEY` | `.env` + Cloud Run | base64url 文字列（`npx web-push generate-vapid-keys` で生成） |
+| `VAPID_PRIVATE_KEY` | `.env` + Cloud Run | base64url 文字列（`npx web-push generate-vapid-keys` で生成） |
 | `VAPID_SUBJECT` | `.env` + Cloud Run | `mailto:official@roamble.app` |
 | `RESEND_API_KEY` | `.env` + Cloud Run | `re_` で始まる文字列 |
-| `NOTIFICATION_EMAIL_FROM` | `.env` + Cloud Run | `Roamble <noreply@send.roamble.app>` |
+| `NOTIFICATION_EMAIL_FROM` | `.env` + Cloud Run | `Roamble <official@roamble.app>` |
 
 ---
 
 ## トラブルシューティング
 
-### `go run webpush` でエラーが出る
+### `npx web-push generate-vapid-keys` でエラーが出る
 
-```
-# Go がインストールされていない場合
-brew install go
+```bash
+# Node.js がインストールされていない場合
+brew install node
 
-# またはモジュールキャッシュの問題の場合
-go clean -modcache
-go run github.com/SherClockHolmes/webpush-go/cmd/webpush@latest
+# または Go で直接生成する場合
+cd backend && go get github.com/SherClockHolmes/webpush-go
+go run - <<'EOF'
+package main
+
+import (
+    "fmt"
+    webpush "github.com/SherClockHolmes/webpush-go"
+)
+
+func main() {
+    privateKey, publicKey, err := webpush.GenerateVAPIDKeys()
+    if err != nil { panic(err) }
+    fmt.Printf("VAPID_PUBLIC_KEY=%s\n", publicKey)
+    fmt.Printf("VAPID_PRIVATE_KEY=%s\n", privateKey)
+}
+EOF
 ```
 
 ### Resend の DNS 認証がなかなか通らない
 
-- Cloudflare の「プロキシステータス」が **DNS only（オレンジ雲 OFF）** になっているか確認。プロキシが有効だと TXT レコードが正しく解決されない場合がある
-- `dig` コマンドで実際に DNS が伝播しているか確認する
+- Cloudflare 自動連携を使った場合でも、まれに数分〜数十分かかることがある
+- Resend ダッシュボードの「Verify DNS Records」ボタンを押して手動で再チェックする
 - 最大 24 時間待ってから再確認する
 
 ### Resend から送信したメールがスパムに入る

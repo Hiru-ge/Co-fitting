@@ -156,12 +156,14 @@
 
 > TDDなし（設定作業）。完了後に env変数・DNS伝播を実機確認すること。
 
-- [ ] VAPID鍵生成（`go run github.com/SherClockHolmes/webpush-go/cmd/webpush@latest`）
+- [x] VAPID鍵生成（`go run github.com/SherClockHolmes/webpush-go/cmd/webpush@latest`）
   - `.env` + Cloud Run に `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` を追加
-- [ ] Resendアカウント作成・DNS認証
+- [x] Resendアカウント作成・DNS認証
   - Cloudflare に SPF / DKIM / DMARC レコード追加
   - `RESEND_API_KEY` / `NOTIFICATION_EMAIL_FROM` を `.env` + Cloud Run に追加
-- [ ] Cloud Run 最小インスタンス数を 0 → 1 に変更
+- [x] Cloud Run 最小インスタンス数を 0 → 1 に変更
+- [x] Resend API でテスト送信を行い、自分のメールアドレスに届くか確認
+- [x] Cloud Run のログに env 関連のエラーが出ていないか確認
 
 ### 通知DBモデル実装（Issue #271）
 
