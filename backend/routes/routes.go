@@ -58,6 +58,7 @@ func Setup(router *gin.Engine, deps Deps) {
 		notifications.POST("/push/subscribe", deps.NotificationHandler.SubscribePush)
 		notifications.DELETE("/push/subscribe", deps.NotificationHandler.UnsubscribePush)
 		notifications.GET("/settings", deps.NotificationHandler.GetNotificationSettings)
+		notifications.PUT("/settings", deps.NotificationHandler.UpdateNotificationSettings)
 	}
 
 	// 認証（JWT不要）

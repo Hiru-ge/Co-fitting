@@ -130,7 +130,86 @@ func (h *NotificationHandler) UnsubscribePush(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// GetNotificationSettings godoc
+// UpdateNotificationSettingsRequest は通知設定更新リクエストの型。
+// 各フィールドはポインタで、nil の場合は更新対象外。
+type UpdateNotificationSettingsRequest struct {
+	PushEnabled     *bool `json:"push_enabled"`
+	EmailEnabled    *bool `json:"email_enabled"`
+	DailySuggestion *bool `json:"daily_suggestion"`
+	WeeklySummary   *bool `json:"weekly_summary"`
+	MonthlySummary  *bool `json:"monthly_summary"`
+	StreakReminder  *bool `json:"streak_reminder"`
+}
+
+// UpdateNotificationSettings godoc
+// @Summary      通知設定更新
+// @Description  ユーザーの通知設定を更新する。送信されたフィールドのみ更新（部分更新）。
+// @Tags         Notifications
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  UpdateNotificationSettingsRequest  true  "更新する通知設定"
+// @Success      200  {object}  NotificationSettingsResponse
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/notifications/settings [put]
+func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var req UpdateNotificationSettingsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var settings models.NotificationSettings
+	if err := h.DB.FirstOrCreate(&settings, models.NotificationSettings{UserID: userID}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get notification settings"})
+		return
+	}
+
+	updates := map[string]interface{}{}
+	if req.PushEnabled != nil {
+		updates["push_enabled"] = *req.PushEnabled
+	}
+	if req.EmailEnabled != nil {
+		updates["email_enabled"] = *req.EmailEnabled
+	}
+	if req.DailySuggestion != nil {
+		updates["daily_suggestion"] = *req.DailySuggestion
+	}
+	if req.WeeklySummary != nil {
+		updates["weekly_summary"] = *req.WeeklySummary
+	}
+	if req.MonthlySummary != nil {
+		updates["monthly_summary"] = *req.MonthlySummary
+	}
+	if req.StreakReminder != nil {
+		updates["streak_reminder"] = *req.StreakReminder
+	}
+
+	if len(updates) > 0 {
+		if err := h.DB.Model(&settings).Updates(updates).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update notification settings"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, NotificationSettingsResponse{
+		PushEnabled:     settings.PushEnabled,
+		EmailEnabled:    settings.EmailEnabled,
+		DailySuggestion: settings.DailySuggestion,
+		WeeklySummary:   settings.WeeklySummary,
+		MonthlySummary:  settings.MonthlySummary,
+		StreakReminder:  settings.StreakReminder,
+	})
+}
+
 // @Summary      通知設定取得
 // @Description  ユーザーの通知設定を取得する。レコードが存在しない場合はデフォルト値で自動作成して返す。
 // @Tags         Notifications

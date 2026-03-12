@@ -347,3 +347,73 @@ func TestGetNotificationSettings_Unauthorized(t *testing.T) {
 		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
 	}
 }
+
+func setupUpdateNotificationSettingsRouter(h *NotificationHandler) *gin.Engine {
+	r := gin.New()
+	r.PUT("/api/notifications/settings",
+		middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient),
+		h.UpdateNotificationSettings,
+	)
+	return r
+}
+
+func TestUpdateNotificationSettings_Success(t *testing.T) {
+	cleanupUsers(t)
+	testDB.Exec("DELETE FROM notification_settings")
+
+	user := createTestUserByEmail(t, "ns-update@example.com", "NS Update User")
+	token := generateTestToken(user.ID)
+
+	h := &NotificationHandler{DB: testDB}
+	router := setupUpdateNotificationSettingsRouter(h)
+
+	pushEnabled := false
+	streakReminder := true
+	body := map[string]interface{}{
+		"push_enabled":    pushEnabled,
+		"streak_reminder": streakReminder,
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/notifications/settings", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+	}
+
+	var resp NotificationSettingsResponse
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("レスポンスのパースに失敗: %v", err)
+	}
+
+	if resp.PushEnabled != false {
+		t.Errorf("Expected PushEnabled=false, got %v", resp.PushEnabled)
+	}
+	if resp.StreakReminder != true {
+		t.Errorf("Expected StreakReminder=true, got %v", resp.StreakReminder)
+	}
+}
+
+func TestUpdateNotificationSettings_Unauthorized(t *testing.T) {
+	h := &NotificationHandler{DB: testDB}
+	router := setupUpdateNotificationSettingsRouter(h)
+
+	body := map[string]interface{}{
+		"push_enabled": true,
+	}
+	jsonBody, _ := json.Marshal(body)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("PUT", "/api/notifications/settings", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	// Authorization ヘッダーなし
+	router.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusUnauthorized, w.Code, w.Body.String())
+	}
+}

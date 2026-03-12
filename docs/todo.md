@@ -278,20 +278,20 @@
 
 **🔴 RED**
 
-- [ ] `handlers/notification_test.go` に追記
+- [x] `handlers/notification_test.go` に追記
   - `TestUpdateNotificationSettings_Success` — 正常更新 → 200 + 更新後の設定値
   - `TestUpdateNotificationSettings_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `UpdateNotificationSettings` ハンドラ実装
+- [x] `handlers/notification.go` に `UpdateNotificationSettings` ハンドラ実装
   - リクエスト: `UpdateNotificationSettingsRequest{ PushEnabled, EmailEnabled, DailySuggestion, WeeklySummary, MonthlySummary, StreakReminder *bool }`
   - `db.Save(&settings)` で全フィールド更新
-- [ ] `routes/routes.go` に `PUT /api/notifications/settings` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `PUT /api/notifications/settings` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] 部分更新（nil フィールドを無視）が必要な場合は `db.Model().Updates()` に変更検討
+- [x] 部分更新（nil フィールドを無視）が必要な場合は `db.Model().Updates()` に変更検討
 
 ---
 
