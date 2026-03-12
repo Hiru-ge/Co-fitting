@@ -487,26 +487,26 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/gamification_test.go` の `TestUpdateStreak` を新仕様に書き直す
+- [x] `backend/services/gamification_test.go` の `TestUpdateStreak` を新仕様に書き直す
   - `前回から6日後に訪問 → 継続` / `前回から7日後に訪問 → 継続` / `前回から8日後に訪問 → リセット`
   - 暦週をまたぐケース（例: 日曜訪問→翌月曜訪問=1日後）でリセットされないことを検証
 
 **🟢 GREEN**
 
-- [ ] `backend/services/gamification.go` の `UpdateStreak` を日数ベースに書き換え
-  - `weekStart()` ではなく `visitedAt.Sub(*user.StreakLast)` で日数差を計算
-  - `diff < 7日`: 同じ"期間"内 → 変化なし（ただし `StreakLast` は更新）
-  - `7日 ≤ diff < 14日`: ストリーク継続 → `streak_count++`
-  - `diff ≥ 14日`: リセット → `streak_count = 1`
-  - `weekStart()` ヘルパー関数を削除（他に使用箇所がなければ）
-- [ ] `backend/services/scheduler.go` のストリークリマインダーを変更
+- [x] `backend/services/gamification.go` の `UpdateStreak` を日数ベースに書き換え
+  - JST カレンダー日数で判定（`dayStartJST()` ヘルパーで DB 秒精度丸めの影響を回避）
+  - `diff < 7日`: 変化なし（StreakLastのみ更新）
+  - `diff == 7日`: ストリーク継続 → `streak_count++`
+  - `diff >= 8日`: リセット → `streak_count = 1`
+  - `weekStart()` はスケジューラーで使用中のため維持
+- [x] `backend/services/scheduler.go` のストリークリマインダーを変更
   - cronを `0 7 * * 0`（日曜のみ）→ `0 7 * * *`（毎日）に変更
-  - 送信条件: `DATE(streak_last) = DATE(NOW() - INTERVAL 6 DAY)` かつ `streak_count > 0`（前回訪問から6日目 = 今日中に訪問しないと切れる）
+  - 送信条件: JST 6日前の日付範囲で `streak_last` を絞り込み（`streak_count > 0` かつ）
 
 **🔵 REFACTOR**
 
-- [ ] `notification-roadmap.md` のストリークリマインダー送信条件の記述を新仕様に合わせて更新
-- [ ] `requirements.md` のストリーク仕様を新仕様に更新
+- [x] `notification-roadmap.md` のストリークリマインダー送信条件の記述を新仕様に合わせて更新
+- [x] `requirements.md` のストリーク仕様を新仕様に更新
 
 ---
 

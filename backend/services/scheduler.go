@@ -47,8 +47,8 @@ func (s *NotificationScheduler) Start() {
 	s.cron.AddFunc("0 7 * * *", func() { //nolint:errcheck
 		s.RunDailySuggestionNotification()
 	})
-	// ストリークリマインダー: 毎週日曜朝7時 JST（#284 でローリングウィンドウ方式に変更予定）
-	s.cron.AddFunc("0 7 * * 0", func() { //nolint:errcheck
+	// ストリークリマインダー: 毎日朝7時 JST（前回訪問から6日目のユーザーに送信）
+	s.cron.AddFunc("0 7 * * *", func() { //nolint:errcheck
 		s.RunStreakReminderNotification()
 	})
 	// 週次サマリー: 毎週月曜朝10時 JST
@@ -93,8 +93,7 @@ func (s *NotificationScheduler) RunDailySuggestionNotification() {
 	}
 }
 
-// RunStreakReminderNotification は今週未訪問かつstreak>0のユーザーにリマインダーを送信する
-// （#284 でローリングウィンドウ方式に変更予定）
+// RunStreakReminderNotification は前回訪問から6日経過（あと1日でストリーク切れ）かつstreak>0のユーザーにリマインダーを送信する
 func (s *NotificationScheduler) RunStreakReminderNotification() {
 	targets, err := fetchStreakReminderTargets(s.db)
 	if err != nil {
@@ -228,17 +227,20 @@ type notificationTarget struct {
 }
 
 // fetchStreakReminderTargets はストリークリマインダー対象ユーザーを返す
-// 条件: streak_count > 0、今週（月曜〜日曜）の訪問なし、streak_reminder=true
+// 条件: streak_count > 0、streak_last がJST本日から6日前の日付、streak_reminder=true
 func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
-	thisMonday := weekStart(time.Now())
+	// JST基準で6日前の日付範囲を計算（UTC変換）
+	nowJST := time.Now().In(jst)
+	sixDaysAgoJST := time.Date(nowJST.Year(), nowJST.Month(), nowJST.Day(), 0, 0, 0, 0, jst).AddDate(0, 0, -6)
+	sixDaysAgoEnd := sixDaysAgoJST.AddDate(0, 0, 1)
 
 	type row struct {
-		UserID       uint64
-		Email        string
-		DisplayName  string
-		StreakCount  int
-		PushEnabled  bool
-		EmailEnabled bool
+		UserID         uint64
+		Email          string
+		DisplayName    string
+		StreakCount    int
+		PushEnabled    bool
+		EmailEnabled   bool
 		StreakReminder bool
 	}
 	var rows []row
@@ -248,7 +250,7 @@ func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
 			"ns.push_enabled, ns.email_enabled, ns.streak_reminder").
 		Joins("JOIN notification_settings ns ON ns.user_id = u.id").
 		Where("u.streak_count > 0 AND ns.streak_reminder = ?", true).
-		Where("NOT EXISTS (SELECT 1 FROM visit_history v WHERE v.user_id = u.id AND v.visited_at >= ?)", thisMonday).
+		Where("u.streak_last >= ? AND u.streak_last < ?", sixDaysAgoJST, sixDaysAgoEnd).
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err
@@ -257,12 +259,12 @@ func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
 	targets := make([]notificationTarget, len(rows))
 	for i, r := range rows {
 		targets[i] = notificationTarget{
-			UserID:        r.UserID,
-			Email:         r.Email,
-			DisplayName:   r.DisplayName,
-			StreakCount:   r.StreakCount,
-			PushEnabled:   r.PushEnabled,
-			EmailEnabled:  r.EmailEnabled,
+			UserID:         r.UserID,
+			Email:          r.Email,
+			DisplayName:    r.DisplayName,
+			StreakCount:    r.StreakCount,
+			PushEnabled:    r.PushEnabled,
+			EmailEnabled:   r.EmailEnabled,
 			StreakReminder: r.StreakReminder,
 		}
 	}
