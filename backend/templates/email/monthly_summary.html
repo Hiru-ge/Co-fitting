@@ -1,0 +1,43 @@
+{{template "header" .}}
+<div style="padding: 32px 24px;">
+  <h2 style="color: #1a1a1a; margin-bottom: 16px;">{{.Month}}の冒険まとめ🎉</h2>
+  <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+    {{.UserName}}、今月もいろんな場所を冒険したね！Roambleでの{{.Month}}の記録をまとめてみたよ。
+  </p>
+
+  <div style="background-color: #fff7ed; border-radius: 12px; padding: 24px; margin: 24px 0;">
+    <h3 style="color: #c2410c; margin-bottom: 16px;">{{.Month}}の記録</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="color: #4a4a4a; padding: 8px 0; font-size: 16px;">行った場所</td>
+        <td style="color: #1a1a1a; font-weight: bold; font-size: 18px; text-align: right;">{{.VisitCount}} か所</td>
+      </tr>
+      <tr>
+        <td style="color: #4a4a4a; padding: 8px 0; font-size: 16px;">獲得XP</td>
+        <td style="color: #f97316; font-weight: bold; font-size: 18px; text-align: right;">{{.TotalXP}} XP</td>
+      </tr>
+    </table>
+  </div>
+
+  {{if .NewBadges}}
+  <div style="margin: 24px 0;">
+    <h3 style="color: #1a1a1a; margin-bottom: 12px;">今月ゲットしたバッジ 🏅</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+      {{range .NewBadges}}
+      <li style="color: #4a4a4a; font-size: 15px; padding: 6px 0; border-bottom: 1px solid #f3f4f6;">
+        ✨ {{.}}
+      </li>
+      {{end}}
+    </ul>
+  </div>
+  {{end}}
+
+  <div style="text-align: center; margin: 32px 0;">
+    <a href="https://roamble.app"
+       style="background-color: #f97316; color: #ffffff; text-decoration: none;
+              padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+      来月も冒険しよう
+    </a>
+  </div>
+</div>
+{{template "footer" .}}
