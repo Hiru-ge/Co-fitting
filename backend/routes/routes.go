@@ -13,20 +13,21 @@ import (
 )
 
 type Deps struct {
-	AuthHandler       *handlers.AuthHandler
-	OAuthHandler      *handlers.OAuthHandler
-	UserHandler       *handlers.UserHandler
-	BadgeHandler      *handlers.BadgeHandler
-	GenreHandler      *handlers.GenreHandler
-	VisitHandler      *handlers.VisitHandler
-	SuggestionHandler *handlers.SuggestionHandler
-	PlacePhotoHandler *handlers.PlacePhotoHandler
-	HealthHandler     *handlers.HealthHandler
-	DevHandler        *handlers.DevHandler
-	BetaHandler       *handlers.BetaHandler
-	JWTSecret         string
-	RedisClient       *redis.Client
-	Environment       string
+	AuthHandler          *handlers.AuthHandler
+	OAuthHandler         *handlers.OAuthHandler
+	UserHandler          *handlers.UserHandler
+	BadgeHandler         *handlers.BadgeHandler
+	GenreHandler         *handlers.GenreHandler
+	VisitHandler         *handlers.VisitHandler
+	SuggestionHandler    *handlers.SuggestionHandler
+	PlacePhotoHandler    *handlers.PlacePhotoHandler
+	HealthHandler        *handlers.HealthHandler
+	DevHandler           *handlers.DevHandler
+	BetaHandler          *handlers.BetaHandler
+	NotificationHandler  *handlers.NotificationHandler
+	JWTSecret            string
+	RedisClient          *redis.Client
+	Environment          string
 }
 
 func Setup(router *gin.Engine, deps Deps) {
@@ -44,6 +45,11 @@ func Setup(router *gin.Engine, deps Deps) {
 
 	// ベータ合言葉照合（JWT不要）
 	router.POST("/api/beta/verify", deps.BetaHandler.VerifyPassphrase)
+
+	// 通知（JWT不要）
+	if deps.NotificationHandler != nil {
+		router.GET("/api/notifications/push/vapid-key", deps.NotificationHandler.GetVAPIDPublicKey)
+	}
 
 	// 認証（JWT不要）
 	auth := router.Group("/api/auth")

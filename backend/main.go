@@ -133,6 +133,10 @@ func main() {
 
 	betaHandler := &handlers.BetaHandler{}
 
+	notificationHandler := &handlers.NotificationHandler{
+		VAPIDPublicKey: os.Getenv("VAPID_PUBLIC_KEY"),
+	}
+
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{
 		AuthHandler:       authHandler,
@@ -145,10 +149,11 @@ func main() {
 		PlacePhotoHandler: placePhotoHandler,
 		HealthHandler:     healthHandler,
 		DevHandler:        devHandler,
-		BetaHandler:       betaHandler,
-		JWTSecret:         jwtCfg.Secret,
-		RedisClient:       redisClient,
-		Environment:       environment,
+		BetaHandler:         betaHandler,
+		NotificationHandler: notificationHandler,
+		JWTSecret:           jwtCfg.Secret,
+		RedisClient:         redisClient,
+		Environment:         environment,
 	})
 
 	port := os.Getenv("PORT")

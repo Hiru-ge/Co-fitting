@@ -190,20 +190,20 @@
 
 **🔴 RED**
 
-- [ ] `backend/handlers/notification_test.go` 作成
+- [x] `backend/handlers/notification_test.go` 作成
   - `TestGetVAPIDPublicKey_Success` — `VAPID_PUBLIC_KEY` 設定済み → 200 + `{ "vapid_public_key": "..." }`
   - `TestGetVAPIDPublicKey_NotSet` — 未設定 → 500
 
 **🟢 GREEN**
 
-- [ ] `backend/handlers/notification.go` 作成
-  - `func GetVAPIDPublicKey(deps *Dependencies) gin.HandlerFunc` 実装
-  - `deps.VAPIDPublicKey` を参照して返却
-- [ ] `backend/routes/routes.go` に `GET /api/notifications/push/vapid-key` 追加（認証不要）
+- [x] `backend/handlers/notification.go` 作成
+  - `NotificationHandler` 構造体（`VAPIDPublicKey` フィールド）と `GetVAPIDPublicKey` メソッド実装
+  - `h.VAPIDPublicKey` を参照して返却
+- [x] `backend/routes/routes.go` に `GET /api/notifications/push/vapid-key` 追加（認証不要）
 
 **🔵 REFACTOR**
 
-- [ ] レスポンス型を `VAPIDKeyResponse` 構造体に切り出し
+- [x] レスポンス型を `VAPIDKeyResponse` 構造体に切り出し
 
 ---
 
