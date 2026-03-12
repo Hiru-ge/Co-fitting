@@ -211,21 +211,21 @@
 
 **🔴 RED**
 
-- [ ] `backend/handlers/notification_test.go` に追記
+- [x] `backend/handlers/notification_test.go` に追記
   - `TestSubscribePush_Success` — 正常登録 → 201
   - `TestSubscribePush_Upsert` — 同一 `endpoint` 再登録 → 200（レコード更新）
   - `TestSubscribePush_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `SubscribePush` ハンドラ実装
+- [x] `handlers/notification.go` に `SubscribePush` ハンドラ実装
   - リクエスト: `SubscribePushRequest{ Endpoint, P256DH, Auth, UserAgent string }`
   - `db.Clauses(clause.OnConflict{ Columns: []clause.Column{{Name: "endpoint"}}, DoUpdates: clause.AssignmentColumns(...) }).Create()`でUpsert
-- [ ] `routes/routes.go` に `POST /api/notifications/push/subscribe` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `POST /api/notifications/push/subscribe` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] Upsertロジックをリポジトリ関数 `UpsertPushSubscription` に切り出し
+- [x] Upsertロジックをリポジトリ関数 `UpsertPushSubscription` に切り出し
 
 ---
 

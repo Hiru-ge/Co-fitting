@@ -51,6 +51,13 @@ func Setup(router *gin.Engine, deps Deps) {
 		router.GET("/api/notifications/push/vapid-key", deps.NotificationHandler.GetVAPIDPublicKey)
 	}
 
+	// 通知（JWT必要）
+	if deps.NotificationHandler != nil {
+		notifications := router.Group("/api/notifications")
+		notifications.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
+		notifications.POST("/push/subscribe", deps.NotificationHandler.SubscribePush)
+	}
+
 	// 認証（JWT不要）
 	auth := router.Group("/api/auth")
 	auth.POST("/refresh", deps.AuthHandler.RefreshToken)

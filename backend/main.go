@@ -135,6 +135,7 @@ func main() {
 
 	notificationHandler := &handlers.NotificationHandler{
 		VAPIDPublicKey: os.Getenv("VAPID_PUBLIC_KEY"),
+		DB:             db,
 	}
 
 	router := gin.Default()
