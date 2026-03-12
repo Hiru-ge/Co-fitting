@@ -366,11 +366,15 @@
   - `type NotificationScheduler struct { cron *cron.Cron; push *PushService; email *EmailService; db *gorm.DB }`
   - `func NewNotificationScheduler(push, email, db) *NotificationScheduler`
   - `func (s *NotificationScheduler) Start()` — `cron.WithLocation(jst)` で4ジョブを登録して起動
+    - デイリーサジェスション: `0 7 * * *`（毎朝7時 JST）
+    - ストリークリマインダー: `0 7 * * 0`（毎週日曜朝7時 JST）※ #284 でローリングウィンドウ方式に変更予定
+    - 週次サマリー: `0 10 * * 1`（毎週月曜朝10時 JST）
+    - 月次サマリー: `0 10 1 * *`（毎月1日朝10時 JST）
   - `func (s *NotificationScheduler) Stop()`
   - `func (s *NotificationScheduler) RunDailySuggestionNotification()` — Push購読ユーザー全員に送信
-  - `func (s *NotificationScheduler) RunStreakReminderNotification()` — 今週未訪問 + streak>0 のユーザーにPush+メール
-  - `func (s *NotificationScheduler) RunWeeklySummaryNotification()` — 先週訪問あり のユーザーにPush+メール
-  - `func (s *NotificationScheduler) RunMonthlySummaryNotification()` — 設定ONのユーザーにPush+メール
+  - `func (s *NotificationScheduler) RunStreakReminderNotification()` — 今週未訪問（暦週）+ streak>0 のユーザーにPush+メール（切れる当日=日曜朝7時に送信）
+  - `func (s *NotificationScheduler) RunWeeklySummaryNotification()` — 週次サマリー設定ONのユーザー全員にPush+メール（訪問なしでも必ず送る）
+  - `func (s *NotificationScheduler) RunMonthlySummaryNotification()` — 月次サマリー設定ONのユーザー全員にPush+メール（訪問なしでも必ず送る）
 - [ ] `backend/main.go` に `NotificationScheduler` 初期化・`Start()` 追加（`defer scheduler.Stop()`）
 
 **🔵 REFACTOR**
@@ -495,13 +499,50 @@
   - `7日 ≤ diff < 14日`: ストリーク継続 → `streak_count++`
   - `diff ≥ 14日`: リセット → `streak_count = 1`
   - `weekStart()` ヘルパー関数を削除（他に使用箇所がなければ）
-- [ ] `backend/services/scheduler.go` のストリークリマインダー送信条件を「前回訪問から5日以上かつストリーク > 0」に変更
-  - 変更前: 今週未訪問（月曜〜現在）
-  - 変更後: `streak_last < NOW() - 5日` かつ `streak_count > 0`（7日の期限まで残り2日でリマインド）
+- [ ] `backend/services/scheduler.go` のストリークリマインダーを変更
+  - cronを `0 7 * * 0`（日曜のみ）→ `0 7 * * *`（毎日）に変更
+  - 送信条件: `DATE(streak_last) = DATE(NOW() - INTERVAL 6 DAY)` かつ `streak_count > 0`（前回訪問から6日目 = 今日中に訪問しないと切れる）
 
 **🔵 REFACTOR**
 
 - [ ] `notification-roadmap.md` のストリークリマインダー送信条件の記述を新仕様に合わせて更新
+
+---
+
+### 週次・月次サマリー 訪問ゼロ時テンプレート追加（Issue #290）
+
+> #279（スケジューラー実装）完了後に着手。訪問なしでもサマリーを送る仕様変更に対応するため、空状態専用テンプレートが必要。
+
+**🔴 RED**
+
+- [ ] `backend/services/email_test.go` に追記
+  - `TestBuildWeeklySummaryEmptyEmail` — `VisitCount: 0` の場合に空状態テンプレートの内容が返るか
+  - `TestBuildMonthlySummaryEmptyEmail` — 同様
+
+**🟢 GREEN**
+
+- [ ] `backend/templates/email/weekly_summary_empty.html` 作成（「今週は冒険できなかったね！来週また行ってみよう」系の背中押しコンテンツ）
+- [ ] `backend/templates/email/monthly_summary_empty.html` 作成（同様）
+- [ ] `backend/services/email.go` の `BuildWeeklySummaryEmail` / `BuildMonthlySummaryEmail` に `VisitCount == 0` 判定を追加し、空状態テンプレートに切り替える
+
+**🔵 REFACTOR**
+
+- [ ] 空状態判定を `isEmptySummary(visitCount int) bool` ヘルパーに切り出し
+
+---
+
+### 月次サマリー通知設定デフォルト値をONに変更（Issue #291）
+
+> `NotificationSettings.MonthlySummary` は現在 `default:false`（opt-in）になっているが、週次サマリーと同様に `default:true` に変更する。
+
+**🟢 GREEN**
+
+- [ ] `backend/models/notification.go` の `MonthlySummary` タグを `gorm:"default:false"` → `gorm:"default:true"` に変更
+- [ ] `backend/database/migrate.go` に既存ユーザーのデフォルト値を更新するマイグレーションを追加（`UPDATE notification_settings SET monthly_summary = true WHERE monthly_summary = false`）
+
+**🔵 REFACTOR**
+
+- [ ] `backend/models/notification_test.go` の `TestNotificationSettingsDefaults` を新デフォルト値に合わせて更新
 
 ---
 
