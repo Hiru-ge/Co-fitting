@@ -211,6 +211,9 @@
 | 3/11 | TikTok | 「残り3日」静止画リマインド | https://www.tiktok.com/@roamble/photo/7615935227617103112 |
 | 3/12 | X | 「残り2日」+ 通知機能開発着手 | https://x.com/roamble_app/status/2031912531967746290 |
 | 3/12 | TikTok | 「残り2日」+「通知機能をつけることにしました」ドッグフーディング系 | https://www.tiktok.com/@roamble/video/7616307559728827666 |
+| 3/13 | TikTok | 「残り1日」静止画リマインド | https://www.tiktok.com/@roamble/photo/7616747154425580807 |
+| 3/14 | X | 「ベータテスター募集、今日で終わります」最終リマインド | https://x.com/roamble_app/status/2032661911742124160 |
+| 3/14 | TikTok | 「ベータテスター募集、今日で終わります」カウントダウン動画 | https://www.tiktok.com/@roamble/video/7616951952580070664 |
 
 * [x] **ドッグフーディング動画**（TikTok/Reels）を1本以上投稿
   * 「ベータ版を実際に使ってみた」系のPOV動画（4.2のフォーマット参照）
