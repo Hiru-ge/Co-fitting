@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import type { MetaFunction } from "react-router";
 
@@ -7,7 +7,31 @@ export const meta: MetaFunction = () => [
   { name: "description", content: "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" },
 ];
 
+type FormState = "idle" | "submitting" | "success" | "error";
+
 export default function LP() {
+  const [email, setEmail] = useState("");
+  const [formState, setFormState] = useState<FormState>("idle");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setFormState("submitting");
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: import.meta.env.VITE_WEB3FORMS_KEY,
+          email,
+          subject: "Roamble iOS版リリース通知リクエスト",
+        }),
+      });
+      const data = await res.json();
+      setFormState(data.success ? "success" : "error");
+    } catch {
+      setFormState("error");
+    }
+  }
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -36,6 +60,12 @@ export default function LP() {
           <span className="font-semibold text-primary"> 経験値（XP）</span>
           に変える。
         </p>
+        <a
+          href="#ios-notify"
+          className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
+        >
+          iOS版リリース通知を受け取る
+        </a>
         {/* Hero Screenshots */}
         <div className="mt-12 flex items-end justify-center gap-3 px-2">
           <img
@@ -247,6 +277,57 @@ export default function LP() {
               <span>@roamble_app</span>
             </a>
           </div>
+        </div>
+      </section>
+
+      {/* ── Divider ── */}
+      <div className="mx-auto w-12 h-px bg-white/10" />
+
+      {/* ── iOS Notify ── */}
+      <section id="ios-notify" className="px-6 py-12">
+        <div className="max-w-md mx-auto">
+          <h2 className="text-xl font-bold font-display mb-3 text-center">
+            iOS版リリース通知を受け取る
+          </h2>
+          <p className="text-sm text-white/60 mb-6 text-center">
+            iOS版の開発を進めています。<br />
+            リリース時にメールでお知らせしますので、メールアドレスを登録してください。
+          </p>
+
+          {formState === "success" ? (
+            <div className="flex flex-col items-center gap-3 py-6 text-center">
+              <span className="material-symbols-outlined text-primary text-4xl">check_circle</span>
+              <p className="font-semibold">登録しました！</p>
+              <p className="text-sm text-white/60">
+                iOS版がリリースされたらメールでお知らせします。
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="メールアドレスを入力"
+                required
+                disabled={formState === "submitting"}
+                className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
+              />
+              <button
+                type="submit"
+                disabled={formState === "submitting" || !email.trim()}
+                className="px-6 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {formState === "submitting" ? "送信中..." : "通知を受け取る"}
+              </button>
+            </form>
+          )}
+
+          {formState === "error" && (
+            <p className="mt-3 text-sm text-red-400 text-center">
+              送信に失敗しました。しばらく時間をおいて再度お試しください。
+            </p>
+          )}
         </div>
       </section>
 
