@@ -65,19 +65,34 @@ func (s *EmailService) BuildStreakReminderEmail(userName string, streakWeeks int
 	return buf.String(), nil
 }
 
+// isEmptySummary は訪問件数がゼロかどうかを返す
+func isEmptySummary(visitCount int) bool {
+	return visitCount == 0
+}
+
 // BuildWeeklySummaryEmail は週次サマリーメールのHTMLを返す
+// 訪問件数がゼロの場合は空状態専用テンプレートを使用する
 func (s *EmailService) BuildWeeklySummaryEmail(data WeeklySummaryData) (string, error) {
+	tmplName := "weekly_summary.html"
+	if isEmptySummary(data.VisitCount) {
+		tmplName = "weekly_summary_empty.html"
+	}
 	var buf bytes.Buffer
-	if err := s.tmpl.ExecuteTemplate(&buf, "weekly_summary.html", data); err != nil {
+	if err := s.tmpl.ExecuteTemplate(&buf, tmplName, data); err != nil {
 		return "", fmt.Errorf("email: weekly summary template: %w", err)
 	}
 	return buf.String(), nil
 }
 
 // BuildMonthlySummaryEmail は月次サマリーメールのHTMLを返す
+// 訪問件数がゼロの場合は空状態専用テンプレートを使用する
 func (s *EmailService) BuildMonthlySummaryEmail(data MonthlySummaryData) (string, error) {
+	tmplName := "monthly_summary.html"
+	if isEmptySummary(data.VisitCount) {
+		tmplName = "monthly_summary_empty.html"
+	}
 	var buf bytes.Buffer
-	if err := s.tmpl.ExecuteTemplate(&buf, "monthly_summary.html", data); err != nil {
+	if err := s.tmpl.ExecuteTemplate(&buf, tmplName, data); err != nil {
 		return "", fmt.Errorf("email: monthly summary template: %w", err)
 	}
 	return buf.String(), nil

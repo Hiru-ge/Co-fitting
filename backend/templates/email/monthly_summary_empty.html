@@ -1,0 +1,32 @@
+{{template "header" .}}
+<div style="padding: 32px 24px;">
+  <h2 style="color: #1a1a1a; margin-bottom: 16px;">{{.Month}}の冒険レポート</h2>
+  <p style="color: #4a4a4a; font-size: 16px; line-height: 1.6;">
+    {{.UserName}}、{{.Month}}もお疲れ！
+  </p>
+
+  <div style="background-color: #f3f4f6; border-radius: 12px; padding: 32px 24px; margin: 24px 0; text-align: center;">
+    <div style="font-size: 48px; margin-bottom: 16px;">🌱</div>
+    <h3 style="color: #4a4a4a; margin: 0 0 12px;">今月は冒険できなかったね</h3>
+    <p style="color: #6b7280; font-size: 15px; line-height: 1.6; margin: 0;">
+    忙しい月もあるよね。焦らなくて大丈夫！<br>
+      来月こそ、新しい場所へ飛び出してみよう！
+    </p>
+  </div>
+
+  <div style="background-color: #fff7ed; border-radius: 12px; padding: 20px 24px; margin: 24px 0;">
+    <p style="color: #c2410c; font-size: 14px; margin: 0; line-height: 1.6;">
+      💡 <strong>ヒント</strong>: Roambleが新しい場所を提案するよ。<br>
+      気が向いたときに、ちょっとだけのぞいてみて。
+    </p>
+  </div>
+
+  <div style="text-align: center; margin: 32px 0;">
+    <a href="https://roamble.app"
+       style="background-color: #f97316; color: #ffffff; text-decoration: none;
+              padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+      来月の冒険先を見てみる
+    </a>
+  </div>
+</div>
+{{template "footer" .}}

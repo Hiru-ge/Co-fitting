@@ -516,19 +516,19 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/email_test.go` に追記
+- [x] `backend/services/email_test.go` に追記
   - `TestBuildWeeklySummaryEmptyEmail` — `VisitCount: 0` の場合に空状態テンプレートの内容が返るか
   - `TestBuildMonthlySummaryEmptyEmail` — 同様
 
 **🟢 GREEN**
 
-- [ ] `backend/templates/email/weekly_summary_empty.html` 作成（「今週は冒険できなかったね！来週また行ってみよう」系の背中押しコンテンツ）
-- [ ] `backend/templates/email/monthly_summary_empty.html` 作成（同様）
-- [ ] `backend/services/email.go` の `BuildWeeklySummaryEmail` / `BuildMonthlySummaryEmail` に `VisitCount == 0` 判定を追加し、空状態テンプレートに切り替える
+- [x] `backend/templates/email/weekly_summary_empty.html` 作成（「今週は冒険できなかったね！来週また行ってみよう」系の背中押しコンテンツ）
+- [x] `backend/templates/email/monthly_summary_empty.html` 作成（同様）
+- [x] `backend/services/email.go` の `BuildWeeklySummaryEmail` / `BuildMonthlySummaryEmail` に `VisitCount == 0` 判定を追加し、空状態テンプレートに切り替える
 
 **🔵 REFACTOR**
 
-- [ ] 空状態判定を `isEmptySummary(visitCount int) bool` ヘルパーに切り出し
+- [x] 空状態判定を `isEmptySummary(visitCount int) bool` ヘルパーに切り出し
 
 ---
 
