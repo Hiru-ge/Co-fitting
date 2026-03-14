@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router";
 import type { MetaFunction } from "react-router";
 
@@ -7,35 +7,7 @@ export const meta: MetaFunction = () => [
   { name: "description", content: "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" },
 ];
 
-type FormState = "idle" | "submitting" | "success" | "error";
-
-// 3/14 23:59:59 JST
-const DEADLINE = new Date("2026-03-14T23:59:59+09:00");
-
-function useCountdown() {
-  const [remaining, setRemaining] = useState(() => Math.max(0, DEADLINE.getTime() - Date.now()));
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setRemaining(Math.max(0, DEADLINE.getTime() - Date.now()));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  const totalSeconds = Math.floor(remaining / 1000);
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  const expired = remaining === 0;
-
-  return { days, hours, minutes, seconds, expired };
-}
-
 export default function LP() {
-  const [email, setEmail] = useState("");
-  const [formState, setFormState] = useState<FormState>("idle");
-  const { days, hours, minutes, seconds, expired } = useCountdown();
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -46,26 +18,6 @@ export default function LP() {
       if (document.body.contains(script)) document.body.removeChild(script);
     };
   }, []);
-
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setFormState("submitting");
-    try {
-      const res = await fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          access_key: import.meta.env.VITE_WEB3FORMS_KEY,
-          email,
-          subject: "Roamble ベータ版アクセスリクエスト",
-        }),
-      });
-      const data = await res.json();
-      setFormState(data.success ? "success" : "error");
-    } catch {
-      setFormState("error");
-    }
-  }
 
   return (
     <div className="min-h-dvh bg-bg-dark text-white">
@@ -84,43 +36,6 @@ export default function LP() {
           <span className="font-semibold text-primary"> 経験値（XP）</span>
           に変える。
         </p>
-        <a
-          href="#request-access"
-          className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
-        >
-          ベータ版アクセスをリクエスト
-        </a>
-
-        {/* Countdown Banner */}
-        <div className="mt-6 w-full max-w-sm rounded-xl border border-accent-orange/40 bg-accent-orange/10 px-4 py-3 text-center">
-          {expired ? (
-            <p className="text-sm font-semibold text-accent-orange">リクエスト受付を終了しました</p>
-          ) : (
-            <>
-              <p className="text-xs text-accent-orange/80 mb-2 font-medium">リクエスト受付終了まで</p>
-              <div className="flex items-center justify-center gap-2">
-                {[
-                  { value: days, label: "日" },
-                  { value: hours, label: "時間" },
-                  { value: minutes, label: "分" },
-                  { value: seconds, label: "秒" },
-                ].map(({ value, label }) => (
-                  <div key={label} className="flex flex-col items-center">
-                    <span className="text-2xl font-bold font-display-alt text-accent-orange tabular-nums leading-none">
-                      {String(value).padStart(2, "0")}
-                    </span>
-                    <span className="text-xs text-accent-orange/70 mt-0.5">{label}</span>
-                  </div>
-                )).reduce<React.ReactNode[]>((acc, el, i) => {
-                  if (i === 0) return [el];
-                  return [...acc, <span key={`sep-${i}`} className="text-accent-orange/50 text-xl font-bold self-start mt-1">:</span>, el];
-                }, [])}
-              </div>
-              <p className="text-xs text-accent-orange/60 mt-2">3月14日（土）23:59 JST まで</p>
-            </>
-          )}
-        </div>
-
         {/* Hero Screenshots */}
         <div className="mt-12 flex items-end justify-center gap-3 px-2">
           <img
@@ -335,58 +250,6 @@ export default function LP() {
         </div>
       </section>
 
-      {/* ── Divider ── */}
-      <div className="mx-auto w-12 h-px bg-white/10" />
-
-      {/* ── Request Access ── */}
-      <section id="request-access" className="px-6 py-12">
-        <div className="max-w-md mx-auto">
-          <h2 className="text-xl font-bold font-display mb-3 text-center">
-            ベータ版アクセスをリクエスト
-          </h2>
-          <p className="text-sm text-white/60 mb-6 text-center">
-            現在Webベータ版公開中です。<br/>
-            <span className="font-semibold text-accent-orange">リクエスト受付は3月14日（土）23:59 JSTまで。</span><br/>
-            メールでアクセス用合言葉をお知らせしますので、以下のフォームからメールアドレスを登録してください。
-          </p>
-
-          {formState === "success" ? (
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <span className="material-symbols-outlined text-primary text-4xl">check_circle</span>
-              <p className="font-semibold">登録しました！</p>
-              <p className="text-sm text-white/60">
-                アクセス権が開放されたらメールでお知らせします。
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="メールアドレスを入力"
-                required
-                disabled={formState === "submitting"}
-                className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-              />
-              <button
-                type="submit"
-                disabled={formState === "submitting" || !email.trim()}
-                className="px-6 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              >
-                {formState === "submitting" ? "送信中..." : "登録する"}
-              </button>
-            </form>
-          )}
-
-          {formState === "error" && (
-            <p className="mt-3 text-sm text-red-400 text-center">
-              送信に失敗しました。しばらく時間をおいて再度お試しください。
-            </p>
-          )}
-        </div>
-      </section>
-      
       {/* ── Divider ── */}
       <div className="mx-auto w-12 h-px bg-white/10" />
 
