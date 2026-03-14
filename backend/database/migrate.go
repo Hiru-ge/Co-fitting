@@ -65,6 +65,11 @@ func Migrate(db *gorm.DB) error {
 		return fmt.Errorf("failed to migrate notification tables: %w", err)
 	}
 
+	// MonthlySummary デフォルト値を false → true に変更（Issue #291）
+	if err := db.Exec("UPDATE notification_settings SET monthly_summary = true WHERE monthly_summary = false").Error; err != nil {
+		return fmt.Errorf("failed to update monthly_summary default: %w", err)
+	}
+
 	if err := SeedMasterData(db); err != nil {
 		return fmt.Errorf("failed to seed master data: %w", err)
 	}

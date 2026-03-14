@@ -538,12 +538,12 @@
 
 **🟢 GREEN**
 
-- [ ] `backend/models/notification.go` の `MonthlySummary` タグを `gorm:"default:false"` → `gorm:"default:true"` に変更
-- [ ] `backend/database/migrate.go` に既存ユーザーのデフォルト値を更新するマイグレーションを追加（`UPDATE notification_settings SET monthly_summary = true WHERE monthly_summary = false`）
+- [x] `backend/models/notification.go` の `MonthlySummary` タグを `gorm:"default:false"` → `gorm:"default:true"` に変更
+- [x] `backend/database/migrate.go` に既存ユーザーのデフォルト値を更新するマイグレーションを追加（`UPDATE notification_settings SET monthly_summary = true WHERE monthly_summary = false`）
 
 **🔵 REFACTOR**
 
-- [ ] `backend/models/notification_test.go` の `TestNotificationSettingsDefaults` を新デフォルト値に合わせて更新
+- [x] `backend/models/notification_test.go` の `TestNotificationSettingsDefaults` を新デフォルト値に合わせて更新
 
 ---
 

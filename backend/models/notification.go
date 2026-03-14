@@ -26,7 +26,7 @@ type NotificationSettings struct {
 	EmailEnabled    bool      `gorm:"default:true" json:"email_enabled"`
 	DailySuggestion bool      `gorm:"default:true" json:"daily_suggestion"`
 	WeeklySummary   bool      `gorm:"default:true" json:"weekly_summary"`
-	MonthlySummary  bool      `gorm:"default:false" json:"monthly_summary"`
+	MonthlySummary  bool      `gorm:"default:true" json:"monthly_summary"`
 	StreakReminder  bool      `gorm:"default:true" json:"streak_reminder"`
 	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 

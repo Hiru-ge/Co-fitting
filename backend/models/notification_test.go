@@ -59,7 +59,7 @@ func TestNotificationSettingsDefaults(t *testing.T) {
 		{"EmailEnabled", "default:true", "EmailEnabled のデフォルトは true"},
 		{"DailySuggestion", "default:true", "DailySuggestion のデフォルトは true"},
 		{"WeeklySummary", "default:true", "WeeklySummary のデフォルトは true"},
-		{"MonthlySummary", "default:false", "MonthlySummary のデフォルトは false（opt-in）"},
+		{"MonthlySummary", "default:true", "MonthlySummary のデフォルトは true"},
 		{"StreakReminder", "default:true", "StreakReminder のデフォルトは true"},
 		{"UpdatedAt", "autoUpdateTime", "UpdatedAt は autoUpdateTime"},
 	}

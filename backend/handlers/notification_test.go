@@ -329,8 +329,8 @@ func TestGetNotificationSettings_NoRecord(t *testing.T) {
 	if resp.StreakReminder != true {
 		t.Errorf("Expected StreakReminder=true (default), got %v", resp.StreakReminder)
 	}
-	if resp.MonthlySummary != false {
-		t.Errorf("Expected MonthlySummary=false (default), got %v", resp.MonthlySummary)
+	if resp.MonthlySummary != true {
+		t.Errorf("Expected MonthlySummary=true (default), got %v", resp.MonthlySummary)
 	}
 }
 
