@@ -144,7 +144,7 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 			payload := PushPayload{
 				Title: "今週の冒険まとめ",
 				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
-				URL:   "/history",
+				URL:   "/summary/weekly",
 			}
 			if err := s.push.SendToUser(target.UserID, payload); err != nil {
 				log.Printf("scheduler: weekly summary: push to user %d: %v", target.UserID, err)
@@ -186,7 +186,7 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 			payload := PushPayload{
 				Title: fmt.Sprintf("%sの冒険まとめ", monthLabel),
 				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
-				URL:   "/history",
+				URL:   "/summary/monthly",
 			}
 			if err := s.push.SendToUser(target.UserID, payload); err != nil {
 				log.Printf("scheduler: monthly summary: push to user %d: %v", target.UserID, err)

@@ -26,9 +26,14 @@ export async function updateVisit(
 export async function listVisits(
   token: string,
   limit: number = 20,
-  offset: number = 0
+  offset: number = 0,
+  from?: string,
+  until?: string
 ): Promise<VisitListResponse> {
-  return apiCall(`/api/visits?limit=${limit}&offset=${offset}`, token);
+  const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  if (from) params.set("from", from);
+  if (until) params.set("until", until);
+  return apiCall(`/api/visits?${params.toString()}`, token);
 }
 
 export async function getMapVisits(token: string): Promise<MapVisitResponse> {

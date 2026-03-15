@@ -28,5 +28,7 @@ export default [
     route("history/:id", "routes/history-detail.tsx"),
     route("profile", "routes/profile.tsx"),
     route("settings", "routes/settings.tsx"),
+    route("summary/weekly", "routes/summary.weekly.tsx"),
+    route("summary/monthly", "routes/summary.monthly.tsx"),
   ]),
 ] satisfies RouteConfig;

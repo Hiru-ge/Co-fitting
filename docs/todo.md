@@ -599,13 +599,13 @@
 
 **🔴 RED**
 
-- [ ] `backend/handlers/visit_test.go` に日付フィルタのテストを追記
+- [x] `backend/handlers/visit_test.go` に日付フィルタのテストを追記
   - `from`・`until` パラメータあり → 該当範囲の訪問のみ返る
   - パラメータなし → 既存動作と変わらない（後方互換）
 
 **🟢 GREEN**
 
-- [ ] `backend/handlers/visit.go` の `ListVisits` に `from`・`until` クエリパラメータを追加（RFC3339形式、省略可能）
+- [x] `backend/handlers/visit.go` の `ListVisits` に `from`・`until` クエリパラメータを追加（RFC3339形式、省略可能）
   - `from` 指定時: `WHERE visited_at >= from`
   - `until` 指定時: `WHERE visited_at < until`
 
@@ -613,31 +613,31 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/routes/summary.weekly.test.tsx` 作成
+- [x] `frontend/app/routes/summary.weekly.test.tsx` 作成
   - 訪問件数・獲得XP・バッジ一覧・場所名一覧が表示される
   - 未認証時は `/login` にリダイレクト
-- [ ] `frontend/app/routes/summary.monthly.test.tsx` 作成（同様）
+- [x] `frontend/app/routes/summary.monthly.test.tsx` 作成（同様）
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/api/visits.ts` に `from`・`until` パラメータ対応を追加
-- [ ] `frontend/app/routes/summary.weekly.tsx` 作成
+- [x] `frontend/app/api/visits.ts` に `from`・`until` パラメータ対応を追加
+- [x] `frontend/app/routes/summary.weekly.tsx` 作成
   - `clientLoader` でJWT確認・未認証時リダイレクト
   - `from`: 直近月曜0時 JST / `until`: 直近月曜0時 + 7日
   - 表示内容: 訪問件数・獲得XP（大きくリッチに）・場所名一覧（写真あり）・バッジ一覧
-- [ ] `frontend/app/routes/summary.monthly.tsx` 作成
+- [x] `frontend/app/routes/summary.monthly.tsx` 作成
   - `from`: 今月1日0時 JST / `until`: 翌月1日0時 JST
   - 表示内容: 訪問件数・獲得XP・場所名一覧・バッジ一覧
-- [ ] `frontend/public/sw.js` の `notificationclick` URLを変更
-  - 週次サマリー通知 → `/summary/weekly`
-  - 月次サマリー通知 → `/summary/monthly`
-- [ ] `backend/services/scheduler.go` の PushPayload URL を変更
+- [x] `frontend/public/sw.js` の `notificationclick` URLを変更
+  - 週次サマリー通知 → `/summary/weekly`（sw.jsは動的URL使用のため変更不要。scheduler.go側を変更）
+  - 月次サマリー通知 → `/summary/monthly`（同上）
+- [x] `backend/services/scheduler.go` の PushPayload URL を変更
   - 週次: `/history` → `/summary/weekly`
   - 月次: `/history` → `/summary/monthly`
 
 **🔵 REFACTOR**
 
-- [ ] 週次・月次で共通のサマリーレイアウトコンポーネント `SummaryLayout` を切り出し
+- [x] 週次・月次で共通のサマリーレイアウトコンポーネント `SummaryLayout` を切り出し
 
 ---
 
