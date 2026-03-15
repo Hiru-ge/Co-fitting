@@ -9,6 +9,8 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
+const emailAssetBaseURL = "https://roamble.app/assets/email"
+
 // EmailService はResend APIを通じてメール送信を行うサービス
 type EmailService struct {
 	client      *resend.Client
@@ -16,12 +18,19 @@ type EmailService struct {
 	tmpl        *template.Template
 }
 
+// BadgeItem はメール内のバッジ表示データ
+type BadgeItem struct {
+	Name    string
+	IconURL string
+}
+
 // WeeklySummaryData は週次サマリーメールのテンプレートデータ
 type WeeklySummaryData struct {
 	UserName   string
 	VisitCount int
 	TotalXP    int
-	NewBadges  []string
+	NewBadges  []BadgeItem
+	AssetBase  string
 }
 
 // MonthlySummaryData は月次サマリーメールのテンプレートデータ
@@ -29,14 +38,47 @@ type MonthlySummaryData struct {
 	UserName   string
 	VisitCount int
 	TotalXP    int
-	NewBadges  []string
+	NewBadges  []BadgeItem
+	AssetBase  string
 	Month      string // 例: "2026年3月"
+}
+
+// badgeIconMap はバッジ名からメール用アイコンファイル名へのマッピング
+var badgeIconMap = map[string]string{
+	"最初の一歩":              "badge-footprint.svg",
+	"コンフォートゾーン・ブレイカー":    "badge-rocket.svg",
+	"ジャンルコレクター Lv.1":    "badge-bookmark.svg",
+	"ジャンルコレクター Lv.2":    "badge-bookmark.svg",
+	"ジャンルコレクター Lv.3":    "badge-bookmark.svg",
+	"ストリークマスター Lv.1":    "badge-fire.svg",
+	"ストリークマスター Lv.2":    "badge-fire.svg",
+	"ストリークマスター Lv.3":    "badge-fire.svg",
+	"エリアパイオニア":           "badge-explore.svg",
+	"ナイトウォーカー":           "badge-moon.svg",
+	"ウィークエンドウォリアー":       "badge-weekend.svg",
+}
+
+// BadgeItemsFromNames はバッジ名スライスをBadgeItemスライスに変換する
+func BadgeItemsFromNames(names []string) []BadgeItem {
+	items := make([]BadgeItem, len(names))
+	for i, name := range names {
+		icon := "badge-default.svg"
+		if mapped, ok := badgeIconMap[name]; ok {
+			icon = mapped
+		}
+		items[i] = BadgeItem{
+			Name:    name,
+			IconURL: emailAssetBaseURL + "/" + icon,
+		}
+	}
+	return items
 }
 
 // streakReminderData はストリークリマインダーメールのテンプレートデータ
 type streakReminderData struct {
 	UserName    string
 	StreakWeeks int
+	AssetBase   string
 }
 
 // NewEmailService は EmailService を初期化して返す
@@ -57,6 +99,7 @@ func (s *EmailService) BuildStreakReminderEmail(userName string, streakWeeks int
 	data := streakReminderData{
 		UserName:    userName,
 		StreakWeeks: streakWeeks,
+		AssetBase:   emailAssetBaseURL,
 	}
 	var buf bytes.Buffer
 	if err := s.tmpl.ExecuteTemplate(&buf, "streak_reminder.html", data); err != nil {
@@ -73,6 +116,7 @@ func isEmptySummary(visitCount int) bool {
 // BuildWeeklySummaryEmail は週次サマリーメールのHTMLを返す
 // 訪問件数がゼロの場合は空状態専用テンプレートを使用する
 func (s *EmailService) BuildWeeklySummaryEmail(data WeeklySummaryData) (string, error) {
+	data.AssetBase = emailAssetBaseURL
 	tmplName := "weekly_summary.html"
 	if isEmptySummary(data.VisitCount) {
 		tmplName = "weekly_summary_empty.html"
@@ -87,6 +131,7 @@ func (s *EmailService) BuildWeeklySummaryEmail(data WeeklySummaryData) (string, 
 // BuildMonthlySummaryEmail は月次サマリーメールのHTMLを返す
 // 訪問件数がゼロの場合は空状態専用テンプレートを使用する
 func (s *EmailService) BuildMonthlySummaryEmail(data MonthlySummaryData) (string, error) {
+	data.AssetBase = emailAssetBaseURL
 	tmplName := "monthly_summary.html"
 	if isEmptySummary(data.VisitCount) {
 		tmplName = "monthly_summary_empty.html"

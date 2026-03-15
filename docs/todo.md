@@ -569,24 +569,24 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/email_test.go` を更新
+- [x] `backend/services/email_test.go` を更新
   - 絵文字を含む期待値を削除
   - 場所名・バッジ名がレンダリング結果に含まれるか検証
 
 **🟢 GREEN**
 
-- [ ] `backend/services/email.go` の `WeeklySummaryData` / `MonthlySummaryData` に `PlaceNames []string` フィールドを追加
-- [ ] `backend/services/scheduler.go` の `buildWeeklySummaryData` / `buildMonthlySummaryData` で訪問した場所名一覧（`visit.PlaceName`）を収集して `PlaceNames` に格納
-- [ ] `backend/templates/email/base.html` — ヘッダーをブランドカラーに修正（シアン `#13ecec` / ダークネイビー `#102222`）
-- [ ] `backend/templates/email/weekly_summary.html` — 絵文字除去・ブランドカラー適用・訪問件数とXPを大きくリッチに表示・場所名一覧セクションとバッジ名一覧セクションを追加
-- [ ] `backend/templates/email/weekly_summary_empty.html` — 絵文字除去・ブランドカラー適用
-- [ ] `backend/templates/email/monthly_summary.html` — weekly_summary.html と同様
-- [ ] `backend/templates/email/monthly_summary_empty.html` — 絵文字除去・ブランドカラー適用
-- [ ] `backend/templates/email/streak_reminder.html` — 絵文字除去・赤色強調をブランドカラーに統一
+- [x] `backend/services/email.go` の `WeeklySummaryData` / `MonthlySummaryData` に `PlaceNames []string` フィールドを追加
+- [x] `backend/services/scheduler.go` の `buildWeeklySummaryData` / `buildMonthlySummaryData` で訪問した場所名一覧（`visit.PlaceName`）を収集して `PlaceNames` に格納
+- [x] `backend/templates/email/base.html` — ヘッダーをブランドカラーに修正（シアン `#13ecec` / ダークネイビー `#102222`）
+- [x] `backend/templates/email/weekly_summary.html` — 絵文字除去・ブランドカラー適用・訪問件数とXPを大きくリッチに表示・場所名一覧セクションとバッジ名一覧セクションを追加
+- [x] `backend/templates/email/weekly_summary_empty.html` — 絵文字除去・ブランドカラー適用
+- [x] `backend/templates/email/monthly_summary.html` — weekly_summary.html と同様
+- [x] `backend/templates/email/monthly_summary_empty.html` — 絵文字除去・ブランドカラー適用
+- [x] `backend/templates/email/streak_reminder.html` — 絵文字除去・赤色強調をブランドカラーに統一
 
 **🔵 REFACTOR**
 
-- [ ] `PlaceNames` の重複除去（同じ場所を複数回訪問した場合）を検討
+- [x] `PlaceNames` の重複除去（同じ場所を複数回訪問した場合）を検討
 
 ---
 

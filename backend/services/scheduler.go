@@ -351,7 +351,7 @@ func buildWeeklySummaryData(db *gorm.DB, target notificationTarget, weekStart, w
 		UserName:   target.DisplayName,
 		VisitCount: len(visits),
 		TotalXP:    totalXP,
-		NewBadges:  newBadgeNames,
+		NewBadges:  BadgeItemsFromNames(newBadgeNames),
 	}, nil
 }
 
@@ -384,7 +384,7 @@ func buildMonthlySummaryData(db *gorm.DB, target notificationTarget, monthStart,
 		UserName:   target.DisplayName,
 		VisitCount: len(visits),
 		TotalXP:    totalXP,
-		NewBadges:  newBadgeNames,
+		NewBadges:  BadgeItemsFromNames(newBadgeNames),
 		Month:      monthLabel,
 	}, nil
 }
