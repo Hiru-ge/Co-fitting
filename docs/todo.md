@@ -547,6 +547,112 @@
 
 ---
 
+### 週次サマリーテストエンドポイントの週判定バグ修正（Issue #292）
+
+> **バグ概要**: `TriggerNotification("weekly_summary")` でテスト発火すると、`RunWeeklySummaryNotification()` 内の `lastWeekStart()` が「先週月曜〜日曜」の範囲でDBを検索するため、テスト発火日に記録した訪問（＝今週分）が含まれない。本番スケジューラー（月曜10時実行）は正しく動作するが、テスト目的では「今週」データを確認できない。
+
+**🔴 RED**
+
+- [ ] `backend/services/scheduler_test.go` に `TestRunWeeklySummaryNotification_UsesLastWeekRange` テストを追記
+  - `lastWeekStart()` が返す範囲と今週の訪問を用意 → 今週分は含まれないことを検証（現仕様の文書化）
+  - `RunWeeklySummaryNotification(weekStart, weekEnd time.Time)` を引数付きに変更した場合のテストも追加
+
+**🟢 GREEN**
+
+- [ ] `backend/services/scheduler.go` の `RunWeeklySummaryNotification()` に省略可能な `targetWeekStart time.Time` 引数を追加（ゼロ値の場合は `lastWeekStart()` を使用）
+  - シグネチャ変更: `RunWeeklySummaryNotification(targetWeekStart ...time.Time)`
+- [ ] `backend/handlers/dev_handler.go` の `TriggerNotification` で `"weekly_summary"` ケースを `s.Scheduler.RunWeeklySummaryNotification(weekStart(time.Now()))` に変更（テスト発火時は今週の月曜を起点にする）
+
+**🔵 REFACTOR**
+
+- [ ] 月次サマリーのテストエンドポイントも同様に `targetMonthStart` 引数対応を検討
+
+---
+
+### メール通知テンプレートのデザイン改修・コンテンツ拡充（Issue #293）
+
+> **概要**:
+> - 絵文字（✨、🗺️、⚠️ 等）を全削除
+> - ブランドカラーを正しく適用（`#13ecec` シアン / `#525BBB` ブランドブルー / `#102222` 背景）
+> - 訪問件数・獲得XPをリッチに表示（大きく・目立つデザイン）
+> - メール本文に **訪問した場所名一覧** と **獲得バッジ名一覧** を追加（シンプルな列挙。場所画像・バッジ画像は含めない）
+>
+> **含めないもの**: 場所画像（Visit に photo_reference が保存されておらず、email 送信時点では取得不可）・バッジ画像（全 IconURL が空文字のため）
+
+**🔴 RED**
+
+- [ ] `backend/services/email_test.go` を更新
+  - 絵文字を含む期待値を削除
+  - 場所名・バッジ名がレンダリング結果に含まれるか検証
+
+**🟢 GREEN**
+
+- [ ] `backend/services/email.go` の `WeeklySummaryData` / `MonthlySummaryData` に `PlaceNames []string` フィールドを追加
+- [ ] `backend/services/scheduler.go` の `buildWeeklySummaryData` / `buildMonthlySummaryData` で訪問した場所名一覧（`visit.PlaceName`）を収集して `PlaceNames` に格納
+- [ ] `backend/templates/email/base.html` — ヘッダーをブランドカラーに修正（シアン `#13ecec` / ダークネイビー `#102222`）
+- [ ] `backend/templates/email/weekly_summary.html` — 絵文字除去・ブランドカラー適用・訪問件数とXPを大きくリッチに表示・場所名一覧セクションとバッジ名一覧セクションを追加
+- [ ] `backend/templates/email/weekly_summary_empty.html` — 絵文字除去・ブランドカラー適用
+- [ ] `backend/templates/email/monthly_summary.html` — weekly_summary.html と同様
+- [ ] `backend/templates/email/monthly_summary_empty.html` — 絵文字除去・ブランドカラー適用
+- [ ] `backend/templates/email/streak_reminder.html` — 絵文字除去・赤色強調をブランドカラーに統一
+
+**🔵 REFACTOR**
+
+- [ ] `PlaceNames` の重複除去（同じ場所を複数回訪問した場合）を検討
+
+---
+
+### 週次・月次サマリーページ実装（Issue #294）
+
+> プッシュ通知タップ後の体験改善。「今週/今月の冒険まとめ」をSpotify Wrapped風のページで表示する。
+> 週次・月次のプッシュ通知タップ先を `/history` から `/summary/weekly`・`/summary/monthly` に変更する。
+
+#### バックエンド
+
+**🔴 RED**
+
+- [ ] `backend/handlers/visit_test.go` に日付フィルタのテストを追記
+  - `from`・`until` パラメータあり → 該当範囲の訪問のみ返る
+  - パラメータなし → 既存動作と変わらない（後方互換）
+
+**🟢 GREEN**
+
+- [ ] `backend/handlers/visit.go` の `ListVisits` に `from`・`until` クエリパラメータを追加（RFC3339形式、省略可能）
+  - `from` 指定時: `WHERE visited_at >= from`
+  - `until` 指定時: `WHERE visited_at < until`
+
+#### フロントエンド
+
+**🔴 RED**
+
+- [ ] `frontend/app/routes/summary.weekly.test.tsx` 作成
+  - 訪問件数・獲得XP・バッジ一覧・場所名一覧が表示される
+  - 未認証時は `/login` にリダイレクト
+- [ ] `frontend/app/routes/summary.monthly.test.tsx` 作成（同様）
+
+**🟢 GREEN**
+
+- [ ] `frontend/app/api/visits.ts` に `from`・`until` パラメータ対応を追加
+- [ ] `frontend/app/routes/summary.weekly.tsx` 作成
+  - `clientLoader` でJWT確認・未認証時リダイレクト
+  - `from`: 直近月曜0時 JST / `until`: 直近月曜0時 + 7日
+  - 表示内容: 訪問件数・獲得XP（大きくリッチに）・場所名一覧（写真あり）・バッジ一覧
+- [ ] `frontend/app/routes/summary.monthly.tsx` 作成
+  - `from`: 今月1日0時 JST / `until`: 翌月1日0時 JST
+  - 表示内容: 訪問件数・獲得XP・場所名一覧・バッジ一覧
+- [ ] `frontend/public/sw.js` の `notificationclick` URLを変更
+  - 週次サマリー通知 → `/summary/weekly`
+  - 月次サマリー通知 → `/summary/monthly`
+- [ ] `backend/services/scheduler.go` の PushPayload URL を変更
+  - 週次: `/history` → `/summary/weekly`
+  - 月次: `/history` → `/summary/monthly`
+
+**🔵 REFACTOR**
+
+- [ ] 週次・月次で共通のサマリーレイアウトコンポーネント `SummaryLayout` を切り出し
+
+---
+
 ## Phase 3 計画（iOS）— ベータFBと通知実装後に着手
 
 ---

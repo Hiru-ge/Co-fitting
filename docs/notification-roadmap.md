@@ -65,7 +65,7 @@ type NotificationSettings struct {
     EmailEnabled    bool      `gorm:"default:true"`
     DailySuggestion bool      `gorm:"default:true"`
     WeeklySummary   bool      `gorm:"default:true"`
-    MonthlySummary  bool      `gorm:"default:false"` // opt-in
+    MonthlySummary  bool      `gorm:"default:true"`
     StreakReminder  bool      `gorm:"default:true"`
     UpdatedAt       time.Time `gorm:"autoUpdateTime"`
 }
