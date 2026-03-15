@@ -109,5 +109,6 @@ func Setup(router *gin.Engine, deps Deps) {
 		dev.Use(middleware.JWTAuth(deps.JWTSecret, deps.RedisClient))
 		dev.DELETE("/suggestions/cache", deps.DevHandler.ResetSuggestionCache)
 		dev.GET("/suggestions/stats", deps.DevHandler.GetSuggestionStats)
+		dev.POST("/notifications/trigger", deps.DevHandler.TriggerNotification)
 	}
 }

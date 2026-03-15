@@ -152,12 +152,6 @@ func main() {
 		RedisClient: redisClient,
 	}
 
-	devHandler := &handlers.DevHandler{
-		RedisClient: redisClient,
-		DB:          db,
-		JWTCfg:      jwtCfg,
-	}
-
 	betaHandler := &handlers.BetaHandler{}
 
 	notificationHandler := &handlers.NotificationHandler{
@@ -168,6 +162,13 @@ func main() {
 	scheduler := initNotificationScheduler(db)
 	scheduler.Start()
 	defer scheduler.Stop()
+
+	devHandler := &handlers.DevHandler{
+		RedisClient: redisClient,
+		DB:          db,
+		JWTCfg:      jwtCfg,
+		Scheduler:   scheduler,
+	}
 
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{

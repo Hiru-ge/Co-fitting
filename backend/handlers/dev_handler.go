@@ -8,6 +8,7 @@ import (
 	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/services"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -18,6 +19,7 @@ type DevHandler struct {
 	RedisClient *redis.Client
 	DB          *gorm.DB
 	JWTCfg      *config.JWTConfig
+	Scheduler   *services.NotificationScheduler
 }
 
 type cacheStatsResponse struct {
@@ -146,4 +148,47 @@ func (h *DevHandler) TestLogin(c *gin.Context) {
 		"refresh_token": tokenPair.RefreshToken,
 		"is_new_user":   isNewUser,
 	})
+}
+
+type triggerNotificationRequest struct {
+	Type string `json:"type" binding:"required"`
+}
+
+// TriggerNotification は開発環境専用の通知即時発火エンドポイント。
+// type に "daily_suggestion" / "streak_reminder" / "weekly_summary" / "monthly_summary" を指定する。
+func (h *DevHandler) TriggerNotification(c *gin.Context) {
+	if h.Scheduler == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "scheduler not initialized"})
+		return
+	}
+
+	var req triggerNotificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "type is required"})
+		return
+	}
+
+	switch req.Type {
+	case "daily_suggestion":
+		h.Scheduler.RunDailySuggestionNotification()
+	case "streak_reminder":
+		h.Scheduler.RunStreakReminderNotification()
+	case "weekly_summary":
+		h.Scheduler.RunWeeklySummaryNotification()
+	case "monthly_summary":
+		h.Scheduler.RunMonthlySummaryNotification()
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid type",
+			"valid_types": []string{
+				"daily_suggestion",
+				"streak_reminder",
+				"weekly_summary",
+				"monthly_summary",
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "notification triggered", "type": req.Type})
 }
