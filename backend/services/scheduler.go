@@ -121,7 +121,8 @@ func (s *NotificationScheduler) RunStreakReminderNotification() {
 	}
 }
 
-// RunWeeklySummaryNotification は週次サマリー設定ONのユーザー全員にサマリーを送信する
+// RunWeeklySummaryNotification は週次サマリー設定ONのユーザー全員にサマリーを送信する。
+// 集計対象は常に先週（lastWeekStart()）の範囲。本番スケジューラー（月曜10時）では正しく動作する。
 func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 	targets, err := fetchWeeklySummaryTargets(s.db)
 	if err != nil {
@@ -139,7 +140,7 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 			continue
 		}
 
-		if target.PushEnabled && target.WeeklySummary {
+		if s.push != nil && target.PushEnabled && target.WeeklySummary {
 			payload := PushPayload{
 				Title: "今週の冒険まとめ",
 				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
@@ -158,7 +159,8 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 	}
 }
 
-// RunMonthlySummaryNotification は月次サマリー設定ONのユーザー全員にサマリーを送信する
+// RunMonthlySummaryNotification は月次サマリー設定ONのユーザー全員にサマリーを送信する。
+// 集計対象は常に前月の範囲。本番スケジューラー（毎月1日10時）では正しく動作する。
 func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 	targets, err := fetchMonthlySummaryTargets(s.db)
 	if err != nil {
@@ -180,7 +182,7 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 			continue
 		}
 
-		if target.PushEnabled && target.MonthlySummary {
+		if s.push != nil && target.PushEnabled && target.MonthlySummary {
 			payload := PushPayload{
 				Title: fmt.Sprintf("%sの冒険まとめ", monthLabel),
 				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
@@ -392,3 +394,4 @@ func lastWeekStart() time.Time {
 	thisMonday := weekStart(time.Now())
 	return thisMonday.AddDate(0, 0, -7)
 }
+

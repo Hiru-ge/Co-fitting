@@ -551,21 +551,9 @@
 
 > **バグ概要**: `TriggerNotification("weekly_summary")` でテスト発火すると、`RunWeeklySummaryNotification()` 内の `lastWeekStart()` が「先週月曜〜日曜」の範囲でDBを検索するため、テスト発火日に記録した訪問（＝今週分）が含まれない。本番スケジューラー（月曜10時実行）は正しく動作するが、テスト目的では「今週」データを確認できない。
 
-**🔴 RED**
-
-- [ ] `backend/services/scheduler_test.go` に `TestRunWeeklySummaryNotification_UsesLastWeekRange` テストを追記
-  - `lastWeekStart()` が返す範囲と今週の訪問を用意 → 今週分は含まれないことを検証（現仕様の文書化）
-  - `RunWeeklySummaryNotification(weekStart, weekEnd time.Time)` を引数付きに変更した場合のテストも追加
-
-**🟢 GREEN**
-
-- [ ] `backend/services/scheduler.go` の `RunWeeklySummaryNotification()` に省略可能な `targetWeekStart time.Time` 引数を追加（ゼロ値の場合は `lastWeekStart()` を使用）
-  - シグネチャ変更: `RunWeeklySummaryNotification(targetWeekStart ...time.Time)`
-- [ ] `backend/handlers/dev_handler.go` の `TriggerNotification` で `"weekly_summary"` ケースを `s.Scheduler.RunWeeklySummaryNotification(weekStart(time.Now()))` に変更（テスト発火時は今週の月曜を起点にする）
-
-**🔵 REFACTOR**
-
-- [ ] 月次サマリーのテストエンドポイントも同様に `targetMonthStart` 引数対応を検討
+**解決方針**: テストエンドポイントのために本番コードのシグネチャを変えるのは過剰と判断。
+`dev_handler.go` のコメントに「集計対象は先週/前月。テスト時は対象期間のデータを用意すること」と記載して対応。
+あわせて `s.push != nil` の nil チェック漏れバグを修正。
 
 ---
 
