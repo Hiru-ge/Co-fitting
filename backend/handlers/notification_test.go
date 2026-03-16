@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/Hiru-ge/roamble/middleware"
-	"github.com/Hiru-ge/roamble/repositories"
 	"github.com/gin-gonic/gin"
 )
 
@@ -157,7 +156,7 @@ func TestUnsubscribePush_Success(t *testing.T) {
 	token := generateTestToken(user.ID)
 
 	// 事前に購読を登録しておく
-	_, err := repositories.UpsertPushSubscription(testDB, user.ID, "https://fcm.googleapis.com/fcm/send/unsub-endpoint", "p256dh", "auth", "UA")
+	_, err := upsertPushSubscription(testDB, user.ID, "https://fcm.googleapis.com/fcm/send/unsub-endpoint", "p256dh", "auth", "UA")
 	if err != nil {
 		t.Fatalf("購読登録に失敗: %v", err)
 	}

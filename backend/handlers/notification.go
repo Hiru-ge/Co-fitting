@@ -5,9 +5,9 @@ import (
 
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
-	"github.com/Hiru-ge/roamble/repositories"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type NotificationHandler struct {
@@ -85,7 +85,7 @@ func (h *NotificationHandler) SubscribePush(c *gin.Context) {
 		return
 	}
 
-	isNew, err := repositories.UpsertPushSubscription(h.DB, userID, req.Endpoint, req.P256DH, req.Auth, req.UserAgent)
+	isNew, err := upsertPushSubscription(h.DB, userID, req.Endpoint, req.P256DH, req.Auth, req.UserAgent)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save subscription"})
 		return
@@ -219,6 +219,27 @@ func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /api/notifications/settings [get]
+// upsertPushSubscription はPush購読をUpsertする。
+// 新規登録の場合は true、既存レコードの更新の場合は false を返す。
+// MySQL の ON DUPLICATE KEY UPDATE は INSERT=1行、UPDATE=2行を返す。
+func upsertPushSubscription(db *gorm.DB, userID uint64, endpoint, p256dh, auth, userAgent string) (isNew bool, err error) {
+	sub := models.PushSubscription{
+		UserID:    userID,
+		Endpoint:  endpoint,
+		P256DH:    p256dh,
+		Auth:      auth,
+		UserAgent: userAgent,
+	}
+	result := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "endpoint"}},
+		DoUpdates: clause.AssignmentColumns([]string{"user_id", "p256_dh", "auth", "user_agent"}),
+	}).Create(&sub)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected == 1, nil
+}
+
 func (h *NotificationHandler) GetNotificationSettings(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
 	if !ok {
