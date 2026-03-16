@@ -191,31 +191,31 @@
 
 > TDDなし（設定作業）。完了後に env変数・DNS伝播を実機確認すること。
 
-- [ ] VAPID鍵生成（`go run github.com/SherClockHolmes/webpush-go/cmd/webpush@latest`）
+- [x] VAPID鍵生成（`go run github.com/SherClockHolmes/webpush-go/cmd/webpush@latest`）
   - `.env` + Cloud Run に `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` を追加
-- [ ] Resendアカウント作成・DNS認証
+- [x] Resendアカウント作成・DNS認証
   - Cloudflare に SPF / DKIM / DMARC レコード追加
   - `RESEND_API_KEY` / `NOTIFICATION_EMAIL_FROM` を `.env` + Cloud Run に追加
-- [ ] Cloud Run 最小インスタンス数を 0 → 1 に変更
+- [x] Cloud Run 最小インスタンス数を 0 → 1 に変更
 
 ### 通知DBモデル実装（Issue #271）
 
 **🔴 RED**
 
-- [ ] `backend/models/notification_test.go` 作成
+- [x] `backend/models/notification_test.go` 作成
   - `TestPushSubscriptionFields` — `PushSubscription` の各フィールドが期待するGORMタグを持つか検証
   - `TestNotificationSettingsDefaults` — `NotificationSettings` のデフォルト値が正しいか検証
 
 **🟢 GREEN**
 
-- [ ] `backend/models/notification.go` 作成
+- [x] `backend/models/notification.go` 作成
   - `type PushSubscription struct` — `ID`, `UserID`, `Endpoint`(uniqueIndex), `P256DH`, `Auth`, `UserAgent`, `CreatedAt`
   - `type NotificationSettings struct` — `UserID`(primaryKey), `PushEnabled`, `EmailEnabled`, `DailySuggestion`, `WeeklySummary`, `MonthlySummary`(default:false), `StreakReminder`, `UpdatedAt`
-- [ ] `backend/database/migrate.go` に `PushSubscription` / `NotificationSettings` の AutoMigrate 追加
+- [x] `backend/database/migrate.go` に `PushSubscription` / `NotificationSettings` の AutoMigrate 追加
 
 **🔵 REFACTOR**
 
-- [ ] フィールド名・型・GORMタグの見直し
+- [x] フィールド名・型・GORMタグの見直し
 
 ---
 
@@ -223,20 +223,20 @@
 
 **🔴 RED**
 
-- [ ] `backend/handlers/notification_test.go` 作成
+- [x] `backend/handlers/notification_test.go` 作成
   - `TestGetVAPIDPublicKey_Success` — `VAPID_PUBLIC_KEY` 設定済み → 200 + `{ "vapid_public_key": "..." }`
   - `TestGetVAPIDPublicKey_NotSet` — 未設定 → 500
 
 **🟢 GREEN**
 
-- [ ] `backend/handlers/notification.go` 作成
+- [x] `backend/handlers/notification.go` 作成
   - `func GetVAPIDPublicKey(deps *Dependencies) gin.HandlerFunc` 実装
   - `deps.VAPIDPublicKey` を参照して返却
-- [ ] `backend/routes/routes.go` に `GET /api/notifications/push/vapid-key` 追加（認証不要）
+- [x] `backend/routes/routes.go` に `GET /api/notifications/push/vapid-key` 追加（認証不要）
 
 **🔵 REFACTOR**
 
-- [ ] レスポンス型を `VAPIDKeyResponse` 構造体に切り出し
+- [x] レスポンス型を `VAPIDKeyResponse` 構造体に切り出し
 
 ---
 
@@ -244,21 +244,21 @@
 
 **🔴 RED**
 
-- [ ] `backend/handlers/notification_test.go` に追記
+- [x] `backend/handlers/notification_test.go` に追記
   - `TestSubscribePush_Success` — 正常登録 → 201
   - `TestSubscribePush_Upsert` — 同一 `endpoint` 再登録 → 200（レコード更新）
   - `TestSubscribePush_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `SubscribePush` ハンドラ実装
+- [x] `handlers/notification.go` に `SubscribePush` ハンドラ実装
   - リクエスト: `SubscribePushRequest{ Endpoint, P256DH, Auth, UserAgent string }`
   - `db.Clauses(clause.OnConflict{ Columns: []clause.Column{{Name: "endpoint"}}, DoUpdates: clause.AssignmentColumns(...) }).Create()`でUpsert
-- [ ] `routes/routes.go` に `POST /api/notifications/push/subscribe` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `POST /api/notifications/push/subscribe` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] Upsertロジックをリポジトリ関数 `UpsertPushSubscription` に切り出し
+- [x] Upsertロジックをリポジトリ関数 `UpsertPushSubscription` に切り出し
 
 ---
 
@@ -266,21 +266,21 @@
 
 **🔴 RED**
 
-- [ ] `handlers/notification_test.go` に追記
+- [x] `handlers/notification_test.go` に追記
   - `TestUnsubscribePush_Success` — 購読解除 → 204
   - `TestUnsubscribePush_NotFound` — 存在しない endpoint → 204（冪等）
   - `TestUnsubscribePush_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `UnsubscribePush` ハンドラ実装
+- [x] `handlers/notification.go` に `UnsubscribePush` ハンドラ実装
   - リクエスト: `UnsubscribePushRequest{ Endpoint string }`
   - `db.Where("endpoint = ? AND user_id = ?", endpoint, userID).Delete(&PushSubscription{})` で削除
-- [ ] `routes/routes.go` に `DELETE /api/notifications/push/subscribe` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `DELETE /api/notifications/push/subscribe` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] DELETE操作のエラーハンドリング統一
+- [x] DELETE操作のエラーハンドリング統一
 
 ---
 
@@ -288,20 +288,20 @@
 
 **🔴 RED**
 
-- [ ] `handlers/notification_test.go` に追記
+- [x] `handlers/notification_test.go` に追記
   - `TestGetNotificationSettings_WithRecord` — レコードあり → 200 + 設定値
   - `TestGetNotificationSettings_NoRecord` — レコードなし → 200 + デフォルト値（`PushEnabled: true` 等）
   - `TestGetNotificationSettings_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `GetNotificationSettings` ハンドラ実装
+- [x] `handlers/notification.go` に `GetNotificationSettings` ハンドラ実装
   - `db.FirstOrCreate(&settings, NotificationSettings{UserID: userID})` でデフォルト値込みで取得
-- [ ] `routes/routes.go` に `GET /api/notifications/settings` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `GET /api/notifications/settings` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] `NotificationSettingsResponse` 型に切り出し
+- [x] `NotificationSettingsResponse` 型に切り出し
 
 ---
 
@@ -309,20 +309,20 @@
 
 **🔴 RED**
 
-- [ ] `handlers/notification_test.go` に追記
+- [x] `handlers/notification_test.go` に追記
   - `TestUpdateNotificationSettings_Success` — 正常更新 → 200 + 更新後の設定値
   - `TestUpdateNotificationSettings_Unauthorized` — 認証なし → 401
 
 **🟢 GREEN**
 
-- [ ] `handlers/notification.go` に `UpdateNotificationSettings` ハンドラ実装
+- [x] `handlers/notification.go` に `UpdateNotificationSettings` ハンドラ実装
   - リクエスト: `UpdateNotificationSettingsRequest{ PushEnabled, EmailEnabled, DailySuggestion, WeeklySummary, MonthlySummary, StreakReminder *bool }`
   - `db.Save(&settings)` で全フィールド更新
-- [ ] `routes/routes.go` に `PUT /api/notifications/settings` 追加（JWTAuth付き）
+- [x] `routes/routes.go` に `PUT /api/notifications/settings` 追加（JWTAuth付き）
 
 **🔵 REFACTOR**
 
-- [ ] 部分更新（nil フィールドを無視）が必要な場合は `db.Model().Updates()` に変更検討
+- [x] 部分更新（nil フィールドを無視）が必要な場合は `db.Model().Updates()` に変更検討
 
 ---
 
@@ -332,13 +332,13 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/push_test.go` 作成
+- [x] `backend/services/push_test.go` 作成
   - `TestSendPushToUser_410RemovesSubscription` — モックHTTPサーバーが410返却 → 該当購読がDBから削除される
   - `TestSendPushToUser_Success` — 200返却 → 購読を維持
 
 **🟢 GREEN**
 
-- [ ] `backend/services/push.go` 作成
+- [x] `backend/services/push.go` 作成
   - `type PushService struct { db *gorm.DB; vapidPublicKey, vapidPrivateKey, vapidSubject string }`
   - `type PushPayload struct { Title, Body, URL string }`
   - `func NewPushService(db, publicKey, privateKey, subject) *PushService`
@@ -347,8 +347,8 @@
 
 **🔵 REFACTOR**
 
-- [ ] 送信失敗ログ（endpoint単位）の整備
-- [ ] goroutineによる並行送信検討（ユーザーが多端末保有の場合）
+- [x] 送信失敗ログ（endpoint単位）の整備
+- [x] goroutineによる並行送信検討（ユーザーが多端末保有の場合）
 
 ---
 
@@ -356,13 +356,13 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/email_test.go` 作成
+- [x] `backend/services/email_test.go` 作成
   - `TestBuildStreakReminderEmail` — テンプレートレンダリング結果に期待する文字列が含まれるか検証
   - `TestBuildWeeklySummaryEmail` — 訪問件数・獲得XPが埋め込まれるか検証
 
 **🟢 GREEN**
 
-- [ ] `backend/services/email.go` 作成
+- [x] `backend/services/email.go` 作成
   - `type EmailService struct { client *resend.Client; fromAddress string }`
   - `type WeeklySummaryData struct { UserName string; VisitCount int; TotalXP int; NewBadges []string }`
   - `type MonthlySummaryData struct { ... }`
@@ -370,13 +370,13 @@
   - `func (s *EmailService) SendStreakReminder(toEmail, userName string, streakWeeks int) error`
   - `func (s *EmailService) SendWeeklySummary(toEmail string, data WeeklySummaryData) error`
   - `func (s *EmailService) SendMonthlySummary(toEmail string, data MonthlySummaryData) error`
-- [ ] `backend/templates/email/streak_reminder.html` 作成
-- [ ] `backend/templates/email/weekly_summary.html` 作成
-- [ ] `backend/templates/email/monthly_summary.html` 作成
+- [x] `backend/templates/email/streak_reminder.html` 作成
+- [x] `backend/templates/email/weekly_summary.html` 作成
+- [x] `backend/templates/email/monthly_summary.html` 作成
 
 **🔵 REFACTOR**
 
-- [ ] テンプレートの共通ヘッダー/フッターを `base.html` に切り出し
+- [x] テンプレートの共通ヘッダー/フッターを `base.html` に切り出し
 
 ---
 
@@ -386,13 +386,13 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/scheduler_test.go` 作成
+- [x] `backend/services/scheduler_test.go` 作成
   - `TestSchedulerJobsRegistered` — `NewNotificationScheduler().Start()` 後に4件のジョブが登録されているか
   - `TestRunDailySuggestionNotification_SendsToSubscribers` — Push購読ユーザーに `PushService.SendToUser` が呼ばれるか（PushServiceをモック）
 
 **🟢 GREEN**
 
-- [ ] `backend/services/scheduler.go` 作成
+- [x] `backend/services/scheduler.go` 作成
   - `type NotificationScheduler struct { cron *cron.Cron; push *PushService; email *EmailService; db *gorm.DB }`
   - `func NewNotificationScheduler(push, email, db) *NotificationScheduler`
   - `func (s *NotificationScheduler) Start()` — `cron.WithLocation(jst)` で4ジョブを登録して起動
@@ -401,12 +401,12 @@
   - `func (s *NotificationScheduler) RunStreakReminderNotification()` — 今週未訪問 + streak>0 のユーザーにPush+メール
   - `func (s *NotificationScheduler) RunWeeklySummaryNotification()` — 先週訪問あり のユーザーにPush+メール
   - `func (s *NotificationScheduler) RunMonthlySummaryNotification()` — 設定ONのユーザーにPush+メール
-- [ ] `backend/main.go` に `NotificationScheduler` 初期化・`Start()` 追加（`defer scheduler.Stop()`）
+- [x] `backend/main.go` に `NotificationScheduler` 初期化・`Start()` 追加（`defer scheduler.Stop()`）
 
 **🔵 REFACTOR**
 
-- [ ] 各ジョブのDB集計クエリをリポジトリ関数に切り出し
-- [ ] ジョブごとのエラーログ整備
+- [x] 各ジョブのDB集計クエリをリポジトリ関数に切り出し
+- [x] ジョブごとのエラーログ整備
 
 ---
 
@@ -416,32 +416,32 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/lib/push.test.ts` 作成
+- [x] `frontend/app/lib/push.test.ts` 作成
   - `subscribePush` — ServiceWorkerとPushManagerをモック → `subscribePushToBackend` が呼ばれるか
   - `unsubscribePush` — `unsubscribePushFromBackend` が呼ばれるか
   - `getPushPermissionState` — `Notification.permission` の値を返すか
 
 **🟢 GREEN**
 
-- [ ] `frontend/vite.config.ts` の PWA設定を `strategy: "injectManifest"` に変更（`srcDir: "public"`, `filename: "sw.js"` を指定）
-- [ ] `frontend/public/sw.js` 作成
+- [x] `frontend/vite.config.ts` の PWA設定を `strategy: "injectManifest"` に変更（`srcDir: "public"`, `filename: "sw.js"` を指定）
+- [x] `frontend/public/sw.js` 作成
   - `precacheAndRoute(self.__WB_MANIFEST)` で既存キャッシュ設定を移植
   - `push` イベント: `showNotification(title, { body, icon, badge, data: { url } })`
   - `notificationclick` イベント: `clients.openWindow(event.notification.data.url)`
-- [ ] `frontend/app/lib/push.ts` 作成
+- [x] `frontend/app/lib/push.ts` 作成
   - `subscribePush(token: string): Promise<boolean>`
   - `unsubscribePush(token: string): Promise<void>`
   - `getPushPermissionState(): Promise<NotificationPermission>`
-- [ ] `frontend/app/api/notifications.ts` 作成
+- [x] `frontend/app/api/notifications.ts` 作成
   - `getNotificationSettings(token: string): Promise<NotificationSettings>`
   - `updateNotificationSettings(token: string, settings: Partial<NotificationSettings>): Promise<void>`
   - `subscribePushToBackend(token: string, subscription: PushSubscriptionJSON): Promise<void>`
   - `unsubscribePushFromBackend(token: string, endpoint: string): Promise<void>`
-- [ ] `frontend/app/types/notification.ts` 作成（`NotificationSettings` 型定義）
+- [x] `frontend/app/types/notification.ts` 作成（`NotificationSettings` 型定義）
 
 **🔵 REFACTOR**
 
-- [ ] VAPID公開鍵取得をキャッシュして毎回APIを叩かないよう最適化
+- [x] VAPID公開鍵取得をキャッシュして毎回APIを叩かないよう最適化
 
 ---
 
@@ -449,7 +449,7 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/routes/settings.test.tsx` に追記
+- [x] `frontend/app/routes/settings.test.tsx` に追記
   - 通知タブが表示される
   - Push許可ステータス（許可済み/未許可/非対応）が表示される
   - 全体ONトグルをOFFにすると個別トグルがdisabledになる
@@ -457,18 +457,18 @@
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/routes/settings.tsx` に `"notification"` タブを追加（`TabId` 型拡張）
-- [ ] `frontend/app/components/NotificationTab.tsx` 作成
+- [x] `frontend/app/routes/settings.tsx` に `"notification"` タブを追加（`TabId` 型拡張）
+- [x] `frontend/app/components/NotificationTab.tsx` 作成
   - Push通知セクション: 許可ステータス表示・「通知を許可する」ボタン（未許可時のみ）
   - Push全体ON/OFFトグル（OFF時はサブトグルをdisabled）
   - 個別トグル: デイリーリフレッシュ・ストリークリマインダー・週次サマリー・月次サマリー
   - メール通知セクション（同構成。デイリーリフレッシュのみ非表示）
   - iOS非スタンドアロン時: 「ホーム画面に追加後に利用できます」案内を表示（`isStandalone()` で判定）
-- [ ] トグル変更で即時 `updateNotificationSettings()` を呼ぶ（debounce不要）
+- [x] トグル変更で即時 `updateNotificationSettings()` を呼ぶ（debounce不要）
 
 **🔵 REFACTOR**
 
-- [ ] ON/OFFトグルを `NotificationToggle` コンポーネントに切り出し
+- [x] ON/OFFトグルを `NotificationToggle` コンポーネントに切り出し
 
 ---
 
@@ -478,22 +478,22 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/routes/home.test.tsx` に追記
+- [x] `frontend/app/routes/home.test.tsx` に追記
   - `isStandalone=true` + `permission=default` + 未dismissed → バナーが表示される
   - `permission=granted` → バナーが表示されない
   - dismissed済み → バナーが表示されない
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/components/PushNotificationBanner.tsx` 作成
+- [x] `frontend/app/components/PushNotificationBanner.tsx` 作成
   - 「許可する」ボタン → `subscribePush(token)` 呼び出し
   - 「後で」ボタン → `localStorage.setItem("push-banner-dismissed", "1")` で非表示
-- [ ] `frontend/app/routes/home.tsx` に `PushNotificationBanner` を追加
+- [x] `frontend/app/routes/home.tsx` に `PushNotificationBanner` を追加
   - 表示条件: `isStandalone() && Notification.permission === "default" && !localStorage.getItem("push-banner-dismissed")`
 
 **🔵 REFACTOR**
 
-- [ ] 表示条件チェックを `usePushBannerVisible()` カスタムフックに切り出し
+- [x] 表示条件チェックを `usePushBannerVisible()` カスタムフックに切り出し
 
 ---
 
