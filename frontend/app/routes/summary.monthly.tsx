@@ -64,7 +64,7 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
         ]);
         const visitsWithPhotos = await loadPhotos(visitRes.visits, token);
         setVisits(visitsWithPhotos);
-        setBadges(badgeRes);
+        setBadges(badgeRes.filter((b) => b.earned_at >= from && b.earned_at < until));
       } finally {
         setIsLoading(false);
       }
