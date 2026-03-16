@@ -9,6 +9,9 @@ export default function NotificationTab({ token }: { token: string }) {
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  const isIOSChrome = /CriOS/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isMac = /Macintosh/.test(navigator.userAgent);
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as { standalone?: boolean }).standalone === true;
@@ -86,10 +89,83 @@ export default function NotificationTab({ token }: { token: string }) {
               通知を許可する
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-              <span className="material-symbols-outlined text-base">notifications_off</span>
-              通知が拒否されています
-            </div>
+            (() => {
+              const deniedSteps: string[] = (() => {
+                if (isIOS && isStandalone) {
+                  return [
+                    "iPhoneの「設定」を開く",
+                    "「アプリ」→「Roamble」をタップ",
+                    "「通知」→「通知を許可」をオン",
+                    "Roambleに戻る",
+                  ];
+                }
+                if (isIOS && isIOSChrome) {
+                  return [
+                    "iPhoneの「設定」を開く",
+                    "「アプリ」→「Chrome」をタップ",
+                    "「通知」をオン",
+                    "Chromeに戻り「通知を許可する」を押す",
+                  ];
+                }
+                if (isIOS) {
+                  // iOS Safari
+                  return [
+                    "iPhoneの「設定」を開く",
+                    "「Safari」→「詳細」→「ウェブサイトの設定」",
+                    "「roamble.app」→「通知」→「許可」",
+                    "Safariに戻り「通知を許可する」を押す",
+                  ];
+                }
+                if (isAndroid) {
+                  return [
+                    "アドレスバー左の🔒をタップ",
+                    "「サイトの設定」→「通知」を選択",
+                    "「許可」に変更",
+                    "ページを再読み込み",
+                  ];
+                }
+                // macOS / Windows desktop
+                return [
+                  "アドレスバー左の🔒をクリック",
+                  "「通知」→「許可」に変更",
+                  "ページを再読み込み",
+                ];
+              })();
+
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
+                    <span className="material-symbols-outlined text-base">notifications_off</span>
+                    通知が拒否されています
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {isIOS
+                      ? "アプリ・ブラウザからは再許可できません。iPhoneの設定から変更してください。"
+                      : "ブラウザからは再許可できません。以下の手順で変更してください。"}
+                  </p>
+                  <div className="bg-white/5 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                      変更手順
+                    </p>
+                    <ol className="space-y-2">
+                      {deniedSteps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                          <span className="shrink-0 w-5 h-5 rounded-full bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
+                            {i + 1}
+                          </span>
+                          {step}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                  {isMac && (
+                    <p className="text-xs text-gray-500 px-1">
+                      ※ macOSをお使いの場合は「システム設定」→「通知」→「Google Chrome」もオンになっているか確認してください。
+                    </p>
+                  )}
+                </div>
+              );
+            })()
           )}
         </div>
 
