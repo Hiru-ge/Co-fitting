@@ -117,8 +117,8 @@ curl -s -X POST $BASE_URL/api/dev/notifications/trigger \
 
 数秒後にChromeの通知（画面右下のトースト）が届けばOK。
 
-- [ ] Push許可ダイアログが表示される
-- [ ] 許可後に `push_subscriptions` テーブルにレコードが作成される
+- [x] Push許可ダイアログが表示される
+- [x] 許可後に `push_subscriptions` テーブルにレコードが作成される（2026-03-16確認）
 - [ ] `daily_suggestion` を発火してChrome通知が届く
 - [ ] `weekly_summary` を発火してChrome通知が届く（クリックで `/summary/weekly` に遷移）
 - [ ] `monthly_summary` を発火してChrome通知が届く（クリックで `/summary/monthly` に遷移）

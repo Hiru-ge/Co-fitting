@@ -15,7 +15,19 @@ export default function NotificationTab({ token }: { token: string }) {
 
   useEffect(() => {
     getNotificationSettings(token).then(setSettings);
-    getPushPermissionState().then(setPushPermission);
+    getPushPermissionState().then(async (permission) => {
+      setPushPermission(permission);
+      if (permission === "granted") {
+        // 許可済みだがSWが未登録などで購読が存在しない場合は自動再購読
+        const reg = await navigator.serviceWorker.ready.catch(() => null);
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (!sub) {
+            await subscribePush(token);
+          }
+        }
+      }
+    });
   }, [token]);
 
   async function handleToggle(

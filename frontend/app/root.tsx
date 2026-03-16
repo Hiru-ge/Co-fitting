@@ -12,6 +12,8 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ToastProvider } from "~/components/toast";
 import { isBetaUnlocked } from "~/lib/beta-access";
 import { GA4_ID, sendPageView } from "~/lib/gtag";
+import { registerSW } from "virtual:pwa-register";
+registerSW({ immediate: true });
 
 /** /beta-gate 以外の全ルートでベータ版合言葉を確認する */
 export async function clientLoader({ request }: { request: Request }) {

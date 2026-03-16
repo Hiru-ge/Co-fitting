@@ -54,6 +54,10 @@ export default defineConfig({
       filename: "sw.js",
       registerType: "autoUpdate",
       includeAssets: ["icons/apple-touch-icon.png"],
+      devOptions: {
+        enabled: true,
+        type: "module",
+      },
       manifest: {
         name: "Roamble",
         short_name: "Roamble",

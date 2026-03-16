@@ -43,6 +43,19 @@ describe("Settings - 通知タブ", () => {
     vi.mocked(getNotificationSettings).mockResolvedValue(defaultSettings);
     vi.mocked(updateNotificationSettings).mockResolvedValue(undefined);
     vi.mocked(getPushPermissionState).mockResolvedValue("granted");
+    // ServiceWorker API スタブ（NotificationTab の自動再購読ロジックで使用）
+    Object.defineProperty(navigator, "serviceWorker", {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+          },
+        }),
+        register: vi.fn().mockResolvedValue(undefined),
+      },
+    });
   });
 
   test("通知タブが表示される（Push通知とメール通知セクション）", async () => {

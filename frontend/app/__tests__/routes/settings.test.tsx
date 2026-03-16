@@ -144,6 +144,19 @@ describe("設定画面", () => {
         query: vi.fn().mockResolvedValue({ state: "prompt", onchange: null }),
       },
     });
+    // ServiceWorker API スタブ（NotificationTab の自動再購読ロジックで使用）
+    Object.defineProperty(navigator, "serviceWorker", {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+          },
+        }),
+        register: vi.fn().mockResolvedValue(undefined),
+      },
+    });
   });
 
   // === タブナビゲーション ===
