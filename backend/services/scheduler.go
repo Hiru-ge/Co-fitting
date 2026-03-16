@@ -81,8 +81,8 @@ func (s *NotificationScheduler) RunDailySuggestionNotification() {
 	}
 
 	payload := PushPayload{
-		Title: "今日のおすすめスポット",
-		Body:  "新しい場所への一歩を踏み出してみませんか？",
+		Title: "提案カードがリフレッシュされたよ！",
+		Body:  "Roambleをのぞいてみて。新しい冒険があなたを待ってる！",
 		URL:   "/home",
 	}
 
@@ -142,8 +142,8 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 
 		if s.push != nil && target.PushEnabled && target.WeeklySummary {
 			payload := PushPayload{
-				Title: "今週の冒険まとめ",
-				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
+				Title: "先週のサマリーが届いてるよ！",
+				Body:  "あなたの冒険を振り返ってみよう",
 				URL:   "/summary/weekly",
 			}
 			if err := s.push.SendToUser(target.UserID, payload); err != nil {
@@ -184,8 +184,8 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 
 		if s.push != nil && target.PushEnabled && target.MonthlySummary {
 			payload := PushPayload{
-				Title: fmt.Sprintf("%sの冒険まとめ", monthLabel),
-				Body:  fmt.Sprintf("%d箇所を訪れ、%d XP獲得！", data.VisitCount, data.TotalXP),
+				Title: fmt.Sprintf("%sのサマリーが届いてるよ！", monthLabel),
+				Body:  "あなたの冒険を振り返ってみよう",
 				URL:   "/summary/monthly",
 			}
 			if err := s.push.SendToUser(target.UserID, payload); err != nil {
@@ -220,12 +220,12 @@ type notificationTarget struct {
 	UserID         uint64
 	Email          string
 	DisplayName    string
-	StreakCount     int
+	StreakCount    int
 	PushEnabled    bool
 	EmailEnabled   bool
-	StreakReminder  bool
-	WeeklySummary   bool
-	MonthlySummary  bool
+	StreakReminder bool
+	WeeklySummary  bool
+	MonthlySummary bool
 }
 
 // fetchStreakReminderTargets はストリークリマインダー対象ユーザーを返す
@@ -291,8 +291,8 @@ func fetchSummaryTargets(db *gorm.DB, settingColumn string) ([]notificationTarge
 		DisplayName    string
 		PushEnabled    bool
 		EmailEnabled   bool
-		WeeklySummary   bool
-		MonthlySummary  bool
+		WeeklySummary  bool
+		MonthlySummary bool
 	}
 	var rows []row
 
@@ -310,11 +310,11 @@ func fetchSummaryTargets(db *gorm.DB, settingColumn string) ([]notificationTarge
 	targets := make([]notificationTarget, len(rows))
 	for i, r := range rows {
 		targets[i] = notificationTarget{
-			UserID:        r.UserID,
-			Email:         r.Email,
-			DisplayName:   r.DisplayName,
-			PushEnabled:   r.PushEnabled,
-			EmailEnabled:  r.EmailEnabled,
+			UserID:         r.UserID,
+			Email:          r.Email,
+			DisplayName:    r.DisplayName,
+			PushEnabled:    r.PushEnabled,
+			EmailEnabled:   r.EmailEnabled,
 			WeeklySummary:  r.WeeklySummary,
 			MonthlySummary: r.MonthlySummary,
 		}
@@ -394,4 +394,3 @@ func lastWeekStart() time.Time {
 	thisMonday := weekStart(time.Now())
 	return thisMonday.AddDate(0, 0, -7)
 }
-
