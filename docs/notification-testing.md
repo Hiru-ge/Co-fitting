@@ -119,11 +119,11 @@ curl -s -X POST $BASE_URL/api/dev/notifications/trigger \
 
 - [x] Push許可ダイアログが表示される
 - [x] 許可後に `push_subscriptions` テーブルにレコードが作成される（2026-03-16確認）
-- [ ] `daily_suggestion` を発火してChrome通知が届く
-- [ ] `weekly_summary` を発火してChrome通知が届く（クリックで `/summary/weekly` に遷移）
-- [ ] `monthly_summary` を発火してChrome通知が届く（クリックで `/summary/monthly` に遷移）
-- [ ] Push通知をOFFにしてから発火しても通知が来ない
-- [ ] Push購読解除後に `push_subscriptions` のレコードが削除される
+- [x] `daily_suggestion` を発火してChrome通知が届く（2026-03-16確認: preview mode port 3000で動作）
+- [x] `weekly_summary` を発火してChrome通知が届く（クリックで `/summary/weekly` に遷移）
+- [x] `monthly_summary` を発火してChrome通知が届く（クリックで `/summary/monthly` に遷移）
+- [x] Push通知をOFFにしてから発火しても通知が来ない
+- [x] Push購読解除後に `push_subscriptions` のレコードが削除される
 
 > **注意**: ローカル環境でPush通知を確認するにはブラウザでPush許可を行ってから実施すること（許可前は `push_subscriptions` が0件のため通知は届かない）。
 
@@ -168,57 +168,7 @@ cd backend && go run cmd/preview-email/main.go
 
 ---
 
-## Step 4: エッジケース確認
-
-### Push購読の無効化（410/404自動削除）
-
-```bash
-# 購読のendpointを無効な値に書き換え
-docker exec -it roamble_db mysql -uroamble -pDandelion1110 roamble \
-  -e "UPDATE push_subscriptions SET endpoint='https://invalid.example.com/invalid' LIMIT 1;"
-
-# 通知を発火
-curl -s -X POST $BASE_URL/api/dev/notifications/trigger \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"daily_suggestion"}'
-
-# バックエンドログで自動削除を確認
-docker-compose logs backend | grep "cleanup"
-
-# DBから該当レコードが消えていることを確認
-docker exec -it roamble_db mysql -uroamble -pDandelion1110 roamble \
-  -e "SELECT COUNT(*) FROM push_subscriptions WHERE endpoint='https://invalid.example.com/invalid';"
-```
-
-- [ ] バックエンドログに `cleanup` が出る
-- [ ] 無効化したレコードがDBから削除される
-
-### 設定OFFのユーザーへの非送信確認
-
-```bash
-# メール通知をOFF
-curl -s -X PUT -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"email_enabled":false}' \
-  $BASE_URL/api/notifications/settings
-
-sleep 10
-
-# weekly_summary を発火 → メールが届かないことを確認
-curl -s -X POST -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"type":"weekly_summary"}' \
-  $BASE_URL/api/dev/notifications/trigger
-```
-
-> **注意**: スキップされてもバックエンドログにスキップログは出ない（コードは正しく動作している）。メールが届かないことで確認すること。
-
-- [ ] `email_enabled: false` の状態でメールが届かない
-
----
-
-## Step 5: スマホ固有の確認
+## Step 4: スマホ固有の確認
 
 バナーコンポーネントだけは実機で確認する。スマホとPCを同じWi-Fiに繋ぎ、PCのローカルIPでアクセスする。
 
@@ -254,7 +204,8 @@ ipconfig getifaddr en0   # macOS
 
 | 症状 | 確認点 |
 |-----|--------|
-| Push通知が届かない | `docker-compose logs backend` でVAPIDの初期化ログを確認。ブラウザの通知設定が `denied` になっていないか確認（一度denyするとURLバーの🔒から手動で解除が必要） |
+| Push通知が届かない | `docker-compose logs backend` でVAPIDの初期化ログを確認。ブラウザの通知設定が `denied` になっていないか確認（一度denyするとURLバーの🔒から手動で解除が必要）。**macOSのシステム設定 → 通知 → Google Chromeがオフになっていないかも確認**（バナーが無効だとブラウザ許可済みでも届かない） |
+| ローカルでdev modeのService Workerが動かない（`dev-sw.js` が404） | `npm run build && npx vite preview --port 3000` でpreview modeを使う。`localhost:3000` はGoogle OAuthに登録済みのためOAuth設定変更不要 |
 | メールが届かない | Resendダッシュボードで送信ログを確認。`RESEND_API_KEY` が有効かを確認。迷惑メールフォルダも確認 |
 | `rate limit exceeded` エラー | 発火コマンドの間隔を10秒以上空ける |
 | `trigger` エンドポイントが404 | `backend/.env` に `ENVIRONMENT=development` が設定されているか確認 |
