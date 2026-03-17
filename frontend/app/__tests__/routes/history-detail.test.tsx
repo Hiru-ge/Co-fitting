@@ -351,7 +351,7 @@ describe("HistoryDetail", () => {
       );
 
       await waitFor(() => {
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1");
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1", undefined);
       });
     });
   });

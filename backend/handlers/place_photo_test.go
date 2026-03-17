@@ -170,6 +170,52 @@ func TestPlacePhoto(t *testing.T) {
 		}
 	})
 
+	t.Run("photo_referenceなし・キャッシュヒット時に200返却", func(t *testing.T) {
+		if testRedisClient == nil {
+			t.Skip("Redis not available")
+		}
+
+		expectedCDNURL := "https://lh3.googleusercontent.com/places/fallback-cached-photo"
+		placeID := "fallback_cache_place"
+		cacheKey := fmt.Sprintf("photo:%s", placeID)
+
+		ctx := context.Background()
+		err := testRedisClient.Set(ctx, cacheKey, expectedCDNURL, 0).Err()
+		if err != nil {
+			t.Fatalf("Failed to set Redis cache: %v", err)
+		}
+		defer testRedisClient.Del(ctx, cacheKey)
+
+		apiCalled := false
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			apiCalled = true
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer mockServer.Close()
+
+		handler := newTestPhotoHandler(mockServer)
+		router := setupPhotoRouter(handler)
+
+		// photo_referenceを指定しない
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/api/places/%s/photo", placeID), nil)
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]string
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		if resp["photo_url"] != expectedCDNURL {
+			t.Errorf("Expected photo_url '%s', got '%s'", expectedCDNURL, resp["photo_url"])
+		}
+
+		if apiCalled {
+			t.Error("Google API should not be called when cache is hit (even without photo_reference)")
+		}
+	})
+
 	t.Run("maxWidthパラメータが正しく渡される", func(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Query().Get("maxwidth") != "800" {

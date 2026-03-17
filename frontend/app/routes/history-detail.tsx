@@ -59,9 +59,9 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
       setMemo(data.memo ?? "");
       setRating(data.rating ?? null);
 
-      // 写真を取得
+      // 写真を取得（photo_referenceを渡してRedis TTL失効後も再解決できるようにする）
       try {
-        const photoUrl = await getPlacePhoto(token, data.place_id);
+        const photoUrl = await getPlacePhoto(token, data.place_id, data.photo_reference);
         setPhotoUrl(photoUrl);
       } catch {
         // 写真取得失敗はスキップ

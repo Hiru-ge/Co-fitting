@@ -9,6 +9,7 @@ export interface Visit {
   lng: number;
   rating: number | null;
   memo: string | null;
+  photo_reference?: string;
   xp_earned: number;
   is_breakout: boolean;
   visited_at: string;
@@ -34,6 +35,7 @@ export interface CreateVisitRequest {
   lng: number;
   rating?: number;
   memo?: string;
+  photo_reference?: string; // 画像参照（Redis TTL失効後の再解決に使用）
   place_types?: string[]; // バックエンドの is_breakout 自動判定に使用
   visited_at: string;
   user_lat?: number; // ユーザーの現在緯度（バックエンド距離検証用）

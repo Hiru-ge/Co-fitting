@@ -360,9 +360,9 @@ describe("History", () => {
       );
 
       await waitFor(() => {
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1");
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place2");
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place3");
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1", undefined);
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place2", undefined);
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place3", undefined);
       });
     });
 
