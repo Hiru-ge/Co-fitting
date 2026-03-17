@@ -276,43 +276,81 @@ if os.Getenv("REDIS_TLS") == "true" {
 
 ---
 
-## 再デプロイ手順（Apple Silicon Mac）
+## CI/CD — Cloud Build トリガー（自動デプロイ）
 
-`Dockerfile.prod` はマルチステージビルドでコンテナ内クロスコンパイルを行うが、**Colima（Apple Silicon Mac）では QEMU エミュレーションに対応していないため `--platform linux/amd64` 指定時に segfault する**。以下の手順で回避する。
+`main` ブランチへのプッシュで、バックエンドが自動ビルド＆デプロイされる。
+
+### 仕組み
+
+| 役割 | サービス |
+|------|---------|
+| バックエンド自動デプロイ | Cloud Build トリガー（GitHub連携） |
+| フロントエンド自動デプロイ | Cloudflare Pages（GitHub連携） |
+
+`backend/cloudbuild.yaml` が以下を順番に実行する:
+1. `Dockerfile.prod` でイメージをビルド
+2. Artifact Registry にプッシュ
+3. Cloud Run (`roamble-backend`) にデプロイ
+
+### 初回セットアップ手順（再構築時）
+
+#### 1. Cloud Build API を有効化
 
 ```bash
-# 1. ホスト側でクロスコンパイル
-cd backend
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o roamble_amd64 main.go
+gcloud services enable cloudbuild.googleapis.com --project roamble
+```
 
-# 2. 最小 Dockerfile を一時作成（Dockerfile.deploy）
-cat > Dockerfile.deploy << 'EOF'
-FROM alpine:latest
-RUN apk add --no-cache ca-certificates
-WORKDIR /app
-COPY roamble_amd64 roamble
-EXPOSE 8080
-CMD ["./roamble"]
-EOF
+#### 2. Cloud Build サービスアカウントに権限付与
 
-# 3. amd64 シングルプラットフォームイメージとしてビルド＆プッシュ
-# ※ --provenance=false --sbom=false を付けないと OCI manifest list になり Cloud Run が拒否する
-docker buildx build \
-  --platform linux/amd64 \
-  --provenance=false \
-  --sbom=false \
-  --push \
-  -t asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest \
-  -f Dockerfile.deploy .
+```bash
+PROJECT_NUMBER=579127299450
+CB_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
 
-# 4. Cloud Run にデプロイ
-gcloud run deploy roamble-backend \
-  --image asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest \
-  --region asia-northeast1 \
-  --allow-unauthenticated
+gcloud projects add-iam-policy-binding roamble \
+  --member="serviceAccount:${CB_SA}" \
+  --role="roles/run.admin"
 
-# 5. 後片付け
-rm Dockerfile.deploy roamble_amd64
+gcloud projects add-iam-policy-binding roamble \
+  --member="serviceAccount:${CB_SA}" \
+  --role="roles/iam.serviceAccountUser"
+```
+
+#### 3. GCPコンソールでトリガーを作成
+
+[Cloud Build → トリガー](https://console.cloud.google.com/cloud-build/triggers?project=roamble) を開いて「トリガーを作成」:
+
+| 項目 | 値 |
+|------|-----|
+| ソース | GitHub（Cloud Build GitHub App） |
+| リポジトリ | `Hiru-ge/Roamble` |
+| ブランチ | `^main$` |
+| 構成 | Cloud Build 構成ファイル |
+| 構成ファイルの場所 | `backend/cloudbuild.yaml` |
+
+> **注意**: `backend/` 以外の変更（フロントエンドのみ等）でもトリガーされるが、ビルド時間は約3分程度なので許容範囲。
+
+### デプロイ状況の確認
+
+```bash
+# Cloud Build の実行履歴
+gcloud builds list --project roamble --limit 5
+
+# Cloud Run の最新リビジョン
+gcloud run revisions list --service roamble-backend --region asia-northeast1 --limit 3
+```
+
+---
+
+## 再デプロイ手順（手動・緊急時）
+
+通常は `main` へのプッシュで自動デプロイされる。Cloud Build トリガーが使えない緊急時は以下で手動デプロイできる。
+
+> **Apple Silicon Mac での注意**: Colima では `--platform linux/amd64` 指定時に QEMU が segfault するため、ローカルビルドは不可。必ず Cloud Build を使うこと。
+
+```bash
+# Cloud Build でリモートビルド＆デプロイ（推奨）
+gcloud builds submit backend/ \
+  --config backend/cloudbuild.yaml
 ```
 
 ---
