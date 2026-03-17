@@ -144,6 +144,19 @@ describe("設定画面", () => {
         query: vi.fn().mockResolvedValue({ state: "prompt", onchange: null }),
       },
     });
+    // ServiceWorker API スタブ（NotificationTab の自動再購読ロジックで使用）
+    Object.defineProperty(navigator, "serviceWorker", {
+      writable: true,
+      configurable: true,
+      value: {
+        ready: Promise.resolve({
+          pushManager: {
+            getSubscription: vi.fn().mockResolvedValue(null),
+          },
+        }),
+        register: vi.fn().mockResolvedValue(undefined),
+      },
+    });
   });
 
   // === タブナビゲーション ===
@@ -155,14 +168,14 @@ describe("設定画面", () => {
 
     test("2つのタブが表示される", () => {
       renderSettings();
-      expect(screen.getByRole("tab", { name: "ユーザー情報" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "ユーザー" })).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "提案設定" })).toBeInTheDocument();
       expect(screen.queryByRole("tab", { name: "アカウント" })).not.toBeInTheDocument();
     });
 
     test("初期状態ではユーザー情報タブが選択されている", () => {
       renderSettings();
-      const tab = screen.getByRole("tab", { name: "ユーザー情報" });
+      const tab = screen.getByRole("tab", { name: "ユーザー" });
       expect(tab).toHaveAttribute("aria-selected", "true");
     });
 

@@ -10,9 +10,13 @@
 | 通知 | Web Push | Email | タイミング | 送信条件 |
 |------|:--------:|:-----:|-----------|---------|
 | 毎日提案リフレッシュ | ✅ | ❌ | 毎日 7:00 JST | Push購読済み・ON |
-| ストリークリマインダー | ✅ | ✅ | 毎週木曜 20:00 JST | ストリーク > 0 かつ今週未訪問 |
-| 週次サマリー | ✅ | ✅ | 毎週日曜 20:00 JST | 先週訪問件数 > 0 |
-| 月次サマリー | ✅ | ✅ | 毎月1日 9:00 JST | 設定ON |
+| ストリークリマインダー | ✅ | ✅ | 毎日 7:00 JST | ストリーク > 0 かつ前回訪問から6日目（今日中に訪問しないと切れる） |
+| 週次サマリー | ✅ | ✅ | 毎週月曜 10:00 JST | 週次サマリー設定ON（訪問なしでも必ず送る） |
+| 月次サマリー | ✅ | ✅ | 毎月1日 10:00 JST | 月次サマリー設定ON（訪問なしでも必ず送る） |
+
+### ストリークリマインダーの意図
+
+**ストリークが切れる当日の朝7時**に送る通知。「今日中に場所を記録しないとストリークがリセットされる」という緊急感を伝えるのが目的。文面は「やばい、切れちゃうよ！」のようなフレンドリーかつ背中を押すトーンにする（敬語不可）。当日に送ることで、その日のうちに行動してもらう。
 
 > デイリー通知はメール除外（毎日届くと迷惑メール認定されるリスクが高い）。
 
@@ -61,7 +65,7 @@ type NotificationSettings struct {
     EmailEnabled    bool      `gorm:"default:true"`
     DailySuggestion bool      `gorm:"default:true"`
     WeeklySummary   bool      `gorm:"default:true"`
-    MonthlySummary  bool      `gorm:"default:false"` // opt-in
+    MonthlySummary  bool      `gorm:"default:true"`
     StreakReminder  bool      `gorm:"default:true"`
     UpdatedAt       time.Time `gorm:"autoUpdateTime"`
 }
@@ -116,11 +120,24 @@ PUT    /api/notifications/settings          # 通知設定更新
 - ライブラリ: `github.com/SherClockHolmes/webpush-go`
 - ユーザーの全購読に対してループ送信
 - **410/404 を受け取ったら購読を自動削除**（放置すると無効な購読が積み上がる）
+- Push通知とメール通知は独立して判定し、**両方ONのユーザーには両方送信する**
 
 **新規ファイル: `backend/services/email.go`**
 - ライブラリ: `github.com/resend/resend-go/v2`
 - HTMLテンプレートは `text/template` で管理
 - 週次/月次サマリーは集計期間の訪問件数・獲得XP・取得バッジをDBから取得して埋め込む
+- **訪問ゼロの場合は専用テンプレート**（`weekly_summary_empty.html` / `monthly_summary_empty.html`）を使用する（Issue #285）
+
+### 各通知のコンテンツ仕様
+
+| 通知 | Push本文 | メール件名 |
+|------|----------|-----------|
+| 毎日提案リフレッシュ | 「カードがリフレッシュされました。今日の提案をチェックしよう」（固定文） | — |
+| ストリークリマインダー | 「やばい、切れちゃうよ！」系フレンドリートーン | 【Roamble】ストリークが切れちゃうよ! |
+| 週次サマリー（訪問あり） | 今週のハイライト | 【Roamble】今週の冒険まとめ |
+| 週次サマリー（訪問ゼロ） | 専用テンプレート（来週の背中押し） | 【Roamble】今週の冒険まとめ |
+| 月次サマリー（訪問あり） | 先月のハイライト | 【Roamble】{月}の冒険まとめ |
+| 月次サマリー（訪問ゼロ） | 専用テンプレート（来月の背中押し） | 【Roamble】{月}の冒険まとめ |
 
 **新規ファイル: `backend/services/scheduler.go`**
 - ライブラリ: `github.com/robfig/cron/v3`
@@ -128,10 +145,10 @@ PUT    /api/notifications/settings          # 通知設定更新
 
 ```go
 c := cron.New(cron.WithLocation(jst))
-c.AddFunc("0 7 * * *",  svc.RunDailySuggestionNotification)
-c.AddFunc("0 20 * * 4", svc.RunStreakReminderNotification)
-c.AddFunc("0 20 * * 0", svc.RunWeeklySummaryNotification)
-c.AddFunc("0 9 1 * *",  svc.RunMonthlySummaryNotification)
+c.AddFunc("0 7 * * *",  svc.RunDailySuggestionNotification)   // 毎朝7時
+c.AddFunc("0 7 * * 0",  svc.RunStreakReminderNotification)    // 毎週日曜朝7時（※#284後は毎日7時に変更）
+c.AddFunc("0 10 * * 1", svc.RunWeeklySummaryNotification)     // 毎週月曜朝10時
+c.AddFunc("0 10 1 * *", svc.RunMonthlySummaryNotification)    // 毎月1日朝10時
 c.Start()
 defer c.Stop()
 ```

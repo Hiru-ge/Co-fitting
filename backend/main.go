@@ -9,6 +9,7 @@ import (
 	_ "github.com/Hiru-ge/roamble/docs"
 	"github.com/Hiru-ge/roamble/handlers"
 	"github.com/Hiru-ge/roamble/routes"
+	"github.com/Hiru-ge/roamble/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -31,6 +32,32 @@ func initOAuthHandler(db *gorm.DB, jwtCfg *config.JWTConfig, redisClient *redis.
 			ClientID: googleClientID,
 		},
 	}
+}
+
+func initNotificationScheduler(db *gorm.DB) *services.NotificationScheduler {
+	vapidPublicKey := os.Getenv("VAPID_PUBLIC_KEY")
+	vapidPrivateKey := os.Getenv("VAPID_PRIVATE_KEY")
+	vapidSubject := os.Getenv("VAPID_SUBJECT")
+	resendAPIKey := os.Getenv("RESEND_API_KEY")
+	emailFrom := os.Getenv("NOTIFICATION_EMAIL_FROM")
+
+	var pushSvc services.PushSender
+	if vapidPublicKey != "" && vapidPrivateKey != "" {
+		pushSvc = services.NewPushService(db, vapidPublicKey, vapidPrivateKey, vapidSubject)
+		log.Println("Notification push service initialized")
+	} else {
+		log.Println("Warning: VAPID keys not set, push notifications disabled")
+	}
+
+	var emailSvc services.EmailSender
+	if resendAPIKey != "" && emailFrom != "" {
+		emailSvc = services.NewEmailService(resendAPIKey, emailFrom)
+		log.Println("Notification email service initialized")
+	} else {
+		log.Println("Warning: Resend config not set, email notifications disabled")
+	}
+
+	return services.NewNotificationScheduler(pushSvc, emailSvc, db)
 }
 
 func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client) (*handlers.SuggestionHandler, *handlers.PlacePhotoHandler) {
@@ -125,13 +152,23 @@ func main() {
 		RedisClient: redisClient,
 	}
 
+	betaHandler := &handlers.BetaHandler{}
+
+	notificationHandler := &handlers.NotificationHandler{
+		VAPIDPublicKey: os.Getenv("VAPID_PUBLIC_KEY"),
+		DB:             db,
+	}
+
+	scheduler := initNotificationScheduler(db)
+	scheduler.Start()
+	defer scheduler.Stop()
+
 	devHandler := &handlers.DevHandler{
 		RedisClient: redisClient,
 		DB:          db,
 		JWTCfg:      jwtCfg,
+		Scheduler:   scheduler,
 	}
-
-	betaHandler := &handlers.BetaHandler{}
 
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{
@@ -145,10 +182,11 @@ func main() {
 		PlacePhotoHandler: placePhotoHandler,
 		HealthHandler:     healthHandler,
 		DevHandler:        devHandler,
-		BetaHandler:       betaHandler,
-		JWTSecret:         jwtCfg.Secret,
-		RedisClient:       redisClient,
-		Environment:       environment,
+		BetaHandler:         betaHandler,
+		NotificationHandler: notificationHandler,
+		JWTSecret:           jwtCfg.Secret,
+		RedisClient:         redisClient,
+		Environment:         environment,
 	})
 
 	port := os.Getenv("PORT")

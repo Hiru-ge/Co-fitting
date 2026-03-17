@@ -22,6 +22,19 @@ const sessionStorageMock = {
 };
 vi.stubGlobal("sessionStorage", sessionStorageMock);
 
+// PushNotificationBanner の isStandalone() が window.matchMedia を呼ぶためモックが必要
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  configurable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })),
+});
+
 const mockShowToast = vi.fn();
 vi.mock("~/components/toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),

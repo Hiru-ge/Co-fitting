@@ -1,0 +1,29 @@
+{{template "header" .}}
+<div style="padding: 32px 24px;">
+  <h2 style="color: #FF9600; margin: 0 0 16px; font-size: 20px;">ストリーク切れちゃうよ!</h2>
+  <p style="color: #b0cccc; font-size: 16px; line-height: 1.6;">
+    {{.UserName}}さん、今週まだ訪問してないよ!
+  </p>
+
+  <div style="background-color: #1a3333; border-radius: 16px; padding: 32px 24px; margin: 24px 0; text-align: center;">
+    <img src="{{.AssetBase}}/fire.svg" alt="" width="48" height="48" style="display: inline-block; margin-bottom: 8px;">
+    <div style="color: #FF9600; font-size: 56px; font-weight: 900; line-height: 1;">{{.StreakWeeks}}</div>
+    <div style="color: #b0cccc; font-size: 16px; margin-top: 8px; font-weight: bold;">週連続の記録が切れちゃう!</div>
+  </div>
+
+  <p style="color: #b0cccc; font-size: 16px; line-height: 1.6;">
+    今日中に場所を記録しないとリセットされちゃう!<br>
+    ちょっとそこまでお散歩でも全然OK!
+  </p>
+  <div style="text-align: center; margin: 32px 0 0;">
+    <a href="https://roamble.app"
+       style="background-color: #FF9600; color: #ffffff; text-decoration: none;
+              padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
+      今日の場所を探す
+    </a>
+  </div>
+  <p style="color: #6b8a8a; font-size: 13px; line-height: 1.6; margin-top: 24px;">
+    行ったあとに記録するだけでOK。ストリーク、守り切ろう!
+  </p>
+</div>
+{{template "footer" .}}

@@ -1244,6 +1244,177 @@ func TestListVisits(t *testing.T) {
 	})
 }
 
+func TestListVisits_DateFilter(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("fromパラメータで指定日時以降の訪問のみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 3件の訪問を異なる日時で作成
+		visits := []models.Visit{
+			{UserID: user.ID, PlaceID: "ChIJ_filter_1", PlaceName: "1月の場所", Category: "cafe", Latitude: 35.677, Longitude: 139.650, VisitedAt: time.Date(2024, 1, 10, 12, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_filter_2", PlaceName: "2月の場所", Category: "park", Latitude: 35.678, Longitude: 139.651, VisitedAt: time.Date(2024, 2, 10, 12, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_filter_3", PlaceName: "3月の場所", Category: "museum", Latitude: 35.679, Longitude: 139.652, VisitedAt: time.Date(2024, 3, 10, 12, 0, 0, 0, time.UTC)},
+		}
+		for i := range visits {
+			if err := testDB.Create(&visits[i]).Error; err != nil {
+				t.Fatalf("Failed to create test visit: %v", err)
+			}
+		}
+
+		// from=2024-02-01T00:00:00Z → 2月・3月の2件のみ返る
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2024-02-01T00:00:00Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 2 {
+			t.Errorf("Expected 2 visits (Feb + Mar), got %d", len(resp.Visits))
+		}
+		for _, v := range resp.Visits {
+			if v.VisitedAt.Before(time.Date(2024, 2, 1, 0, 0, 0, 0, time.UTC)) {
+				t.Errorf("Visit %s is before from date", v.PlaceName)
+			}
+		}
+	})
+
+	t.Run("untilパラメータで指定日時より前の訪問のみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		visits := []models.Visit{
+			{UserID: user.ID, PlaceID: "ChIJ_until_1", PlaceName: "1月の場所", Category: "cafe", Latitude: 35.677, Longitude: 139.650, VisitedAt: time.Date(2024, 1, 10, 12, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_until_2", PlaceName: "2月の場所", Category: "park", Latitude: 35.678, Longitude: 139.651, VisitedAt: time.Date(2024, 2, 10, 12, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_until_3", PlaceName: "3月の場所", Category: "museum", Latitude: 35.679, Longitude: 139.652, VisitedAt: time.Date(2024, 3, 10, 12, 0, 0, 0, time.UTC)},
+		}
+		for i := range visits {
+			if err := testDB.Create(&visits[i]).Error; err != nil {
+				t.Fatalf("Failed to create test visit: %v", err)
+			}
+		}
+
+		// until=2024-03-01T00:00:00Z → 1月・2月の2件のみ返る
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?until=2024-03-01T00:00:00Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 2 {
+			t.Errorf("Expected 2 visits (Jan + Feb), got %d", len(resp.Visits))
+		}
+		until := time.Date(2024, 3, 1, 0, 0, 0, 0, time.UTC)
+		for _, v := range resp.Visits {
+			if !v.VisitedAt.Before(until) {
+				t.Errorf("Visit %s is not before until date", v.PlaceName)
+			}
+		}
+	})
+
+	t.Run("fromとuntilを組み合わせて範囲指定できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		visits := []models.Visit{
+			{UserID: user.ID, PlaceID: "ChIJ_range_1", PlaceName: "1月の場所", Category: "cafe", Latitude: 35.677, Longitude: 139.650, VisitedAt: time.Date(2024, 1, 10, 12, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_range_2", PlaceName: "2月の場所", Category: "park", Latitude: 35.678, Longitude: 139.651, VisitedAt: time.Date(2024, 2, 10, 12, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_range_3", PlaceName: "3月の場所", Category: "museum", Latitude: 35.679, Longitude: 139.652, VisitedAt: time.Date(2024, 3, 10, 12, 0, 0, 0, time.UTC)},
+		}
+		for i := range visits {
+			if err := testDB.Create(&visits[i]).Error; err != nil {
+				t.Fatalf("Failed to create test visit: %v", err)
+			}
+		}
+
+		// from=2024-02-01T00:00:00Z&until=2024-03-01T00:00:00Z → 2月の1件のみ
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2024-02-01T00:00:00Z&until=2024-03-01T00:00:00Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 1 {
+			t.Errorf("Expected 1 visit (Feb only), got %d", len(resp.Visits))
+		}
+		if len(resp.Visits) == 1 && resp.Visits[0].PlaceName != "2月の場所" {
+			t.Errorf("Expected '2月の場所', got '%s'", resp.Visits[0].PlaceName)
+		}
+	})
+
+	t.Run("パラメータなしで既存動作と変わらない（後方互換）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		createVisitsForUser(t, user.ID, 3)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 3 {
+			t.Errorf("Expected 3 visits (no filter), got %d", len(resp.Visits))
+		}
+		if resp.Total != 3 {
+			t.Errorf("Expected total 3, got %d", resp.Total)
+		}
+	})
+}
+
 func TestGetVisit(t *testing.T) {
 	router := setupVisitRouter()
 

@@ -1,0 +1,50 @@
+{{template "header" .}}
+<div style="padding: 32px 24px;">
+  <p style="color: #b0cccc; font-size: 16px; line-height: 1.6; margin: 0 0 8px;">
+    {{.UserName}}さん、今週もお疲れ!
+  </p>
+  <h2 style="color: #ffffff; margin: 0 0 24px; font-size: 20px;">今週の冒険、どうだった?</h2>
+
+  <!-- 訪問件数・獲得XP 横並び -->
+  <table style="width: 100%; border-collapse: separate; border-spacing: 8px 0; margin: 0 0 24px;">
+    <tr>
+      <td style="width: 50%; background-color: #1a3333; border-radius: 16px; padding: 24px 16px; text-align: center; vertical-align: top;">
+        <img src="{{.AssetBase}}/pin.svg" alt="" width="32" height="32" style="display: inline-block; margin-bottom: 4px;">
+        <div style="color: #FF9600; font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -2px;">{{.VisitCount}}</div>
+        <div style="color: #b0cccc; font-size: 14px; margin-top: 6px; font-weight: bold;">か所を冒険!</div>
+      </td>
+      <td style="width: 50%; background-color: #1a3333; border-radius: 16px; padding: 24px 16px; text-align: center; vertical-align: top;">
+        <img src="{{.AssetBase}}/bolt.svg" alt="" width="32" height="32" style="display: inline-block; margin-bottom: 4px;">
+        <div style="color: #13ecec; font-size: 52px; font-weight: 900; line-height: 1; letter-spacing: -1px;">{{.TotalXP}}</div>
+        <div style="color: #6b8a8a; font-size: 14px; margin-top: 6px; font-weight: bold;">XP 獲得!</div>
+      </td>
+    </tr>
+  </table>
+
+  {{if .NewBadges}}
+  <div style="margin: 0 0 24px;">
+    <h3 style="color: #ffffff; margin: 0 0 12px; font-size: 16px;">今週ゲットしたバッジ</h3>
+    {{range .NewBadges}}
+    <table style="width: 100%; margin-bottom: 8px; border-collapse: collapse;">
+      <tr>
+        <td style="width: 40px; background-color: #1a3333; border-radius: 8px 0 0 8px; padding: 10px 12px; vertical-align: middle;">
+          <img src="{{.IconURL}}" alt="" width="24" height="24" style="display: block;">
+        </td>
+        <td style="background-color: #1a3333; border-radius: 0 8px 8px 0; padding: 10px 16px; color: #b0cccc; font-size: 15px; vertical-align: middle;">
+          {{.Name}}
+        </td>
+      </tr>
+    </table>
+    {{end}}
+  </div>
+  {{end}}
+
+  <div style="text-align: center; margin: 32px 0 0;">
+    <a href="https://roamble.app"
+       style="background-color: #525BBB; color: #ffffff; text-decoration: none;
+              padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
+      来週も行ってみよう
+    </a>
+  </div>
+</div>
+{{template "footer" .}}

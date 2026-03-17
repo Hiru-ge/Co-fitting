@@ -1,0 +1,47 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)",
+      "Bash(go mod:*)",
+      "Bash(golangci-lint run:*)",
+      "Bash(cd backend && go build:*)",
+      "Bash(cd backend && go test:*)",
+      "Bash(cd backend && go vet:*)",
+      "Bash(cd backend && golangci-lint run:*)",
+      "Bash(npm run:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(cd frontend && npm run:*)",
+      "Bash(cd frontend && npx vitest:*)",
+      "Bash(cd frontend && npx playwright:*)",
+      "Bash(cd frontend && npx eslint:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker compose restart:*)",
+      "Bash(make:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git branch:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue create:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git rebase:*)",
+      "Bash(gh pr create:*)",
+      "Bash(docker compose down:*)",
+      "Bash(docker system prune:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Read(.env*)"
+    ]
+  }
+}

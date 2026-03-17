@@ -16,6 +16,7 @@ import BadgeModal from "~/components/badge-modal";
 import CompleteCard from "~/components/complete-card";
 import HomeTourModal from "~/components/HomeTourModal";
 import LocationPermissionModal from "~/components/location-permission-modal";
+import PushNotificationBanner from "~/components/PushNotificationBanner";
 
 export async function clientLoader({}: Route.ClientLoaderArgs) {
   const token = getToken();
@@ -188,6 +189,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           onGoToSettings={handleGoToSettings}
         />
       )}
+
+      {/* Push通知許可バナー */}
+      <PushNotificationBanner token={token} />
     </div>
   );
 }
