@@ -2614,3 +2614,83 @@ func TestCreateVisitDistanceValidation(t *testing.T) {
 		}
 	})
 }
+
+func TestCreateVisit_SavesPhotoReference(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("photo_referenceを含むリクエストでDBに保存される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		photoRef := "places/ChIJl_example/photos/AUacShizqkCa"
+		body := map[string]interface{}{
+			"place_id":        "ChIJl_photo_ref_test",
+			"place_name":      "写真付きカフェ",
+			"category":        "cafe",
+			"lat":             35.677,
+			"lng":             139.650,
+			"visited_at":      "2024-02-07T15:30:00Z",
+			"photo_reference": photoRef,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		// DBにphoto_referenceが保存されていることを確認
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_photo_ref_test", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.PhotoReference == nil {
+			t.Fatal("Expected photo_reference to be saved, got nil")
+		}
+		if *visit.PhotoReference != photoRef {
+			t.Errorf("Expected photo_reference '%s', got '%s'", photoRef, *visit.PhotoReference)
+		}
+	})
+
+	t.Run("photo_referenceなしでも201 Created（nilで保存される）", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"place_id":   "ChIJl_no_photo_ref",
+			"place_name": "写真なしカフェ",
+			"category":   "cafe",
+			"lat":        35.677,
+			"lng":        139.650,
+			"visited_at": "2024-02-07T15:30:00Z",
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusCreated {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusCreated, w.Code, w.Body.String())
+		}
+
+		var visit models.Visit
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_no_photo_ref", user.ID).First(&visit).Error; err != nil {
+			t.Fatalf("Visit not found in DB: %v", err)
+		}
+		if visit.PhotoReference != nil {
+			t.Errorf("Expected photo_reference to be nil, got '%s'", *visit.PhotoReference)
+		}
+	})
+}

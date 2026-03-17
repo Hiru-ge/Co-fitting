@@ -84,18 +84,19 @@ func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
 }
 
 type createVisitRequest struct {
-	PlaceID    string   `json:"place_id" binding:"required"`
-	PlaceName  string   `json:"place_name" binding:"required"`
-	Vicinity   string   `json:"vicinity"`
-	Category   string   `json:"category" binding:"required"`
-	Lat        float64  `json:"lat" binding:"required"`
-	Lng        float64  `json:"lng" binding:"required"`
-	PlaceTypes []string `json:"place_types"` // 任意: is_breakout自動判定に使用
-	Rating     *float32 `json:"rating"`
-	Memo       *string  `json:"memo"`
-	VisitedAt  string   `json:"visited_at" binding:"required"`
-	UserLat    float64  `json:"user_lat"` // ユーザーの現在緯度（距離検証用）
-	UserLng    float64  `json:"user_lng"` // ユーザーの現在経度（距離検証用）
+	PlaceID        string   `json:"place_id" binding:"required"`
+	PlaceName      string   `json:"place_name" binding:"required"`
+	Vicinity       string   `json:"vicinity"`
+	Category       string   `json:"category" binding:"required"`
+	Lat            float64  `json:"lat" binding:"required"`
+	Lng            float64  `json:"lng" binding:"required"`
+	PlaceTypes     []string `json:"place_types"` // 任意: is_breakout自動判定に使用
+	Rating         *float32 `json:"rating"`
+	Memo           *string  `json:"memo"`
+	PhotoReference *string  `json:"photo_reference"` // 画像参照（Redis TTL失効後の再解決に使用）
+	VisitedAt      string   `json:"visited_at" binding:"required"`
+	UserLat        float64  `json:"user_lat"` // ユーザーの現在緯度（距離検証用）
+	UserLng        float64  `json:"user_lng"` // ユーザーの現在経度（距離検証用）
 }
 
 // createVisitResponse はゲーミフィケーション情報を含むCreateVisitのレスポンス
@@ -171,18 +172,19 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	genre := resolveGenreInfo(h.DB, userID, req.PlaceTypes)
 
 	visit := models.Visit{
-		UserID:     userID,
-		PlaceID:    req.PlaceID,
-		PlaceName:  req.PlaceName,
-		Vicinity:   req.Vicinity,
-		Category:   req.Category,
-		Latitude:   req.Lat,
-		Longitude:  req.Lng,
-		Rating:     req.Rating,
-		Memo:       req.Memo,
-		IsBreakout: genre.IsBreakout,
-		GenreTagID: genre.GenreTagID,
-		VisitedAt:  visitedAt,
+		UserID:         userID,
+		PlaceID:        req.PlaceID,
+		PlaceName:      req.PlaceName,
+		Vicinity:       req.Vicinity,
+		Category:       req.Category,
+		Latitude:       req.Lat,
+		Longitude:      req.Lng,
+		Rating:         req.Rating,
+		Memo:           req.Memo,
+		PhotoReference: req.PhotoReference,
+		IsBreakout:     genre.IsBreakout,
+		GenreTagID:     genre.GenreTagID,
+		VisitedAt:      visitedAt,
 	}
 
 	if err := h.DB.Create(&visit).Error; err != nil {

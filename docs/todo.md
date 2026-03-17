@@ -160,24 +160,24 @@
 
 **🔴 RED**
 
-- [ ] `backend/handlers/visit_test.go` に `TestCreateVisit_SavesPhotoReference` テスト追加
+- [x] `backend/handlers/visit_test.go` に `TestCreateVisit_SavesPhotoReference` テスト追加
   - `photo_reference` フィールドを含むリクエストを送信 → DB に保存されているか検証
-- [ ] `backend/handlers/place_photo_test.go` に `TestGetPhoto_NoPhotoRefFallsBackToCache` テスト追加
+- [x] `backend/handlers/place_photo_test.go` に `TestGetPhoto_NoPhotoRefFallsBackToCache` テスト追加
   - `photo_reference` クエリパラメータなし + Redis キャッシュヒット → 正常に返却されるか検証
 
 **🟢 GREEN**
 
-- [ ] `backend/models/user.go` の `Visit` 構造体に `PhotoReference *string \`gorm:"type:varchar(500)" json:"photo_reference"\`` フィールド追加（nullable）
-- [ ] `backend/database/migrate.go` の AutoMigrate でカラム追加反映
-- [ ] `backend/handlers/visit.go` の `createVisitRequest` に `PhotoReference *string \`json:"photo_reference"\`` フィールド追加
-- [ ] `backend/handlers/visit.go` の `CreateVisit` ハンドラで `PhotoReference` を `models.Visit` に詰めて保存
-- [ ] `frontend/app/types/visit.ts` の `Visit` 型に `photo_reference?: string` フィールド追加
-- [ ] `frontend/app/api/visits.ts` の `createVisit` リクエストボディに `photo_reference` を含める
-- [ ] `frontend/app/routes/history-detail.tsx` の `getPlacePhoto(token, data.place_id)` を `getPlacePhoto(token, data.place_id, data.photo_reference)` に変更
+- [x] `backend/models/user.go` の `Visit` 構造体に `PhotoReference *string \`gorm:"type:varchar(500)" json:"photo_reference"\`` フィールド追加（nullable）
+- [x] `backend/database/migrate.go` の AutoMigrate でカラム追加反映
+- [x] `backend/handlers/visit.go` の `createVisitRequest` に `PhotoReference *string \`json:"photo_reference"\`` フィールド追加
+- [x] `backend/handlers/visit.go` の `CreateVisit` ハンドラで `PhotoReference` を `models.Visit` に詰めて保存
+- [x] `frontend/app/types/visit.ts` の `Visit` 型に `photo_reference?: string` フィールド追加
+- [x] `frontend/app/api/visits.ts` の `createVisit` リクエストボディに `photo_reference` を含める
+- [x] `frontend/app/routes/history-detail.tsx` の `getPlacePhoto(token, data.place_id)` を `getPlacePhoto(token, data.place_id, data.photo_reference)` に変更
 
 **🔵 REFACTOR**
 
-- [ ] 訪問一覧（`history.tsx`）でも photo_reference を活用するか検討
+- [x] 訪問一覧（`history.tsx`）でも photo_reference を活用（`getPlacePhoto` 呼び出しに `visit.photo_reference` を追加）
 
 ---
 

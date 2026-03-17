@@ -326,7 +326,7 @@ async function loadPhotos(
     const batchResults = await Promise.all(
       batch.map(async (visit) => {
         try {
-          const photoUrl = await getPlacePhoto(token, visit.place_id);
+          const photoUrl = await getPlacePhoto(token, visit.place_id, visit.photo_reference);
           return { ...visit, photoUrl };
         } catch {
           // 写真取得失敗はスキップ

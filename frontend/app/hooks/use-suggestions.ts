@@ -332,6 +332,7 @@ export function useSuggestions(token: string) {
         category: category,
         lat: place.lat,
         lng: place.lng,
+        photo_reference: place.photo_reference,
         place_types: place.types,
         visited_at: new Date().toISOString(),
         user_lat: userPos.lat,

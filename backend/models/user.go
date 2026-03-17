@@ -33,9 +33,10 @@ type Visit struct {
 	Latitude   float64   `gorm:"column:lat;type:decimal(10,8)" json:"lat"`
 	Longitude  float64   `gorm:"column:lng;type:decimal(11,8)" json:"lng"`
 	GenreTagID *uint64   `gorm:"index" json:"genre_tag_id"`
-	Rating     *float32  `json:"rating"`
-	Memo       *string   `json:"memo"`
-	XpEarned   int       `gorm:"default:0;not null" json:"xp_earned"`
+	Rating         *float32 `json:"rating"`
+	Memo           *string  `json:"memo"`
+	PhotoReference *string  `gorm:"type:varchar(500)" json:"photo_reference"`
+	XpEarned       int      `gorm:"default:0;not null" json:"xp_earned"`
 	IsBreakout bool      `gorm:"default:false" json:"is_breakout"`
 	VisitedAt  time.Time `gorm:"not null;index:idx_user_visited" json:"visited_at"`
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
