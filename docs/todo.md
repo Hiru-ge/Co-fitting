@@ -146,7 +146,74 @@
 - [ ] Product Hunt "Upcoming" ページの活用
 
 
-## Phase 1 バグ修正
+## Phase 1 バグ修正・機能改善
+
+### コンプリートカードのデザイン刷新（Issue #300）
+
+> **背景**: 現在のコンプリートカードは画面全体を占める `<section>` で、施設カードと形状が揃っていない。黒を基調とした宇宙テーマのカード形状に刷新し、スワイプ時はその場でスピンするように変更する。
+
+**🔴 RED**
+
+- [ ] `frontend/app/__tests__/components/complete-card.test.tsx` に以下のテストを追加
+  - スワイプ閾値（120px）未満で離した場合 → 元の位置に戻る（スピンしない）
+  - スワイプ閾値超過で離した場合 → スピンアニメーションが発火する（`isSpinning` クラスが付与される）
+  - スワイプ閾値超過でも `onSwipe` コールバックが呼ばれないこと
+
+**🟢 GREEN**
+
+- [ ] `frontend/app/routes/home.tsx`: `isCompleted` 分岐を修正
+  - `<CompleteCard />` を DiscoveryCard と同じ `<main>` + `relative w-full aspect-3/5` コンテナで包む
+- [ ] `frontend/app/components/complete-card.tsx`: コンポーネントを全面書き直し
+  - ルート要素を `<div className="absolute inset-0 rounded-3xl overflow-hidden shadow-xl select-none touch-none cursor-grab active:cursor-grabbing">` に変更
+  - 背景: `radial-gradient(ellipse at center, #1a1040 0%, #0a0820 40%, #000000 100%)`
+  - 星フィールド: 絶対配置のdivに白い小点（`border-radius: 50%`）を10〜15個配置（アニメーションなし）
+  - ネビュラグロー: 中央に `radial-gradient(circle, rgba(120,80,220,0.25) 0%, transparent 70%)` のオーバーレイ
+  - トロフィーアイコン: `filter: drop-shadow(0 0 20px rgba(250,200,0,0.7))`
+  - DiscoveryCard と同じ PointerDown/Move/Up ハンドラーを実装（`useRef`, `useState` で `offset`, `dragging`）
+  - 閾値超過時: `isSpinning = true` → `transform: rotate(360deg)` (300ms) → 元の位置に戻す（`onSwipe` は呼ばない）
+  - `cardTransform`: ドラッグ中は `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg)`, スピン中は `rotate(360deg)`, それ以外は `none`
+
+**🔵 REFACTOR**
+
+- [ ] 星フィールドの座標を定数配列として定義し、JSX をシンプルに保つ
+
+---
+
+### 提案除外ジャンル設定実装（Issue #298）
+
+> **背景**: 公園など「苦手ではないが行きたくもない」ジャンルが頻繁に提案される問題への対応。
+> 3ステートトグル（未設定→興味あり→除外）で興味タグ設定画面に統合。除外ジャンルは提案から完全除外するが、訪問自体は妨げないためXPは通常通り付与する。
+
+**🔴 RED**
+
+- [ ] `backend/handlers/user_test.go` に `TestUpdateInterests_ExcludedStatus` テスト追加
+  - `status: "excluded"` を含むリクエスト → DBに保存されるか検証
+  - `status: "interested"` が3件未満 → 400を返すか検証
+- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_ExcludesExcludedGenres` テスト追加
+  - excludedジャンルの場所が候補に含まれないか検証
+
+**🟢 GREEN**
+
+- [ ] `backend/models/gamification.go` の `UserInterest` 構造体に `Status string \`gorm:"type:enum('interested','excluded');default:'interested';not null" json:"status"\`` フィールド追加
+- [ ] `backend/database/migrate.go` の AutoMigrate でカラム追加反映
+- [ ] `backend/handlers/user.go` の `UpdateInterests` ハンドラ:
+  - リクエスト型を `[]struct{ GenreTagID uint64 \`json:"genre_tag_id"\`; Status string \`json:"status"\` }` に変更
+  - `interested` が3件以上のバリデーション追加
+  - レスポンスの `interestResponse` に `status` フィールド追加
+- [ ] `backend/handlers/suggestion.go` の `getUserInterestGenreNames()`: `WHERE status = 'interested'` 条件を追加
+- [ ] `backend/handlers/suggestion.go` の候補フィルタリング: `excluded` ジャンルに該当する場所を除外
+- [ ] `frontend/app/types/genre.ts` の `Interest` 型に `status: 'interested' | 'excluded'` フィールド追加
+- [ ] `frontend/app/api/genres.ts` の `updateInterests()` リクエストボディを `{ genre_tag_ids: number[] }` から `{ interests: { genre_tag_id: number; status: string }[] }` に変更
+- [ ] `frontend/app/routes/settings.tsx`: ジャンルタグの3ステートトグルUI実装
+  - 未設定（グレー）→ 1回タップ → 興味あり（現行の選択状態）→ 2回タップ → 除外（バツ表示）→ 3回タップ → 未設定
+  - セクションに静的テキスト追加「本当に苦手なジャンル以外の除外は、成長の機会を逃すかも！」
+
+**🔵 REFACTOR**
+
+- [ ] 除外ジャンルのフィルタリングロジックを `getExcludedGenreNames()` 関数に切り出し
+- [ ] トグル状態管理をカスタムフックに切り出し検討
+
+---
 
 ### 訪問履歴の場所画像が24時間後に表示できなくなる問題の修正（Issue #295）
 
