@@ -148,6 +148,35 @@
 
 ## Phase 1 バグ修正・機能改善
 
+### サマリーページでデータが表示されない問題の修正（Issue #301）
+
+> **問題**: スマホでサマリーページを開くと「0か所を冒険」「0 XP獲得」と表示されデータが見えない。
+> 原因は3点: ①RFC3339ミリ秒非互換によりバックエンドの日付フィルタが無言で無効化される、②API失敗時にエラーが握りつぶされ空状態が表示される、③表示期間ラベルがUIに出ていないためユーザーがどの週を見ているか分からない。
+
+**🔴 RED**
+
+- [ ] `frontend/app/routes/summary.weekly.test.tsx` に以下のテストを追加
+  - APIが失敗した場合にエラーメッセージが表示されること（空状態ではなくエラー）
+  - `period` ラベル（例: `3/23（月）〜 3/29（日）`）が画面に表示されること
+- [ ] `backend/handlers/visit_test.go` に `TestListVisits_RFC3339WithMilliseconds` テスト追加
+  - `from` パラメータに `"2026-03-22T15:00:00.000Z"`（ミリ秒付き）を渡した場合でも正しくフィルタされること
+
+**🟢 GREEN**
+
+- [ ] `backend/handlers/visit.go` の `ListVisits`: `time.RFC3339` を `time.RFC3339Nano` に変更（ミリ秒付きISOString対応）
+  - `if t, err := time.Parse(time.RFC3339, from)` → `time.Parse(time.RFC3339Nano, from)`（`until` も同様）
+- [ ] `frontend/app/routes/summary.weekly.tsx`: `load()` に `catch` を追加しエラー状態を管理
+  - `useState<string | null>` でエラーメッセージを保持し、失敗時はユーザーに案内を表示
+- [ ] `frontend/app/routes/summary.monthly.tsx`: 同様に `catch` を追加
+- [ ] `frontend/app/components/SummaryLayout.tsx`: `period` prop を統計カードの下に表示
+  - 例: `<p style={{ color: "#6b8a8a", fontSize: "13px", textAlign: "center", marginBottom: "8px" }}>{period}</p>`
+
+**🔵 REFACTOR**
+
+- [ ] `SummaryLayout` にエラー表示用スロットを追加し、weekly/monthly 両ルートで共通化
+
+---
+
 ### コンプリートカードのデザイン刷新（Issue #300）
 
 > **背景**: 現在のコンプリートカードは画面全体を占める `<section>` で、施設カードと形状が揃っていない。黒を基調とした宇宙テーマのカード形状に刷新し、スワイプ時はその場でスピンするように変更する。
