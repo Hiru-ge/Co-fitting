@@ -110,6 +110,14 @@ body {
 .animate-confetti-2 { animation: confetti-float-2 2.5s ease-in-out infinite 0.3s; }
 .animate-confetti-3 { animation: confetti-float-3 1.8s ease-in-out infinite 0.6s; }
 
+/* ── コンプリートカード スピンアニメーション ── */
+@keyframes card-spin {
+  to { transform: perspective(800px) rotateY(1080deg); } /* 縦軸を軸に3回転 */
+}
+.animate-card-spin {
+  animation: card-spin 0.9s ease-in-out forwards;
+}
+
 /* ── 未実装ボタン共通スタイル ── */
 .btn-unimplemented {
   opacity: 0.6;

@@ -183,16 +183,16 @@
 
 **🔴 RED**
 
-- [ ] `frontend/app/__tests__/components/complete-card.test.tsx` に以下のテストを追加
+- [x] `frontend/app/__tests__/components/complete-card.test.tsx` に以下のテストを追加
   - スワイプ閾値（120px）未満で離した場合 → 元の位置に戻る（スピンしない）
   - スワイプ閾値超過で離した場合 → スピンアニメーションが発火する（`isSpinning` クラスが付与される）
   - スワイプ閾値超過でも `onSwipe` コールバックが呼ばれないこと
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/routes/home.tsx`: `isCompleted` 分岐を修正
+- [x] `frontend/app/routes/home.tsx`: `isCompleted` 分岐を修正
   - `<CompleteCard />` を DiscoveryCard と同じ `<main>` + `relative w-full aspect-3/5` コンテナで包む
-- [ ] `frontend/app/components/complete-card.tsx`: コンポーネントを全面書き直し
+- [x] `frontend/app/components/complete-card.tsx`: コンポーネントを全面書き直し
   - ルート要素を `<div className="absolute inset-0 rounded-3xl overflow-hidden shadow-xl select-none touch-none cursor-grab active:cursor-grabbing">` に変更
   - 背景: `radial-gradient(ellipse at center, #1a1040 0%, #0a0820 40%, #000000 100%)`
   - 星フィールド: 絶対配置のdivに白い小点（`border-radius: 50%`）を10〜15個配置（アニメーションなし）
@@ -204,7 +204,7 @@
 
 **🔵 REFACTOR**
 
-- [ ] 星フィールドの座標を定数配列として定義し、JSX をシンプルに保つ
+- [x] 星フィールドの座標を定数配列として定義し、JSX をシンプルに保つ
 
 ---
 

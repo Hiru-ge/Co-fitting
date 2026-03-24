@@ -97,7 +97,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       ) : isCompleted ? (
         <>
           <AppHeader />
-          <CompleteCard />
+          <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
+            <div className="relative w-full aspect-3/5">
+              <CompleteCard />
+            </div>
+          </main>
         </>
       ) : (error || places.length === 0) ? (
         <>
