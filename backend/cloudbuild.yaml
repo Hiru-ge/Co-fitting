@@ -24,3 +24,6 @@ steps:
 
 images:
   - asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
