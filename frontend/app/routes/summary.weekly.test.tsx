@@ -125,6 +125,38 @@ describe("SummaryWeekly", () => {
 
     await expect(clientLoader({ params: {}, request: new Request("http://localhost/summary/weekly"), context: {} } as never)).rejects.toThrow();
   });
+
+  test("APIが失敗した場合にエラーメッセージが表示される", async () => {
+    vi.mocked(listVisits).mockRejectedValue(new Error("Network error"));
+    const { default: SummaryWeekly } = await import("./summary.weekly");
+    render(
+      <MemoryRouter>
+        <SummaryWeekly
+          loaderData={{ user: mockUser, token: "mock-token" }}
+          params={{}}
+          matches={[]}
+        />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText(/データの取得に失敗しました/)).toBeInTheDocument();
+  });
+
+  test("periodラベルが画面に表示される", async () => {
+    const { default: SummaryWeekly } = await import("./summary.weekly");
+    render(
+      <MemoryRouter>
+        <SummaryWeekly
+          loaderData={{ user: mockUser, token: "mock-token" }}
+          params={{}}
+          matches={[]}
+        />
+      </MemoryRouter>
+    );
+
+    // 2026-03-16 (月) 固定 → 週は 3/16（月）〜 3/22（日）
+    expect(await screen.findByText("3/16（月）〜 3/22（日）")).toBeInTheDocument();
+  });
 });
 
 // ---- バッジフィルタリングのロジック単体テスト ----

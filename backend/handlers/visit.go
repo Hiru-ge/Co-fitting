@@ -395,13 +395,13 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 	countQuery := h.DB.Model(&models.Visit{}).Where("user_id = ?", userID)
 
 	if from := c.Query("from"); from != "" {
-		if t, err := time.Parse(time.RFC3339, from); err == nil {
+		if t, err := time.Parse(time.RFC3339Nano, from); err == nil {
 			query = query.Where("visited_at >= ?", t)
 			countQuery = countQuery.Where("visited_at >= ?", t)
 		}
 	}
 	if until := c.Query("until"); until != "" {
-		if t, err := time.Parse(time.RFC3339, until); err == nil {
+		if t, err := time.Parse(time.RFC3339Nano, until); err == nil {
 			query = query.Where("visited_at < ?", t)
 			countQuery = countQuery.Where("visited_at < ?", t)
 		}

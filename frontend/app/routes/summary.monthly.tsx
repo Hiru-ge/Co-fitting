@@ -52,6 +52,7 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [visits, setVisits] = useState<VisitWithPhoto[]>([]);
   const [badges, setBadges] = useState<EarnedBadge[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { from, until, label } = getMonthRange();
 
@@ -65,6 +66,8 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
         const visitsWithPhotos = await loadPhotos(visitRes.visits, token);
         setVisits(visitsWithPhotos);
         setBadges(badgeRes.filter((b) => b.earned_at >= from && b.earned_at < until));
+      } catch {
+        setErrorMessage("データの取得に失敗しました。しばらくしてから再度お試しください。");
       } finally {
         setIsLoading(false);
       }
@@ -83,6 +86,7 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
       visits={visits}
       badges={badges}
       ctaLabel="来月も冒険しよう"
+      errorMessage={errorMessage}
     />
   );
 }

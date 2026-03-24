@@ -1415,6 +1415,97 @@ func TestListVisits_DateFilter(t *testing.T) {
 	})
 }
 
+func TestListVisits_RFC3339WithMilliseconds(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("fromパラメータにミリ秒付きISOStringを渡しても正しくフィルタされる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		// 3月22日 (JST) = UTC 3月21日15:00 以降のみ返るようにする
+		visits := []models.Visit{
+			{UserID: user.ID, PlaceID: "ChIJ_ms_1", PlaceName: "3月21日の場所", Category: "cafe", Latitude: 35.677, Longitude: 139.650, VisitedAt: time.Date(2026, 3, 21, 14, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_ms_2", PlaceName: "3月22日の場所", Category: "park", Latitude: 35.678, Longitude: 139.651, VisitedAt: time.Date(2026, 3, 22, 3, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_ms_3", PlaceName: "3月23日の場所", Category: "museum", Latitude: 35.679, Longitude: 139.652, VisitedAt: time.Date(2026, 3, 23, 3, 0, 0, 0, time.UTC)},
+		}
+		for i := range visits {
+			if err := testDB.Create(&visits[i]).Error; err != nil {
+				t.Fatalf("Failed to create test visit: %v", err)
+			}
+		}
+
+		// ミリ秒付きISOString（JavaScriptの toISOString() が返す形式）
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2026-03-22T00:00:00.000Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 2 {
+			t.Errorf("Expected 2 visits (3/22 + 3/23), got %d", len(resp.Visits))
+		}
+		fromTime := time.Date(2026, 3, 22, 0, 0, 0, 0, time.UTC)
+		for _, v := range resp.Visits {
+			if v.VisitedAt.Before(fromTime) {
+				t.Errorf("Visit %s is before from date", v.PlaceName)
+			}
+		}
+	})
+
+	t.Run("untilパラメータにミリ秒付きISOStringを渡しても正しくフィルタされる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		visits := []models.Visit{
+			{UserID: user.ID, PlaceID: "ChIJ_msuntil_1", PlaceName: "3月20日の場所", Category: "cafe", Latitude: 35.677, Longitude: 139.650, VisitedAt: time.Date(2026, 3, 20, 3, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_msuntil_2", PlaceName: "3月22日の場所", Category: "park", Latitude: 35.678, Longitude: 139.651, VisitedAt: time.Date(2026, 3, 22, 3, 0, 0, 0, time.UTC)},
+			{UserID: user.ID, PlaceID: "ChIJ_msuntil_3", PlaceName: "3月24日の場所", Category: "museum", Latitude: 35.679, Longitude: 139.652, VisitedAt: time.Date(2026, 3, 24, 3, 0, 0, 0, time.UTC)},
+		}
+		for i := range visits {
+			if err := testDB.Create(&visits[i]).Error; err != nil {
+				t.Fatalf("Failed to create test visit: %v", err)
+			}
+		}
+
+		// until にミリ秒付きISOString
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?until=2026-03-22T15:00:00.000Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if len(resp.Visits) != 2 {
+			t.Errorf("Expected 2 visits (3/20 + 3/22), got %d", len(resp.Visits))
+		}
+	})
+}
+
 func TestGetVisit(t *testing.T) {
 	router := setupVisitRouter()
 
