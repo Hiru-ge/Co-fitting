@@ -3,7 +3,7 @@ import type { User, UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 
 export async function updateDisplayName(
   token: string,
-  displayName: string
+  displayName: string,
 ): Promise<User> {
   return apiCall("/api/users/me", token, {
     method: "PATCH",
@@ -14,7 +14,7 @@ export async function updateDisplayName(
 export async function updateSearchRadius(
   token: string,
   searchRadius: number,
-  refreshSuggestions?: boolean
+  refreshSuggestions?: boolean,
 ): Promise<{ reload_count_remaining: number }> {
   const url = refreshSuggestions
     ? "/api/users/me?refresh_suggestions=true"

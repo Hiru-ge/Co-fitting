@@ -58,7 +58,7 @@ func TestPlacePhoto(t *testing.T) {
 		}
 
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck //nolint:errcheck
 		if resp["error"] != "no cached photo found" {
 			t.Errorf("Expected error message 'no cached photo found', got '%s'", resp["error"])
 		}
@@ -96,7 +96,7 @@ func TestPlacePhoto(t *testing.T) {
 		}
 
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["photo_url"] != expectedCDNURL {
 			t.Errorf("Expected photo_url '%s', got '%s'", expectedCDNURL, resp["photo_url"])
 		}
@@ -160,7 +160,7 @@ func TestPlacePhoto(t *testing.T) {
 		}
 
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["photo_url"] != expectedCDNURL {
 			t.Errorf("Expected photo_url '%s', got '%s'", expectedCDNURL, resp["photo_url"])
 		}
@@ -206,7 +206,7 @@ func TestPlacePhoto(t *testing.T) {
 		}
 
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["photo_url"] != expectedCDNURL {
 			t.Errorf("Expected photo_url '%s', got '%s'", expectedCDNURL, resp["photo_url"])
 		}

@@ -75,7 +75,7 @@ func (h *PlacePhotoHandler) resolveNewAPIPhotoURL(photoRef string, maxWidth int)
 	if err != nil {
 		return "", fmt.Errorf("failed to request photo URL: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode == http.StatusFound || resp.StatusCode == http.StatusMovedPermanently {
 		location := resp.Header.Get("Location")
@@ -99,7 +99,7 @@ func (h *PlacePhotoHandler) resolveLegacyPhotoURL(photoRef string, maxWidth int)
 	if err != nil {
 		return "", fmt.Errorf("failed to request photo URL: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode == http.StatusFound || resp.StatusCode == http.StatusMovedPermanently {
 		location := resp.Header.Get("Location")

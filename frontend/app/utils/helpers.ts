@@ -15,7 +15,7 @@ export function formatShortDate(dateStr: string): string {
 
 export function groupByMonth<T>(
   items: T[],
-  getDate: (item: T) => string
+  getDate: (item: T) => string,
 ): Map<string, T[]> {
   const groups = new Map<string, T[]>();
   for (const item of items) {

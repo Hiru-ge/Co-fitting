@@ -39,7 +39,7 @@ describe("認証トークン管理", () => {
 
     expect(localStorage.getItem("roamble_token")).toBe("test-access-token");
     expect(localStorage.getItem("roamble_refresh_token")).toBe(
-      "test-refresh-token"
+      "test-refresh-token",
     );
   });
 
@@ -89,7 +89,7 @@ describe("getUser", () => {
         headers: expect.objectContaining({
           Authorization: "Bearer valid-token",
         }),
-      })
+      }),
     );
     expect(user).toEqual(mockUser);
   });

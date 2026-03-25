@@ -19,14 +19,13 @@ export async function clientLoader() {
 
 export default function PWAPrompt() {
   const navigate = useNavigate();
-  const [platform, setPlatform] = useState<Platform>("other");
-  const [canInstall, setCanInstall] = useState(false);
+  const [platform] = useState<Platform>(() => detectPlatform());
+  const [canInstall, setCanInstall] = useState(
+    () => getInstallPrompt() !== null,
+  );
   const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
-    setPlatform(detectPlatform());
-    setCanInstall(getInstallPrompt() !== null);
-
     // beforeinstallprompt がこの後に来る場合に備えてリッスン
     const handler = () => setCanInstall(true);
     window.addEventListener("beforeinstallprompt", handler);
@@ -57,18 +56,19 @@ export default function PWAPrompt() {
           <p className="text-5xl font-bold font-display-alt text-primary mb-2">
             Roamble
           </p>
-          <p className="text-sm text-white/50">コンフォートゾーンを抜け出そう</p>
+          <p className="text-sm text-white/50">
+            コンフォートゾーンを抜け出そう
+          </p>
         </div>
 
         {/* メインカード */}
         <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 space-y-5">
           <div className="text-center space-y-1">
             <div className="text-4xl mb-3">📲</div>
-            <h1 className="text-lg font-bold text-white">
-              アプリとして使おう
-            </h1>
+            <h1 className="text-lg font-bold text-white">アプリとして使おう</h1>
             <p className="text-sm text-white/60 leading-relaxed">
-              ホーム画面に追加すると、<br />
+              ホーム画面に追加すると、
+              <br />
               ネイティブアプリのように使えます。
             </p>
           </div>
@@ -98,7 +98,9 @@ export default function PWAPrompt() {
                   </span>
                   <span>
                     画面下の
-                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 bg-white/10 rounded text-xs mx-0.5">共有</span>
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 bg-white/10 rounded text-xs mx-0.5">
+                      共有
+                    </span>
                     をタップ
                   </span>
                 </li>
@@ -130,7 +132,8 @@ export default function PWAPrompt() {
           )}
 
           {/* その他 or Android で beforeinstallprompt が来ていない場合 */}
-          {(platform === "other" || (platform === "android" && !canInstall)) && (
+          {(platform === "other" ||
+            (platform === "android" && !canInstall)) && (
             <div className="bg-white/5 rounded-xl p-4 space-y-2">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
                 追加手順

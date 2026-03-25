@@ -29,7 +29,9 @@ export default function ActionButtons({
           aria-label="リロード"
           className="size-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
-          <span className={`material-symbols-outlined text-xl text-gray-300 ${isReloading ? "animate-spin" : ""}`}>
+          <span
+            className={`material-symbols-outlined text-xl text-gray-300 ${isReloading ? "animate-spin" : ""}`}
+          >
             {isReloading ? "progress_activity" : "refresh"}
           </span>
         </button>
@@ -45,17 +47,23 @@ export default function ActionButtons({
       >
         {isCheckingIn ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+            <span className="material-symbols-outlined animate-spin text-xl">
+              progress_activity
+            </span>
             記録中...
           </span>
         ) : isVisited ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-xl">check_circle</span>
+            <span className="material-symbols-outlined text-xl">
+              check_circle
+            </span>
             記録済み
           </span>
         ) : !isNearPlace ? (
           <span className="flex items-center justify-center gap-2 text-sm">
-            <span className="material-symbols-outlined text-xl">location_off</span>
+            <span className="material-symbols-outlined text-xl">
+              location_off
+            </span>
             到着してから記録できます
           </span>
         ) : (

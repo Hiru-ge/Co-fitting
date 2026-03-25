@@ -69,8 +69,8 @@ func cleanupAllSuggestionCache(t *testing.T) {
 		return
 	}
 	ctx := context.Background()
-	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestion:*")
-	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestions:*")
+	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestion:*")  //nolint:errcheck
+	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestions:*") //nolint:errcheck
 }
 
 // parseSuggestions は SuggestionResult ラッパーから []PlaceResult を取り出すテストヘルパー
@@ -811,7 +811,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			Completed bool          `json:"completed"`
 			Places    []PlaceResult `json:"places"`
 		}
-		json.Unmarshal(w2.Body.Bytes(), &completedResp)
+		json.Unmarshal(w2.Body.Bytes(), &completedResp) //nolint:errcheck
 		if !completedResp.Completed {
 			t.Errorf("Expected completed=true after all suggestions visited. Body: %s", w2.Body.String())
 		}
@@ -893,7 +893,7 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 			Completed bool          `json:"completed"`
 			Places    []PlaceResult `json:"places"`
 		}
-		json.Unmarshal(w2.Body.Bytes(), &w2Resp)
+		json.Unmarshal(w2.Body.Bytes(), &w2Resp) //nolint:errcheck
 		if !w2Resp.Completed {
 			t.Fatalf("全訪問後はcompleted=trueが返るはず. Body: %s", w2.Body.String())
 		}
@@ -917,7 +917,7 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 			Completed bool          `json:"completed"`
 			Places    []PlaceResult `json:"places"`
 		}
-		json.Unmarshal(w3.Body.Bytes(), &w3Resp)
+		json.Unmarshal(w3.Body.Bytes(), &w3Resp) //nolint:errcheck
 		if !w3Resp.Completed {
 			t.Errorf("興味タグ変更後も completed=true が返るはず（日次上限は復活しない）. Body: %s", w3.Body.String())
 		}
@@ -1670,7 +1670,7 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 
 		var errResp map[string]interface{}
-		json.Unmarshal(rw.Body.Bytes(), &errResp)
+		json.Unmarshal(rw.Body.Bytes(), &errResp) //nolint:errcheck
 		if errResp["code"] != "RELOAD_LIMIT_REACHED" {
 			t.Errorf("Expected code 'RELOAD_LIMIT_REACHED', got '%v'", errResp["code"])
 		}
@@ -1818,7 +1818,7 @@ func TestSuggestForceReload(t *testing.T) {
 			Places               []PlaceResult `json:"places"`
 			ReloadCountRemaining *int          `json:"reload_count_remaining"`
 		}
-		json.Unmarshal(w2.Body.Bytes(), &result2)
+		json.Unmarshal(w2.Body.Bytes(), &result2) //nolint:errcheck
 		if result2.ReloadCountRemaining == nil || *result2.ReloadCountRemaining != 2 {
 			remaining := -1
 			if result2.ReloadCountRemaining != nil {
@@ -1871,7 +1871,7 @@ func TestSuggestForceReload(t *testing.T) {
 		router.ServeHTTP(w2, req2)
 
 		var compResp struct{ Completed bool }
-		json.Unmarshal(w2.Body.Bytes(), &compResp)
+		json.Unmarshal(w2.Body.Bytes(), &compResp) //nolint:errcheck
 		if !compResp.Completed {
 			t.Fatalf("Expected completed=true after all visited")
 		}
@@ -1894,7 +1894,7 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 
 		var compResp2 struct{ Completed bool }
-		json.Unmarshal(w3.Body.Bytes(), &compResp2)
+		json.Unmarshal(w3.Body.Bytes(), &compResp2) //nolint:errcheck
 		if !compResp2.Completed {
 			t.Errorf("Expected completed=true even with force_reload after daily limit reached. Body: %s", w3.Body.String())
 		}
@@ -2103,7 +2103,7 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		// is_breakout フィールドを確認するために生のJSONをデコード
 		var result struct {
 			Places []struct {
-				PlaceID       string `json:"place_id"`
+				PlaceID    string `json:"place_id"`
 				IsBreakout *bool  `json:"is_breakout"`
 			} `json:"places"`
 		}
@@ -2168,7 +2168,7 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 
 		var result struct {
 			Places []struct {
-				PlaceID       string `json:"place_id"`
+				PlaceID    string `json:"place_id"`
 				IsBreakout *bool  `json:"is_breakout"`
 			} `json:"places"`
 		}
@@ -2433,7 +2433,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 
 			// リクエストボディの検証
 			var reqBody map[string]interface{}
-			json.NewDecoder(r.Body).Decode(&reqBody)
+			json.NewDecoder(r.Body).Decode(&reqBody) //nolint:errcheck
 			if reqBody["rankPreference"] != "DISTANCE" {
 				t.Errorf("expected rankPreference=DISTANCE, got %v", reqBody["rankPreference"])
 			}
@@ -2482,7 +2482,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 				},
 			}
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(resp)
+			json.NewEncoder(w).Encode(resp) //nolint:errcheck
 		}))
 		defer server.Close()
 
@@ -2540,7 +2540,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 	t.Run("New API が空レスポンスを返した場合", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{}`))
+			w.Write([]byte(`{}`)) //nolint:errcheck
 		}))
 		defer server.Close()
 
@@ -2561,7 +2561,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 	t.Run("New API がエラーステータスを返した場合", func(t *testing.T) {
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(`{"error": {"message": "Invalid request"}}`))
+			w.Write([]byte(`{"error": {"message": "Invalid request"}}`)) //nolint:errcheck
 		}))
 		defer server.Close()
 
@@ -2582,11 +2582,11 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 			var reqBody struct {
 				IncludedTypes []string `json:"includedTypes"`
 			}
-			json.NewDecoder(r.Body).Decode(&reqBody)
+			json.NewDecoder(r.Body).Decode(&reqBody) //nolint:errcheck
 			receivedTypes = reqBody.IncludedTypes
 
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{}`))
+			w.Write([]byte(`{}`)) //nolint:errcheck
 		}))
 		defer server.Close()
 
@@ -2595,7 +2595,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 			BaseURL: server.URL,
 		}
 
-		client.NearbySearch(context.Background(), 35.6762, 139.6503, 3000)
+		client.NearbySearch(context.Background(), 35.6762, 139.6503, 3000) //nolint:errcheck
 
 		if len(receivedTypes) == 0 {
 			t.Error("expected includedTypes to be sent in request")

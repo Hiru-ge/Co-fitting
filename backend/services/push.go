@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"sync"
 
-	webpush "github.com/SherClockHolmes/webpush-go"
 	"github.com/Hiru-ge/roamble/models"
+	webpush "github.com/SherClockHolmes/webpush-go"
 	"gorm.io/gorm"
 )
 
@@ -104,7 +104,7 @@ func (s *PushService) sendOne(sub models.PushSubscription, message []byte) error
 	if err != nil {
 		return fmt.Errorf("push: send notification: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	// 410 Gone または 404 Not Found は購読期限切れを示すため削除する
 	if resp.StatusCode == http.StatusGone || resp.StatusCode == http.StatusNotFound {

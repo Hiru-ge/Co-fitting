@@ -33,7 +33,9 @@ describe("BadgeModal", () => {
 
   test("aria-label が「バッジ獲得」になっている", () => {
     render(<BadgeModal badge={badge} onClose={vi.fn()} />);
-    expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "バッジ獲得" }),
+    ).toBeInTheDocument();
   });
 
   test("「バッジを獲得」ボタンで onClose が呼ばれる", () => {

@@ -19,13 +19,21 @@ function getWeekRange(): { from: string; until: string; label: string } {
 
   // 直近月曜 00:00 JST (= 前日 15:00 UTC のケースあり)
   const mondayMidnightUTC =
-    Date.UTC(nowJST.getUTCFullYear(), nowJST.getUTCMonth(), nowJST.getUTCDate() - daysFromMonday) - JST_OFFSET_MS;
+    Date.UTC(
+      nowJST.getUTCFullYear(),
+      nowJST.getUTCMonth(),
+      nowJST.getUTCDate() - daysFromMonday,
+    ) - JST_OFFSET_MS;
 
   const from = new Date(mondayMidnightUTC).toISOString();
-  const until = new Date(mondayMidnightUTC + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const until = new Date(
+    mondayMidnightUTC + 7 * 24 * 60 * 60 * 1000,
+  ).toISOString();
 
   const mondayDate = new Date(mondayMidnightUTC + JST_OFFSET_MS);
-  const sundayDate = new Date(mondayMidnightUTC + JST_OFFSET_MS + 6 * 24 * 60 * 60 * 1000);
+  const sundayDate = new Date(
+    mondayMidnightUTC + JST_OFFSET_MS + 6 * 24 * 60 * 60 * 1000,
+  );
   const fmt = (d: Date) => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
   const label = `${fmt(mondayDate)}（月）〜 ${fmt(sundayDate)}（日）`;
 
@@ -34,7 +42,10 @@ function getWeekRange(): { from: string; until: string; label: string } {
 
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
-async function loadPhotos(visits: Visit[], token: string): Promise<VisitWithPhoto[]> {
+async function loadPhotos(
+  visits: Visit[],
+  token: string,
+): Promise<VisitWithPhoto[]> {
   return Promise.all(
     visits.map(async (v) => {
       try {
@@ -43,7 +54,7 @@ async function loadPhotos(visits: Visit[], token: string): Promise<VisitWithPhot
       } catch {
         return { ...v };
       }
-    })
+    }),
   );
 }
 
@@ -65,9 +76,13 @@ export default function SummaryWeekly({ loaderData }: Route.ComponentProps) {
         ]);
         const visitsWithPhotos = await loadPhotos(visitRes.visits, token);
         setVisits(visitsWithPhotos);
-        setBadges(badgeRes.filter((b) => b.earned_at >= from && b.earned_at < until));
+        setBadges(
+          badgeRes.filter((b) => b.earned_at >= from && b.earned_at < until),
+        );
       } catch {
-        setErrorMessage("データの取得に失敗しました。しばらくしてから再度お試しください。");
+        setErrorMessage(
+          "データの取得に失敗しました。しばらくしてから再度お試しください。",
+        );
       } finally {
         setIsLoading(false);
       }

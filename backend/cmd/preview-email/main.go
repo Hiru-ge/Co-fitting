@@ -50,7 +50,9 @@ func main() {
 		},
 	}
 
-	os.MkdirAll("tmp/email-preview", 0755)
+	if err := os.MkdirAll("tmp/email-preview", 0755); err != nil {
+		log.Fatalf("failed to create output directory: %v", err)
+	}
 
 	for name, fn := range previews {
 		html, err := fn()
@@ -59,7 +61,9 @@ func main() {
 			continue
 		}
 		path := "tmp/email-preview/" + name
-		os.WriteFile(path, []byte(html), 0644)
+		if err := os.WriteFile(path, []byte(html), 0644); err != nil {
+			fmt.Fprintf(os.Stderr, "ERROR writing %s: %v\n", path, err)
+		}
 		fmt.Printf("wrote %s\n", path)
 	}
 
@@ -73,7 +77,9 @@ func main() {
 <li><a href="/preview/monthly_summary_empty.html" style="color:#13ecec;">monthly_summary_empty</a></li>
 <li><a href="/preview/streak_reminder.html" style="color:#13ecec;">streak_reminder</a></li>
 </ul></body></html>`
-	os.WriteFile("tmp/email-preview/index.html", []byte(index), 0644)
+	if err := os.WriteFile("tmp/email-preview/index.html", []byte(index), 0644); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR writing index.html: %v\n", err)
+	}
 
 	// 静的ファイルサーバー
 	http.Handle("/preview/", http.StripPrefix("/preview/", http.FileServer(http.Dir("tmp/email-preview"))))

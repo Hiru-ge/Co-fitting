@@ -20,11 +20,15 @@ describe("places API", () => {
       const expectedPhotoUrl = "https://example.com/photo.jpg";
       mockApiCall.mockResolvedValue({ photo_url: expectedPhotoUrl });
 
-      const result = await getPlacePhoto(mockToken, mockPlaceId, mockPhotoReference);
+      const result = await getPlacePhoto(
+        mockToken,
+        mockPlaceId,
+        mockPhotoReference,
+      );
 
       expect(mockApiCall).toHaveBeenCalledWith(
         `/api/places/${mockPlaceId}/photo?photo_reference=${mockPhotoReference}`,
-        mockToken
+        mockToken,
       );
       expect(result).toBe(expectedPhotoUrl);
     });
@@ -34,14 +38,14 @@ describe("places API", () => {
       // URLSearchParamsは空白を+でエンコードする
       const expectedPhotoRef = "photo_ref_with+spaces+%26+symbols";
       const expectedPhotoUrl = "https://example.com/photo.jpg";
-      
+
       mockApiCall.mockResolvedValue({ photo_url: expectedPhotoUrl });
 
       await getPlacePhoto(mockToken, mockPlaceId, specialPhotoRef);
 
       expect(mockApiCall).toHaveBeenCalledWith(
         `/api/places/${mockPlaceId}/photo?photo_reference=${expectedPhotoRef}`,
-        mockToken
+        mockToken,
       );
     });
 
@@ -49,7 +53,11 @@ describe("places API", () => {
       const expectedPhotoUrl = "https://example.com/test-photo.jpg";
       mockApiCall.mockResolvedValue({ photo_url: expectedPhotoUrl });
 
-      const result = await getPlacePhoto(mockToken, mockPlaceId, mockPhotoReference);
+      const result = await getPlacePhoto(
+        mockToken,
+        mockPlaceId,
+        mockPhotoReference,
+      );
 
       expect(result).toBe(expectedPhotoUrl);
     });
@@ -63,7 +71,7 @@ describe("places API", () => {
 
       expect(mockApiCall).toHaveBeenCalledWith(
         `/api/places/${mockPlaceId}/photo`,
-        mockToken
+        mockToken,
       );
     });
 
@@ -75,7 +83,7 @@ describe("places API", () => {
 
       expect(mockApiCall).toHaveBeenCalledWith(
         `/api/places/${mockPlaceId}/photo`,
-        mockToken
+        mockToken,
       );
     });
 
@@ -88,7 +96,7 @@ describe("places API", () => {
 
       expect(mockApiCall).toHaveBeenCalledWith(
         `/api/places/${specialPlaceId}/photo?photo_reference=${mockPhotoReference}`,
-        mockToken
+        mockToken,
       );
     });
 
@@ -96,20 +104,26 @@ describe("places API", () => {
       const apiError = new Error("Network error");
       mockApiCall.mockRejectedValue(apiError);
 
-      await expect(getPlacePhoto(mockToken, mockPlaceId, mockPhotoReference)).rejects.toThrow("Network error");
+      await expect(
+        getPlacePhoto(mockToken, mockPlaceId, mockPhotoReference),
+      ).rejects.toThrow("Network error");
     });
 
     it("should handle different photo_url formats", async () => {
       const formats = [
         "https://example.com/photo.jpg",
-        "http://example.com/photo.png", 
+        "http://example.com/photo.png",
         "/api/static/photo123.jpg",
         "data:image/jpeg;base64,/9j/4AAQSkZJRgABA...",
       ];
 
       for (const photoUrl of formats) {
         mockApiCall.mockResolvedValue({ photo_url: photoUrl });
-        const result = await getPlacePhoto(mockToken, mockPlaceId, mockPhotoReference);
+        const result = await getPlacePhoto(
+          mockToken,
+          mockPlaceId,
+          mockPhotoReference,
+        );
         expect(result).toBe(photoUrl);
       }
     });
@@ -117,7 +131,11 @@ describe("places API", () => {
     it("should handle null or undefined photo_url", async () => {
       // null が返された場合
       mockApiCall.mockResolvedValue({ photo_url: null });
-      let result = await getPlacePhoto(mockToken, mockPlaceId, mockPhotoReference);
+      let result = await getPlacePhoto(
+        mockToken,
+        mockPlaceId,
+        mockPhotoReference,
+      );
       expect(result).toBeNull();
 
       // undefined が返された場合
@@ -139,7 +157,7 @@ describe("places API", () => {
         await getPlacePhoto(token, mockPlaceId, mockPhotoReference);
         expect(mockApiCall).toHaveBeenCalledWith(
           `/api/places/${mockPlaceId}/photo?photo_reference=${mockPhotoReference}`,
-          token
+          token,
         );
       }
     });
@@ -148,7 +166,7 @@ describe("places API", () => {
       const complexPlaceId = "ChIJ_____complex_place_id_123";
       const complexPhotoRef = "photo_ref_with/special%chars&symbols=test";
       const expectedPhotoUrl = "https://example.com/photo.jpg";
-      
+
       mockApiCall.mockResolvedValue({ photo_url: expectedPhotoUrl });
 
       await getPlacePhoto(mockToken, complexPlaceId, complexPhotoRef);

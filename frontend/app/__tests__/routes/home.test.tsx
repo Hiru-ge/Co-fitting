@@ -7,18 +7,32 @@ import userEvent from "@testing-library/user-event";
 const localStorageData: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => localStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { localStorageData[key] = value; },
-  removeItem: (key: string) => { delete localStorageData[key]; },
-  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    localStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete localStorageData[key];
+  },
+  clear: () => {
+    Object.keys(localStorageData).forEach((k) => delete localStorageData[k]);
+  },
 };
 vi.stubGlobal("localStorage", localStorageMock);
 
 const sessionStorageData: Record<string, string> = {};
 const sessionStorageMock = {
   getItem: (key: string) => sessionStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { sessionStorageData[key] = value; },
-  removeItem: (key: string) => { delete sessionStorageData[key]; },
-  clear: () => { Object.keys(sessionStorageData).forEach(k => delete sessionStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    sessionStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete sessionStorageData[key];
+  },
+  clear: () => {
+    Object.keys(sessionStorageData).forEach(
+      (k) => delete sessionStorageData[k],
+    );
+  },
 };
 vi.stubGlobal("sessionStorage", sessionStorageMock);
 
@@ -79,11 +93,12 @@ vi.mock("~/utils/geolocation", () => ({
 
 const mockNavigate = vi.hoisted(() => vi.fn());
 
-let callCount = 0;
 vi.mock("~/api/suggestions", () => ({
   getSuggestions: vi.fn().mockImplementation(() => {
-    callCount++;
-    return Promise.resolve({ places: [...mockPlaces], reload_count_remaining: 3 });
+    return Promise.resolve({
+      places: [...mockPlaces],
+      reload_count_remaining: 3,
+    });
   }),
 }));
 
@@ -97,8 +112,17 @@ vi.mock("react-router", async () => {
     ...actual,
     redirect: vi.fn(),
     useNavigate: vi.fn().mockReturnValue(mockNavigate),
-    Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-      <a href={to} {...props}>{children}</a>
+    Link: ({
+      to,
+      children,
+      ...props
+    }: {
+      to: string;
+      children: React.ReactNode;
+    }) => (
+      <a href={to} {...props}>
+        {children}
+      </a>
     ),
   };
 });
@@ -137,8 +161,13 @@ function renderHome() {
     },
     token: "test-token",
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return render(<Home loaderData={loaderData as any} params={{} as any} matches={[] as any} />);
+  return render(
+    <Home
+      loaderData={loaderData as any}
+      params={{} as any}
+      matches={[] as any}
+    />,
+  );
 }
 
 function renderHomeStrict() {
@@ -153,11 +182,14 @@ function renderHomeStrict() {
     },
     token: "test-token",
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return render(
     <StrictMode>
-      <Home loaderData={loaderData as any} params={{} as any} matches={[] as any} />
-    </StrictMode>
+      <Home
+        loaderData={loaderData as any}
+        params={{} as any}
+        matches={[] as any}
+      />
+    </StrictMode>,
   );
 }
 
@@ -175,7 +207,7 @@ describe("Home clientLoader", () => {
     const { clientLoader } = await import("~/routes/home");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+      await clientLoader();
     } catch {
       // throw redirect を使う
     }
@@ -192,7 +224,7 @@ describe("Home clientLoader", () => {
     const { clientLoader } = await import("~/routes/home");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+      await clientLoader();
     } catch {
       // throw redirect を使う
     }
@@ -208,7 +240,7 @@ describe("Home clientLoader", () => {
     const { clientLoader } = await import("~/routes/home");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+      await clientLoader();
     } catch {
       // throw redirect を使う
     }
@@ -226,7 +258,7 @@ describe("Home clientLoader", () => {
     const { clientLoader } = await import("~/routes/home");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+      await clientLoader();
     } catch {
       // throw redirect を使う
     }
@@ -245,10 +277,14 @@ describe("Home clientLoader", () => {
 
     vi.mocked(getUser).mockImplementationOnce(async () => {
       getUserStarted = true;
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       return {
-        id: 1, email: "test@example.com", display_name: "テスト",
-        avatar_url: null, created_at: "2024-01-01", updated_at: "2024-01-01",
+        id: 1,
+        email: "test@example.com",
+        display_name: "テスト",
+        avatar_url: null,
+        created_at: "2024-01-01",
+        updated_at: "2024-01-01",
         search_radius: 500,
       };
     });
@@ -256,16 +292,26 @@ describe("Home clientLoader", () => {
       getInterestsStarted = true;
       // getUser が既に開始している（並列）ことを確認
       getUserStartedBeforeInterestsDone = getUserStarted;
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
       return [
-        { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
-        { genre_tag_id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
+        {
+          genre_tag_id: 1,
+          name: "カフェ",
+          category: "食べる・飲む",
+          icon: "☕",
+        },
+        {
+          genre_tag_id: 2,
+          name: "ラーメン",
+          category: "食べる・飲む",
+          icon: "🍜",
+        },
         { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
       ];
     });
 
     const { clientLoader } = await import("~/routes/home");
-    await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    await clientLoader();
 
     expect(getUserStarted).toBe(true);
     expect(getInterestsStarted).toBe(true);
@@ -281,7 +327,7 @@ describe("Home clientLoader", () => {
     const { clientLoader } = await import("~/routes/home");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
+      await clientLoader();
     } catch {
       // clientLoaderはthrow redirectを使う
     }
@@ -298,7 +344,7 @@ describe("Home clientLoader", () => {
     const { redirect } = await import("react-router");
     const { clientLoader } = await import("~/routes/home");
 
-    const result = await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    const result = await clientLoader();
 
     expect(redirect).not.toHaveBeenCalledWith("/onboarding");
     expect(result).toHaveProperty("token", "test-token");
@@ -307,7 +353,6 @@ describe("Home clientLoader", () => {
 
 describe("Home画面", () => {
   beforeEach(() => {
-    callCount = 0;
     vi.clearAllMocks();
     sessionStorageMock.clear();
     localStorageMock.clear(); // localStorageに変更後、テスト間のコンプリートフラグ汚染を防ぐ
@@ -368,13 +413,15 @@ describe("Home画面", () => {
   test("INTERNAL_ERRORエラー時にエラーメッセージが表示されトーストが出る", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockRejectedValueOnce(
-      new ApiError(500, "failed to search nearby places", "INTERNAL_ERROR")
+      new ApiError(500, "failed to search nearby places", "INTERNAL_ERROR"),
     );
 
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByText("スポットの取得に失敗しました")).toBeInTheDocument();
+      expect(
+        screen.getByText("スポットの取得に失敗しました"),
+      ).toBeInTheDocument();
     });
     expect(mockShowToast).toHaveBeenCalled();
   });
@@ -387,7 +434,14 @@ describe("Home画面", () => {
       total_xp: 150,
       level_up: false,
       new_level: 2,
-      new_badges: [{ id: 1, name: "最初の一歩", description: "初めての訪問！", icon_url: "" }],
+      new_badges: [
+        {
+          id: 1,
+          name: "最初の一歩",
+          description: "初めての訪問！",
+          icon_url: "",
+        },
+      ],
     } as any);
 
     const user = userEvent.setup();
@@ -402,7 +456,9 @@ describe("Home画面", () => {
 
     // XPモーダルが表示される
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "XP獲得" }),
+      ).toBeInTheDocument();
     });
 
     // XPモーダルを閉じる
@@ -410,7 +466,9 @@ describe("Home画面", () => {
 
     // バッジモーダルが表示される
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "バッジ獲得" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("最初の一歩")).toBeInTheDocument();
     });
   });
@@ -438,7 +496,9 @@ describe("Home画面", () => {
 
     // XPモーダルが表示される
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "XP獲得" }),
+      ).toBeInTheDocument();
     });
 
     // XPモーダルを閉じる
@@ -446,7 +506,9 @@ describe("Home画面", () => {
 
     // バッジモーダルは表示されない
     await waitFor(() => {
-      expect(screen.queryByRole("dialog", { name: "バッジ獲得" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("dialog", { name: "バッジ獲得" }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -455,9 +517,33 @@ describe("Home画面", () => {
     const { createVisit } = await import("~/api/visits");
     // 1・2件目は未コンプリート、3件目でdaily_completed=trueを返す
     vi.mocked(createVisit)
-      .mockResolvedValueOnce({ id: 1, xp_earned: 50, total_xp: 100, level_up: false, new_level: 2, new_badges: [], daily_completed: false } as any)
-      .mockResolvedValueOnce({ id: 1, xp_earned: 50, total_xp: 100, level_up: false, new_level: 2, new_badges: [], daily_completed: false } as any)
-      .mockResolvedValueOnce({ id: 1, xp_earned: 50, total_xp: 150, level_up: false, new_level: 2, new_badges: [], daily_completed: true } as any);
+      .mockResolvedValueOnce({
+        id: 1,
+        xp_earned: 50,
+        total_xp: 100,
+        level_up: false,
+        new_level: 2,
+        new_badges: [],
+        daily_completed: false,
+      } as any)
+      .mockResolvedValueOnce({
+        id: 1,
+        xp_earned: 50,
+        total_xp: 100,
+        level_up: false,
+        new_level: 2,
+        new_badges: [],
+        daily_completed: false,
+      } as any)
+      .mockResolvedValueOnce({
+        id: 1,
+        xp_earned: 50,
+        total_xp: 150,
+        level_up: false,
+        new_level: 2,
+        new_badges: [],
+        daily_completed: true,
+      } as any);
 
     const user = userEvent.setup();
     renderHome();
@@ -469,28 +555,38 @@ describe("Home画面", () => {
     // 1件目チェックイン → XPモーダル → 閉じる
     await user.click(screen.getByRole("button", { name: /行ってきた/ }));
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "XP獲得" }),
+      ).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
 
     // 2件目チェックイン → XPモーダル → 閉じる
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /行ってきた/ })).not.toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /行ってきた/ }),
+      ).not.toBeDisabled();
     });
     await user.click(screen.getByRole("button", { name: /行ってきた/ }));
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "XP獲得" }),
+      ).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
 
     // 3件目チェックイン (最後の1件) → XPモーダルが表示されること
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /行ってきた/ })).not.toBeDisabled();
+      expect(
+        screen.getByRole("button", { name: /行ってきた/ }),
+      ).not.toBeDisabled();
     });
     await user.click(screen.getByRole("button", { name: /行ってきた/ }));
 
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "XP獲得" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -513,13 +609,18 @@ describe("Home画面", () => {
     for (let i = 0; i < 3; i++) {
       const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
       await user.click(checkInButton);
-      await waitFor(() => {
-        expect(checkInButton).not.toBeDisabled();
-      }, { timeout: 500 }).catch(() => {});
+      await waitFor(
+        () => {
+          expect(checkInButton).not.toBeDisabled();
+        },
+        { timeout: 500 },
+      ).catch(() => {});
     }
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -532,8 +633,18 @@ describe("Home画面", () => {
       level_up: false,
       new_level: 2,
       new_badges: [
-        { id: 1, name: "最初の一歩", description: "初めての訪問！", icon_url: "" },
-        { id: 2, name: "コンフォートゾーン・ブレイカー", description: "脱却訪問を達成！", icon_url: "" },
+        {
+          id: 1,
+          name: "最初の一歩",
+          description: "初めての訪問！",
+          icon_url: "",
+        },
+        {
+          id: 2,
+          name: "コンフォートゾーン・ブレイカー",
+          description: "脱却訪問を達成！",
+          icon_url: "",
+        },
       ],
     } as any);
 
@@ -549,13 +660,17 @@ describe("Home画面", () => {
 
     // XPモーダルを閉じる
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "XP獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "XP獲得" }),
+      ).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
 
     // 1枚目バッジモーダル
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "バッジ獲得" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("最初の一歩")).toBeInTheDocument();
     });
 
@@ -564,8 +679,12 @@ describe("Home画面", () => {
 
     // 2枚目バッジモーダル
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "バッジ獲得" })).toBeInTheDocument();
-      expect(screen.getByText("コンフォートゾーン・ブレイカー")).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "バッジ獲得" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("コンフォートゾーン・ブレイカー"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -580,7 +699,9 @@ describe("Home画面", () => {
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -594,7 +715,9 @@ describe("Home画面", () => {
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
     expect(mockShowToast).not.toHaveBeenCalled();
   });
@@ -614,7 +737,7 @@ describe("Home画面", () => {
     });
     expect(mockShowToast).toHaveBeenCalledWith(
       expect.stringContaining("興味タグ"),
-      "info"
+      "info",
     );
   });
 
@@ -626,7 +749,7 @@ describe("Home画面", () => {
     });
     expect(mockShowToast).not.toHaveBeenCalledWith(
       expect.stringContaining("興味タグ"),
-      "info"
+      "info",
     );
   });
 
@@ -647,20 +770,22 @@ describe("Home画面", () => {
     expect(mockShowToast).toHaveBeenCalledTimes(1);
     expect(mockShowToast).toHaveBeenCalledWith(
       expect.stringContaining("興味タグ"),
-      "info"
+      "info",
     );
   });
 
   test("React StrictMode環境でもエラー発生時のトーストは1回のみ表示される", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockRejectedValue(
-      new ApiError(500, "internal error", "INTERNAL_ERROR")
+      new ApiError(500, "internal error", "INTERNAL_ERROR"),
     );
 
     renderHomeStrict();
 
     await waitFor(() => {
-      expect(screen.getByText("スポットの取得に失敗しました")).toBeInTheDocument();
+      expect(
+        screen.getByText("スポットの取得に失敗しました"),
+      ).toBeInTheDocument();
     });
 
     expect(mockShowToast).toHaveBeenCalledTimes(1);
@@ -670,31 +795,38 @@ describe("Home画面", () => {
   test("位置情報が拒否された場合、位置情報モーダルが表示される", async () => {
     const { getCurrentPosition } = await import("~/utils/geolocation");
     vi.mocked(getCurrentPosition).mockRejectedValueOnce(
-      Object.assign(new Error("User denied Geolocation"), { code: 1 })
+      Object.assign(new Error("User denied Geolocation"), { code: 1 }),
     );
 
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "位置情報が利用できません" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "位置情報が利用できません" }),
+      ).toBeInTheDocument();
     });
   });
 
   test("位置情報モーダルで「渋谷駅周辺で試す」を選ぶと提案が表示される", async () => {
     // 前のテストで mockRejectedValue が設定されている可能性があるため明示的にリセット
     const { getSuggestions } = await import("~/api/suggestions");
-    vi.mocked(getSuggestions).mockResolvedValue({ places: [...mockPlaces], reload_count_remaining: 3 });
+    vi.mocked(getSuggestions).mockResolvedValue({
+      places: [...mockPlaces],
+      reload_count_remaining: 3,
+    });
 
     const { getCurrentPosition } = await import("~/utils/geolocation");
     vi.mocked(getCurrentPosition).mockRejectedValueOnce(
-      Object.assign(new Error("User denied Geolocation"), { code: 1 })
+      Object.assign(new Error("User denied Geolocation"), { code: 1 }),
     );
 
     const user = userEvent.setup();
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "位置情報が利用できません" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "位置情報が利用できません" }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: "渋谷駅周辺で試す" }));
@@ -709,14 +841,16 @@ describe("Home画面", () => {
   test("位置情報モーダルで「設定で許可する」を選ぶと設定画面へ遷移する", async () => {
     const { getCurrentPosition } = await import("~/utils/geolocation");
     vi.mocked(getCurrentPosition).mockRejectedValueOnce(
-      Object.assign(new Error("User denied Geolocation"), { code: 1 })
+      Object.assign(new Error("User denied Geolocation"), { code: 1 }),
     );
 
     const user = userEvent.setup();
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "位置情報が利用できません" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "位置情報が利用できません" }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: "設定で許可する" }));
@@ -728,7 +862,6 @@ describe("Home画面", () => {
 // === Issue #223: 3件訪問後に発見画面を再訪問すると再度提案されるバグ修正 ===
 describe("Issue #223: コンプリート状態の永続化", () => {
   beforeEach(async () => {
-    callCount = 0;
     vi.clearAllMocks();
     sessionStorageMock.clear();
     localStorageMock.clear();
@@ -762,14 +895,19 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     for (let i = 0; i < 3; i++) {
       const checkInButton = screen.getByRole("button", { name: /行ってきた/ });
       await user.click(checkInButton);
-      await waitFor(() => {
-        expect(checkInButton).not.toBeDisabled();
-      }, { timeout: 500 }).catch(() => {});
+      await waitFor(
+        () => {
+          expect(checkInButton).not.toBeDisabled();
+        },
+        { timeout: 500 },
+      ).catch(() => {});
     }
 
     // コンプリート状態になる
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
 
     // API呼び出し回数を記録
@@ -783,11 +921,15 @@ describe("Issue #223: コンプリート状態の永続化", () => {
 
     // APIを再呼び出しせずにコンプリート画面が即表示される
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
 
     // 再マウント後にAPIが追加で呼ばれていないことを確認
-    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(callCountBeforeRemount);
+    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(
+      callCountBeforeRemount,
+    );
   });
 
   test("コンプリートフラグはlocalStorageで保持される（タブを閉じても当日中は有効）", async () => {
@@ -801,7 +943,9 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     const { unmount } = renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
 
     // アンマウント
@@ -811,7 +955,9 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     renderHome();
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "コンプリート" }),
+      ).toBeInTheDocument();
     });
   });
 });
@@ -842,7 +988,9 @@ describe("ホームページ レイアウト・スクロール制御", () => {
     const { container } = renderHome();
 
     await waitFor(() => {
-      expect(screen.getByText("スポットの取得に失敗しました")).toBeInTheDocument();
+      expect(
+        screen.getByText("スポットの取得に失敗しました"),
+      ).toBeInTheDocument();
     });
 
     const rootDiv = container.firstChild as HTMLElement;
@@ -865,7 +1013,6 @@ describe("ホームページ レイアウト・スクロール制御", () => {
 describe("提案リロード機能", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    callCount = 0;
     localStorageMock.clear();
     sessionStorageMock.clear();
     localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
@@ -896,7 +1043,9 @@ describe("提案リロード機能", () => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole("button", { name: /スキップ/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /スキップ/ }),
+    ).not.toBeInTheDocument();
   });
 
   test("リロードボタン押下でforceReload付きでAPIが呼ばれる", async () => {
@@ -961,7 +1110,11 @@ describe("提案リロード機能", () => {
 
     // リロード時に429を返す
     vi.mocked(getSuggestions).mockRejectedValueOnce(
-      new ApiError(429, "今日のリロードは使い切りました。明日また使えます", "RELOAD_LIMIT_REACHED")
+      new ApiError(
+        429,
+        "今日のリロードは使い切りました。明日また使えます",
+        "RELOAD_LIMIT_REACHED",
+      ),
     );
 
     const reloadButton = screen.getByRole("button", { name: /リロード/ });
@@ -977,7 +1130,6 @@ describe("提案リロード機能", () => {
 describe("Issue #252: 位置情報変化による自動再提案機能の排除", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    callCount = 0;
     localStorageMock.clear();
     sessionStorageMock.clear();
     localStorage.setItem("home_tour_seen", "true"); // ツアーモーダルをスキップ
@@ -1019,11 +1171,14 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
   });
 
   test("提案取得後にアンマウント→再マウントしても getSuggestions が再呼び出しされない（位置変化に関係なく）", async () => {
-    const { getSuggestions, } = await import("~/api/suggestions");
+    const { getSuggestions } = await import("~/api/suggestions");
     const { getCurrentPosition } = await import("~/utils/geolocation");
 
     // 初回: 位置A
-    vi.mocked(getCurrentPosition).mockResolvedValue({ lat: 35.658, lng: 139.7016 });
+    vi.mocked(getCurrentPosition).mockResolvedValue({
+      lat: 35.658,
+      lng: 139.7016,
+    });
 
     const { unmount } = renderHome();
 
@@ -1031,14 +1186,18 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    const callCountAfterFirstMount = vi.mocked(getSuggestions).mock.calls.length;
+    const callCountAfterFirstMount =
+      vi.mocked(getSuggestions).mock.calls.length;
     expect(callCountAfterFirstMount).toBe(1);
 
     // 画面遷移をシミュレート（アンマウント）
     unmount();
 
     // 位置が変わった（B地点）状態で再マウント
-    vi.mocked(getCurrentPosition).mockResolvedValue({ lat: 35.680, lng: 139.760 });
+    vi.mocked(getCurrentPosition).mockResolvedValue({
+      lat: 35.68,
+      lng: 139.76,
+    });
     renderHome();
 
     // sessionStorageキャッシュから復元されるため、提案カードはすぐに表示される
@@ -1047,7 +1206,9 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     });
 
     // 再マウント後に getSuggestions が追加で呼ばれていないことを確認
-    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(callCountAfterFirstMount);
+    expect(vi.mocked(getSuggestions).mock.calls.length).toBe(
+      callCountAfterFirstMount,
+    );
   });
 
   test("forceReload（リロードボタン押下）時は localStorage キャッシュを無視して再取得する", async () => {
@@ -1075,7 +1236,9 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     await user.click(reloadButton);
 
     await waitFor(() => {
-      expect(vi.mocked(getSuggestions).mock.calls.length).toBeGreaterThan(callCountBeforeReload);
+      expect(vi.mocked(getSuggestions).mock.calls.length).toBeGreaterThan(
+        callCountBeforeReload,
+      );
     });
 
     // forceReload=true で呼ばれていることを確認
@@ -1088,7 +1251,6 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
 describe("Issue #258: ホームチュートリアルツアーモーダル", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    callCount = 0;
     localStorageMock.clear();
     sessionStorageMock.clear();
     const { getSuggestions } = await import("~/api/suggestions");
@@ -1101,7 +1263,9 @@ describe("Issue #258: ホームチュートリアルツアーモーダル", () =
   test("home_tour_seen が null のとき HomeTourModal が表示される", async () => {
     renderHome();
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "使い方ツアー" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "使い方ツアー" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -1113,6 +1277,8 @@ describe("Issue #258: ホームチュートリアルツアーモーダル", () =
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole("dialog", { name: "使い方ツアー" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "使い方ツアー" }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -3,13 +3,20 @@ import type { Route } from "./+types/settings";
 import { useNavigate, Link } from "react-router";
 import { clearToken } from "~/lib/auth";
 import { protectedLoader } from "~/lib/protected-loader";
-import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
+import {
+  updateDisplayName,
+  deleteAccount,
+  updateSearchRadius,
+} from "~/api/users";
 import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
 import { useModalClose } from "~/hooks/use-modal-close";
 import { useFormMessage } from "~/hooks/use-form-message";
 import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
-import { clearSuggestionsCache, getReloadCountRemaining } from "~/hooks/use-suggestions";
+import {
+  clearSuggestionsCache,
+  getReloadCountRemaining,
+} from "~/hooks/use-suggestions";
 import NotificationTab from "~/components/NotificationTab";
 
 type TabId = "user" | "suggestion" | "notification";
@@ -23,7 +30,9 @@ function FormMessage({ success, error }: { success?: string; error?: string }) {
   if (success) {
     return (
       <p className="text-sm text-green-600 flex items-center gap-1">
-        <span className="material-symbols-outlined text-base">check_circle</span>
+        <span className="material-symbols-outlined text-base">
+          check_circle
+        </span>
         {success}
       </p>
     );
@@ -45,7 +54,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: "notification", label: "通知", icon: "notifications" },
 ];
 
-export async function clientLoader({}: Route.ClientLoaderArgs) {
+export async function clientLoader() {
   const { user, token } = await protectedLoader();
   const [genres, interests] = await Promise.all([
     getGenreTags(token),
@@ -93,7 +102,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              <span className="material-symbols-outlined text-base" aria-hidden="true">
+              <span
+                className="material-symbols-outlined text-base"
+                aria-hidden="true"
+              >
                 {tab.icon}
               </span>
               {tab.label}
@@ -104,9 +116,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 
       {/* Tab Content */}
       <div className="px-4 py-6" role="tabpanel">
-        {activeTab === "user" && (
-          <UserInfoTab token={token} user={user} />
-        )}
+        {activeTab === "user" && <UserInfoTab token={token} user={user} />}
         {activeTab === "suggestion" && (
           <SuggestionTab
             token={token}
@@ -115,9 +125,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             initialRadius={user.search_radius ?? 10000}
           />
         )}
-        {activeTab === "notification" && (
-          <NotificationTab token={token} />
-        )}
+        {activeTab === "notification" && <NotificationTab token={token} />}
       </div>
     </div>
   );
@@ -138,7 +146,13 @@ function UserInfoTab({
 }) {
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState(user.display_name);
-  const { msg: displayNameMsg, error: displayNameError, setMsg: setDisplayNameMsg, setError: setDisplayNameError, reset: resetDisplayNameMsg } = useFormMessage();
+  const {
+    msg: displayNameMsg,
+    error: displayNameError,
+    setMsg: setDisplayNameMsg,
+    setError: setDisplayNameError,
+    reset: resetDisplayNameMsg,
+  } = useFormMessage();
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -287,7 +301,9 @@ function UserInfoTab({
 
 // === 位置情報許可セクション ===
 function LocationPermissionSection() {
-  const [permState, setPermState] = useState<PermissionState | "unsupported" | null>(null);
+  const [permState, setPermState] = useState<
+    PermissionState | "unsupported" | null
+  >(null);
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
   const isIOSChrome = /CriOS/.test(navigator.userAgent);
@@ -297,7 +313,7 @@ function LocationPermissionSection() {
 
   useEffect(() => {
     if (!navigator.permissions) {
-      setPermState("unsupported");
+      Promise.resolve().then(() => setPermState("unsupported"));
       return;
     }
     navigator.permissions
@@ -355,7 +371,9 @@ function LocationPermissionSection() {
     if (permState === "granted") {
       return (
         <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-          <span className="material-symbols-outlined text-base">check_circle</span>
+          <span className="material-symbols-outlined text-base">
+            check_circle
+          </span>
           許可済み — 現在地を使って提案しています
         </div>
       );
@@ -365,7 +383,9 @@ function LocationPermissionSection() {
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-            <span className="material-symbols-outlined text-base">location_off</span>
+            <span className="material-symbols-outlined text-base">
+              location_off
+            </span>
             位置情報が拒否されています
           </div>
           <p className="text-xs text-gray-400">
@@ -379,7 +399,10 @@ function LocationPermissionSection() {
             </p>
             <ol className="space-y-2">
               {deniedSteps.map((step, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                <li
+                  key={i}
+                  className="flex items-start gap-2 text-sm text-gray-300"
+                >
                   <span className="shrink-0 w-5 h-5 rounded-full bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
                     {i + 1}
                   </span>
@@ -394,21 +417,26 @@ function LocationPermissionSection() {
 
     if (permState === "unsupported") {
       return (
-        <p className="text-sm text-gray-400">このブラウザは位置情報に対応していません。</p>
+        <p className="text-sm text-gray-400">
+          このブラウザは位置情報に対応していません。
+        </p>
       );
     }
 
     // "prompt" state
     return (
       <div className="flex items-start gap-2 bg-blue-900/20 rounded-xl p-3">
-        <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">info</span>
+        <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">
+          info
+        </span>
         <p className="text-xs text-blue-300">
           まだ許可されていません。ホーム画面でスポットを読み込む際に許可ダイアログが表示されます。
-          {isIOS && (isStandalone
-            ? "許可後は「設定 → 位置情報サービス → Roamble」で管理できます。"
-            : isIOSChrome
-            ? "許可後は「設定 → 位置情報サービス → Chrome」で管理できます。"
-            : "許可後は「設定 → 位置情報サービス → Safari ウェブサイト」で管理できます。")}
+          {isIOS &&
+            (isStandalone
+              ? "許可後は「設定 → 位置情報サービス → Roamble」で管理できます。"
+              : isIOSChrome
+                ? "許可後は「設定 → 位置情報サービス → Chrome」で管理できます。"
+                : "許可後は「設定 → 位置情報サービス → Safari ウェブサイト」で管理できます。")}
         </p>
       </div>
     );
@@ -417,7 +445,9 @@ function LocationPermissionSection() {
   return (
     <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
       <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary text-xl">my_location</span>
+        <span className="material-symbols-outlined text-primary text-xl">
+          my_location
+        </span>
         位置情報
       </h2>
       <p className="text-sm text-gray-400 mb-4">
@@ -441,22 +471,36 @@ function SuggestionTab({
   initialRadius: number;
 }) {
   const [selectedIds, setSelectedIds] = useState<number[]>(
-    initialInterests.map((i) => i.genre_tag_id)
+    initialInterests.map((i) => i.genre_tag_id),
   );
-  const { msg: interestMsg, error: interestError, setMsg: setInterestMsg, setError: setInterestError, reset: resetInterestMsg } = useFormMessage();
+  const {
+    msg: interestMsg,
+    error: interestError,
+    setMsg: setInterestMsg,
+    setError: setInterestError,
+    reset: resetInterestMsg,
+  } = useFormMessage();
   const [isSaving, setIsSaving] = useState(false);
 
   const [selectedRadius, setSelectedRadius] = useState<number>(initialRadius);
-  const { msg: radiusMsg, error: radiusError, setMsg: setRadiusMsg, setError: setRadiusError, reset: resetRadiusMsg } = useFormMessage();
+  const {
+    msg: radiusMsg,
+    error: radiusError,
+    setMsg: setRadiusMsg,
+    setError: setRadiusError,
+    reset: resetRadiusMsg,
+  } = useFormMessage();
   const [isSavingRadius, setIsSavingRadius] = useState(false);
 
   // 確認モーダル管理
   const [showRefreshModal, setShowRefreshModal] = useState(false);
-  const [pendingSave, setPendingSave] = useState<"interests" | "radius" | null>(null);
+  const [pendingSave, setPendingSave] = useState<"interests" | "radius" | null>(
+    null,
+  );
 
   function toggleGenre(id: number) {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
 
@@ -471,7 +515,7 @@ function SuggestionTab({
       setInterestMsg(
         withRefresh
           ? "興味タグを保存しました"
-          : "設定は保存されました。提案は明日リセット時に反映されます"
+          : "設定は保存されました。提案は明日リセット時に反映されます",
       );
     } catch {
       setInterestError("興味タグの保存に失敗しました");
@@ -491,7 +535,7 @@ function SuggestionTab({
       setRadiusMsg(
         withRefresh
           ? "提案半径を保存しました"
-          : "設定は保存されました。提案は明日リセット時に反映されます"
+          : "設定は保存されました。提案は明日リセット時に反映されます",
       );
     } catch {
       setRadiusError("提案半径の保存に失敗しました");
@@ -553,11 +597,15 @@ function SuggestionTab({
         <form onSubmit={handleSaveRadius} className="space-y-4">
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-400">{RADIUS_MIN / 1000}km</span>
+              <span className="text-xs text-gray-400">
+                {RADIUS_MIN / 1000}km
+              </span>
               <span className="text-lg font-bold text-primary">
                 {selectedRadius / 1000}km
               </span>
-              <span className="text-xs text-gray-400">{RADIUS_MAX / 1000}km</span>
+              <span className="text-xs text-gray-400">
+                {RADIUS_MAX / 1000}km
+              </span>
             </div>
             <input
               type="range"

@@ -27,9 +27,15 @@ let localStorageStore: Record<string, string> = {};
 Object.defineProperty(window, "localStorage", {
   value: {
     getItem: (key: string) => localStorageStore[key] ?? null,
-    setItem: (key: string, value: string) => { localStorageStore[key] = value; },
-    removeItem: (key: string) => { delete localStorageStore[key]; },
-    clear: () => { localStorageStore = {}; },
+    setItem: (key: string, value: string) => {
+      localStorageStore[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete localStorageStore[key];
+    },
+    clear: () => {
+      localStorageStore = {};
+    },
   },
   configurable: true,
   writable: true,
@@ -59,7 +65,9 @@ describe("PushNotificationBanner", () => {
 
     render(<PushNotificationBanner token="test-token" />);
 
-    expect(screen.getByRole("button", { name: "許可する" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "許可する" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "後で" })).toBeInTheDocument();
   });
 
@@ -69,7 +77,9 @@ describe("PushNotificationBanner", () => {
 
     render(<PushNotificationBanner token="test-token" />);
 
-    expect(screen.queryByRole("button", { name: "許可する" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "許可する" }),
+    ).not.toBeInTheDocument();
   });
 
   test("dismissed済み → バナーが表示されない", () => {
@@ -78,7 +88,9 @@ describe("PushNotificationBanner", () => {
 
     render(<PushNotificationBanner token="test-token" />);
 
-    expect(screen.queryByRole("button", { name: "許可する" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "許可する" }),
+    ).not.toBeInTheDocument();
   });
 
   test("「許可する」ボタン → subscribePush が呼ばれる", async () => {
@@ -99,6 +111,8 @@ describe("PushNotificationBanner", () => {
     fireEvent.click(screen.getByRole("button", { name: "後で" }));
 
     expect(localStorage.getItem("push-banner-dismissed")).toBe("1");
-    expect(screen.queryByRole("button", { name: "許可する" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "許可する" }),
+    ).not.toBeInTheDocument();
   });
 });

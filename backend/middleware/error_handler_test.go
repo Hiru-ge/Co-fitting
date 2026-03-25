@@ -33,7 +33,7 @@ func TestErrorHandler(t *testing.T) {
 		{
 			name: "single error - error response",
 			setupHandler: func(c *gin.Context) {
-				c.Error(errors.New("test error"))
+				c.Error(errors.New("test error")) //nolint:errcheck
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `{"error":"test error"}`,
@@ -42,9 +42,9 @@ func TestErrorHandler(t *testing.T) {
 		{
 			name: "multiple errors - last error response",
 			setupHandler: func(c *gin.Context) {
-				c.Error(errors.New("first error"))
-				c.Error(errors.New("second error"))
-				c.Error(errors.New("last error"))
+				c.Error(errors.New("first error"))  //nolint:errcheck
+				c.Error(errors.New("second error")) //nolint:errcheck
+				c.Error(errors.New("last error"))   //nolint:errcheck
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   `{"error":"last error"}`,
@@ -54,7 +54,7 @@ func TestErrorHandler(t *testing.T) {
 			name: "error with already written response",
 			setupHandler: func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"message": "already written"})
-				c.Error(errors.New("error after response"))
+				c.Error(errors.New("error after response")) //nolint:errcheck
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   `{"message":"already written"}`,
@@ -109,7 +109,7 @@ func TestErrorHandler_ErrorLogging(t *testing.T) {
 	r.Use(ErrorHandler())
 
 	r.GET("/test", func(c *gin.Context) {
-		c.Error(errors.New("logged error"))
+		c.Error(errors.New("logged error")) //nolint:errcheck
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -128,7 +128,7 @@ func TestErrorHandler_EmptyErrorMessage(t *testing.T) {
 	r.Use(ErrorHandler())
 
 	r.GET("/test", func(c *gin.Context) {
-		c.Error(errors.New(""))
+		c.Error(errors.New("")) //nolint:errcheck
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -151,7 +151,7 @@ func TestErrorHandler_WithDifferentHTTPMethods(t *testing.T) {
 			r.Use(ErrorHandler())
 
 			r.Handle(method, "/test", func(c *gin.Context) {
-				c.Error(errors.New("method error"))
+				c.Error(errors.New("method error")) //nolint:errcheck
 			})
 
 			req := httptest.NewRequest(method, "/test", nil)
@@ -171,7 +171,7 @@ func TestErrorHandler_ErrorResponseFormat(t *testing.T) {
 	r.Use(ErrorHandler())
 
 	r.GET("/test", func(c *gin.Context) {
-		c.Error(errors.New("format test error"))
+		c.Error(errors.New("format test error")) //nolint:errcheck
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -197,7 +197,7 @@ func TestErrorHandler_NoResponseRewrite(t *testing.T) {
 		// 先にレスポンスを書き込む
 		c.JSON(http.StatusCreated, gin.H{"data": "created"})
 		// その後でエラーを追加
-		c.Error(errors.New("after response error"))
+		c.Error(errors.New("after response error")) //nolint:errcheck
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)

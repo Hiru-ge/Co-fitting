@@ -23,17 +23,19 @@ export default function Login() {
 
     try {
       const { access_token, refresh_token, is_new_user } = await googleOAuth(
-        credentialResponse.credential
+        credentialResponse.credential,
       );
       setToken(access_token, refresh_token);
       sendLogin("google_oauth", is_new_user);
       navigate(is_new_user ? "/onboarding" : "/home");
     } catch (err) {
       if (isNetworkError(err)) {
-        setGoogleError("ネットワークに接続できません。通信環境をご確認ください");
+        setGoogleError(
+          "ネットワークに接続できません。通信環境をご確認ください",
+        );
       } else if (err instanceof Error && err.message === "server_error") {
         setGoogleError(
-          "サーバーエラーが発生しました。時間をおいて再度お試しください"
+          "サーバーエラーが発生しました。時間をおいて再度お試しください",
         );
       } else {
         setGoogleError("Googleログインに失敗しました。もう一度お試しください");

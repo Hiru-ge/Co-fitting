@@ -3,7 +3,10 @@ interface LocationPermissionModalProps {
   onGoToSettings: () => void;
 }
 
-export default function LocationPermissionModal({ onUseDefault, onGoToSettings }: LocationPermissionModalProps) {
+export default function LocationPermissionModal({
+  onUseDefault,
+  onGoToSettings,
+}: LocationPermissionModalProps) {
   return (
     <div
       role="dialog"
@@ -17,7 +20,10 @@ export default function LocationPermissionModal({ onUseDefault, onGoToSettings }
       {/* モーダル本体 */}
       <div className="relative z-10 w-full max-w-sm bg-gray-900 rounded-2xl p-6 flex flex-col gap-4 shadow-xl">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-3xl text-amber-500" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-3xl text-amber-500"
+            aria-hidden="true"
+          >
             location_off
           </span>
           <h2 className="text-base font-bold text-white">

@@ -25,7 +25,7 @@ export async function getSuggestions(
   lat: number,
   lng: number,
   radius?: number,
-  forceReload?: boolean
+  forceReload?: boolean,
 ): Promise<SuggestionResult> {
   const body: Record<string, number | boolean> = { lat, lng };
   if (radius !== undefined) {

@@ -170,7 +170,7 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 	if err != nil {
 		return nil, fmt.Errorf("nearby search request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -570,7 +570,9 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 
 	if h.RedisClient != nil {
 		data, _ := json.Marshal(selected)
-		database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour)
+		if err := database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour); err != nil {
+			log.Printf("suggestion: failed to set daily suggestions cache: %v", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice, ReloadCountRemaining: &reloadRemaining})
@@ -632,7 +634,9 @@ func (h *SuggestionHandler) processForceReload(ctx context.Context, userIDStr, t
 		newCount = reloadCount
 	}
 
-	database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr)
+	if _, err := database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr); err != nil {
+		log.Printf("suggestion: failed to clear daily suggestions cache: %v", err)
+	}
 
 	placeCacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
 	h.RedisClient.Del(ctx, placeCacheKey)
@@ -668,7 +672,9 @@ func (h *SuggestionHandler) checkDailyCacheResult(ctx context.Context, userID ui
 				return &SuggestionResult{Places: filtered, ReloadCountRemaining: &reloadRemaining}, true
 			}
 			// 日次提案は割り当て済みで全て訪問済み → 本日の上限に達した
-			database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
+			if err := database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour); err != nil {
+				log.Printf("suggestion: failed to set daily limit reached: %v", err)
+			}
 			return &SuggestionResult{Completed: true}, true
 		}
 	}

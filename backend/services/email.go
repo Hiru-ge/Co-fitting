@@ -45,17 +45,17 @@ type MonthlySummaryData struct {
 
 // badgeIconMap はバッジ名からメール用アイコンファイル名へのマッピング
 var badgeIconMap = map[string]string{
-	"最初の一歩":              "badge-footprint.svg",
-	"コンフォートゾーン・ブレイカー":    "badge-rocket.svg",
-	"ジャンルコレクター Lv.1":    "badge-bookmark.svg",
-	"ジャンルコレクター Lv.2":    "badge-bookmark.svg",
-	"ジャンルコレクター Lv.3":    "badge-bookmark.svg",
-	"ストリークマスター Lv.1":    "badge-fire.svg",
-	"ストリークマスター Lv.2":    "badge-fire.svg",
-	"ストリークマスター Lv.3":    "badge-fire.svg",
-	"エリアパイオニア":           "badge-explore.svg",
-	"ナイトウォーカー":           "badge-moon.svg",
-	"ウィークエンドウォリアー":       "badge-weekend.svg",
+	"最初の一歩": "badge-footprint.svg",
+	"コンフォートゾーン・ブレイカー": "badge-rocket.svg",
+	"ジャンルコレクター Lv.1":  "badge-bookmark.svg",
+	"ジャンルコレクター Lv.2":  "badge-bookmark.svg",
+	"ジャンルコレクター Lv.3":  "badge-bookmark.svg",
+	"ストリークマスター Lv.1":  "badge-fire.svg",
+	"ストリークマスター Lv.2":  "badge-fire.svg",
+	"ストリークマスター Lv.3":  "badge-fire.svg",
+	"エリアパイオニア":        "badge-explore.svg",
+	"ナイトウォーカー":        "badge-moon.svg",
+	"ウィークエンドウォリアー":    "badge-weekend.svg",
 }
 
 // BadgeItemsFromNames はバッジ名スライスをBadgeItemスライスに変換する

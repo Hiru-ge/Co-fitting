@@ -25,7 +25,7 @@ describe("ランディングページ", () => {
     render(
       <MemoryRouter>
         <Index />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(screen.getByText("Roamble")).toBeInTheDocument();
@@ -36,12 +36,10 @@ describe("ランディングページ", () => {
     render(
       <MemoryRouter>
         <Index />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    expect(
-      screen.getByText(/いつもと違う場所/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/いつもと違う場所/)).toBeInTheDocument();
   });
 
   test("利用フローのステップが表示される", async () => {
@@ -49,7 +47,7 @@ describe("ランディングページ", () => {
     render(
       <MemoryRouter>
         <Index />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // 3ステップの利用フロー（見出しテキストで検証）
@@ -63,7 +61,7 @@ describe("ランディングページ", () => {
     render(
       <MemoryRouter>
         <Index />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const aboutLink = screen.getByText(/Roamble ってなに/);
@@ -76,7 +74,7 @@ describe("ランディングページ", () => {
     render(
       <MemoryRouter>
         <Index />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const startLink = screen.getByRole("link", { name: /さっそく始める/ });

@@ -22,7 +22,7 @@ describe("apiCall", () => {
           "Content-Type": "application/json",
           Authorization: "Bearer my-token",
         }),
-      })
+      }),
     );
   });
 
@@ -39,11 +39,13 @@ describe("apiCall", () => {
     // localStorage モック（401 リフレッシュに影響しないようにする）
     const storageMock: Record<string, string> = {};
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(
-      (key: string) => storageMock[key] ?? null
+      (key: string) => storageMock[key] ?? null,
     );
 
     await expect(apiCall("/api/test", "token")).rejects.toThrow(ApiError);
-    await expect(apiCall("/api/test", "token")).rejects.toThrow("サーバーエラー");
+    await expect(apiCall("/api/test", "token")).rejects.toThrow(
+      "サーバーエラー",
+    );
   });
 
   test("401 でリフレッシュ失敗時に access_token と refresh_token の両方が削除される（clearToken 相当）", async () => {
@@ -59,8 +61,12 @@ describe("apiCall", () => {
     const store: Record<string, string> = {};
     const mockStorage = {
       getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+      }),
       clear: vi.fn(),
       length: 0,
       key: vi.fn(),
@@ -81,7 +87,9 @@ describe("apiCall", () => {
     await expect(apiCall("/api/test", "token")).rejects.toThrow(ApiError);
     // clearToken() は roamble_token と roamble_refresh_token の両方を削除する
     expect(mockStorage.removeItem).toHaveBeenCalledWith("roamble_token");
-    expect(mockStorage.removeItem).toHaveBeenCalledWith("roamble_refresh_token");
+    expect(mockStorage.removeItem).toHaveBeenCalledWith(
+      "roamble_refresh_token",
+    );
 
     Object.defineProperty(window, "location", {
       value: originalLocation,
@@ -104,8 +112,12 @@ describe("apiCall", () => {
     const store: Record<string, string> = {};
     const mockStorage = {
       getItem: vi.fn((key: string) => store[key] ?? null),
-      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
-      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+      }),
       clear: vi.fn(),
       length: 0,
       key: vi.fn(),
@@ -155,7 +167,7 @@ describe("suggestions API", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ lat: 35.6762, lng: 139.6503 }),
-      })
+      }),
     );
     expect(result).toEqual([{ place_id: "p1", name: "テストカフェ" }]);
   });
@@ -174,7 +186,7 @@ describe("suggestions API", () => {
       "http://localhost:8000/api/suggestions",
       expect.objectContaining({
         body: JSON.stringify({ lat: 35.6762, lng: 139.6503, radius: 5000 }),
-      })
+      }),
     );
   });
 });
@@ -207,7 +219,7 @@ describe("visits API", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify(visitData),
-      })
+      }),
     );
     expect(result).toEqual({ id: 1 });
   });
@@ -228,7 +240,7 @@ describe("visits API", () => {
         headers: expect.objectContaining({
           Authorization: "Bearer my-token",
         }),
-      })
+      }),
     );
   });
 
@@ -244,7 +256,7 @@ describe("visits API", () => {
 
     expect(fetch).toHaveBeenCalledWith(
       "http://localhost:8000/api/visits?limit=20&offset=0",
-      expect.anything()
+      expect.anything(),
     );
   });
 });

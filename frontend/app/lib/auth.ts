@@ -9,10 +9,14 @@ import {
 } from "~/lib/token-storage";
 export { refreshToken, tryRefreshToken } from "~/lib/token-refresh";
 
-export { getStoredToken as getToken, setStoredToken as setToken, clearStoredToken as clearToken };
+export {
+  getStoredToken as getToken,
+  setStoredToken as setToken,
+  clearStoredToken as clearToken,
+};
 
 export async function logout(): Promise<void> {
-  const token = getToken();
+  const token = getStoredToken();
   const refresh = getRefreshToken();
 
   if (token) {
@@ -35,7 +39,7 @@ export async function logout(): Promise<void> {
       // API失敗してもローカルトークンは必ず削除する
     }
   }
-  clearToken();
+  clearStoredToken();
 }
 
 export async function getUser(token: string): Promise<User> {

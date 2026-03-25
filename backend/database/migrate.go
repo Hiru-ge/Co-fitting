@@ -47,15 +47,21 @@ func Migrate(db *gorm.DB) error {
 	}
 
 	if db.Migrator().HasColumn(&models.Visit{}, "latitude") {
-		db.Migrator().DropColumn(&models.Visit{}, "latitude")
+		if err := db.Migrator().DropColumn(&models.Visit{}, "latitude"); err != nil {
+			return fmt.Errorf("failed to drop latitude column: %w", err)
+		}
 	}
 	if db.Migrator().HasColumn(&models.Visit{}, "longitude") {
-		db.Migrator().DropColumn(&models.Visit{}, "longitude")
+		if err := db.Migrator().DropColumn(&models.Visit{}, "longitude"); err != nil {
+			return fmt.Errorf("failed to drop longitude column: %w", err)
+		}
 	}
 
 	// Google OAuth移行に伴い password_hash カラムを削除
 	if db.Migrator().HasColumn(&models.User{}, "password_hash") {
-		db.Migrator().DropColumn(&models.User{}, "password_hash")
+		if err := db.Migrator().DropColumn(&models.User{}, "password_hash"); err != nil {
+			return fmt.Errorf("failed to drop password_hash column: %w", err)
+		}
 	}
 
 	if err := db.AutoMigrate(

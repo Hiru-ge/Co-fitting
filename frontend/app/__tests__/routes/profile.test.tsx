@@ -83,8 +83,22 @@ vi.mock("~/api/users", () => ({
     },
   ]),
   getProficiency: vi.fn().mockResolvedValue([
-    { genre_tag_id: 1, genre_name: "カフェ", category: "飲食", icon: "local_cafe", xp: 300, level: 3 },
-    { genre_tag_id: 2, genre_name: "公園・緑地", category: "アウトドア", icon: "park", xp: 150, level: 2 },
+    {
+      genre_tag_id: 1,
+      genre_name: "カフェ",
+      category: "飲食",
+      icon: "local_cafe",
+      xp: 300,
+      level: 3,
+    },
+    {
+      genre_tag_id: 2,
+      genre_name: "公園・緑地",
+      category: "アウトドア",
+      icon: "park",
+      xp: 150,
+      level: 2,
+    },
   ]),
 }));
 
@@ -110,25 +124,39 @@ function renderProfile() {
       loaderData={loaderData as any}
       params={{} as any}
       matches={[] as any}
-    />
+    />,
   );
 }
 
 const sessionStorageData: Record<string, string> = {};
 const sessionStorageMock = {
   getItem: (key: string) => sessionStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { sessionStorageData[key] = value; },
-  removeItem: (key: string) => { delete sessionStorageData[key]; },
-  clear: () => { Object.keys(sessionStorageData).forEach(k => delete sessionStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    sessionStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete sessionStorageData[key];
+  },
+  clear: () => {
+    Object.keys(sessionStorageData).forEach(
+      (k) => delete sessionStorageData[k],
+    );
+  },
 };
 vi.stubGlobal("sessionStorage", sessionStorageMock);
 
 const localStorageData: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => localStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { localStorageData[key] = value; },
-  removeItem: (key: string) => { delete localStorageData[key]; },
-  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    localStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete localStorageData[key];
+  },
+  clear: () => {
+    Object.keys(localStorageData).forEach((k) => delete localStorageData[k]);
+  },
 };
 vi.stubGlobal("localStorage", localStorageMock);
 
@@ -160,7 +188,9 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /ログアウト/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /ログアウト/ }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -169,14 +199,20 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /ログアウト/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /ログアウト/ }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: /ログアウト/ }));
 
     expect(screen.getByText("ログアウトしますか？")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "ログアウトする" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "ログアウトする" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "キャンセル" }),
+    ).toBeInTheDocument();
   });
 
   test("モーダル「ログアウトする」→ 認証情報削除", async () => {
@@ -188,7 +224,9 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /ログアウト/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /ログアウト/ }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: /ログアウト/ }));
@@ -205,7 +243,9 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /ログアウト/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /ログアウト/ }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: /ログアウト/ }));
@@ -295,7 +335,9 @@ describe("プロフィール画面", () => {
 
     await waitFor(() => {
       expect(screen.getByText("最初の一歩")).toBeInTheDocument();
-      expect(screen.getByText("コンフォートゾーン・ブレイカー")).toBeInTheDocument();
+      expect(
+        screen.getByText("コンフォートゾーン・ブレイカー"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -330,7 +372,9 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "使い方ツアー ステップ3" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("dialog", { name: "使い方ツアー ステップ3" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("XPとバッジを集めよう")).toBeInTheDocument();
       expect(screen.getByText("3 / 3")).toBeInTheDocument();
     });
@@ -343,7 +387,9 @@ describe("プロフィール画面", () => {
       expect(screen.getByText("テストユーザー")).toBeInTheDocument();
     });
 
-    expect(screen.queryByRole("dialog", { name: "使い方ツアー ステップ3" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: "使い方ツアー ステップ3" }),
+    ).not.toBeInTheDocument();
   });
 
   test("ProfileTourStep「はじめる」でフラグが書き込まれ /home に遷移する", async () => {
@@ -356,7 +402,9 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "はじめる" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "はじめる" }),
+      ).toBeInTheDocument();
     });
 
     await user.click(screen.getByRole("button", { name: "はじめる" }));
@@ -405,9 +453,11 @@ describe("プロフィール画面", () => {
     expect(genreNameEl).toHaveClass("truncate");
 
     // アイコンがmaterial-symbols-outlinedクラスを持つspan要素として別途存在すること
-    const iconSpans = document.querySelectorAll("span.material-symbols-outlined");
+    const iconSpans = document.querySelectorAll(
+      "span.material-symbols-outlined",
+    );
     const localCafeIconSpan = Array.from(iconSpans).find(
-      (el) => el.textContent?.trim() === "local_cafe"
+      (el) => el.textContent?.trim() === "local_cafe",
     );
     expect(localCafeIconSpan).toBeTruthy();
 

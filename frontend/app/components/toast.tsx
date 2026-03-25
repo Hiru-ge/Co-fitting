@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import type { ReactNode } from "react";
 
 export type ToastType = "success" | "error" | "info";
@@ -27,7 +34,9 @@ const AUTO_CLOSE_MS = 3000;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   const removeToast = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -48,13 +57,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       }, AUTO_CLOSE_MS);
       timersRef.current.set(id, timer);
     },
-    [removeToast]
+    [removeToast],
   );
 
   // クリーンアップ
   useEffect(() => {
+    const timers = timersRef.current;
     return () => {
-      timersRef.current.forEach((timer) => clearTimeout(timer));
+      timers.forEach((timer) => clearTimeout(timer));
     };
   }, []);
 
@@ -86,7 +96,9 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       className={`pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg backdrop-blur-md transition-all animate-slide-in ${config.bg}`}
       role="alert"
     >
-      <span className={`material-symbols-outlined text-xl shrink-0 mt-0.5 ${config.iconColor}`}>
+      <span
+        className={`material-symbols-outlined text-xl shrink-0 mt-0.5 ${config.iconColor}`}
+      >
         {config.icon}
       </span>
       <div className="flex-1 min-w-0">
@@ -95,7 +107,10 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         </p>
         {toast.action && (
           <button
-            onClick={() => { toast.action!.onClick(); onClose(); }}
+            onClick={() => {
+              toast.action!.onClick();
+              onClose();
+            }}
             className={`mt-1.5 text-xs font-bold underline underline-offset-2 ${config.iconColor}`}
           >
             {toast.action.label}
@@ -107,7 +122,9 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         className={`shrink-0 rounded-full p-1 transition-colors ${config.closeHover}`}
         aria-label="閉じる"
       >
-        <span className={`material-symbols-outlined text-base ${config.iconColor}`}>
+        <span
+          className={`material-symbols-outlined text-base ${config.iconColor}`}
+        >
           close
         </span>
       </button>

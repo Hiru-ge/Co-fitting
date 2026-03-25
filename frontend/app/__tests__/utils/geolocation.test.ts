@@ -1,5 +1,11 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { calcDistance, getPositionWithFallback, calcMapCenter, isWithinCheckInRange, startPositionPolling } from "~/utils/geolocation";
+import {
+  calcDistance,
+  getPositionWithFallback,
+  calcMapCenter,
+  isWithinCheckInRange,
+  startPositionPolling,
+} from "~/utils/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 describe("calcDistance", () => {
@@ -28,12 +34,16 @@ describe("isWithinCheckInRange", () => {
 
   test("約150m離れた地点は200m以内と判定される", () => {
     // 緯度0.00135度 ≈ 150m
-    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016)).toBe(true);
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016)).toBe(
+      true,
+    );
   });
 
   test("約300m離れた地点は200m超と判定される", () => {
     // 緯度0.0027度 ≈ 300m
-    expect(isWithinCheckInRange(35.658, 139.7016, 35.6607, 139.7016)).toBe(false);
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6607, 139.7016)).toBe(
+      false,
+    );
   });
 
   test("userPos が (0,0) のときは常に true（GPS未取得扱い）", () => {
@@ -42,8 +52,12 @@ describe("isWithinCheckInRange", () => {
 
   test("カスタム閾値（100m）での判定", () => {
     // 約150m離れた地点: 100m閾値ではfalse、200m閾値ではtrue
-    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016, 100)).toBe(false);
-    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016, 200)).toBe(true);
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016, 100)).toBe(
+      false,
+    );
+    expect(isWithinCheckInRange(35.658, 139.7016, 35.6594, 139.7016, 200)).toBe(
+      true,
+    );
   });
 });
 
@@ -71,10 +85,8 @@ describe("getPositionWithFallback", () => {
   test("GPS失敗時 → デフォルト位置（渋谷）にフォールバック", async () => {
     vi.stubGlobal("navigator", {
       geolocation: {
-        getCurrentPosition: (
-          _success: unknown,
-          error: (err: Error) => void
-        ) => error(new Error("User denied")),
+        getCurrentPosition: (_success: unknown, error: (err: Error) => void) =>
+          error(new Error("User denied")),
       },
     });
 
@@ -137,11 +149,17 @@ describe("startPositionPolling", () => {
 
   test("起動直後に1回取得し、コールバックが呼ばれる", () => {
     const onPosition = vi.fn();
-    const getCurrentPositionMock = vi.fn().mockImplementation(
-      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
-        success({ coords: { latitude: 35.68, longitude: 139.76 } });
-      }
-    );
+    const getCurrentPositionMock = vi
+      .fn()
+      .mockImplementation(
+        (
+          success: (pos: {
+            coords: { latitude: number; longitude: number };
+          }) => void,
+        ) => {
+          success({ coords: { latitude: 35.68, longitude: 139.76 } });
+        },
+      );
     vi.stubGlobal("navigator", {
       geolocation: { getCurrentPosition: getCurrentPositionMock },
     });
@@ -151,18 +169,24 @@ describe("startPositionPolling", () => {
     expect(getCurrentPositionMock).toHaveBeenCalledWith(
       expect.any(Function),
       undefined,
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
     );
     expect(onPosition).toHaveBeenCalledWith({ lat: 35.68, lng: 139.76 });
   });
 
   test("30秒後に再度取得される", () => {
     const onPosition = vi.fn();
-    const getCurrentPositionMock = vi.fn().mockImplementation(
-      (success: (pos: { coords: { latitude: number; longitude: number } }) => void) => {
-        success({ coords: { latitude: 35.68, longitude: 139.76 } });
-      }
-    );
+    const getCurrentPositionMock = vi
+      .fn()
+      .mockImplementation(
+        (
+          success: (pos: {
+            coords: { latitude: number; longitude: number };
+          }) => void,
+        ) => {
+          success({ coords: { latitude: 35.68, longitude: 139.76 } });
+        },
+      );
     vi.stubGlobal("navigator", {
       geolocation: { getCurrentPosition: getCurrentPositionMock },
     });
@@ -187,7 +211,7 @@ describe("startPositionPolling", () => {
     expect(getCurrentPositionMock).toHaveBeenCalledWith(
       expect.any(Function),
       onError,
-      expect.any(Object)
+      expect.any(Object),
     );
   });
 

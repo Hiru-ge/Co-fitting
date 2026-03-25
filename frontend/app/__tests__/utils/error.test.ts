@@ -1,5 +1,12 @@
 import { describe, test, expect } from "vitest";
-import { ApiError, getErrorMessage, getErrorMessageByCode, parseApiError, isNetworkError, toUserMessage } from "~/utils/error";
+import {
+  ApiError,
+  getErrorMessage,
+  getErrorMessageByCode,
+  parseApiError,
+  isNetworkError,
+  toUserMessage,
+} from "~/utils/error";
 
 describe("ApiError", () => {
   test("status, message, code を保持する", () => {
@@ -33,17 +40,22 @@ describe("getErrorMessage", () => {
     [500, "サーバーエラー"],
     [502, "サーバーエラー"],
     [503, "サーバーエラー"],
-  ])("ステータス %i に対応するメッセージを返す", (status, expectedSubstring) => {
-    const msg = getErrorMessage(status);
-    expect(msg).toContain(expectedSubstring);
-  });
+  ])(
+    "ステータス %i に対応するメッセージを返す",
+    (status, expectedSubstring) => {
+      const msg = getErrorMessage(status);
+      expect(msg).toContain(expectedSubstring);
+    },
+  );
 
   test("未知のステータスにはデフォルトメッセージを返す", () => {
     expect(getErrorMessage(418)).toBe("予期しないエラーが発生しました");
   });
 
   test("未知のステータスに fallback を指定できる", () => {
-    expect(getErrorMessage(418, "カスタムメッセージ")).toBe("カスタムメッセージ");
+    expect(getErrorMessage(418, "カスタムメッセージ")).toBe(
+      "カスタムメッセージ",
+    );
   });
 });
 
@@ -96,7 +108,10 @@ describe("parseApiError", () => {
   test("code がある場合は getErrorMessageByCode の日本語メッセージを使う", async () => {
     const mockRes = {
       status: 429,
-      json: async () => ({ error: "daily visit limit reached", code: "DAILY_LIMIT_REACHED" }),
+      json: async () => ({
+        error: "daily visit limit reached",
+        code: "DAILY_LIMIT_REACHED",
+      }),
     } as Response;
     const err = await parseApiError(mockRes);
     expect(err.status).toBe(429);
@@ -118,8 +133,10 @@ describe("parseApiError", () => {
   test("JSON パース失敗時はステータスに基づく日本語メッセージを使う", async () => {
     const mockRes = {
       status: 500,
-      json: async () => { throw new Error("parse error"); },
-    } as Response;
+      json: async () => {
+        throw new Error("parse error");
+      },
+    } as unknown as Response;
     const err = await parseApiError(mockRes);
     expect(err.status).toBe(500);
     expect(err.message).toContain("サーバーエラー");
@@ -143,6 +160,8 @@ describe("toUserMessage", () => {
   });
 
   test("不明な型にはデフォルトメッセージ", () => {
-    expect(toUserMessage("文字列エラー")).toBe("予期しないエラーが発生しました");
+    expect(toUserMessage("文字列エラー")).toBe(
+      "予期しないエラーが発生しました",
+    );
   });
 });

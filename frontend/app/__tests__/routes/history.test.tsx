@@ -52,6 +52,7 @@ const mockUser: User = {
   id: 1,
   email: "test@example.com",
   display_name: "Test User",
+  search_radius: 500,
   avatar_url: null,
   created_at: "2026-02-15T10:00:00Z",
   updated_at: "2026-02-15T10:00:00Z",
@@ -114,20 +115,42 @@ describe("History", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // デフォルトのモック設定
     mockUseToast.mockReturnValue({ showToast: mockShowToast });
     mockGetCategoryInfoByKey.mockImplementation((key) => ({
-      label: key === "カフェ" ? "カフェ" : key === "公園" ? "公園" : "美術館・博物館",
-      icon: key === "カフェ" ? "local_cafe" : key === "公園" ? "park" : "museum",
-      gradient: key === "カフェ" ? "from-amber-600 to-orange-800" : key === "公園" ? "from-green-500 to-green-700" : "from-purple-500 to-purple-700",
+      label:
+        key === "カフェ"
+          ? "カフェ"
+          : key === "公園"
+            ? "公園"
+            : "美術館・博物館",
+      icon:
+        key === "カフェ" ? "local_cafe" : key === "公園" ? "park" : "museum",
+      gradient:
+        key === "カフェ"
+          ? "from-amber-600 to-orange-800"
+          : key === "公園"
+            ? "from-green-500 to-green-700"
+            : "from-purple-500 to-purple-700",
     }));
-    mockFormatShortDate.mockImplementation((date) => "2月15日");
-    mockGroupByMonth.mockImplementation((visits, dateFn) => 
-      new Map([
-        ["2026年2月", (visits as Visit[]).filter(v => new Date(v.visited_at).getMonth() === 1)],
-        ["2026年1月", (visits as Visit[]).filter(v => new Date(v.visited_at).getMonth() === 0)],
-      ])
+    mockFormatShortDate.mockImplementation(() => "2月15日");
+    mockGroupByMonth.mockImplementation(
+      (visits) =>
+        new Map([
+          [
+            "2026年2月",
+            (visits as Visit[]).filter(
+              (v) => new Date(v.visited_at).getMonth() === 1,
+            ),
+          ],
+          [
+            "2026年1月",
+            (visits as Visit[]).filter(
+              (v) => new Date(v.visited_at).getMonth() === 0,
+            ),
+          ],
+        ]),
     );
 
     // 写真取得モック
@@ -139,15 +162,15 @@ describe("History", () => {
       mockGetToken.mockReturnValue(null);
       const mockRedirect = vi.fn();
       vi.doMock("react-router", () => ({ redirect: mockRedirect }));
-      
-      await expect(clientLoader({} as any)).rejects.toThrow();
+
+      await expect(clientLoader()).rejects.toThrow();
     });
 
     it("should return user and token when authenticated", async () => {
       mockGetToken.mockReturnValue(mockToken);
       mockGetUser.mockResolvedValue(mockUser);
-      
-      const result = await clientLoader({} as any);
+
+      const result = await clientLoader();
       expect(result).toEqual({ user: mockUser, token: mockToken });
     });
   });
@@ -155,48 +178,52 @@ describe("History", () => {
   describe("Component rendering", () => {
     const renderHistory = (visits = mockVisits, total = 3) => {
       mockListVisits.mockResolvedValue({ visits, total });
-      
+
       return render(
         <MemoryRouter>
-          <History 
+          <History
             loaderData={{ user: mockUser, token: mockToken }}
-            params={{}} 
+            params={{}}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
     };
 
     it("should display loading skeleton initially", async () => {
       mockListVisits.mockImplementation(() => new Promise(() => {})); // 永続的なpending状態
-      
+
       renderHistory();
-      
+
       // スケルトンローダーが表示されることを確認
       await waitFor(() => {
         expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
       });
-      
+
       const genericElements = screen.getAllByRole("generic");
       expect(genericElements.length).toBeGreaterThan(0);
     });
 
     it("should display empty state when no visits", async () => {
       renderHistory([], 0);
-      
+
       await waitFor(() => {
-        expect(screen.getByText(/まだ訪問記録がありません/)).toBeInTheDocument();
-        expect(screen.getByText(/新しい場所を発見しに行きましょう！/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/まだ訪問記録がありません/),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText(/新しい場所を発見しに行きましょう！/),
+        ).toBeInTheDocument();
       });
     });
 
     it("should display visit history grouped by month", async () => {
       renderHistory();
-      
+
       await waitFor(() => {
         // 月別グループ化を確認
         expect(mockGroupByMonth).toHaveBeenCalled();
-        
+
         // 訪問記録が表示されることを確認
         expect(screen.getByText("カフェA")).toBeInTheDocument();
         expect(screen.getByText("公園B")).toBeInTheDocument();
@@ -208,13 +235,15 @@ describe("History", () => {
   describe("Category filtering", () => {
     const renderWithFilter = async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       // 初期ロードを待つ
       await waitFor(() => {
         expect(screen.getByText("カフェA")).toBeInTheDocument();
@@ -223,10 +252,10 @@ describe("History", () => {
 
     it("should display all categories in filter buttons", async () => {
       await renderWithFilter();
-      
+
       // 「すべて」ボタンが表示される
       expect(screen.getByText("すべて")).toBeInTheDocument();
-      
+
       // 各カテゴリーボタンが表示される
       expect(screen.getByText("カフェ")).toBeInTheDocument();
       expect(screen.getByText("公園")).toBeInTheDocument();
@@ -235,11 +264,11 @@ describe("History", () => {
 
     it("should filter visits by category when filter button clicked", async () => {
       await renderWithFilter();
-      
+
       // カフェフィルターをクリック
       const cafeFilterButton = screen.getByRole("button", { name: /カフェ/ });
       fireEvent.click(cafeFilterButton);
-      
+
       await waitFor(() => {
         // カフェが選択状態になっていることを確認
         expect(cafeFilterButton).toHaveClass("bg-primary-purple text-white");
@@ -248,15 +277,15 @@ describe("History", () => {
 
     it("should show all visits when 'all' filter is selected", async () => {
       await renderWithFilter();
-      
+
       // カフェフィルターを選択
       const cafeFilter = screen.getByRole("button", { name: /カフェ/ });
       fireEvent.click(cafeFilter);
-      
+
       // すべてフィルターを選択
       const allFilter = screen.getByRole("button", { name: "すべて" });
       fireEvent.click(allFilter);
-      
+
       await waitFor(() => {
         expect(allFilter).toHaveClass("bg-primary-purple text-white");
         // 全ての訪問記録が表示される
@@ -269,30 +298,41 @@ describe("History", () => {
 
   describe("Pagination", () => {
     it("should display 'Load more' button when there are more visits", async () => {
-      mockListVisits.mockResolvedValue({ visits: mockVisits.slice(0, 2), total: 5 });
-      
+      mockListVisits.mockResolvedValue({
+        visits: mockVisits.slice(0, 2),
+        total: 5,
+      });
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "もっと見る" }),
+        ).toBeInTheDocument();
       });
     });
 
     it("should hide 'Load more' button when all visits are loaded", async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
-        expect(screen.queryByRole("button", { name: "もっと見る" })).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "もっと見る" }),
+        ).not.toBeInTheDocument();
       });
     });
 
@@ -301,22 +341,24 @@ describe("History", () => {
       mockListVisits
         .mockResolvedValueOnce({ visits: mockVisits.slice(0, 2), total: 3 })
         .mockResolvedValueOnce({ visits: [mockVisits[2]], total: 3 });
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       // 初回ロードを待つ
       await waitFor(() => {
         expect(screen.getByText("カフェA")).toBeInTheDocument();
       });
-      
+
       // 「もっと見る」ボタンをクリック
       const loadMoreButton = screen.getByRole("button", { name: "もっと見る" });
       fireEvent.click(loadMoreButton);
-      
+
       // 2回目のAPI呼び出しが正しいoffsetで実行されることを確認
       await waitFor(() => {
         expect(mockListVisits).toHaveBeenCalledTimes(2);
@@ -328,22 +370,28 @@ describe("History", () => {
       mockListVisits
         .mockResolvedValueOnce({ visits: mockVisits.slice(0, 2), total: 3 })
         .mockImplementationOnce(() => new Promise(() => {})); // 永続的なpending状態
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "もっと見る" })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "もっと見る" }),
+        ).toBeInTheDocument();
       });
-      
+
       const loadMoreButton = screen.getByRole("button", { name: "もっと見る" });
       fireEvent.click(loadMoreButton);
-      
+
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "読み込み中..." })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "読み込み中..." }),
+        ).toBeInTheDocument();
         expect(loadMoreButton).toBeDisabled();
       });
     });
@@ -355,14 +403,28 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1", undefined);
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place2", undefined);
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place3", undefined);
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(
+          mockToken,
+          "place1",
+          undefined,
+        );
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(
+          mockToken,
+          "place2",
+          undefined,
+        );
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(
+          mockToken,
+          "place3",
+          undefined,
+        );
       });
     });
 
@@ -372,8 +434,10 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -389,13 +453,17 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
         // 背景画像としてphoto_urlが設定されることを確認
-        const imageElement = document.querySelector('[style*="background-image"]');
+        const imageElement = document.querySelector(
+          '[style*="background-image"]',
+        );
         expect(imageElement).toBeInTheDocument();
       });
     });
@@ -406,16 +474,20 @@ describe("History", () => {
       const errorMessage = "Network error";
       mockListVisits.mockRejectedValue(new Error(errorMessage));
       mockToUserMessage.mockReturnValue("ネットワークエラーが発生しました");
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
         expect(mockToUserMessage).toHaveBeenCalled();
-        expect(mockShowToast).toHaveBeenCalledWith("ネットワークエラーが発生しました");
+        expect(mockShowToast).toHaveBeenCalledWith(
+          "ネットワークエラーが発生しました",
+        );
       });
     });
 
@@ -425,14 +497,19 @@ describe("History", () => {
         .mockResolvedValueOnce("https://example.com/photo1.jpg")
         .mockRejectedValueOnce(new Error("Photo load error"));
 
-      mockListVisits.mockResolvedValue({ visits: mockVisits.slice(0, 2), total: 2 });
-      
+      mockListVisits.mockResolvedValue({
+        visits: mockVisits.slice(0, 2),
+        total: 2,
+      });
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
         // エラーに関係なく、訪問記録は表示される
         expect(screen.getByText("カフェA")).toBeInTheDocument();
@@ -448,13 +525,19 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /リスト/ })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /マップ/ })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /リスト/ }),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /マップ/ }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -464,8 +547,10 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
@@ -479,12 +564,16 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /マップ/ })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /マップ/ }),
+        ).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByRole("button", { name: /マップ/ }));
@@ -500,12 +589,16 @@ describe("History", () => {
 
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /マップ/ })).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /マップ/ }),
+        ).toBeInTheDocument();
       });
 
       // マップタブをクリック
@@ -525,36 +618,46 @@ describe("History", () => {
   describe("Date formatting and grouping", () => {
     it("should call formatShortDate for each visit", async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
         // 各訪問記録の日付フォーマットが呼ばれることを確認
         expect(mockFormatShortDate).toHaveBeenCalledTimes(3);
-        expect(mockFormatShortDate).toHaveBeenCalledWith(mockVisits[0].visited_at);
-        expect(mockFormatShortDate).toHaveBeenCalledWith(mockVisits[1].visited_at);
-        expect(mockFormatShortDate).toHaveBeenCalledWith(mockVisits[2].visited_at);
+        expect(mockFormatShortDate).toHaveBeenCalledWith(
+          mockVisits[0].visited_at,
+        );
+        expect(mockFormatShortDate).toHaveBeenCalledWith(
+          mockVisits[1].visited_at,
+        );
+        expect(mockFormatShortDate).toHaveBeenCalledWith(
+          mockVisits[2].visited_at,
+        );
       });
     });
 
     it("should call groupByMonth to organize visits by month", async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
-      
+
       render(
         <MemoryRouter>
-          <History {...({ loaderData: { user: mockUser, token: mockToken } } as any)} />
-        </MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
       );
-      
+
       await waitFor(() => {
         // groupByMonthが適切に呼ばれることを確認
         expect(mockGroupByMonth).toHaveBeenCalledWith(
           expect.any(Array), // filteredVisits
-          expect.any(Function) // date extractor function
+          expect.any(Function), // date extractor function
         );
       });
     });

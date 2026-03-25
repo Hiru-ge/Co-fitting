@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	testRedisClient.Close()
+	testRedisClient.Close() //nolint:errcheck
 	os.Exit(code)
 }
 

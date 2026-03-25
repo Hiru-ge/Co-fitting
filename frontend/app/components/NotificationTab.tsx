@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
-import { getNotificationSettings, updateNotificationSettings } from "~/api/notifications";
+import {
+  getNotificationSettings,
+  updateNotificationSettings,
+} from "~/api/notifications";
 import { getPushPermissionState, subscribePush } from "~/lib/push";
 import type { NotificationSettings } from "~/types/notification";
 import NotificationToggle from "~/components/NotificationToggle";
 
 export default function NotificationTab({ token }: { token: string }) {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
-  const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
+  const [pushPermission, setPushPermission] =
+    useState<NotificationPermission>("default");
 
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
   const isIOSChrome = /CriOS/.test(navigator.userAgent);
@@ -35,7 +39,7 @@ export default function NotificationTab({ token }: { token: string }) {
 
   async function handleToggle(
     field: keyof NotificationSettings,
-    value: boolean
+    value: boolean,
   ) {
     if (!settings) return;
     setSettings({ ...settings, [field]: value });
@@ -49,7 +53,9 @@ export default function NotificationTab({ token }: { token: string }) {
 
   if (!settings) {
     return (
-      <div className="text-sm text-gray-400 py-8 text-center">読み込み中...</div>
+      <div className="text-sm text-gray-400 py-8 text-center">
+        読み込み中...
+      </div>
     );
   }
 
@@ -77,7 +83,9 @@ export default function NotificationTab({ token }: { token: string }) {
             </div>
           ) : pushPermission === "granted" ? (
             <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-              <span className="material-symbols-outlined text-base">check_circle</span>
+              <span className="material-symbols-outlined text-base">
+                check_circle
+              </span>
               通知が許可されています
             </div>
           ) : pushPermission === "default" ? (
@@ -135,7 +143,9 @@ export default function NotificationTab({ token }: { token: string }) {
               return (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-                    <span className="material-symbols-outlined text-base">notifications_off</span>
+                    <span className="material-symbols-outlined text-base">
+                      notifications_off
+                    </span>
                     通知が拒否されています
                   </div>
                   <p className="text-xs text-gray-400">
@@ -149,7 +159,10 @@ export default function NotificationTab({ token }: { token: string }) {
                     </p>
                     <ol className="space-y-2">
                       {deniedSteps.map((step, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                        <li
+                          key={i}
+                          className="flex items-start gap-2 text-sm text-gray-300"
+                        >
                           <span className="shrink-0 w-5 h-5 rounded-full bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
                             {i + 1}
                           </span>
@@ -160,7 +173,8 @@ export default function NotificationTab({ token }: { token: string }) {
                   </div>
                   {isMac && (
                     <p className="text-xs text-gray-500 px-1">
-                      ※ macOSをお使いの場合は「システム設定」→「通知」→「Google Chrome」もオンになっているか確認してください。
+                      ※ macOSをお使いの場合は「システム設定」→「通知」→「Google
+                      Chrome」もオンになっているか確認してください。
                     </p>
                   )}
                 </div>

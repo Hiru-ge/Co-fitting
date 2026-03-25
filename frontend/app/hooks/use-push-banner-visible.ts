@@ -5,7 +5,7 @@ const PUSH_BANNER_DISMISSED_KEY = "push-banner-dismissed";
 
 export function usePushBannerVisible() {
   const [dismissed, setDismissed] = useState(
-    () => !!localStorage.getItem(PUSH_BANNER_DISMISSED_KEY)
+    () => !!localStorage.getItem(PUSH_BANNER_DISMISSED_KEY),
   );
 
   const visible =

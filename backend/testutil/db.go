@@ -22,8 +22,8 @@ func LoadTestEnv() {
 	}
 
 	// テスト用DB名・root接続に上書き
-	os.Setenv("MYSQL_USER", "root")
-	os.Setenv("MYSQL_PASSWORD", os.Getenv("MYSQL_ROOT_PASSWORD"))
-	os.Setenv("MYSQL_DATABASE", "roamble_test")
-	os.Setenv("MYSQL_HOST", "localhost")
+	os.Setenv("MYSQL_USER", "root")                               //nolint:errcheck
+	os.Setenv("MYSQL_PASSWORD", os.Getenv("MYSQL_ROOT_PASSWORD")) //nolint:errcheck
+	os.Setenv("MYSQL_DATABASE", "roamble_test")                   //nolint:errcheck
+	os.Setenv("MYSQL_HOST", "localhost")                          //nolint:errcheck
 }

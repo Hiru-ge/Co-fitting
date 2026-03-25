@@ -38,14 +38,14 @@ func TestMain(m *testing.M) {
 		panic("Failed to run migrations: " + err.Error())
 	}
 
-	os.Setenv("JWT_SECRET", "test-secret-key")
+	os.Setenv("JWT_SECRET", "test-secret-key") //nolint:errcheck
 	jwtCfg, err := config.LoadJWTConfig()
 	if err != nil {
 		panic("Failed to load JWT config: " + err.Error())
 	}
 
 	// Redis初期化（テスト用にlocalhost接続）
-	os.Setenv("REDIS_HOST", "localhost")
+	os.Setenv("REDIS_HOST", "localhost") //nolint:errcheck
 	redisClient, err := database.InitRedis()
 	if err != nil {
 		log.Printf("Warning: Redis not available for tests: %v", err)
@@ -63,10 +63,9 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	sqlDB, _ := testDB.DB()
-	sqlDB.Close()
+	sqlDB.Close() //nolint:errcheck
 	os.Exit(code)
 }
-
 
 func setupRouter() *gin.Engine {
 	r := gin.New()

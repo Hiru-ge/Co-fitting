@@ -240,16 +240,6 @@ type mapVisitItem struct {
 	VisitedAt  string  `json:"visited_at"`
 }
 
-type listVisitsResponse struct {
-	Visits []models.Visit `json:"visits"`
-	Total  int64          `json:"total"`
-}
-
-type mapVisitsResponse struct {
-	Visits []mapVisitItem `json:"visits"`
-	Total  int64          `json:"total"`
-}
-
 // GetMapData godoc
 // @Summary      マップ表示用訪問データ取得
 // @Description  マップ表示に必要な位置情報・ジャンル情報を最適化して取得する

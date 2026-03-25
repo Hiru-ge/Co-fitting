@@ -1,9 +1,15 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { ToastProvider, useToast } from "~/components/toast";
 
 // テスト用トースト発火コンポーネント
-function ToastTrigger({ message, type }: { message: string; type?: "success" | "error" | "info" }) {
+function ToastTrigger({
+  message,
+  type,
+}: {
+  message: string;
+  type?: "success" | "error" | "info";
+}) {
   const { showToast } = useToast();
   return <button onClick={() => showToast(message, type)}>トースト</button>;
 }
@@ -21,7 +27,7 @@ describe("Toast コンポーネント", () => {
     render(
       <ToastProvider>
         <ToastTrigger message="テストメッセージ" />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     act(() => {
@@ -36,7 +42,7 @@ describe("Toast コンポーネント", () => {
     render(
       <ToastProvider>
         <ToastTrigger message="一時メッセージ" />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     act(() => {
@@ -55,7 +61,7 @@ describe("Toast コンポーネント", () => {
     render(
       <ToastProvider>
         <ToastTrigger message="閉じるテスト" />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     act(() => {
@@ -73,7 +79,7 @@ describe("Toast コンポーネント", () => {
     render(
       <ToastProvider>
         <ToastTrigger message="成功です" type="success" />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     act(() => {
@@ -90,7 +96,9 @@ describe("Toast コンポーネント", () => {
       return (
         <>
           <button onClick={() => showToast("メッセージ1")}>発火1</button>
-          <button onClick={() => showToast("メッセージ2", "success")}>発火2</button>
+          <button onClick={() => showToast("メッセージ2", "success")}>
+            発火2
+          </button>
         </>
       );
     }
@@ -98,7 +106,7 @@ describe("Toast コンポーネント", () => {
     render(
       <ToastProvider>
         <MultiTrigger />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     act(() => {
@@ -125,7 +133,7 @@ describe("Toast コンポーネント", () => {
     render(
       <ToastProvider>
         <ToastTrigger message="テスト" />
-      </ToastProvider>
+      </ToastProvider>,
     );
 
     act(() => {

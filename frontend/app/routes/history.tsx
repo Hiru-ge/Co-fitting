@@ -65,7 +65,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
         setIsLoadingMore(false);
       }
     },
-    [token, showToast]
+    [token, showToast],
   );
 
   useEffect(() => {
@@ -153,41 +153,43 @@ export default function History({ loaderData }: Route.ComponentProps) {
 
         {/* ── Filter tabs (リスト時のみ表示) ── */}
         {viewMode === "list" && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-          {/* "すべて" ボタン */}
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
-              activeFilter === "all"
-                ? "bg-primary-purple text-white"
-                : "bg-white/10 text-white/70"
-            }`}
-          >
-            <span className="text-sm font-medium">すべて</span>
-          </button>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            {/* "すべて" ボタン */}
+            <button
+              onClick={() => setActiveFilter("all")}
+              className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
+                activeFilter === "all"
+                  ? "bg-primary-purple text-white"
+                  : "bg-white/10 text-white/70"
+              }`}
+            >
+              <span className="text-sm font-medium">すべて</span>
+            </button>
 
-          {/* 動的カテゴリーボタン */}
-          {availableCategories.map((categoryKey) => {
-            const categoryInfo = getCategoryInfoByKey(categoryKey);
-            const isActive = activeFilter === categoryKey;
-            return (
-              <button
-                key={categoryKey}
-                onClick={() => setActiveFilter(categoryKey)}
-                className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
-                  isActive
-                    ? "bg-primary-purple text-white"
-                    : "bg-white/10 text-white/70"
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg">
-                  {categoryInfo.icon}
-                </span>
-                <span className="text-sm font-medium">{categoryInfo.label}</span>
-              </button>
-            );
-          })}
-        </div>
+            {/* 動的カテゴリーボタン */}
+            {availableCategories.map((categoryKey) => {
+              const categoryInfo = getCategoryInfoByKey(categoryKey);
+              const isActive = activeFilter === categoryKey;
+              return (
+                <button
+                  key={categoryKey}
+                  onClick={() => setActiveFilter(categoryKey)}
+                  className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
+                    isActive
+                      ? "bg-primary-purple text-white"
+                      : "bg-white/10 text-white/70"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    {categoryInfo.icon}
+                  </span>
+                  <span className="text-sm font-medium">
+                    {categoryInfo.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         )}
       </header>
 
@@ -201,65 +203,65 @@ export default function History({ loaderData }: Route.ComponentProps) {
       {/* ── List view ── */}
       {viewMode === "list" && (
         <>
-      {isLoading ? (
-        <main className="px-4 pt-6 space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-4 p-3 rounded-md border border-gray-100 animate-pulse"
-            >
-              <div className="size-20 rounded-md bg-gray-200 shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
-                <div className="h-3 bg-gray-200 rounded w-1/3" />
-              </div>
-            </div>
-          ))}
-        </main>
-      ) : (
-        <main className="flex flex-col px-4 pt-6 space-y-8">
-          {filteredVisits.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <span className="material-symbols-outlined text-6xl text-gray-300">
-                explore
-              </span>
-              <p className="text-gray-400 text-center text-sm">
-                まだ訪問記録がありません
-                <br />
-                新しい場所を発見しに行きましょう！
-              </p>
-            </div>
-          ) : (
-            <>
-              {Array.from(grouped.entries()).map(([month, items]) => (
-                <div key={month} className="space-y-4">
-                  <h3 className="text-sm font-bold text-[#75608a] uppercase tracking-wider pl-1">
-                    {month}
-                  </h3>
-                  {items.map((visit) => (
-                    <VisitHistoryItem key={visit.id} visit={visit} />
-                  ))}
+          {isLoading ? (
+            <main className="px-4 pt-6 space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 p-3 rounded-md border border-gray-100 animate-pulse"
+                >
+                  <div className="size-20 rounded-md bg-gray-200 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    <div className="h-3 bg-gray-200 rounded w-1/3" />
+                  </div>
                 </div>
               ))}
-
-              {visits.length < total && (
-                <div className="flex justify-center pb-4">
-                  <button
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
-                    className="px-6 py-2 rounded-full bg-white/10 text-white text-sm font-medium transition-opacity disabled:opacity-50"
-                  >
-                    {isLoadingMore ? "読み込み中..." : "もっと見る"}
-                  </button>
+            </main>
+          ) : (
+            <main className="flex flex-col px-4 pt-6 space-y-8">
+              {filteredVisits.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <span className="material-symbols-outlined text-6xl text-gray-300">
+                    explore
+                  </span>
+                  <p className="text-gray-400 text-center text-sm">
+                    まだ訪問記録がありません
+                    <br />
+                    新しい場所を発見しに行きましょう！
+                  </p>
                 </div>
+              ) : (
+                <>
+                  {Array.from(grouped.entries()).map(([month, items]) => (
+                    <div key={month} className="space-y-4">
+                      <h3 className="text-sm font-bold text-[#75608a] uppercase tracking-wider pl-1">
+                        {month}
+                      </h3>
+                      {items.map((visit) => (
+                        <VisitHistoryItem key={visit.id} visit={visit} />
+                      ))}
+                    </div>
+                  ))}
+
+                  {visits.length < total && (
+                    <div className="flex justify-center pb-4">
+                      <button
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className="px-6 py-2 rounded-full bg-white/10 text-white text-sm font-medium transition-opacity disabled:opacity-50"
+                      >
+                        {isLoadingMore ? "読み込み中..." : "もっと見る"}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
-            </>
+              <div className="h-10" />
+            </main>
           )}
-          <div className="h-10" />
-        </main>
-      )}
-      </>
+        </>
       )}
     </div>
   );
@@ -296,9 +298,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
             {visit.place_name}
           </p>
         </div>
-        <p className="text-gray-400 text-xs mt-0.5">
-          {visit.vicinity}
-        </p>
+        <p className="text-gray-400 text-xs mt-0.5">{visit.vicinity}</p>
         <div className="flex items-center gap-1 mt-2 text-gray-400">
           <span className="material-symbols-outlined text-xs">
             calendar_today
@@ -312,12 +312,11 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
   );
 }
 
-
 const PHOTO_BATCH_SIZE = 5;
 
 async function loadPhotos(
   visits: Visit[],
-  token: string
+  token: string,
 ): Promise<VisitWithPhoto[]> {
   const results: VisitWithPhoto[] = [];
 
@@ -326,13 +325,17 @@ async function loadPhotos(
     const batchResults = await Promise.all(
       batch.map(async (visit) => {
         try {
-          const photoUrl = await getPlacePhoto(token, visit.place_id, visit.photo_reference);
+          const photoUrl = await getPlacePhoto(
+            token,
+            visit.place_id,
+            visit.photo_reference,
+          );
           return { ...visit, photoUrl };
         } catch {
           // 写真取得失敗はスキップ
         }
         return visit;
-      })
+      }),
     );
     results.push(...batchResults);
   }

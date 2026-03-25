@@ -101,7 +101,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={[]} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     expect(await screen.findByTestId("api-provider")).toBeInTheDocument();
     expect(screen.getByTestId("google-map")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
     const markers = screen.getAllByTestId("map-marker");
@@ -122,7 +122,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={[]} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
     expect(screen.queryByTestId("map-marker")).toBeNull();
@@ -132,7 +132,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
 
@@ -149,7 +149,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
     fireEvent.click(screen.getAllByTestId("map-marker")[0]);
@@ -163,7 +163,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
     fireEvent.click(screen.getAllByTestId("map-marker")[0]);
@@ -177,7 +177,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
 
@@ -195,7 +195,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     await screen.findByTestId("google-map");
     fireEvent.click(screen.getAllByTestId("map-marker")[1]);
@@ -214,7 +214,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const mapEl = await screen.findByTestId("google-map");
@@ -249,7 +249,7 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={mockVisits} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const mapEl = await screen.findByTestId("google-map");
@@ -266,15 +266,15 @@ describe("VisitMap", () => {
     render(
       <MemoryRouter>
         <VisitMap visits={[]} />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const mapEl = await screen.findByTestId("google-map");
     expect(Number(mapEl.getAttribute("data-center-lat"))).toBeCloseTo(
-      DEFAULT_LOCATION.lat
+      DEFAULT_LOCATION.lat,
     );
     expect(Number(mapEl.getAttribute("data-center-lng"))).toBeCloseTo(
-      DEFAULT_LOCATION.lng
+      DEFAULT_LOCATION.lng,
     );
   });
 });

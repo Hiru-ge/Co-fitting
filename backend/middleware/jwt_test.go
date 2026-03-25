@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 		fmt.Println("middleware test: .env not found, using existing environment variables")
 	}
 
-	os.Setenv("REDIS_HOST", "localhost")
+	os.Setenv("REDIS_HOST", "localhost") //nolint:errcheck
 
 	// Redis初期化
 	host := os.Getenv("REDIS_HOST")

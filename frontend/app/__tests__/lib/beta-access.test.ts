@@ -86,7 +86,7 @@ describe("beta-access", () => {
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ passphrase: "EARLYROAMER" }),
-        })
+        }),
       );
     });
 
@@ -99,8 +99,10 @@ describe("beta-access", () => {
         expect.stringContaining("/api/beta/verify"),
         expect.objectContaining({
           method: "POST",
-          headers: expect.objectContaining({ "Content-Type": "application/json" }),
-        })
+          headers: expect.objectContaining({
+            "Content-Type": "application/json",
+          }),
+        }),
       );
     });
   });

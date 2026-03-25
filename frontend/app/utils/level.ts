@@ -1,5 +1,7 @@
 // レベルアップに必要な累計XP閾値（インデックス = レベル - 1）
-export const LEVEL_XP_THRESHOLDS = [0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500];
+export const LEVEL_XP_THRESHOLDS = [
+  0, 100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500,
+];
 
 // レベル称号テーブル（インデックス = レベル - 1）
 export const LEVEL_TITLES = [
@@ -16,7 +18,10 @@ export const LEVEL_TITLES = [
 ];
 
 export function getLevelTitle(level: number): string {
-  return LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)] ?? LEVEL_TITLES[0];
+  return (
+    LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)] ??
+    LEVEL_TITLES[0]
+  );
 }
 
 export interface LevelInfo {
@@ -36,7 +41,8 @@ export function getLevelInfo(totalXp: number): LevelInfo {
 
   const isMaxLevel = level >= LEVEL_XP_THRESHOLDS.length;
   const currentLevelStartXp = LEVEL_XP_THRESHOLDS[level - 1] ?? 0;
-  const nextLevelStartXp = LEVEL_XP_THRESHOLDS[level] ?? currentLevelStartXp + 1000;
+  const nextLevelStartXp =
+    LEVEL_XP_THRESHOLDS[level] ?? currentLevelStartXp + 1000;
 
   const xpInCurrentLevel = totalXp - currentLevelStartXp;
   const xpToNextLevel = nextLevelStartXp - totalXp;
@@ -44,5 +50,11 @@ export function getLevelInfo(totalXp: number): LevelInfo {
     ? 100
     : (xpInCurrentLevel / (nextLevelStartXp - currentLevelStartXp)) * 100;
 
-  return { level, xpInCurrentLevel, xpToNextLevel, progressPercent, isMaxLevel };
+  return {
+    level,
+    xpInCurrentLevel,
+    xpToNextLevel,
+    progressPercent,
+    isMaxLevel,
+  };
 }

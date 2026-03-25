@@ -44,10 +44,10 @@ export interface CreateVisitRequest {
 
 // XP計算内訳
 export interface XPBreakdown {
-  base_xp: number;          // ベースXP（通常50 or 脱却100）
+  base_xp: number; // ベースXP（通常50 or 脱却100）
   first_area_bonus: number; // 初エリアボーナス（0 or 30）
-  memo_bonus: number;       // メモボーナス（0 or 10）
-  streak_bonus: number;     // ストリークボーナス（0〜100）
+  memo_bonus: number; // メモボーナス（0 or 10）
+  streak_bonus: number; // ストリークボーナス（0〜100）
 }
 
 export interface BadgeInfo {
@@ -75,7 +75,7 @@ export interface MapVisitResponse {
 }
 
 // Issue #128 実装後にバックエンドから返るゲーミフィケーションフィールド
-export interface CreateVisitResponse extends Omit<Visit, 'xp_earned'> {
+export interface CreateVisitResponse extends Omit<Visit, "xp_earned"> {
   xp_earned?: number;
   total_xp?: number;
   level_up?: boolean;

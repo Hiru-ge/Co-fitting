@@ -6,16 +6,16 @@
   --color-primary: #13ecec;
   --color-primary-purple: #8c25f4;
   --color-accent-orange: #ff9f43;
-  --color-brand: #525BBB;
+  --color-brand: #525bbb;
 
   /* Colors — Background */
   --color-bg-dark: #102222;
   --color-bg-dark-purple: #191022;
 
   /* Font families */
-  --font-sans: "Plus Jakarta Sans", "Noto Sans JP", ui-sans-serif, system-ui,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-    "Noto Color Emoji";
+  --font-sans:
+    "Plus Jakarta Sans", "Noto Sans JP", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-display: "Plus Jakarta Sans", "Noto Sans JP", sans-serif;
   --font-display-alt: "Space Grotesk", "Noto Sans JP", sans-serif;
 
@@ -35,7 +35,11 @@ body {
 
 /* ── Utility classes (design tokens from screen-design) ── */
 .card-gradient {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.8) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 50%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -48,7 +52,7 @@ body {
 
 /* ── Material Symbols Outlined ── */
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
+  font-family: "Material Symbols Outlined";
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -59,7 +63,7 @@ body {
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
-  -webkit-font-feature-settings: 'liga';
+  -webkit-font-feature-settings: "liga";
   -webkit-font-smoothing: antialiased;
 }
 
@@ -95,24 +99,53 @@ body {
 
 /* ── Confetti animations ── */
 @keyframes confetti-float-1 {
-  0%, 100% { transform: translateY(0) rotate(45deg); opacity: 0.6; }
-  50% { transform: translateY(-12px) rotate(90deg); opacity: 1; }
+  0%,
+  100% {
+    transform: translateY(0) rotate(45deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-12px) rotate(90deg);
+    opacity: 1;
+  }
 }
 @keyframes confetti-float-2 {
-  0%, 100% { transform: translateY(0) rotate(-12deg); opacity: 0.6; }
-  50% { transform: translateY(-8px) rotate(20deg); opacity: 1; }
+  0%,
+  100% {
+    transform: translateY(0) rotate(-12deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-8px) rotate(20deg);
+    opacity: 1;
+  }
 }
 @keyframes confetti-float-3 {
-  0%, 100% { transform: translateY(0) rotate(90deg); opacity: 0.6; }
-  50% { transform: translateY(-16px) rotate(45deg); opacity: 1; }
+  0%,
+  100% {
+    transform: translateY(0) rotate(90deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-16px) rotate(45deg);
+    opacity: 1;
+  }
 }
-.animate-confetti-1 { animation: confetti-float-1 2s ease-in-out infinite; }
-.animate-confetti-2 { animation: confetti-float-2 2.5s ease-in-out infinite 0.3s; }
-.animate-confetti-3 { animation: confetti-float-3 1.8s ease-in-out infinite 0.6s; }
+.animate-confetti-1 {
+  animation: confetti-float-1 2s ease-in-out infinite;
+}
+.animate-confetti-2 {
+  animation: confetti-float-2 2.5s ease-in-out infinite 0.3s;
+}
+.animate-confetti-3 {
+  animation: confetti-float-3 1.8s ease-in-out infinite 0.6s;
+}
 
 /* ── コンプリートカード スピンアニメーション ── */
 @keyframes card-spin {
-  to { transform: perspective(800px) rotateY(1080deg); } /* 縦軸を軸に3回転 */
+  to {
+    transform: perspective(800px) rotateY(1080deg);
+  } /* 縦軸を軸に3回転 */
 }
 .animate-card-spin {
   animation: card-spin 0.9s ease-in-out forwards;

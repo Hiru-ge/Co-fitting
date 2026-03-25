@@ -32,7 +32,7 @@ function renderCard(overrides = {}) {
       userLat={35.658}
       userLng={139.7016}
       stackIndex={0}
-    />
+    />,
   );
 }
 
@@ -80,7 +80,7 @@ describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () =>
   test("is_breakout=true の場合、脱却モードバッジに赤系カラーが適用される（Issue #222: 視認性改善）", () => {
     const { container } = renderCard({ is_breakout: true });
     const badge = Array.from(container.querySelectorAll("span")).find(
-      (el) => el.textContent === "脱却モード"
+      (el) => el.textContent === "脱却モード",
     );
     expect(badge).toBeTruthy();
     expect(badge?.className).toMatch(/red/);
@@ -113,7 +113,7 @@ describe("DiscoveryCard Google Maps施設詳細", () => {
     renderCard();
     const link = screen.getByTestId("google-maps-link");
     expect(link.getAttribute("href")).toBe(
-      "https://www.google.com/maps/place/?q=place_id:place_1"
+      "https://www.google.com/maps/place/?q=place_id:place_1",
     );
   });
 
@@ -127,7 +127,7 @@ describe("DiscoveryCard Google Maps施設詳細", () => {
     renderCard({ place_id: "place_2" });
     const link = screen.getByTestId("google-maps-link");
     expect(link.getAttribute("href")).toBe(
-      "https://www.google.com/maps/place/?q=place_id:place_2"
+      "https://www.google.com/maps/place/?q=place_id:place_2",
     );
   });
 });

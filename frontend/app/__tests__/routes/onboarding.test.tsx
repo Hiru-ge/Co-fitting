@@ -5,9 +5,15 @@ import userEvent from "@testing-library/user-event";
 const localStorageData: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => localStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { localStorageData[key] = value; },
-  removeItem: (key: string) => { delete localStorageData[key]; },
-  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    localStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete localStorageData[key];
+  },
+  clear: () => {
+    Object.keys(localStorageData).forEach((k) => delete localStorageData[k]);
+  },
 };
 vi.stubGlobal("localStorage", localStorageMock);
 
@@ -18,8 +24,17 @@ vi.mock("react-router", async () => {
     ...actual,
     redirect: vi.fn((to: string) => ({ type: "redirect", location: to })),
     useNavigate: () => mockNavigate,
-    Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-      <a href={to} {...props}>{children}</a>
+    Link: ({
+      to,
+      children,
+      ...props
+    }: {
+      to: string;
+      children: React.ReactNode;
+    }) => (
+      <a href={to} {...props}>
+        {children}
+      </a>
     ),
   };
 });
@@ -60,8 +75,13 @@ function renderOnboarding(overrideLoaderData?: object) {
     selectedIds: [],
     ...overrideLoaderData,
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return render(<Onboarding loaderData={loaderData as any} params={{} as any} matches={[] as any} />);
+  return render(
+    <Onboarding
+      loaderData={loaderData as any}
+      params={{} as any}
+      matches={[] as any}
+    />,
+  );
 }
 
 describe("Onboarding画面", () => {
@@ -74,8 +94,12 @@ describe("Onboarding画面", () => {
   test("興味タグ一覧が表示される", async () => {
     renderOnboarding();
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /カフェ/ })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /ラーメン/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /カフェ/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /ラーメン/ }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /公園/ })).toBeInTheDocument();
     });
   });
@@ -141,7 +165,9 @@ describe("Onboarding画面", () => {
     await user.click(screen.getByRole("button", { name: /ラーメン/ }));
     await user.click(screen.getByRole("button", { name: /公園/ }));
 
-    expect(screen.getByRole("button", { name: /選択して始める \(3\)/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /選択して始める \(3\)/ }),
+    ).toBeInTheDocument();
   });
 
   test("保存ボタン押下でupdateInterestsが呼ばれ /home に遷移する", async () => {
@@ -201,9 +227,18 @@ describe("Onboarding画面", () => {
   test("初期選択済みタグがある場合、選択状態で表示される", () => {
     renderOnboarding({ selectedIds: [1, 3] });
 
-    expect(screen.getByRole("button", { name: /カフェ/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /公園/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /ラーメン/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /カフェ/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /公園/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /ラーメン/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
   });
 });
 
@@ -216,8 +251,8 @@ describe("Onboarding clientLoader", () => {
     const { clientLoader } = await import("~/routes/onboarding");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
-    } catch (e) {
+      await clientLoader();
+    } catch {
       expect(redirect).toHaveBeenCalledWith("/login");
     }
   });
@@ -226,7 +261,12 @@ describe("Onboarding clientLoader", () => {
     const { getInterests } = await import("~/api/genres");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
-      { genre_tag_id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
+      {
+        genre_tag_id: 2,
+        name: "ラーメン",
+        category: "食べる・飲む",
+        icon: "🍜",
+      },
       { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
     ]);
 
@@ -234,8 +274,8 @@ describe("Onboarding clientLoader", () => {
     const { clientLoader } = await import("~/routes/onboarding");
 
     try {
-      await clientLoader({} as Parameters<typeof clientLoader>[0]);
-    } catch (e) {
+      await clientLoader();
+    } catch {
       expect(redirect).toHaveBeenCalledWith("/home");
     }
   });
@@ -248,7 +288,7 @@ describe("Onboarding clientLoader", () => {
     vi.mocked(getGenreTags).mockResolvedValueOnce(mockGenres);
 
     const { clientLoader } = await import("~/routes/onboarding");
-    const result = await clientLoader({} as Parameters<typeof clientLoader>[0]);
+    const result = await clientLoader();
 
     expect(result).toEqual({
       token: "test-token",

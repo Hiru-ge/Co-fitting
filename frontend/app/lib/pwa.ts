@@ -30,7 +30,10 @@ export function detectPlatform(): Platform {
 }
 
 export function getInstallPrompt(): BeforeInstallPromptEvent | null {
-  return (window as { __installPrompt?: BeforeInstallPromptEvent }).__installPrompt ?? null;
+  return (
+    (window as { __installPrompt?: BeforeInstallPromptEvent })
+      .__installPrompt ?? null
+  );
 }
 
 export async function triggerInstallPrompt(): Promise<boolean> {
@@ -38,6 +41,8 @@ export async function triggerInstallPrompt(): Promise<boolean> {
   if (!prompt) return false;
   await prompt.prompt();
   const { outcome } = await prompt.userChoice;
-  (window as { __installPrompt?: BeforeInstallPromptEvent | null }).__installPrompt = null;
+  (
+    window as { __installPrompt?: BeforeInstallPromptEvent | null }
+  ).__installPrompt = null;
   return outcome === "accepted";
 }

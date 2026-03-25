@@ -99,7 +99,10 @@ export default function BetaGate() {
         {/* フッター */}
         <p className="text-center text-xs text-white/30">
           ベータ版への参加は
-          <Link to="/lp#request-access" className="underline hover:text-white/50">
+          <Link
+            to="/lp#request-access"
+            className="underline hover:text-white/50"
+          >
             紹介ページ
           </Link>
           からリクエストを送信してください

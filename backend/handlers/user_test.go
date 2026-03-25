@@ -196,7 +196,7 @@ func TestUpdateMe(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["display_name"] != "Trimmed Name" {
 			t.Errorf("Expected display_name 'Trimmed Name', got '%v'", resp["display_name"])
 		}
@@ -279,7 +279,7 @@ func TestUpdateSearchRadius(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		if resp["search_radius"] != float64(10000) {
 			t.Errorf("Expected search_radius 10000, got '%v'", resp["search_radius"])
@@ -453,7 +453,7 @@ func TestUpdateSearchRadius(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		if resp["display_name"] != "New Name" {
 			t.Errorf("Expected display_name 'New Name', got '%v'", resp["display_name"])
@@ -619,9 +619,9 @@ func TestDeleteMe(t *testing.T) {
 		ctx := context.Background()
 		userIDStr := fmt.Sprintf("%d", user.ID)
 		today := time.Now().Format("2006-01-02")
-		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.0, 135.0, `{"places":[]}`, 24*time.Hour)
-		database.SetDailyLimitReached(ctx, testRedisClient, userIDStr, today, 24*time.Hour)
-		database.IncrementDailyReloadCount(ctx, testRedisClient, userIDStr, today, 24*time.Hour)
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.0, 135.0, `{"places":[]}`, 24*time.Hour) //nolint:errcheck
+		database.SetDailyLimitReached(ctx, testRedisClient, userIDStr, today, 24*time.Hour)                              //nolint:errcheck
+		database.IncrementDailyReloadCount(ctx, testRedisClient, userIDStr, today, 24*time.Hour)                         //nolint:errcheck
 
 		token := generateTestToken(user.ID)
 

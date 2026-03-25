@@ -11,8 +11,8 @@ import (
 
 func TestCORS_WithAllowedOrigin(t *testing.T) {
 	// 環境変数を設定
-	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com")
-	defer os.Unsetenv("ALLOWED_ORIGIN")
+	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com") //nolint:errcheck
+	defer os.Unsetenv("ALLOWED_ORIGIN")                //nolint:errcheck
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -37,7 +37,7 @@ func TestCORS_WithAllowedOrigin(t *testing.T) {
 
 func TestCORS_WithDefaultOrigin(t *testing.T) {
 	// 環境変数をクリア
-	os.Unsetenv("ALLOWED_ORIGIN")
+	os.Unsetenv("ALLOWED_ORIGIN") //nolint:errcheck
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -62,8 +62,8 @@ func TestCORS_WithDefaultOrigin(t *testing.T) {
 
 func TestCORS_WithMultipleOrigins(t *testing.T) {
 	// カンマ区切りで複数オリジンを設定
-	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com,http://localhost:5173,https://dev.roamble.com")
-	defer os.Unsetenv("ALLOWED_ORIGIN")
+	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com,http://localhost:5173,https://dev.roamble.com") //nolint:errcheck
+	defer os.Unsetenv("ALLOWED_ORIGIN")                                                              //nolint:errcheck
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -97,8 +97,8 @@ func TestCORS_WithMultipleOrigins(t *testing.T) {
 
 func TestCORS_DisallowedOrigin(t *testing.T) {
 	// 特定のオリジンのみ許可
-	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com")
-	defer os.Unsetenv("ALLOWED_ORIGIN")
+	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com") //nolint:errcheck
+	defer os.Unsetenv("ALLOWED_ORIGIN")                //nolint:errcheck
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

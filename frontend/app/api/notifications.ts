@@ -9,13 +9,15 @@ export async function getVapidPublicKey(): Promise<string> {
   return data.vapid_public_key as string;
 }
 
-export async function getNotificationSettings(token: string): Promise<NotificationSettings> {
+export async function getNotificationSettings(
+  token: string,
+): Promise<NotificationSettings> {
   return apiCall("/api/notifications/settings", token);
 }
 
 export async function updateNotificationSettings(
   token: string,
-  settings: Partial<NotificationSettings>
+  settings: Partial<NotificationSettings>,
 ): Promise<void> {
   await apiCall("/api/notifications/settings", token, {
     method: "PUT",
@@ -25,7 +27,7 @@ export async function updateNotificationSettings(
 
 export async function subscribePushToBackend(
   token: string,
-  subscription: PushSubscriptionJSON
+  subscription: PushSubscriptionJSON,
 ): Promise<void> {
   const keys = subscription.keys as { p256dh?: string; auth?: string } | null;
   await apiCall("/api/notifications/push/subscribe", token, {
@@ -41,7 +43,7 @@ export async function subscribePushToBackend(
 
 export async function unsubscribePushFromBackend(
   token: string,
-  endpoint: string
+  endpoint: string,
 ): Promise<void> {
   await apiCall("/api/notifications/push/subscribe", token, {
     method: "DELETE",

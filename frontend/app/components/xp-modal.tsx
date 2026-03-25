@@ -51,7 +51,6 @@ export default function XpModal({
             border: "1px solid rgba(19, 236, 236, 0.15)",
           }}
         >
-
           {/* バッジ / スター アイコン */}
           <div className="mt-4 relative">
             <div
@@ -68,20 +67,26 @@ export default function XpModal({
             >
               <span
                 className="material-symbols-outlined text-white"
-                style={{ fontVariationSettings: "'FILL' 1", fontSize: "6.5rem" }}
+                style={{
+                  fontVariationSettings: "'FILL' 1",
+                  fontSize: "6.5rem",
+                }}
                 aria-hidden="true"
               >
                 check
               </span>
             </div>
-
           </div>
 
           {/* XP・テキスト */}
           <div className="mt-10 space-y-2">
             {levelUp && (
               <div className="flex items-center justify-center gap-1.5 mb-1">
-                <span className="material-symbols-outlined text-yellow-400 text-base" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden="true">
+                <span
+                  className="material-symbols-outlined text-yellow-400 text-base"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  aria-hidden="true"
+                >
                   military_tech
                 </span>
                 <span className="text-yellow-400 text-sm font-bold tracking-widest uppercase">
@@ -92,7 +97,9 @@ export default function XpModal({
             <div className="text-primary text-4xl font-bold tracking-tight">
               +{xpEarned} XP
             </div>
-            <h2 className="text-white text-3xl font-bold pt-2">クエスト完了！</h2>
+            <h2 className="text-white text-3xl font-bold pt-2">
+              クエスト完了！
+            </h2>
             <p className="text-white/70 text-sm leading-relaxed max-w-[280px] mx-auto">
               {levelUp
                 ? `レベル${newLevel}に上がりました！`
@@ -105,7 +112,10 @@ export default function XpModal({
             <div
               data-testid="xp-breakdown"
               className="w-full mt-6 rounded-xl px-4 py-3 text-left space-y-1.5"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
             >
               <XpBreakdownRow
                 label={xpBreakdown.base_xp >= 100 ? "脱却訪問" : "通常訪問"}
@@ -114,13 +124,22 @@ export default function XpModal({
                 showPlus={false}
               />
               {xpBreakdown.first_area_bonus > 0 && (
-                <XpBreakdownRow label="初エリアボーナス" xp={xpBreakdown.first_area_bonus} />
+                <XpBreakdownRow
+                  label="初エリアボーナス"
+                  xp={xpBreakdown.first_area_bonus}
+                />
               )}
               {xpBreakdown.memo_bonus > 0 && (
-                <XpBreakdownRow label="メモボーナス" xp={xpBreakdown.memo_bonus} />
+                <XpBreakdownRow
+                  label="メモボーナス"
+                  xp={xpBreakdown.memo_bonus}
+                />
               )}
               {xpBreakdown.streak_bonus > 0 && (
-                <XpBreakdownRow label="ストリークボーナス" xp={xpBreakdown.streak_bonus} />
+                <XpBreakdownRow
+                  label="ストリークボーナス"
+                  xp={xpBreakdown.streak_bonus}
+                />
               )}
             </div>
           )}
@@ -140,7 +159,9 @@ export default function XpModal({
             <div className="flex justify-between mt-2 text-[10px] text-white/50 font-medium uppercase tracking-widest">
               <span>LEVEL {currentLevel}</span>
               {xpToNextLevel > 0 ? (
-                <span>LEVEL {currentLevel + 1} まであと {xpToNextLevel} XP</span>
+                <span>
+                  LEVEL {currentLevel + 1} まであと {xpToNextLevel} XP
+                </span>
               ) : (
                 <span>MAX LEVEL</span>
               )}
@@ -159,7 +180,9 @@ export default function XpModal({
           }}
         >
           <span>次の冒険へ</span>
-          <span className="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            rocket_launch
+          </span>
         </button>
       </div>
     </div>
@@ -167,11 +190,30 @@ export default function XpModal({
 }
 
 // XP内訳の1行コンポーネント
-function XpBreakdownRow({ label, xp, highlight = false, showPlus = true }: { label: string; xp: number; highlight?: boolean; showPlus?: boolean }) {
+function XpBreakdownRow({
+  label,
+  xp,
+  highlight = false,
+  showPlus = true,
+}: {
+  label: string;
+  xp: number;
+  highlight?: boolean;
+  showPlus?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between text-xs">
-      <span className={highlight ? "text-red-400 font-semibold" : "text-white/60"}>{label}</span>
-      <span className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}>{showPlus ? "+" : ""}{xp}</span>
+      <span
+        className={highlight ? "text-red-400 font-semibold" : "text-white/60"}
+      >
+        {label}
+      </span>
+      <span
+        className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}
+      >
+        {showPlus ? "+" : ""}
+        {xp}
+      </span>
     </div>
   );
 }

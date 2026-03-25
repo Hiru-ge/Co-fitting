@@ -87,9 +87,16 @@ vi.mock("~/hooks/use-suggestions", () => ({
 }));
 
 import Settings from "~/routes/settings";
-import { updateDisplayName, deleteAccount, updateSearchRadius } from "~/api/users";
+import {
+  updateDisplayName,
+  deleteAccount,
+  updateSearchRadius,
+} from "~/api/users";
 import { updateInterests } from "~/api/genres";
-import { clearSuggestionsCache, getReloadCountRemaining } from "~/hooks/use-suggestions";
+import {
+  clearSuggestionsCache,
+  getReloadCountRemaining,
+} from "~/hooks/use-suggestions";
 
 const mockUser = {
   id: 1,
@@ -123,7 +130,7 @@ function renderSettings() {
       loaderData={loaderData as any}
       params={{} as any}
       matches={[] as any}
-    />
+    />,
   );
 }
 
@@ -170,7 +177,9 @@ describe("設定画面", () => {
       renderSettings();
       expect(screen.getByRole("tab", { name: "ユーザー" })).toBeInTheDocument();
       expect(screen.getByRole("tab", { name: "提案設定" })).toBeInTheDocument();
-      expect(screen.queryByRole("tab", { name: "アカウント" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("tab", { name: "アカウント" }),
+      ).not.toBeInTheDocument();
     });
 
     test("初期状態ではユーザー情報タブが選択されている", () => {
@@ -185,7 +194,10 @@ describe("設定画面", () => {
 
       // 提案設定タブに切り替え
       await user.click(screen.getByRole("tab", { name: "提案設定" }));
-      expect(screen.getByRole("tab", { name: "提案設定" })).toHaveAttribute("aria-selected", "true");
+      expect(screen.getByRole("tab", { name: "提案設定" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
       expect(screen.getByText("興味タグ")).toBeInTheDocument();
     });
 
@@ -200,7 +212,9 @@ describe("設定画面", () => {
     test("表示名変更フォームが表示される", () => {
       renderSettings();
       expect(screen.getByLabelText("表示名")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "表示名を変更" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "表示名を変更" }),
+      ).toBeInTheDocument();
     });
 
     test("現在の表示名が初期値としてセットされる", () => {
@@ -219,7 +233,10 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "表示名を変更" }));
 
       await waitFor(() => {
-        expect(updateDisplayName).toHaveBeenCalledWith("test-token", "新しい名前");
+        expect(updateDisplayName).toHaveBeenCalledWith(
+          "test-token",
+          "新しい名前",
+        );
       });
     });
 
@@ -240,25 +257,37 @@ describe("設定画面", () => {
     test("ユーザー情報タブにアカウント削除ボタンが表示される", () => {
       renderSettings();
       expect(screen.getByText("アカウントの削除")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "アカウントを削除" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "アカウントを削除" }),
+      ).toBeInTheDocument();
     });
 
     test("アカウント削除ボタンで確認モーダルが表示される", async () => {
       const user = userEvent.setup();
       renderSettings();
 
-      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
+      await user.click(
+        screen.getByRole("button", { name: "アカウントを削除" }),
+      );
 
-      expect(screen.getByText("本当にアカウントを削除しますか？")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "削除する" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
+      expect(
+        screen.getByText("本当にアカウントを削除しますか？"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "削除する" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "キャンセル" }),
+      ).toBeInTheDocument();
     });
 
     test("アカウント削除確認でAPIが呼ばれる", async () => {
       const user = userEvent.setup();
       renderSettings();
 
-      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
+      await user.click(
+        screen.getByRole("button", { name: "アカウントを削除" }),
+      );
       await user.click(screen.getByRole("button", { name: "削除する" }));
 
       await waitFor(() => {
@@ -270,13 +299,18 @@ describe("設定画面", () => {
       const user = userEvent.setup();
       renderSettings();
 
-      await user.click(screen.getByRole("button", { name: "アカウントを削除" }));
-      expect(screen.getByText("本当にアカウントを削除しますか？")).toBeInTheDocument();
+      await user.click(
+        screen.getByRole("button", { name: "アカウントを削除" }),
+      );
+      expect(
+        screen.getByText("本当にアカウントを削除しますか？"),
+      ).toBeInTheDocument();
 
       await user.click(screen.getByRole("button", { name: "キャンセル" }));
-      expect(screen.queryByText("本当にアカウントを削除しますか？")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("本当にアカウントを削除しますか？"),
+      ).not.toBeInTheDocument();
     });
-
   });
 
   // === 提案設定タブ ===
@@ -295,10 +329,16 @@ describe("設定画面", () => {
 
     test("全ジャンルタグが選択可能に表示される", async () => {
       await switchToSuggestionTab();
-      expect(screen.getByRole("button", { name: /カフェ/ })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /レストラン/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /カフェ/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /レストラン/ }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /公園/ })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /美術館/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /美術館/ }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /書店/ })).toBeInTheDocument();
     });
 
@@ -330,8 +370,12 @@ describe("設定画面", () => {
       await waitFor(() => {
         expect(screen.getByText("提案が更新されます")).toBeInTheDocument();
       });
-      expect(screen.getByRole("button", { name: "保存する" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "キャンセル" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "保存する" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "キャンセル" }),
+      ).toBeInTheDocument();
     });
 
     test("興味タグの保存でAPIが呼ばれる（モーダル確認後）", async () => {
@@ -342,11 +386,17 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
 
       // モーダル確認
-      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText("提案が更新されます")).toBeInTheDocument(),
+      );
       await user.click(screen.getByRole("button", { name: "保存する" }));
 
       await waitFor(() => {
-        expect(updateInterests).toHaveBeenCalledWith("test-token", [1, 3, 4, 2], true);
+        expect(updateInterests).toHaveBeenCalledWith(
+          "test-token",
+          [1, 3, 4, 2],
+          true,
+        );
       });
     });
 
@@ -357,7 +407,9 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
 
       // モーダル確認
-      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText("提案が更新されます")).toBeInTheDocument(),
+      );
       await user.click(screen.getByRole("button", { name: "保存する" }));
 
       await waitFor(() => {
@@ -371,7 +423,9 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
       await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
 
-      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText("提案が更新されます")).toBeInTheDocument(),
+      );
       await user.click(screen.getByRole("button", { name: "キャンセル" }));
 
       expect(updateInterests).not.toHaveBeenCalled();
@@ -387,7 +441,11 @@ describe("設定画面", () => {
 
       // モーダルは表示されぺにダイレクト保存
       await waitFor(() => {
-        expect(updateInterests).toHaveBeenCalledWith("test-token", [1, 3, 4, 2], false);
+        expect(updateInterests).toHaveBeenCalledWith(
+          "test-token",
+          [1, 3, 4, 2],
+          false,
+        );
       });
       expect(screen.queryByText("提案が更新されます")).not.toBeInTheDocument();
     });
@@ -400,7 +458,9 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
 
       await waitFor(() => {
-        expect(screen.getByText(/明日リセット時に反映されます/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/明日リセット時に反映されます/),
+        ).toBeInTheDocument();
       });
     });
 
@@ -428,14 +488,20 @@ describe("設定画面", () => {
 
     test("提案半径のスライダーUIが表示される", async () => {
       await switchToSuggestionTab();
-      expect(screen.getByRole("heading", { name: /提案半径/ })).toBeInTheDocument();
-      expect(screen.getByRole("slider", { name: "提案半径" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { name: /提案半径/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("slider", { name: "提案半径" }),
+      ).toBeInTheDocument();
     });
 
     test("現在のsearch_radiusがスライダーの初期値として設定される", async () => {
       await switchToSuggestionTab();
       // mockUser の search_radius = 5000
-      const slider = screen.getByRole("slider", { name: "提案半径" }) as HTMLInputElement;
+      const slider = screen.getByRole("slider", {
+        name: "提案半径",
+      }) as HTMLInputElement;
       expect(slider.value).toBe("5000");
     });
 
@@ -447,7 +513,9 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "半径を保存" }));
 
       // モーダル確認
-      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText("提案が更新されます")).toBeInTheDocument(),
+      );
       await user.click(screen.getByRole("button", { name: "保存する" }));
 
       await waitFor(() => {
@@ -461,7 +529,9 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "半径を保存" }));
 
       // モーダル確認
-      await waitFor(() => expect(screen.getByText("提案が更新されます")).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText("提案が更新されます")).toBeInTheDocument(),
+      );
       await user.click(screen.getByRole("button", { name: "保存する" }));
 
       await waitFor(() => {
@@ -478,5 +548,4 @@ describe("設定画面", () => {
       expect(rootDiv).not.toHaveClass("pb-32");
     });
   });
-
 });

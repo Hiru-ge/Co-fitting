@@ -18,11 +18,14 @@ import HomeTourModal from "~/components/HomeTourModal";
 import LocationPermissionModal from "~/components/location-permission-modal";
 import PushNotificationBanner from "~/components/PushNotificationBanner";
 
-export async function clientLoader({}: Route.ClientLoaderArgs) {
+export async function clientLoader() {
   const token = getToken();
   if (!token) throw redirect("/login");
 
-  let apiResult: [Awaited<ReturnType<typeof getUser>>, Awaited<ReturnType<typeof getInterests>>];
+  let apiResult: [
+    Awaited<ReturnType<typeof getUser>>,
+    Awaited<ReturnType<typeof getInterests>>,
+  ];
   try {
     apiResult = await Promise.all([getUser(token), getInterests(token)]);
   } catch {
@@ -30,14 +33,17 @@ export async function clientLoader({}: Route.ClientLoaderArgs) {
   }
 
   const [user, interests] = apiResult;
-  const onboardingSkipped = localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
+  const onboardingSkipped =
+    localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
   if (interests.length < 3 && !onboardingSkipped) throw redirect("/onboarding");
   return { user, token };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
-  const [showTour, setShowTour] = useState(() => localStorage.getItem(HOME_TOUR_SEEN_KEY) === null);
+  const [showTour, setShowTour] = useState(
+    () => localStorage.getItem(HOME_TOUR_SEEN_KEY) === null,
+  );
   const {
     places,
     isLoading,
@@ -103,12 +109,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </div>
           </main>
         </>
-      ) : (error || places.length === 0) ? (
+      ) : error || places.length === 0 ? (
         <>
           <AppHeader />
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-            <span className="material-symbols-outlined text-6xl text-gray-400">explore_off</span>
-            <p className="text-gray-500 text-center">{error || "近くのスポットが見つかりませんでした"}</p>
+            <span className="material-symbols-outlined text-6xl text-gray-400">
+              explore_off
+            </span>
+            <p className="text-gray-500 text-center">
+              {error || "近くのスポットが見つかりませんでした"}
+            </p>
             <button
               onClick={() => loadSuggestions()}
               className="px-6 py-2 bg-primary text-white rounded-full font-bold"
@@ -119,11 +129,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </>
       ) : (
         <>
-          <AppHeader locationLabel={getTruncatedLocationLabel(currentPlace!.vicinity)} isDefaultLocation={isUsingDefaultLocation} />
+          <AppHeader
+            locationLabel={getTruncatedLocationLabel(currentPlace!.vicinity)}
+            isDefaultLocation={isUsingDefaultLocation}
+          />
 
           <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
             {places.length > 0 && (
-              <div data-tour="discovery-cards" className="relative w-full aspect-3/5">
+              <div
+                data-tour="discovery-cards"
+                className="relative w-full aspect-3/5"
+              >
                 {places.slice(0, 3).map((place, i) => (
                   <DiscoveryCard
                     key={place.place_id}
@@ -138,7 +154,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 ))}
 
                 {/* アクションボタンをカード下部にオーバーレイ */}
-                <div data-tour="action-buttons" className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4">
+                <div
+                  data-tour="action-buttons"
+                  className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4"
+                >
                   <ActionButtons
                     onCheckIn={handleCheckIn}
                     onReload={handleReload}
@@ -155,7 +174,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             {/* カードインジケーターはカードの外 */}
             {places.length > 1 && (
               <div className="mt-2">
-                <CardIndicator total={places.length} currentIndex={currentIndex} />
+                <CardIndicator
+                  total={places.length}
+                  currentIndex={currentIndex}
+                />
               </div>
             )}
           </main>
@@ -177,10 +199,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       {/* バッジ獲得モーダル: 同上 */}
       {badgeQueue.length > 0 && (
-        <BadgeModal
-          badge={badgeQueue[0]}
-          onClose={handleBadgeModalClose}
-        />
+        <BadgeModal badge={badgeQueue[0]} onClose={handleBadgeModalClose} />
       )}
 
       {/* チュートリアルツアーモーダル: 初回のみ表示 */}

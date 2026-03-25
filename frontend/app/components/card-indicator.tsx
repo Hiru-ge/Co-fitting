@@ -3,7 +3,10 @@ interface CardIndicatorProps {
   currentIndex: number;
 }
 
-export default function CardIndicator({ total, currentIndex }: CardIndicatorProps) {
+export default function CardIndicator({
+  total,
+  currentIndex,
+}: CardIndicatorProps) {
   return (
     <div className="flex items-center justify-center gap-2">
       {Array.from({ length: total }, (_, i) => (

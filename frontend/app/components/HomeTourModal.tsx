@@ -11,7 +11,8 @@ const HOME_TOUR_STEPS = [
   {
     selector: '[data-tour="discovery-cards"]',
     title: "近くの場所が提案されます",
-    description: "カードをスワイプで次の提案へ移動\nリロードで提案カードを引き直せます",
+    description:
+      "カードをスワイプで次の提案へ移動\nリロードで提案カードを引き直せます",
   },
   {
     selector: '[data-tour="action-buttons"]',
@@ -32,7 +33,8 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
 
   useEffect(() => {
     const el = document.querySelector(currentStep.selector);
-    setTargetRect(el ? el.getBoundingClientRect() : null);
+    const rect = el ? el.getBoundingClientRect() : null;
+    requestAnimationFrame(() => setTargetRect(rect));
   }, [step, currentStep.selector]);
 
   function handleSkip() {
@@ -51,12 +53,22 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
   }
 
   const panelAtTop = targetRect
-    ? (targetRect.top + targetRect.height / 2) > window.innerHeight * 0.55
+    ? targetRect.top + targetRect.height / 2 > window.innerHeight * 0.55
     : false;
 
   const panelStyle: React.CSSProperties = panelAtTop
-    ? { position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)" }
-    : { position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)" };
+    ? {
+        position: "absolute",
+        top: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+      }
+    : {
+        position: "absolute",
+        bottom: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+      };
 
   return (
     <div

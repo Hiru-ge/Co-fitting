@@ -26,30 +26,68 @@ import { getUserStats, getUserBadges } from "~/api/users";
 
 const mockVisits = [
   {
-    id: 1, user_id: 1, place_id: "ChIJ_m1", place_name: "上野公園", vicinity: "台東区",
-    category: "park", lat: 35.714, lng: 139.774, rating: null, memo: null,
-    xp_earned: 50, is_breakout: false, visited_at: "2024-02-03T12:00:00Z", created_at: "2024-02-03T12:00:00Z",
+    id: 1,
+    user_id: 1,
+    place_id: "ChIJ_m1",
+    place_name: "上野公園",
+    vicinity: "台東区",
+    category: "park",
+    lat: 35.714,
+    lng: 139.774,
+    rating: null,
+    memo: null,
+    xp_earned: 50,
+    is_breakout: false,
+    visited_at: "2024-02-03T12:00:00Z",
+    created_at: "2024-02-03T12:00:00Z",
   },
   {
-    id: 2, user_id: 1, place_id: "ChIJ_m2", place_name: "浅草寺", vicinity: "台東区",
-    category: "temple", lat: 35.714, lng: 139.796, rating: null, memo: null,
-    xp_earned: 80, is_breakout: true, visited_at: "2024-02-15T12:00:00Z", created_at: "2024-02-15T12:00:00Z",
+    id: 2,
+    user_id: 1,
+    place_id: "ChIJ_m2",
+    place_name: "浅草寺",
+    vicinity: "台東区",
+    category: "temple",
+    lat: 35.714,
+    lng: 139.796,
+    rating: null,
+    memo: null,
+    xp_earned: 80,
+    is_breakout: true,
+    visited_at: "2024-02-15T12:00:00Z",
+    created_at: "2024-02-15T12:00:00Z",
   },
 ];
 
 // 固定時刻 2026-03-16（3月）における今月の範囲内: 2026-03-10T01:00:00Z
 const mockBadges = [
-  { id: 2, name: "探検家", description: "5箇所を訪問", icon_url: "", earned_at: "2026-03-10T01:00:00.000Z" },
+  {
+    id: 2,
+    name: "探検家",
+    description: "5箇所を訪問",
+    icon_url: "",
+    earned_at: "2026-03-10T01:00:00.000Z",
+  },
 ];
 
 const mockStats = {
-  level: 4, total_xp: 800, streak_count: 3, streak_last: null,
-  total_visits: 15, breakout_visits: 5, challenge_visits: 2,
+  level: 4,
+  total_xp: 800,
+  streak_count: 3,
+  streak_last: null,
+  total_visits: 15,
+  breakout_visits: 5,
+  challenge_visits: 2,
 };
 
 const mockUser = {
-  id: 1, email: "test@example.com", display_name: "テストユーザー",
-  search_radius: 1000, avatar_url: null, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z",
+  id: 1,
+  email: "test@example.com",
+  display_name: "テストユーザー",
+  search_radius: 1000,
+  avatar_url: null,
+  created_at: "2024-01-01T00:00:00Z",
+  updated_at: "2024-01-01T00:00:00Z",
 };
 
 // 2026-03-16 12:00 JST に固定 (UTC: 03:00:00)
@@ -79,9 +117,9 @@ describe("SummaryMonthly", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // 訪問件数と獲得XPの両方が存在すること
@@ -96,9 +134,9 @@ describe("SummaryMonthly", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("上野公園")).toBeInTheDocument();
@@ -112,9 +150,9 @@ describe("SummaryMonthly", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("探検家")).toBeInTheDocument();
@@ -124,7 +162,7 @@ describe("SummaryMonthly", () => {
     vi.mocked(getToken).mockReturnValue(null);
     const { clientLoader } = await import("./summary.monthly");
 
-    await expect(clientLoader({ params: {}, request: new Request("http://localhost/summary/monthly"), context: {} } as never)).rejects.toThrow();
+    await expect(clientLoader()).rejects.toThrow();
   });
 });
 
@@ -140,7 +178,7 @@ describe("SummaryMonthly バッジフィルタリング", () => {
   // この月の範囲（JST基準: 2026年3月）
   // from  = 2026-03-01 00:00 JST = 2026-02-28T15:00:00.000Z
   // until = 2026-04-01 00:00 JST = 2026-03-31T15:00:00.000Z
-  const MONTH_FROM  = "2026-02-28T15:00:00.000Z";
+  const MONTH_FROM = "2026-02-28T15:00:00.000Z";
   const MONTH_UNTIL = "2026-03-31T15:00:00.000Z";
 
   beforeEach(() => {
@@ -164,9 +202,27 @@ describe("SummaryMonthly バッジフィルタリング", () => {
     // 期間外（先月）: 2026-02-28 10:00 JST (= 2026-02-28T01:00:00Z)
     // 期間外（翌月）: 2026-04-01 10:00 JST (= 2026-04-01T01:00:00Z)
     vi.mocked(getUserBadges).mockResolvedValue([
-      { id: 1, name: "月内バッジ",   description: "", icon_url: "", earned_at: "2026-03-10T01:00:00.000Z" },
-      { id: 2, name: "先月バッジ",   description: "", icon_url: "", earned_at: "2026-02-28T01:00:00.000Z" },
-      { id: 3, name: "翌月バッジ",   description: "", icon_url: "", earned_at: "2026-04-01T01:00:00.000Z" },
+      {
+        id: 1,
+        name: "月内バッジ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-03-10T01:00:00.000Z",
+      },
+      {
+        id: 2,
+        name: "先月バッジ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-02-28T01:00:00.000Z",
+      },
+      {
+        id: 3,
+        name: "翌月バッジ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-04-01T01:00:00.000Z",
+      },
     ]);
 
     const { default: SummaryMonthly } = await import("./summary.monthly");
@@ -175,9 +231,9 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("月内バッジ")).toBeInTheDocument();
@@ -188,7 +244,13 @@ describe("SummaryMonthly バッジフィルタリング", () => {
   test("earned_at が from と一致する（境界値）バッジは表示される", async () => {
     // from ちょうど: 2026-02-28T15:00:00.000Z (= 2026-03-01 00:00 JST)
     vi.mocked(getUserBadges).mockResolvedValue([
-      { id: 1, name: "月始まりバッジ", description: "", icon_url: "", earned_at: MONTH_FROM },
+      {
+        id: 1,
+        name: "月始まりバッジ",
+        description: "",
+        icon_url: "",
+        earned_at: MONTH_FROM,
+      },
     ]);
 
     const { default: SummaryMonthly } = await import("./summary.monthly");
@@ -197,9 +259,9 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("月始まりバッジ")).toBeInTheDocument();
@@ -208,7 +270,13 @@ describe("SummaryMonthly バッジフィルタリング", () => {
   test("earned_at が until と一致する（境界値）バッジは表示されない", async () => {
     // until ちょうど: 2026-03-31T15:00:00.000Z (= 2026-04-01 00:00 JST、翌月は範囲外)
     vi.mocked(getUserBadges).mockResolvedValue([
-      { id: 1, name: "月終わりバッジ", description: "", icon_url: "", earned_at: MONTH_UNTIL },
+      {
+        id: 1,
+        name: "月終わりバッジ",
+        description: "",
+        icon_url: "",
+        earned_at: MONTH_UNTIL,
+      },
     ]);
 
     const { default: SummaryMonthly } = await import("./summary.monthly");
@@ -217,9 +285,9 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // ローディング完了を待ってから、表示されないことを確認する
@@ -229,10 +297,34 @@ describe("SummaryMonthly バッジフィルタリング", () => {
 
   test("期間内のバッジが複数ある場合は全て表示される", async () => {
     vi.mocked(getUserBadges).mockResolvedValue([
-      { id: 1, name: "バッジX",    description: "", icon_url: "", earned_at: "2026-03-05T00:00:00.000Z" },
-      { id: 2, name: "バッジY",    description: "", icon_url: "", earned_at: "2026-03-15T00:00:00.000Z" },
-      { id: 3, name: "バッジZ",    description: "", icon_url: "", earned_at: "2026-03-28T00:00:00.000Z" },
-      { id: 4, name: "範囲外バッジ", description: "", icon_url: "", earned_at: "2026-02-01T00:00:00.000Z" },
+      {
+        id: 1,
+        name: "バッジX",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-03-05T00:00:00.000Z",
+      },
+      {
+        id: 2,
+        name: "バッジY",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-03-15T00:00:00.000Z",
+      },
+      {
+        id: 3,
+        name: "バッジZ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-03-28T00:00:00.000Z",
+      },
+      {
+        id: 4,
+        name: "範囲外バッジ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-02-01T00:00:00.000Z",
+      },
     ]);
 
     const { default: SummaryMonthly } = await import("./summary.monthly");
@@ -241,9 +333,9 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("バッジX")).toBeInTheDocument();
@@ -254,8 +346,20 @@ describe("SummaryMonthly バッジフィルタリング", () => {
 
   test("期間内のバッジが1件もない場合はバッジセクションが空になる", async () => {
     vi.mocked(getUserBadges).mockResolvedValue([
-      { id: 1, name: "先月バッジ",   description: "", icon_url: "", earned_at: "2026-02-10T00:00:00.000Z" },
-      { id: 2, name: "来月バッジ",   description: "", icon_url: "", earned_at: "2026-04-10T00:00:00.000Z" },
+      {
+        id: 1,
+        name: "先月バッジ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-02-10T00:00:00.000Z",
+      },
+      {
+        id: 2,
+        name: "来月バッジ",
+        description: "",
+        icon_url: "",
+        earned_at: "2026-04-10T00:00:00.000Z",
+      },
     ]);
 
     const { default: SummaryMonthly } = await import("./summary.monthly");
@@ -264,9 +368,9 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         <SummaryMonthly
           loaderData={{ user: mockUser, token: "mock-token" }}
           params={{}}
-          matches={[]}
+          matches={[] as any}
         />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     // ローディング完了を待つ

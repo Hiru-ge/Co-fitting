@@ -12,7 +12,7 @@ export async function getInterests(token: string): Promise<Interest[]> {
 export async function updateInterests(
   token: string,
   genreTagIds: number[],
-  refreshSuggestions?: boolean
+  refreshSuggestions?: boolean,
 ): Promise<{ interests: Interest[]; reload_count_remaining: number }> {
   const url = refreshSuggestions
     ? "/api/users/me/interests?refresh_suggestions=true"

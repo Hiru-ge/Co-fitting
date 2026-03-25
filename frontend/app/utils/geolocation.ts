@@ -7,7 +7,7 @@ export interface Position {
 
 export function calcMapCenter(
   visits: { lat: number; lng: number }[],
-  userPosition: Position | null
+  userPosition: Position | null,
 ): Position {
   if (userPosition) return userPosition;
   if (visits.length > 0) {
@@ -27,7 +27,7 @@ export function getCurrentPosition(): Promise<Position> {
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => reject(err),
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
     );
   });
 }
@@ -48,15 +48,16 @@ export async function getPositionWithFallback(): Promise<Position> {
  */
 export function startPositionPolling(
   onPosition: (pos: Position) => void,
-  onError?: (err: GeolocationPositionError) => void
+  onError?: (err: GeolocationPositionError) => void,
 ): ReturnType<typeof setInterval> | null {
   if (!navigator.geolocation) return null;
 
   const fetch = () => {
     navigator.geolocation.getCurrentPosition(
-      (pos) => onPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) =>
+        onPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       onError,
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
     );
   };
 
@@ -73,17 +74,19 @@ export function isWithinCheckInRange(
   userLng: number,
   targetLat: number,
   targetLng: number,
-  thresholdMeters: number = CHECKIN_DISTANCE_THRESHOLD
+  thresholdMeters: number = CHECKIN_DISTANCE_THRESHOLD,
 ): boolean {
   if (userLat === 0 && userLng === 0) return true;
-  return calcDistance(userLat, userLng, targetLat, targetLng) <= thresholdMeters;
+  return (
+    calcDistance(userLat, userLng, targetLat, targetLng) <= thresholdMeters
+  );
 }
 
 export function calcDistance(
   lat1: number,
   lng1: number,
   lat2: number,
-  lng2: number
+  lng2: number,
 ): number {
   const R = 6371000;
   const toRad = (deg: number) => (deg * Math.PI) / 180;

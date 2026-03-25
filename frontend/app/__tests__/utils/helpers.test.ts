@@ -1,5 +1,12 @@
 import { describe, test, expect } from "vitest";
-import { formatDate, formatMonth, formatShortDate, groupByMonth, formatDistance, buildGoogleMapsPlaceUrl } from "~/utils/helpers";
+import {
+  formatDate,
+  formatMonth,
+  formatShortDate,
+  groupByMonth,
+  formatDistance,
+  buildGoogleMapsPlaceUrl,
+} from "~/utils/helpers";
 
 describe("formatDate", () => {
   test("ISO文字列を「YYYY年M月D日」形式に変換する", () => {
@@ -102,7 +109,7 @@ describe("buildGoogleMapsPlaceUrl", () => {
   test("place_id を埋め込んだ Google Maps URL を返す", () => {
     const url = buildGoogleMapsPlaceUrl("ChIJN1t_tDeuEmsRUsoyG83frY4");
     expect(url).toBe(
-      "https://www.google.com/maps/place/?q=place_id:ChIJN1t_tDeuEmsRUsoyG83frY4"
+      "https://www.google.com/maps/place/?q=place_id:ChIJN1t_tDeuEmsRUsoyG83frY4",
     );
   });
 

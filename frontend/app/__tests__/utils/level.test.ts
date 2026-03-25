@@ -13,7 +13,9 @@ describe("LEVEL_XP_THRESHOLDS", () => {
 
   test("閾値は昇順になっている", () => {
     for (let i = 1; i < LEVEL_XP_THRESHOLDS.length; i++) {
-      expect(LEVEL_XP_THRESHOLDS[i]).toBeGreaterThan(LEVEL_XP_THRESHOLDS[i - 1]);
+      expect(LEVEL_XP_THRESHOLDS[i]).toBeGreaterThan(
+        LEVEL_XP_THRESHOLDS[i - 1],
+      );
     }
   });
 });

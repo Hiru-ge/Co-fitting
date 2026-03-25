@@ -126,7 +126,7 @@ func TestDevResetSuggestionCache(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		deletedCount := int(resp["deleted_count"].(float64))
 		if deletedCount != 3 {
@@ -197,7 +197,7 @@ func TestDevGetSuggestionStats(t *testing.T) {
 		}
 
 		var resp cacheStatsResponse
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		if resp.KeyCount != 0 {
 			t.Errorf("Expected key_count 0, got %d", resp.KeyCount)

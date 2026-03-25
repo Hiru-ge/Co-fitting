@@ -5,18 +5,32 @@ import userEvent from "@testing-library/user-event";
 const localStorageData: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => localStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { localStorageData[key] = value; },
-  removeItem: (key: string) => { delete localStorageData[key]; },
-  clear: () => { Object.keys(localStorageData).forEach(k => delete localStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    localStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete localStorageData[key];
+  },
+  clear: () => {
+    Object.keys(localStorageData).forEach((k) => delete localStorageData[k]);
+  },
 };
 vi.stubGlobal("localStorage", localStorageMock);
 
 const sessionStorageData: Record<string, string> = {};
 const sessionStorageMock = {
   getItem: (key: string) => sessionStorageData[key] ?? null,
-  setItem: (key: string, value: string) => { sessionStorageData[key] = value; },
-  removeItem: (key: string) => { delete sessionStorageData[key]; },
-  clear: () => { Object.keys(sessionStorageData).forEach(k => delete sessionStorageData[k]); },
+  setItem: (key: string, value: string) => {
+    sessionStorageData[key] = value;
+  },
+  removeItem: (key: string) => {
+    delete sessionStorageData[key];
+  },
+  clear: () => {
+    Object.keys(sessionStorageData).forEach(
+      (k) => delete sessionStorageData[k],
+    );
+  },
 };
 vi.stubGlobal("sessionStorage", sessionStorageMock);
 
@@ -60,7 +74,9 @@ describe("HomeTourModal", () => {
 
     await user.click(screen.getByRole("button", { name: "次へ" }));
     expect(screen.getByRole("button", { name: "次へ" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "はじめる" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "はじめる" }),
+    ).not.toBeInTheDocument();
   });
 
   test("ステップ2「次へ」押下で profile_tour_active がsessionStorageに書き込まれる", async () => {
@@ -122,7 +138,9 @@ describe("HomeTourModal", () => {
   test("dialog role と aria-label が設定されている", () => {
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
-    expect(screen.getByRole("dialog", { name: "使い方ツアー" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("dialog", { name: "使い方ツアー" }),
+    ).toBeInTheDocument();
   });
 
   test("ステップ数インジケーターが正しく表示される（1/3）", () => {

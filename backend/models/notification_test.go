@@ -50,9 +50,9 @@ func TestNotificationSettingsDefaults(t *testing.T) {
 	typ := reflect.TypeOf(NotificationSettings{})
 
 	tests := []struct {
-		field        string
-		wantContain  string
-		description  string
+		field       string
+		wantContain string
+		description string
 	}{
 		{"UserID", "primaryKey", "UserID は primaryKey"},
 		{"PushEnabled", "default:true", "PushEnabled のデフォルトは true"},

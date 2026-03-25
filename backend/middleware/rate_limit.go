@@ -18,11 +18,11 @@ type windowEntry struct {
 // ベータ版〜小規模利用を想定したインメモリ実装。
 // 本番スケールアウト時は Redis ベースの実装へ移行すること。
 type RateLimiter struct {
-	mu       sync.Mutex
-	entries  map[string]*windowEntry
-	limit    int
-	window   time.Duration
-	lastGC   time.Time
+	mu      sync.Mutex
+	entries map[string]*windowEntry
+	limit   int
+	window  time.Duration
+	lastGC  time.Time
 }
 
 func NewRateLimiter(limit int, window time.Duration) *RateLimiter {

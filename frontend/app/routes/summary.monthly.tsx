@@ -34,7 +34,10 @@ function getMonthRange(): { from: string; until: string; label: string } {
 
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
-async function loadPhotos(visits: Visit[], token: string): Promise<VisitWithPhoto[]> {
+async function loadPhotos(
+  visits: Visit[],
+  token: string,
+): Promise<VisitWithPhoto[]> {
   return Promise.all(
     visits.map(async (v) => {
       try {
@@ -43,7 +46,7 @@ async function loadPhotos(visits: Visit[], token: string): Promise<VisitWithPhot
       } catch {
         return { ...v };
       }
-    })
+    }),
   );
 }
 
@@ -65,9 +68,13 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
         ]);
         const visitsWithPhotos = await loadPhotos(visitRes.visits, token);
         setVisits(visitsWithPhotos);
-        setBadges(badgeRes.filter((b) => b.earned_at >= from && b.earned_at < until));
+        setBadges(
+          badgeRes.filter((b) => b.earned_at >= from && b.earned_at < until),
+        );
       } catch {
-        setErrorMessage("データの取得に失敗しました。しばらくしてから再度お試しください。");
+        setErrorMessage(
+          "データの取得に失敗しました。しばらくしてから再度お試しください。",
+        );
       } finally {
         setIsLoading(false);
       }

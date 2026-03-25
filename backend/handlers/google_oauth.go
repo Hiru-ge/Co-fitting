@@ -51,7 +51,7 @@ func (v *GoogleHTTPVerifier) VerifyIDToken(ctx context.Context, idToken string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer resp.Body.Close() //nolint:errcheck
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New("invalid id_token")

@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	}
 
 	sqlDB, _ := testDB.DB()
-	defer sqlDB.Close()
+	defer sqlDB.Close() //nolint:errcheck
 
 	m.Run()
 }
@@ -55,7 +55,7 @@ func createUser(t *testing.T, email string) models.User {
 
 func getOrCreateGenreTag(t *testing.T, name string) models.GenreTag {
 	t.Helper()
-	database.SeedMasterData(testDB)
+	database.SeedMasterData(testDB) //nolint:errcheck
 	var tag models.GenreTag
 	if err := testDB.Where("name = ?", name).First(&tag).Error; err != nil {
 		tag = models.GenreTag{Name: name, Category: "テスト", Icon: "test"}
@@ -404,7 +404,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("初訪問で「最初の一歩」バッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge1@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
@@ -435,7 +435,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("2回目以降は「最初の一歩」バッジは付与されない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge2@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		var badge models.Badge
 		testDB.Where("name = ?", "最初の一歩").First(&badge)
@@ -479,18 +479,18 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("コンフォートゾーン脱却訪問4件ではバッジが付与されない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge3a@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		for i := 0; i < 4; i++ {
 			testDB.Create(&models.Visit{
-				UserID:        user.ID,
-				PlaceID:       fmt.Sprintf("place_czb4_%d", i),
-				PlaceName:     "テスト場所",
-				Category:      "museum",
-				Latitude:      35.67,
-				Longitude:     139.65,
+				UserID:     user.ID,
+				PlaceID:    fmt.Sprintf("place_czb4_%d", i),
+				PlaceName:  "テスト場所",
+				Category:   "museum",
+				Latitude:   35.67,
+				Longitude:  139.65,
 				IsBreakout: true,
-				VisitedAt:     time.Now(),
+				VisitedAt:  time.Now(),
 			})
 		}
 
@@ -509,18 +509,18 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("コンフォートゾーン脱却訪問5件目でバッジが付与される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge3b@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		for i := 0; i < 5; i++ {
 			testDB.Create(&models.Visit{
-				UserID:        user.ID,
-				PlaceID:       fmt.Sprintf("place_czb5_%d", i),
-				PlaceName:     "テスト場所",
-				Category:      "museum",
-				Latitude:      35.67,
-				Longitude:     139.65,
+				UserID:     user.ID,
+				PlaceID:    fmt.Sprintf("place_czb5_%d", i),
+				PlaceName:  "テスト場所",
+				Category:   "museum",
+				Latitude:   35.67,
+				Longitude:  139.65,
 				IsBreakout: true,
-				VisitedAt:     time.Now(),
+				VisitedAt:  time.Now(),
 			})
 		}
 
@@ -543,7 +543,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("3種類のジャンルを訪問したら「ジャンルコレクター Lv.1」を獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge4@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		tag1 := getOrCreateGenreTag(t, "カフェ")
 		tag2 := getOrCreateGenreTag(t, "ラーメン・麺類")
@@ -582,7 +582,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("ストリーク4週でストリークマスター Lv.1を獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge5@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		testDB.Model(&user).Update("streak_count", 4)
 
@@ -605,7 +605,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("深夜（23時JST）の訪問でナイトウォーカーバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night1@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		nightVisitTime := time.Date(2024, 1, 15, 23, 0, 0, 0, jst)
@@ -639,7 +639,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("翌5時未満（4時JST）の訪問でナイトウォーカーバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night2@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		nightVisitTime := time.Date(2024, 1, 16, 4, 0, 0, 0, jst)
@@ -673,7 +673,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("昼間（15時JST）の訪問ではナイトウォーカーバッジを獲得しない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night3@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		dayVisitTime := time.Date(2024, 1, 15, 15, 0, 0, 0, jst)
@@ -707,7 +707,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("週末（土曜JST）に3箇所以上訪問するとウィークエンドウォリアーバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "weekend1@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-20 は土曜日（JST）
@@ -744,7 +744,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("週末（日曜JST）に3箇所以上訪問するとウィークエンドウォリアーバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "weekend2@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-21 は日曜日（JST）
@@ -781,7 +781,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("週末訪問が2箇所ではウィークエンドウォリアーバッジを獲得しない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "weekend3@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-20 は土曜日（JST）
@@ -814,7 +814,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("平日の訪問3件ではウィークエンドウォリアーバッジを獲得しない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "weekend4@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-15 は月曜日（JST）
@@ -847,7 +847,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("土日合計で3箇所以上（異なる週末日）でウィークエンドウォリアーバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "weekend5@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-20 土曜, 2024-01-21 日曜
@@ -890,7 +890,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("過去訪問から10km以上離れた場所を訪問するとエリアパイオニアバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "area_pioneer1@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 東京駅付近の過去訪問
 		tokyoLat, tokyoLng := 35.6812, 139.7671
@@ -935,7 +935,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("過去訪問から10km未満の場所を訪問してもエリアパイオニアバッジを獲得しない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "area_pioneer2@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 東京駅付近の過去訪問
 		tokyoLat, tokyoLng := 35.6812, 139.7671
@@ -976,7 +976,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("初めての訪問（過去訪問なし）はエリアパイオニアバッジを獲得しない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "area_pioneer3@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		yokohamaLat, yokohamaLng := 35.4660, 139.6225
 		testDB.Create(&models.Visit{
@@ -1005,7 +1005,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 	t.Run("複数の過去訪問のうち1つから10km以上離れていればエリアパイオニアバッジを獲得", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "area_pioneer4@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 近くの過去訪問（新宿）
 		testDB.Create(&models.Visit{
@@ -1053,17 +1053,17 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("通常訪問でXPが加算されレスポンスが返る", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif1@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place1",
-			PlaceName:     "テストカフェ",
-			Category:      "cafe",
-			Latitude:      35.67,
-			Longitude:     139.65,
+			UserID:     user.ID,
+			PlaceID:    "place1",
+			PlaceName:  "テストカフェ",
+			Category:   "cafe",
+			Latitude:   35.67,
+			Longitude:  139.65,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1083,17 +1083,17 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("脱却訪問で100XP基本値が加算される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif2@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place1",
-			PlaceName:     "美術館",
-			Category:      "museum",
-			Latitude:      35.67,
-			Longitude:     139.65,
+			UserID:     user.ID,
+			PlaceID:    "place1",
+			PlaceName:  "美術館",
+			Category:   "museum",
+			Latitude:   35.67,
+			Longitude:  139.65,
 			IsBreakout: true,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1110,7 +1110,7 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("レベルアップ時にlevel_up=trueとnew_levelが返る", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif3@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"total_xp": 90,
@@ -1118,14 +1118,14 @@ func TestProcessGamification(t *testing.T) {
 		})
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place1",
-			PlaceName:     "テスト",
-			Category:      "cafe",
-			Latitude:      35.67,
-			Longitude:     139.65,
+			UserID:     user.ID,
+			PlaceID:    "place1",
+			PlaceName:  "テスト",
+			Category:   "cafe",
+			Latitude:   35.67,
+			Longitude:  139.65,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1145,17 +1145,17 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("visit.xp_earnedがDBに保存される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif4@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_xp_save",
-			PlaceName:     "テスト",
-			Category:      "cafe",
-			Latitude:      35.67,
-			Longitude:     139.65,
+			UserID:     user.ID,
+			PlaceID:    "place_xp_save",
+			PlaceName:  "テスト",
+			Category:   "cafe",
+			Latitude:   35.67,
+			Longitude:  139.65,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1174,7 +1174,7 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("streak=5のユーザーが訪問するとストリークボーナス+50XPが加算される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_streak@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// streakを5に設定
 		lastWeek := time.Now().AddDate(0, 0, -7)
@@ -1184,14 +1184,14 @@ func TestProcessGamification(t *testing.T) {
 		})
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_streak_bonus",
-			PlaceName:     "テスト",
-			Category:      "cafe",
-			Latitude:      35.67,
-			Longitude:     139.65,
+			UserID:     user.ID,
+			PlaceID:    "place_streak_bonus",
+			PlaceName:  "テスト",
+			Category:   "cafe",
+			Latitude:   35.67,
+			Longitude:  139.65,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1210,7 +1210,7 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("streak=10のユーザーが訪問するとストリークボーナス上限100XPが加算される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_streak_cap@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// streak=9（UpdateStreak後に10になる）
 		lastWeek := time.Now().AddDate(0, 0, -7)
@@ -1220,14 +1220,14 @@ func TestProcessGamification(t *testing.T) {
 		})
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_streak_cap",
-			PlaceName:     "テスト",
-			Category:      "cafe",
-			Latitude:      35.67,
-			Longitude:     139.65,
+			UserID:     user.ID,
+			PlaceID:    "place_streak_cap",
+			PlaceName:  "テスト",
+			Category:   "cafe",
+			Latitude:   35.67,
+			Longitude:  139.65,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1245,18 +1245,18 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("過去訪問から10km以上離れた場所への訪問で初エリアボーナス+30XPが付与される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_first_area@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 東京駅付近の過去訪問
 		pastVisit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_tokyo_past",
-			PlaceName:     "東京の場所",
-			Category:      "cafe",
-			Latitude:      35.6812,
-			Longitude:     139.7671,
+			UserID:     user.ID,
+			PlaceID:    "place_tokyo_past",
+			PlaceName:  "東京の場所",
+			Category:   "cafe",
+			Latitude:   35.6812,
+			Longitude:  139.7671,
 			IsBreakout: false,
-			VisitedAt:     time.Now().Add(-24 * time.Hour),
+			VisitedAt:  time.Now().Add(-24 * time.Hour),
 		}
 		testDB.Create(&pastVisit)
 		// 過去訪問のXPを更新しておく（ロジック外のため手動でXP付与）
@@ -1264,14 +1264,14 @@ func TestProcessGamification(t *testing.T) {
 
 		// 横浜（東京から約30km）の新しい訪問
 		newVisit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_yokohama_new",
-			PlaceName:     "横浜の場所",
-			Category:      "cafe",
-			Latitude:      35.4660,
-			Longitude:     139.6225,
+			UserID:     user.ID,
+			PlaceID:    "place_yokohama_new",
+			PlaceName:  "横浜の場所",
+			Category:   "cafe",
+			Latitude:   35.4660,
+			Longitude:  139.6225,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&newVisit)
 
@@ -1289,31 +1289,31 @@ func TestProcessGamification(t *testing.T) {
 	t.Run("過去訪問から10km未満の場所への訪問では初エリアボーナスが付かない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_no_area_bonus@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 東京駅付近の過去訪問
 		pastVisit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_tokyo_near_past",
-			PlaceName:     "東京の場所",
-			Category:      "cafe",
-			Latitude:      35.6812,
-			Longitude:     139.7671,
+			UserID:     user.ID,
+			PlaceID:    "place_tokyo_near_past",
+			PlaceName:  "東京の場所",
+			Category:   "cafe",
+			Latitude:   35.6812,
+			Longitude:  139.7671,
 			IsBreakout: false,
-			VisitedAt:     time.Now().Add(-24 * time.Hour),
+			VisitedAt:  time.Now().Add(-24 * time.Hour),
 		}
 		testDB.Create(&pastVisit)
 
 		// 新宿（東京から約6km）の新しい訪問
 		nearVisit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_shinjuku_near",
-			PlaceName:     "新宿の場所",
-			Category:      "cafe",
-			Latitude:      35.6896,
-			Longitude:     139.7006,
+			UserID:     user.ID,
+			PlaceID:    "place_shinjuku_near",
+			PlaceName:  "新宿の場所",
+			Category:   "cafe",
+			Latitude:   35.6896,
+			Longitude:  139.7006,
 			IsBreakout: false,
-			VisitedAt:     time.Now(),
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&nearVisit)
 
@@ -1448,7 +1448,7 @@ func TestGenreProficiencyIncludesStreakBonus(t *testing.T) {
 	t.Run("ProcessGamificationのストリークボーナスXPがジャンル熟練度に反映される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "genre_streak@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		tag := getOrCreateGenreTag(t, "カフェ")
 
@@ -1460,15 +1460,15 @@ func TestGenreProficiencyIncludesStreakBonus(t *testing.T) {
 		})
 
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_genre_streak",
-			PlaceName:     "ストリークカフェ",
-			Category:      "cafe",
-			Latitude:      35.6895,
-			Longitude:     139.6917,
+			UserID:     user.ID,
+			PlaceID:    "place_genre_streak",
+			PlaceName:  "ストリークカフェ",
+			Category:   "cafe",
+			Latitude:   35.6895,
+			Longitude:  139.6917,
 			IsBreakout: false,
-			GenreTagID:    &tag.ID,
-			VisitedAt:     time.Now(),
+			GenreTagID: &tag.ID,
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1506,7 +1506,7 @@ func TestNightVisitBoundaries(t *testing.T) {
 	t.Run("22時59分JSTの訪問ではナイトウォーカーバッジを獲得しない（h=22 → false）", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night_boundary1@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 2024-01-15 22:59 JST（深夜帯の1分前）
 		visitTime := time.Date(2024, 1, 15, 22, 59, 0, 0, jstZone)
@@ -1536,7 +1536,7 @@ func TestNightVisitBoundaries(t *testing.T) {
 	t.Run("5時00分JSTの訪問ではナイトウォーカーバッジを獲得しない（h=5 → false）", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night_boundary2@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 2024-01-16 5:00 JST（深夜帯終了後の境界）
 		visitTime := time.Date(2024, 1, 16, 5, 0, 0, 0, jstZone)
@@ -1566,7 +1566,7 @@ func TestNightVisitBoundaries(t *testing.T) {
 	t.Run("4時59分JSTの訪問ではナイトウォーカーバッジを獲得する（h=4 → true）", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night_boundary3@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 2024-01-16 4:59 JST（深夜帯終了の1分前）
 		visitTime := time.Date(2024, 1, 16, 4, 59, 0, 0, jstZone)
@@ -1603,19 +1603,19 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 	t.Run("ProcessGamificationはXP内訳情報(XPBreakdown)を返す", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_breakdown@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		tag := getOrCreateGenreTag(t, "カフェ")
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_breakdown_test",
-			PlaceName:     "ブレイクダウンテスト",
-			Category:      "cafe",
-			Latitude:      35.6895,
-			Longitude:     139.6917,
+			UserID:     user.ID,
+			PlaceID:    "place_breakdown_test",
+			PlaceName:  "ブレイクダウンテスト",
+			Category:   "cafe",
+			Latitude:   35.6895,
+			Longitude:  139.6917,
 			IsBreakout: false,
-			GenreTagID:    &tag.ID,
-			VisitedAt:     time.Now(),
+			GenreTagID: &tag.ID,
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 
@@ -1641,19 +1641,19 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 	t.Run("脱却訪問のXPBreakdownはBaseXP=100を返す", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_breakdown_escape@example.com")
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		tag := getOrCreateGenreTag(t, "カフェ")
 		visit := models.Visit{
-			UserID:        user.ID,
-			PlaceID:       "place_escape_test",
-			PlaceName:     "脱却テスト",
-			Category:      "cafe",
-			Latitude:      35.6895,
-			Longitude:     139.6917,
+			UserID:     user.ID,
+			PlaceID:    "place_escape_test",
+			PlaceName:  "脱却テスト",
+			Category:   "cafe",
+			Latitude:   35.6895,
+			Longitude:  139.6917,
 			IsBreakout: true, // 脱却訪問
-			GenreTagID:    &tag.ID,
-			VisitedAt:     time.Now(),
+			GenreTagID: &tag.ID,
+			VisitedAt:  time.Now(),
 		}
 		testDB.Create(&visit)
 

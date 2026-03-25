@@ -25,7 +25,7 @@ describe("googleOAuth", () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_token: "google-id-token" }),
-      })
+      }),
     );
     expect(result).toEqual({
       access_token: "access-token",
@@ -69,9 +69,7 @@ describe("googleOAuth", () => {
   });
 
   test("ネットワークエラー時にエラーをthrowする", async () => {
-    global.fetch = vi
-      .fn()
-      .mockRejectedValue(new TypeError("Failed to fetch"));
+    global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
 
     await expect(googleOAuth("some-token")).rejects.toThrow("Failed to fetch");
   });

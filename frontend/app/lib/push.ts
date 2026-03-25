@@ -1,4 +1,8 @@
-import { getVapidPublicKey, subscribePushToBackend, unsubscribePushFromBackend } from "~/api/notifications";
+import {
+  getVapidPublicKey,
+  subscribePushToBackend,
+  unsubscribePushFromBackend,
+} from "~/api/notifications";
 
 let cachedVapidPublicKey: string | null = null;
 
@@ -36,10 +40,15 @@ export async function subscribePush(token: string): Promise<boolean> {
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    applicationServerKey: urlBase64ToUint8Array(
+      vapidPublicKey,
+    ) as Uint8Array<ArrayBuffer>,
   });
 
-  await subscribePushToBackend(token, subscription.toJSON() as PushSubscriptionJSON);
+  await subscribePushToBackend(
+    token,
+    subscription.toJSON() as PushSubscriptionJSON,
+  );
   return true;
 }
 

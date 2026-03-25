@@ -12,7 +12,7 @@ const MAX_TILT = 10;
 
 // 🔵 REFACTOR: 星フィールドの座標を定数配列として定義
 const STARS: Array<{ top: string; left: string; size: number }> = [
-  { top: "8%",  left: "12%", size: 2 },
+  { top: "8%", left: "12%", size: 2 },
   { top: "15%", left: "72%", size: 1 },
   { top: "22%", left: "38%", size: 3 },
   { top: "30%", left: "85%", size: 2 },
@@ -21,7 +21,7 @@ const STARS: Array<{ top: string; left: string; size: number }> = [
   { top: "60%", left: "30%", size: 3 },
   { top: "68%", left: "78%", size: 1 },
   { top: "75%", left: "48%", size: 2 },
-  { top: "82%", left: "8%",  size: 1 },
+  { top: "82%", left: "8%", size: 1 },
   { top: "88%", left: "65%", size: 2 },
   { top: "35%", left: "52%", size: 1 },
 ];
@@ -31,7 +31,8 @@ const STARS: Array<{ top: string; left: string; size: number }> = [
  * DiscoveryCard と同じポインタハンドラを持つが、スワイプ閾値超過時は
  * その場でスピンして元に戻る（スワイプアウトしない）。
  */
-export default function CompleteCard({ onSwipe: _onSwipe }: CompleteCardProps) {
+// onSwipe は渡されても呼ばれない — カードはスワイプアウトせずスピンして戻る
+export default function CompleteCard({ onSwipe: _ }: CompleteCardProps = {}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const startPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
@@ -48,7 +49,7 @@ export default function CompleteCard({ onSwipe: _onSwipe }: CompleteCardProps) {
       setOffset({ x: 0, y: 0 });
       cardRef.current?.setPointerCapture(e.pointerId);
     },
-    [isSpinning]
+    [isSpinning],
   );
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -79,9 +80,10 @@ export default function CompleteCard({ onSwipe: _onSwipe }: CompleteCardProps) {
   }, []);
 
   // ドラッグ量を傾き角度に変換（移動はせず傾くだけ）
-  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-  const tiltY = clamp(offset.x * TILT_FACTOR, -MAX_TILT, MAX_TILT);   // 左右の傾き
-  const tiltX = clamp(-offset.y * TILT_FACTOR, -MAX_TILT, MAX_TILT);  // 上下の傾き
+  const clamp = (v: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, v));
+  const tiltY = clamp(offset.x * TILT_FACTOR, -MAX_TILT, MAX_TILT); // 左右の傾き
+  const tiltX = clamp(-offset.y * TILT_FACTOR, -MAX_TILT, MAX_TILT); // 上下の傾き
 
   // spinning 中は CSS animation に transform を任せ、inline style から外す
   const cardStyle: React.CSSProperties = {
@@ -91,6 +93,7 @@ export default function CompleteCard({ onSwipe: _onSwipe }: CompleteCardProps) {
       ? {}
       : {
           transform: `perspective(800px) rotateY(${tiltY}deg) rotateX(${tiltX}deg)`,
+          // eslint-disable-next-line react-hooks/refs
           transition: dragging.current ? "none" : "transform 0.3s ease-out",
         }),
   };

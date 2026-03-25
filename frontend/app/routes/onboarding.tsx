@@ -7,7 +7,7 @@ import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
 import { sendOnboardingCompleted, sendOnboardingSkipped } from "~/lib/gtag";
 import type { GenreTag } from "~/types/genre";
 
-export async function clientLoader(_: Route.ClientLoaderArgs) {
+export async function clientLoader() {
   const token = getToken();
   if (!token) throw redirect("/login");
 
@@ -16,7 +16,10 @@ export async function clientLoader(_: Route.ClientLoaderArgs) {
     getInterests(token),
   ]);
 
-  if (interests.length >= 3 || localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true") {
+  if (
+    interests.length >= 3 ||
+    localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true"
+  ) {
     throw redirect("/home");
   }
 
@@ -36,7 +39,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
 
   function toggleTag(id: number) {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   }
 
@@ -71,7 +74,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
       acc[genre.category].push(genre);
       return acc;
     },
-    {} as Record<string, GenreTag[]>
+    {} as Record<string, GenreTag[]>,
   );
 
   return (
@@ -84,7 +87,9 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
           興味のあるジャンルを選ぼう
         </h1>
         <p className="text-sm text-gray-400">
-          3つ以上選択してください。<br/>あなたに合った場所を提案します。
+          3つ以上選択してください。
+          <br />
+          あなたに合った場所を提案します。
         </p>
       </div>
 

@@ -39,7 +39,10 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
           }}
         >
           {/* バッジ獲得ラベル */}
-          <p className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: "#8c25f4" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-widest mb-6"
+            style={{ color: "#8c25f4" }}
+          >
             バッジ獲得
           </p>
 
@@ -85,7 +88,9 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
           }}
         >
           <span>バッジを獲得</span>
-          <span className="material-symbols-outlined" aria-hidden="true">military_tech</span>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            military_tech
+          </span>
         </button>
       </div>
     </div>

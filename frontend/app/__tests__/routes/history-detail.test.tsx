@@ -37,6 +37,7 @@ const mockUser: User = {
   id: 1,
   email: "test@example.com",
   display_name: "Test User",
+  search_radius: 500,
   avatar_url: null,
   created_at: "2026-02-15T10:00:00Z",
   updated_at: "2026-02-15T10:00:00Z",
@@ -74,7 +75,7 @@ describe("HistoryDetail", () => {
     it("トークンがない場合は /login にリダイレクトする", async () => {
       mockGetToken.mockReturnValue(null);
       await expect(
-        clientLoader({ params: { id: "1" } } as any)
+        clientLoader({ params: { id: "1" } } as any),
       ).rejects.toThrow();
     });
 
@@ -89,7 +90,7 @@ describe("HistoryDetail", () => {
       mockGetToken.mockReturnValue(mockToken);
       mockGetUser.mockResolvedValue(mockUser);
       await expect(
-        clientLoader({ params: { id: "abc" } } as any)
+        clientLoader({ params: { id: "abc" } } as any),
       ).rejects.toThrow();
     });
   });
@@ -104,7 +105,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
     };
 
@@ -118,9 +119,7 @@ describe("HistoryDetail", () => {
     it("住所（vicinity）を表示する", async () => {
       renderDetail();
       await waitFor(() => {
-        expect(
-          screen.getByText("東京都渋谷区神南1-1-1")
-        ).toBeInTheDocument();
+        expect(screen.getByText("東京都渋谷区神南1-1-1")).toBeInTheDocument();
       });
     });
 
@@ -147,7 +146,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
@@ -165,7 +164,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         const textarea = screen.getByRole("textbox");
@@ -182,7 +181,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         const textarea = screen.getByRole("textbox");
@@ -199,7 +198,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         const stars = screen.getAllByRole("button", { name: /★/ });
@@ -216,7 +215,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         const stars = screen.getAllByRole("button", { name: /★/ });
@@ -239,7 +238,7 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         expect(screen.getByText("Blue Bottle Coffee")).toBeInTheDocument();
@@ -294,10 +293,7 @@ describe("HistoryDetail", () => {
       fireEvent.click(saveButton);
 
       await waitFor(() => {
-        expect(mockShowToast).toHaveBeenCalledWith(
-          "保存しました",
-          "success"
-        );
+        expect(mockShowToast).toHaveBeenCalledWith("保存しました", "success");
       });
     });
 
@@ -325,11 +321,11 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /戻る/ })
+          screen.getByRole("button", { name: /戻る/ }),
         ).toBeInTheDocument();
       });
     });
@@ -347,11 +343,15 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
 
       await waitFor(() => {
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(mockToken, "place1", undefined);
+        expect(mockGetPlacePhoto).toHaveBeenCalledWith(
+          mockToken,
+          "place1",
+          undefined,
+        );
       });
     });
   });
@@ -367,11 +367,11 @@ describe("HistoryDetail", () => {
             params={{ id: "1" }}
             matches={[] as any}
           />
-        </MemoryRouter>
+        </MemoryRouter>,
       );
       await waitFor(() => {
         expect(mockShowToast).toHaveBeenCalledWith(
-          "訪問記録が見つかりませんでした"
+          "訪問記録が見つかりませんでした",
         );
       });
     });

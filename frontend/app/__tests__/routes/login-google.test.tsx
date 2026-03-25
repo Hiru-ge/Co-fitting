@@ -97,7 +97,7 @@ describe("Login コンポーネント — Google OAuth", () => {
   });
 
   function renderLogin() {
-    return render(<Login actionData={undefined as any} params={{} as any} matches={[] as any} />);
+    return render(<Login />);
   }
 
   test("Googleでログインボタンが表示される", () => {
@@ -148,7 +148,7 @@ describe("Login コンポーネント — Google OAuth", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Googleログインに失敗しました/)
+        screen.getByText(/Googleログインに失敗しました/),
       ).toBeInTheDocument();
     });
     expect(googleOAuth).not.toHaveBeenCalled();
@@ -162,7 +162,7 @@ describe("Login コンポーネント — Google OAuth", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Googleログインに失敗しました/)
+        screen.getByText(/Googleログインに失敗しました/),
       ).toBeInTheDocument();
     });
   });
@@ -176,7 +176,7 @@ describe("Login コンポーネント — Google OAuth", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Googleログインに失敗しました/)
+        screen.getByText(/Googleログインに失敗しました/),
       ).toBeInTheDocument();
     });
     expect(mockNavigate).not.toHaveBeenCalled();
@@ -191,23 +191,21 @@ describe("Login コンポーネント — Google OAuth", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/サーバーエラーが発生しました/)
+        screen.getByText(/サーバーエラーが発生しました/),
       ).toBeInTheDocument();
     });
   });
 
   test("ネットワークエラー時にネットワークエラーメッセージが表示される", async () => {
     const user = userEvent.setup();
-    vi.mocked(googleOAuth).mockRejectedValue(
-      new TypeError("Failed to fetch")
-    );
+    vi.mocked(googleOAuth).mockRejectedValue(new TypeError("Failed to fetch"));
 
     renderLogin();
     await user.click(screen.getByText("Googleでログイン"));
 
     await waitFor(() => {
       expect(
-        screen.getByText(/ネットワークに接続できません/)
+        screen.getByText(/ネットワークに接続できません/),
       ).toBeInTheDocument();
     });
   });

@@ -97,7 +97,7 @@ export default function VisitMap({ visits }: Props) {
             position={{ lat: visit.lat, lng: visit.lng }}
             onClick={() =>
               setSelectedVisit((prev: MapVisit | null) =>
-                prev?.id === visit.id ? null : visit
+                prev?.id === visit.id ? null : visit,
               )
             }
           >

@@ -1889,7 +1889,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		// 興味タグにカフェを設定して、カフェに通常訪問
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 		var cafeTag models.GenreTag
 		testDB.Where("name = ?", "カフェ").First(&cafeTag)
 		testDB.Create(&models.UserInterest{
@@ -1920,7 +1920,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		xpEarned, _ := resp["xp_earned"].(float64)
 		// 通常訪問（50XP）+ 初ジャンルボーナス（+50XP）= 100XP以上
@@ -1935,7 +1935,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		// 興味タグにカフェを設定して、美術館（興味外）に訪問
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 		var cafeTag models.GenreTag
 		testDB.Where("name = ?", "カフェ").First(&cafeTag)
 		testDB.Create(&models.UserInterest{
@@ -1966,7 +1966,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		xpEarned, _ := resp["xp_earned"].(float64)
 		// 脱却訪問基本値は100XP以上
@@ -1996,7 +1996,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		router.ServeHTTP(w1, req1)
 		var resp1 map[string]interface{}
-		json.Unmarshal(w1.Body.Bytes(), &resp1)
+		json.Unmarshal(w1.Body.Bytes(), &resp1) //nolint:errcheck
 		xp1, _ := resp1["xp_earned"].(float64)
 
 		// メモあり訪問
@@ -2020,7 +2020,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token2))
 		router.ServeHTTP(w2, req2)
 		var resp2 map[string]interface{}
-		json.Unmarshal(w2.Body.Bytes(), &resp2)
+		json.Unmarshal(w2.Body.Bytes(), &resp2) //nolint:errcheck
 		xp2, _ := resp2["xp_earned"].(float64)
 
 		if xp2 != xp1+10 {
@@ -2060,7 +2060,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		levelUp, _ := resp["level_up"].(bool)
 		newLevel, _ := resp["new_level"].(float64)
@@ -2099,7 +2099,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		xpEarned, _ := resp["xp_earned"].(float64)
 
 		var updated models.User
@@ -2114,7 +2114,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		cleanupUsers(t)
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
-		database.SeedMasterData(testDB)
+		database.SeedMasterData(testDB) //nolint:errcheck
 
 		body := map[string]interface{}{
 			"place_id":   "ChIJgamif_firstbadge",
@@ -2137,7 +2137,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		newBadges, ok := resp["new_badges"].([]interface{})
 		if !ok {
@@ -2343,7 +2343,7 @@ func TestCreateVisitCoordinateValidation(t *testing.T) {
 			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
 		}
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["code"] != "INVALID_COORDINATES" {
 			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
 		}
@@ -2364,7 +2364,7 @@ func TestCreateVisitCoordinateValidation(t *testing.T) {
 			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
 		}
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["code"] != "INVALID_COORDINATES" {
 			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
 		}
@@ -2385,7 +2385,7 @@ func TestCreateVisitCoordinateValidation(t *testing.T) {
 			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
 		}
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["code"] != "INVALID_COORDINATES" {
 			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
 		}
@@ -2406,7 +2406,7 @@ func TestCreateVisitCoordinateValidation(t *testing.T) {
 			t.Errorf("Expected 400, got %d. Body: %s", w.Code, w.Body.String())
 		}
 		var resp map[string]string
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["code"] != "INVALID_COORDINATES" {
 			t.Errorf("Expected code INVALID_COORDINATES, got %s", resp["code"])
 		}
@@ -2522,7 +2522,7 @@ func TestCreateVisitInvalidVisitedAt(t *testing.T) {
 // TestCreateVisitDailyCompletedFlag は daily_completed フラグの境界値テスト
 func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 	router := setupVisitRouter()
-	database.SeedMasterData(testDB)
+	database.SeedMasterData(testDB) //nolint:errcheck
 
 	makeVisitBody := func(placeID string) []byte {
 		body := map[string]interface{}{
@@ -2553,7 +2553,7 @@ func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["daily_completed"] != false {
 			t.Errorf("Expected daily_completed=false on 1st visit, got %v", resp["daily_completed"])
 		}
@@ -2590,7 +2590,7 @@ func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 		}
 
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["daily_completed"] != true {
 			t.Errorf("Expected daily_completed=true on 3rd visit, got %v", resp["daily_completed"])
 		}
@@ -2660,7 +2660,7 @@ func TestCreateVisitDistanceValidation(t *testing.T) {
 			t.Errorf("Expected status 400, got %d. Body: %s", w.Code, w.Body.String())
 		}
 		var resp map[string]interface{}
-		json.Unmarshal(w.Body.Bytes(), &resp)
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 		if resp["code"] != "TOO_FAR_FROM_PLACE" {
 			t.Errorf("Expected code 'TOO_FAR_FROM_PLACE', got '%v'", resp["code"])
 		}

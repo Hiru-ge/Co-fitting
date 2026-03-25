@@ -1,0 +1,21 @@
+pre-commit:
+  parallel: true
+  commands:
+    frontend-format:
+      root: "frontend/"
+      glob: "*.{ts,tsx,js,jsx}"
+      run: npx prettier --write {staged_files} && git add {staged_files}
+    frontend-lint:
+      root: "frontend/"
+      glob: "*.{ts,tsx}"
+      run: npx eslint {staged_files}
+    frontend-typecheck:
+      run: cd frontend && node_modules/.bin/tsc --noEmit
+    backend-format:
+      root: "backend/"
+      glob: "*.go"
+      run: gofmt -w {staged_files} && git add {staged_files}
+    backend-lint:
+      root: "backend/"
+      glob: "*.go"
+      run: golangci-lint run ./...

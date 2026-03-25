@@ -38,12 +38,16 @@ describe("ActionButtons: 訪問ボタンの近接制限", () => {
   });
 
   test("isNearPlace=false でも isVisited=true のときは「記録済み」が表示される", () => {
-    render(<ActionButtons {...baseProps} isNearPlace={false} isVisited={true} />);
+    render(
+      <ActionButtons {...baseProps} isNearPlace={false} isVisited={true} />,
+    );
     expect(screen.getByText("記録済み")).toBeTruthy();
   });
 
   test("isNearPlace=false でも isCheckingIn=true のときは「記録中...」が表示される", () => {
-    render(<ActionButtons {...baseProps} isNearPlace={false} isCheckingIn={true} />);
+    render(
+      <ActionButtons {...baseProps} isNearPlace={false} isCheckingIn={true} />,
+    );
     expect(screen.getByText("記録中...")).toBeTruthy();
   });
 });

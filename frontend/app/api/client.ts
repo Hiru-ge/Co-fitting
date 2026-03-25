@@ -13,7 +13,7 @@ import { tryRefreshToken } from "~/lib/token-refresh";
 export async function apiCall(
   endpoint: string,
   token: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ) {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -50,9 +50,11 @@ export async function apiCall(
 
     clearToken();
     window.location.href = "/login";
-    throw new ApiError(401, "認証の有効期限が切れました。再ログインしてください");
+    throw new ApiError(
+      401,
+      "認証の有効期限が切れました。再ログインしてください",
+    );
   }
 
   throw await parseApiError(res);
 }
-

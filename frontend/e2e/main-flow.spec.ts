@@ -42,14 +42,14 @@ async function devTestLogin(email: string, displayName: string) {
 async function injectAuthTokens(
   page: Page,
   accessToken: string,
-  refreshToken: string
+  refreshToken: string,
 ) {
   await page.evaluate(
     ({ at, rt }) => {
       localStorage.setItem("roamble_token", at);
       localStorage.setItem("roamble_refresh_token", rt);
     },
-    { at: accessToken, rt: refreshToken }
+    { at: accessToken, rt: refreshToken },
   );
 }
 
@@ -79,7 +79,9 @@ test.describe("主要ユーザーフロー", () => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Roamble" })).toBeVisible();
-    await expect(page.getByText("いつもと違う場所へ、一歩踏み出そう")).toBeVisible();
+    await expect(
+      page.getByText("いつもと違う場所へ、一歩踏み出そう"),
+    ).toBeVisible();
 
     // 利用フロー 3 ステップ
     await expect(page.getByText("提案", { exact: true })).toBeVisible();
@@ -87,7 +89,9 @@ test.describe("主要ユーザーフロー", () => {
     await expect(page.getByText("記録", { exact: true })).toBeVisible();
 
     // CTA ボタン
-    await expect(page.getByRole("link", { name: "さっそく始める" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "さっそく始める" }),
+    ).toBeVisible();
 
     // LP リンク
     const lpLink = page.getByRole("link", { name: /Roamble ってなに/ });
@@ -101,15 +105,19 @@ test.describe("主要ユーザーフロー", () => {
     await page.getByRole("link", { name: "さっそく始める" }).click();
     await page.waitForURL("/login");
 
-    await expect(page.getByRole("heading", { name: "Roambleへようこそ" })).toBeVisible();
-    await expect(page.getByText("Googleアカウントでログイン / 新規登録")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Roambleへようこそ" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Googleアカウントでログイン / 新規登録"),
+    ).toBeVisible();
   });
 
   // 3. devエンドポイント経由で認証 → オンボーディング画面
   test("認証後 → /onboarding へ遷移（新規ユーザー）", async () => {
     const { access_token, refresh_token } = await devTestLogin(
       TEST_USER.email,
-      TEST_USER.displayName
+      TEST_USER.displayName,
     );
 
     // トークンを localStorage に注入してページ遷移
@@ -117,14 +125,18 @@ test.describe("主要ユーザーフロー", () => {
     await injectAuthTokens(page, access_token, refresh_token);
     await page.goto("/onboarding");
 
-    await expect(page.getByRole("heading", { name: "興味のあるジャンルを選ぼう" })).toBeVisible({
+    await expect(
+      page.getByRole("heading", { name: "興味のあるジャンルを選ぼう" }),
+    ).toBeVisible({
       timeout: 15_000,
     });
   });
 
   // 4. オンボーディング完了 → ホーム画面リダイレクト
   test("オンボーディングで3つ以上選択して保存 → /home へリダイレクト", async () => {
-    await expect(page.getByRole("heading", { name: "興味のあるジャンルを選ぼう" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "興味のあるジャンルを選ぼう" }),
+    ).toBeVisible();
 
     // ジャンルタグを3つ選択
     const tagButtons = page.locator("[aria-pressed]");
@@ -145,7 +157,7 @@ test.describe("主要ユーザーフロー", () => {
       page
         .getByText("行ってきた！")
         .or(page.getByText("近くのスポットが見つかりませんでした"))
-        .or(page.getByText("スポットの取得に失敗しました"))
+        .or(page.getByText("スポットの取得に失敗しました")),
     ).toBeVisible({ timeout: 15_000 });
 
     // ボトムナビゲーションの確認
@@ -168,11 +180,15 @@ test.describe("主要ユーザーフロー", () => {
     await page.getByRole("link", { name: "マイページ" }).click();
     await page.waitForURL("/profile");
 
-    await expect(page.getByRole("heading", { name: "マイページ" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "マイページ" }),
+    ).toBeVisible();
     // 登録した表示名が表示されること
     await expect(page.getByText(TEST_USER.displayName)).toBeVisible();
     // ログアウトボタン
-    await expect(page.getByRole("button", { name: /ログアウト/ })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /ログアウト/ }),
+    ).toBeVisible();
   });
 
   // 8. ログアウト → ログイン画面リダイレクト
@@ -185,14 +201,16 @@ test.describe("主要ユーザーフロー", () => {
 
     // ログイン画面へ遷移
     await page.waitForURL("/login", { timeout: 10_000 });
-    await expect(page.getByRole("heading", { name: "Roambleへようこそ" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Roambleへようこそ" }),
+    ).toBeVisible();
   });
 
   // 9. 再ログイン（devエンドポイント経由）→ /home へリダイレクト
   test("再ログイン → /home へリダイレクト", async () => {
     const { access_token, refresh_token } = await devTestLogin(
       TEST_USER.email,
-      TEST_USER.displayName
+      TEST_USER.displayName,
     );
 
     await injectAuthTokens(page, access_token, refresh_token);
@@ -217,19 +235,25 @@ test.describe("未認証ガード", () => {
     });
   });
 
-  test("未認証で /home にアクセス → /login へリダイレクト", async ({ page }) => {
+  test("未認証で /home にアクセス → /login へリダイレクト", async ({
+    page,
+  }) => {
     await page.goto("/home");
     await page.waitForURL("/login", { timeout: 10_000 });
     await expect(page).toHaveURL("/login");
   });
 
-  test("未認証で /history にアクセス → /login へリダイレクト", async ({ page }) => {
+  test("未認証で /history にアクセス → /login へリダイレクト", async ({
+    page,
+  }) => {
     await page.goto("/history");
     await page.waitForURL("/login", { timeout: 10_000 });
     await expect(page).toHaveURL("/login");
   });
 
-  test("未認証で /profile にアクセス → /login へリダイレクト", async ({ page }) => {
+  test("未認証で /profile にアクセス → /login へリダイレクト", async ({
+    page,
+  }) => {
     await page.goto("/profile");
     await page.waitForURL("/login", { timeout: 10_000 });
     await expect(page).toHaveURL("/login");
@@ -245,7 +269,11 @@ test.describe("ログイン画面", () => {
 
   test("ログイン画面の要素が正しく表示される", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Roambleへようこそ" })).toBeVisible();
-    await expect(page.getByText("Googleアカウントでログイン / 新規登録")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Roambleへようこそ" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Googleアカウントでログイン / 新規登録"),
+    ).toBeVisible();
   });
 });

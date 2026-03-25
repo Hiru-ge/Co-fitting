@@ -3,10 +3,19 @@ import { useNavigate } from "react-router";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
 import { createVisit } from "~/api/visits";
-import { getCurrentPosition, startPositionPolling, isWithinCheckInRange } from "~/utils/geolocation";
+import {
+  getCurrentPosition,
+  startPositionPolling,
+  isWithinCheckInRange,
+} from "~/utils/geolocation";
 import { DEFAULT_LOCATION, DEFAULT_RADIUS } from "~/utils/constants";
 import { getBestCategoryKey } from "~/utils/category-map";
-import { ApiError, API_ERROR_CODES, SUGGESTION_MESSAGES, toUserMessage } from "~/utils/error";
+import {
+  ApiError,
+  API_ERROR_CODES,
+  SUGGESTION_MESSAGES,
+  toUserMessage,
+} from "~/utils/error";
 import { useToast } from "~/components/toast";
 import {
   sendSuggestionGenerated,
@@ -19,7 +28,11 @@ import {
   sendLevelUp,
 } from "~/lib/gtag";
 import type { Place } from "~/types/suggestion";
-import type { BadgeInfo, CreateVisitResponse, XPBreakdown } from "~/types/visit";
+import type {
+  BadgeInfo,
+  CreateVisitResponse,
+  XPBreakdown,
+} from "~/types/visit";
 
 export type PlaceWithPhoto = Place & { photoUrl?: string };
 
@@ -59,9 +72,16 @@ function getSuggestionsCache(): SuggestionsCache | null {
   }
 }
 
-function setSuggestionsCache(places: PlaceWithPhoto[], reloadCountRemaining: number): void {
+function setSuggestionsCache(
+  places: PlaceWithPhoto[],
+  reloadCountRemaining: number,
+): void {
   try {
-    const data: SuggestionsCache = { date: getTodayKey(), places, reloadCountRemaining };
+    const data: SuggestionsCache = {
+      date: getTodayKey(),
+      places,
+      reloadCountRemaining,
+    };
     localStorage.setItem(SUGGESTIONS_CACHE_KEY, JSON.stringify(data));
   } catch {
     // localStorage 使用不可の環境では無視
@@ -92,7 +112,9 @@ export function getReloadCountRemaining(): number {
 function getTodayKey(): string {
   const now = new Date();
   const jstOffset = 9 * 60;
-  const jst = new Date(now.getTime() + (jstOffset + now.getTimezoneOffset()) * 60000);
+  const jst = new Date(
+    now.getTime() + (jstOffset + now.getTimezoneOffset()) * 60000,
+  );
   return `${jst.getFullYear()}-${String(jst.getMonth() + 1).padStart(2, "0")}-${String(jst.getDate()).padStart(2, "0")}`;
 }
 
@@ -119,10 +141,14 @@ export function useSuggestions(token: string) {
   const completedFromStorage = isCompletedToday();
   // コンプリート済みでなければ当日の提案キャッシュを確認（初期化時に1回のみ呼ぶ）
   const initialCache = completedFromStorage ? null : getSuggestionsCache();
-  const [places, setPlaces] = useState<PlaceWithPhoto[]>(initialCache?.places ?? []);
+  const [places, setPlaces] = useState<PlaceWithPhoto[]>(
+    initialCache?.places ?? [],
+  );
   const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   // コンプリート済みの場合もキャッシュがある場合も初期ローディングは不要
-  const [isLoading, setIsLoading] = useState(!completedFromStorage && !initialCache);
+  const [isLoading, setIsLoading] = useState(
+    !completedFromStorage && !initialCache,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isCompleted, setIsCompleted] = useState(completedFromStorage);
   const [checkingIn, setCheckingIn] = useState(false);
@@ -130,11 +156,13 @@ export function useSuggestions(token: string) {
   const [userPos, setUserPos] = useState({ lat: 0, lng: 0 });
   // originalOrder は places から導出可能なため、キャッシュではなく places の初期値から設定する
   const [originalOrder, setOriginalOrder] = useState<string[]>(
-    initialCache?.places.map((p) => p.place_id) ?? []
+    initialCache?.places.map((p) => p.place_id) ?? [],
   );
   const [xpModalState, setXpModalState] = useState<XpModalState | null>(null);
   const [badgeQueue, setBadgeQueue] = useState<BadgeInfo[]>([]);
-  const [reloadCountRemaining, setReloadCountRemaining] = useState(initialCache?.reloadCountRemaining ?? 3);
+  const [reloadCountRemaining, setReloadCountRemaining] = useState(
+    initialCache?.reloadCountRemaining ?? 3,
+  );
   const [isReloading, setIsReloading] = useState(false);
   const [showLocationDeniedModal, setShowLocationDeniedModal] = useState(false);
   const [isUsingDefaultLocation, setIsUsingDefaultLocation] = useState(false);
@@ -155,115 +183,154 @@ export function useSuggestions(token: string) {
     };
   }, [hasCards]);
 
-  const loadSuggestions = useCallback(async (forceReload?: boolean) => {
-    if (forceReload) {
-      // forceReload 時はキャッシュを削除して新鮮な提案を取得する
-      clearSuggestionsCache();
-      setIsReloading(true);
-    } else {
-      // 通常ロード時は当日のキャッシュを確認し、あれば復元して API 呼び出しをスキップする
-      const cached = getSuggestionsCache();
-      if (cached) {
-        setPlaces(cached.places);
-        setOriginalOrder(cached.places.map((p) => p.place_id));
-        setReloadCountRemaining(cached.reloadCountRemaining);
-        // userPos は現在地を取得し直す（距離表示を最新に保つため）
-        // 拒否・エラー時はデフォルト位置を使用（カードはキャッシュから表示済みのためモーダルは出さない）
-        getCurrentPosition().then(setUserPos).catch(() => {
-          setUserPos({ lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng });
-          useDefaultLocationRef.current = true;
-          setIsUsingDefaultLocation(true);
-          showToast("現在地を取得できないため、渋谷駅周辺で表示しています",
-              "info", { label: "設定で許可する", onClick: () => navigate("/settings") });
-        });
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-    }
-    setError(null);
-    setIsCompleted(false);
-    try {
-      let pos = { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
-      if (!useDefaultLocationRef.current) {
-        try {
-          pos = await getCurrentPosition();
-        } catch (locErr) {
-          // GeolocationPositionError.PERMISSION_DENIED = 1
-          const isDenied = (locErr as { code?: number } | null)?.code === 1;
-          if (isDenied) {
-            setShowLocationDeniedModal(true);
-            setIsLoading(false);
-            setIsReloading(false);
-            return;
-          }
-          // タイムアウト等の非拒否エラー: デフォルト位置を使用
-          useDefaultLocationRef.current = true;
-          setIsUsingDefaultLocation(true);
-        }
-      }
-      setUserPos(pos);
-
-      const { places: collected, notice, completed, reload_count_remaining } = await getSuggestions(token, pos.lat, pos.lng, DEFAULT_RADIUS, forceReload);
-
-      if (reload_count_remaining !== undefined) {
-        setReloadCountRemaining(reload_count_remaining);
-      }
-
-      if (completed) {
-        if (notice === API_ERROR_CODES.ALL_VISITED_NEARBY) {
-          setError(SUGGESTION_MESSAGES.ALL_VISITED_NEARBY);
-        } else {
-          setIsCompleted(true);
-          markCompletedToday();
-        }
-        return;
-      }
-
-      if (notice === API_ERROR_CODES.NO_INTEREST_PLACES) {
-        showToast(SUGGESTION_MESSAGES.NO_INTEREST_PLACES, "info");
-      }
-
-      if (collected.length === 0) {
-        setError("近くのスポットが見つかりませんでした");
+  const loadSuggestions = useCallback(
+    async (forceReload?: boolean) => {
+      if (forceReload) {
+        // forceReload 時はキャッシュを削除して新鮮な提案を取得する
+        clearSuggestionsCache();
+        setIsReloading(true);
       } else {
-        const placesWithPhotos: PlaceWithPhoto[] = await Promise.all(
-          collected.map(async (place) => {
-            if (!place.photo_reference) return place;
-            try {
-              const photoUrl = await getPlacePhoto(token, place.place_id, place.photo_reference);
-              return { ...place, photoUrl };
-            } catch {
-              return place;
+        // 通常ロード時は当日のキャッシュを確認し、あれば復元して API 呼び出しをスキップする
+        const cached = getSuggestionsCache();
+        if (cached) {
+          setPlaces(cached.places);
+          setOriginalOrder(cached.places.map((p) => p.place_id));
+          setReloadCountRemaining(cached.reloadCountRemaining);
+          // userPos は現在地を取得し直す（距離表示を最新に保つため）
+          // 拒否・エラー時はデフォルト位置を使用（カードはキャッシュから表示済みのためモーダルは出さない）
+          getCurrentPosition()
+            .then(setUserPos)
+            .catch(() => {
+              setUserPos({
+                lat: DEFAULT_LOCATION.lat,
+                lng: DEFAULT_LOCATION.lng,
+              });
+              useDefaultLocationRef.current = true;
+              setIsUsingDefaultLocation(true);
+              showToast(
+                "現在地を取得できないため、渋谷駅周辺で表示しています",
+                "info",
+                {
+                  label: "設定で許可する",
+                  onClick: () => navigate("/settings"),
+                },
+              );
+            });
+          setIsLoading(false);
+          return;
+        }
+        setIsLoading(true);
+      }
+      setError(null);
+      setIsCompleted(false);
+      try {
+        let pos = { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
+        if (!useDefaultLocationRef.current) {
+          try {
+            pos = await getCurrentPosition();
+          } catch (locErr) {
+            // GeolocationPositionError.PERMISSION_DENIED = 1
+            const isDenied = (locErr as { code?: number } | null)?.code === 1;
+            if (isDenied) {
+              setShowLocationDeniedModal(true);
+              setIsLoading(false);
+              setIsReloading(false);
+              return;
             }
-          })
+            // タイムアウト等の非拒否エラー: デフォルト位置を使用
+            useDefaultLocationRef.current = true;
+            setIsUsingDefaultLocation(true);
+          }
+        }
+        setUserPos(pos);
+
+        const {
+          places: collected,
+          notice,
+          completed,
+          reload_count_remaining,
+        } = await getSuggestions(
+          token,
+          pos.lat,
+          pos.lng,
+          DEFAULT_RADIUS,
+          forceReload,
         );
-        setPlaces(placesWithPhotos);
-        setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
-        setSuggestionsCache(placesWithPhotos, reload_count_remaining ?? 3);
-        sendSuggestionGenerated({
-          placesCount: placesWithPhotos.length,
-          interestMatchCount: placesWithPhotos.filter((p) => p.is_interest_match).length,
-          breakoutCount: placesWithPhotos.filter((p) => p.is_breakout).length,
-          categories: placesWithPhotos.map((p) => getBestCategoryKey(p.types ?? [])),
-          isReload: !!forceReload,
-        });
+
+        if (reload_count_remaining !== undefined) {
+          setReloadCountRemaining(reload_count_remaining);
+        }
+
+        if (completed) {
+          if (notice === API_ERROR_CODES.ALL_VISITED_NEARBY) {
+            setError(SUGGESTION_MESSAGES.ALL_VISITED_NEARBY);
+          } else {
+            setIsCompleted(true);
+            markCompletedToday();
+          }
+          return;
+        }
+
+        if (notice === API_ERROR_CODES.NO_INTEREST_PLACES) {
+          showToast(SUGGESTION_MESSAGES.NO_INTEREST_PLACES, "info");
+        }
+
+        if (collected.length === 0) {
+          setError("近くのスポットが見つかりませんでした");
+        } else {
+          const placesWithPhotos: PlaceWithPhoto[] = await Promise.all(
+            collected.map(async (place) => {
+              if (!place.photo_reference) return place;
+              try {
+                const photoUrl = await getPlacePhoto(
+                  token,
+                  place.place_id,
+                  place.photo_reference,
+                );
+                return { ...place, photoUrl };
+              } catch {
+                return place;
+              }
+            }),
+          );
+          setPlaces(placesWithPhotos);
+          setOriginalOrder(placesWithPhotos.map((p) => p.place_id));
+          setSuggestionsCache(placesWithPhotos, reload_count_remaining ?? 3);
+          sendSuggestionGenerated({
+            placesCount: placesWithPhotos.length,
+            interestMatchCount: placesWithPhotos.filter(
+              (p) => p.is_interest_match,
+            ).length,
+            breakoutCount: placesWithPhotos.filter((p) => p.is_breakout).length,
+            categories: placesWithPhotos.map((p) =>
+              getBestCategoryKey(p.types ?? []),
+            ),
+            isReload: !!forceReload,
+          });
+        }
+      } catch (err) {
+        if (
+          err instanceof ApiError &&
+          err.code === API_ERROR_CODES.NO_NEARBY_PLACES
+        ) {
+          setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
+        } else if (
+          err instanceof ApiError &&
+          err.code === API_ERROR_CODES.RELOAD_LIMIT_REACHED
+        ) {
+          setReloadCountRemaining(0);
+          showToast(err.message, "info");
+        } else {
+          setError(SUGGESTION_MESSAGES.FETCH_ERROR);
+          showToast(toUserMessage(err));
+        }
+      } finally {
+        setIsLoading(false);
+        setIsReloading(false);
       }
-    } catch (err) {
-      if (err instanceof ApiError && err.code === API_ERROR_CODES.NO_NEARBY_PLACES) {
-        setError(SUGGESTION_MESSAGES.NO_NEARBY_PLACES);
-      } else if (err instanceof ApiError && err.code === API_ERROR_CODES.RELOAD_LIMIT_REACHED) {
-        setReloadCountRemaining(0);
-        showToast(err.message, "info");
-      } else {
-        setError(SUGGESTION_MESSAGES.FETCH_ERROR);
-        showToast(toUserMessage(err));
-      }
-    } finally {
-      setIsLoading(false);
-      setIsReloading(false);
-    }
-  }, [token, showToast]);
+    },
+    [token, showToast, navigate],
+  );
 
   useEffect(() => {
     if (initialLoadDoneRef.current) return;
@@ -339,7 +406,9 @@ export function useSuggestions(token: string) {
         user_lng: userPos.lng,
       });
 
-      const remainingPlaces = places.filter((p) => p.place_id !== place.place_id);
+      const remainingPlaces = places.filter(
+        (p) => p.place_id !== place.place_id,
+      );
       setPlaces(remainingPlaces);
       setVisitedIds((prev) => new Set(prev).add(place.place_id));
       // 訪問済み施設をキャッシュからも除去する（ページ再訪時に再表示されないようにする）
@@ -409,13 +478,22 @@ export function useSuggestions(token: string) {
   }
 
   const currentPlace = places[0];
-  const isCurrentVisited = currentPlace ? visitedIds.has(currentPlace.place_id) : false;
-  const currentIndex = currentPlace ? originalOrder.indexOf(currentPlace.place_id) : 0;
+  const isCurrentVisited = currentPlace
+    ? visitedIds.has(currentPlace.place_id)
+    : false;
+  const currentIndex = currentPlace
+    ? originalOrder.indexOf(currentPlace.place_id)
+    : 0;
   // development環境では常に有効化（開発・テストの利便性のため）
-  const isNearCurrentPlace = import.meta.env.DEV || (
-    currentPlace !== undefined &&
-    isWithinCheckInRange(userPos.lat, userPos.lng, currentPlace.lat, currentPlace.lng)
-  );
+  const isNearCurrentPlace =
+    import.meta.env.DEV ||
+    (currentPlace !== undefined &&
+      isWithinCheckInRange(
+        userPos.lat,
+        userPos.lng,
+        currentPlace.lat,
+        currentPlace.lng,
+      ));
 
   return {
     places,

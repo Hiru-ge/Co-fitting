@@ -97,15 +97,21 @@ describe("getBestCategoryKey", () => {
   });
 
   test("先頭が未知でも後続に既知のキーがあればそれを返す", () => {
-    expect(getBestCategoryKey(["food", "bakery", "establishment"])).toBe("bakery");
+    expect(getBestCategoryKey(["food", "bakery", "establishment"])).toBe(
+      "bakery",
+    );
   });
 
   test("複数未知の後に既知がある場合もマッチする", () => {
-    expect(getBestCategoryKey(["point_of_interest", "establishment", "restaurant"])).toBe("restaurant");
+    expect(
+      getBestCategoryKey(["point_of_interest", "establishment", "restaurant"]),
+    ).toBe("restaurant");
   });
 
   test("CATEGORY_MAPにない場合はtypes[0]を返す", () => {
-    expect(getBestCategoryKey(["unknown_type", "also_unknown"])).toBe("unknown_type");
+    expect(getBestCategoryKey(["unknown_type", "also_unknown"])).toBe(
+      "unknown_type",
+    );
   });
 
   test("空配列の場合は'other'を返す", () => {
@@ -113,6 +119,14 @@ describe("getBestCategoryKey", () => {
   });
 
   test("bakeryのtypesが[food, bakery, ...]の順でもbakeryを返す", () => {
-    expect(getBestCategoryKey(["food", "bakery", "store", "point_of_interest", "establishment"])).toBe("bakery");
+    expect(
+      getBestCategoryKey([
+        "food",
+        "bakery",
+        "store",
+        "point_of_interest",
+        "establishment",
+      ]),
+    ).toBe("bakery");
   });
 });

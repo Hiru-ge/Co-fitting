@@ -53,7 +53,9 @@ export default function BadgeToast({ badge, onClose }: BadgeToastProps) {
         aria-label="閉じる"
         className="shrink-0 size-6 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors"
       >
-        <span className="material-symbols-outlined text-base text-white/60">close</span>
+        <span className="material-symbols-outlined text-base text-white/60">
+          close
+        </span>
       </button>
     </div>
   );

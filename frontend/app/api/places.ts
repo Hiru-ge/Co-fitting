@@ -3,7 +3,7 @@ import { apiCall } from "./client";
 export async function getPlacePhoto(
   token: string,
   placeId: string,
-  photoReference?: string
+  photoReference?: string,
 ): Promise<string> {
   const path = photoReference
     ? `/api/places/${placeId}/photo?${new URLSearchParams({ photo_reference: photoReference }).toString()}`

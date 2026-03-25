@@ -121,5 +121,5 @@ func TestMigration(t *testing.T) {
 	}
 
 	sqlDB, _ := db.DB()
-	sqlDB.Close()
+	sqlDB.Close() //nolint:errcheck
 }

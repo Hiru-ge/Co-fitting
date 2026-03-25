@@ -1,14 +1,23 @@
 // Issue #165: 3件完了時に達成感のあるコンプリートカードを表示する
 // Issue #300: コンプリートカードのデザイン刷新（宇宙テーマ・スワイプでスピン）
-import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
     ...actual,
-    Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-      <a href={to} {...props}>{children}</a>
+    Link: ({
+      to,
+      children,
+      ...props
+    }: {
+      to: string;
+      children: React.ReactNode;
+    }) => (
+      <a href={to} {...props}>
+        {children}
+      </a>
     ),
   };
 });
@@ -23,7 +32,9 @@ beforeEach(() => {
 describe("CompleteCard 表示", () => {
   test("コンプリートカードが aria-label='コンプリート' で表示される", () => {
     render(<CompleteCard />);
-    expect(screen.getByRole("region", { name: "コンプリート" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "コンプリート" }),
+    ).toBeInTheDocument();
   });
 
   test("コンプリートメッセージが表示される", () => {

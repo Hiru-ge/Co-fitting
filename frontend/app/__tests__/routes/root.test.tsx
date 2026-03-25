@@ -16,11 +16,15 @@ vi.mock("react-router", async () => {
 });
 
 vi.mock("@react-oauth/google", () => ({
-  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 vi.mock("~/components/toast", () => ({
-  ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  ToastProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
@@ -52,7 +56,9 @@ describe("root clientLoader", () => {
     vi.mocked(isBetaUnlocked).mockReturnValue(true);
     const { clientLoader } = await import("~/root");
 
-    const result = await clientLoader({ request: new Request("https://roamble.app/") });
+    const result = await clientLoader({
+      request: new Request("https://roamble.app/"),
+    });
     expect(result).toBeNull();
   });
 
@@ -62,7 +68,9 @@ describe("root clientLoader", () => {
     const { redirect } = await import("react-router");
     const { clientLoader } = await import("~/root");
 
-    const result = await clientLoader({ request: new Request("https://roamble.app/beta-gate") });
+    const result = await clientLoader({
+      request: new Request("https://roamble.app/beta-gate"),
+    });
     expect(redirect).not.toHaveBeenCalled();
     expect(result).toBeNull();
   });

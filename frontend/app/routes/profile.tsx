@@ -19,7 +19,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [showProfileTour, setShowProfileTour] = useState(
-    () => sessionStorage.getItem(PROFILE_TOUR_KEY) === "true"
+    () => sessionStorage.getItem(PROFILE_TOUR_KEY) === "true",
   );
   const [stats, setStats] = useState<UserStats | null>(null);
   const [badges, setBadges] = useState<EarnedBadge[]>([]);
@@ -79,7 +79,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           </button>
           <h1 className="text-lg font-bold text-center">マイページ</h1>
           <button
-            onClick={() => {/* TODO: 共有機能 */}}
+            onClick={() => {
+              /* TODO: 共有機能 */
+            }}
             className="flex size-10 items-center justify-center rounded-full bg-white/10 btn-unimplemented"
             aria-label="共有"
             disabled
@@ -130,7 +132,6 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             </p>
           ) : null}
         </div>
-
       </div>
 
       {/* ── XP プログレスバー ── */}
@@ -151,7 +152,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             <div className="h-4 w-full bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full shadow-[0_0_15px_rgba(19,236,236,0.5)]"
-                style={{ width: `${Math.min(levelInfo.progressPercent, 100)}%` }}
+                style={{
+                  width: `${Math.min(levelInfo.progressPercent, 100)}%`,
+                }}
               />
             </div>
             <p className="text-center text-xs text-gray-400 mt-2">
@@ -182,7 +185,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           </div>
         </Link>
         <button
-          onClick={() => {/* TODO: ランキング機能 */}}
+          onClick={() => {
+            /* TODO: ランキング機能 */
+          }}
           className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/10 shadow-sm active:scale-95 transition-transform btn-unimplemented"
           disabled
         >
@@ -204,18 +209,26 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       {!isLoading && stats && (
         <div className="px-4 pb-2">
           <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Challenge Stats</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+              Challenge Stats
+            </p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
-                <p className="text-xl font-extrabold text-primary">{stats.total_visits}</p>
+                <p className="text-xl font-extrabold text-primary">
+                  {stats.total_visits}
+                </p>
                 <p className="text-[10px] text-gray-500">総訪問</p>
               </div>
               <div>
-                <p className="text-xl font-extrabold text-amber-500">{stats.challenge_visits}</p>
+                <p className="text-xl font-extrabold text-amber-500">
+                  {stats.challenge_visits}
+                </p>
                 <p className="text-[10px] text-gray-500">脱却チャレンジ</p>
               </div>
               <div>
-                <p className="text-xl font-extrabold text-indigo-500">{stats.streak_count}</p>
+                <p className="text-xl font-extrabold text-indigo-500">
+                  {stats.streak_count}
+                </p>
                 <p className="text-[10px] text-gray-500">週連続</p>
               </div>
             </div>
@@ -226,28 +239,44 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       {/* ── ジャンル熟練度トップ ── */}
       {!isLoading && proficiency.length > 0 && (
         <div className="px-4 py-4">
-          <h3 className="text-base font-bold tracking-tight mb-3 px-1">得意ジャンル</h3>
+          <h3 className="text-base font-bold tracking-tight mb-3 px-1">
+            得意ジャンル
+          </h3>
           <div className="space-y-2">
             {proficiency.slice(0, 3).map((p) => (
-              <div key={p.genre_tag_id} className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10">
+              <div
+                key={p.genre_tag_id}
+                className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10"
+              >
                 <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
-                  <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span
+                    className="material-symbols-outlined text-primary text-base"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
                     {p.icon}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm font-bold truncate">{p.genre_name}</span>
-                    <span className="text-xs font-bold text-primary ml-2 shrink-0">Lv.{p.level}</span>
+                    <span className="text-sm font-bold truncate">
+                      {p.genre_name}
+                    </span>
+                    <span className="text-xs font-bold text-primary ml-2 shrink-0">
+                      Lv.{p.level}
+                    </span>
                   </div>
                   <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-primary rounded-full"
-                      style={{ width: `${Math.min((p.xp % 100) + (p.level > 1 ? 100 : 0), 100)}%` }}
+                      style={{
+                        width: `${Math.min((p.xp % 100) + (p.level > 1 ? 100 : 0), 100)}%`,
+                      }}
                     />
                   </div>
                 </div>
-                <span className="text-xs text-gray-400 font-mono shrink-0">{p.xp} XP</span>
+                <span className="text-xs text-gray-400 font-mono shrink-0">
+                  {p.xp} XP
+                </span>
               </div>
             ))}
           </div>
@@ -275,17 +304,26 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           </div>
         ) : badges.length === 0 ? (
           <div className="text-center py-6">
-            <span className="material-symbols-outlined text-4xl text-gray-300">military_tech</span>
+            <span className="material-symbols-outlined text-4xl text-gray-300">
+              military_tech
+            </span>
             <p className="text-sm text-gray-400 mt-2">まだバッジがありません</p>
-            <p className="text-xs text-gray-400">探索してバッジを獲得しましょう！</p>
+            <p className="text-xs text-gray-400">
+              探索してバッジを獲得しましょう！
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {badges.map((badge) => {
               const { icon, color, border } = getBadgeIcon(badge.name);
               return (
-                <div key={badge.id} className="flex flex-col items-center gap-2">
-                  <div className={`size-20 rounded-full bg-white flex items-center justify-center shadow-md border-b-4 ${border}`}>
+                <div
+                  key={badge.id}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <div
+                    className={`size-20 rounded-full bg-white flex items-center justify-center shadow-md border-b-4 ${border}`}
+                  >
                     <span
                       className={`material-symbols-outlined text-4xl ${color}`}
                       style={{ fontVariationSettings: "'FILL' 1" }}
@@ -293,7 +331,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                       {icon}
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-center leading-tight">{badge.name}</span>
+                  <span className="text-[10px] font-bold text-center leading-tight">
+                    {badge.name}
+                  </span>
                 </div>
               );
             })}
@@ -352,7 +392,8 @@ function ProfileTourStep({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const el = document.querySelector('[data-tour="xp-section"]');
-    setTargetRect(el ? el.getBoundingClientRect() : null);
+    const rect = el ? el.getBoundingClientRect() : null;
+    requestAnimationFrame(() => setTargetRect(rect));
   }, []);
 
   function handleFinish() {
@@ -363,12 +404,22 @@ function ProfileTourStep({ onClose }: { onClose: () => void }) {
   }
 
   const panelAtTop = targetRect
-    ? (targetRect.top + targetRect.height / 2) > window.innerHeight * 0.55
+    ? targetRect.top + targetRect.height / 2 > window.innerHeight * 0.55
     : false;
 
   const panelStyle: React.CSSProperties = panelAtTop
-    ? { position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)" }
-    : { position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)" };
+    ? {
+        position: "absolute",
+        top: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+      }
+    : {
+        position: "absolute",
+        bottom: 16,
+        left: "50%",
+        transform: "translateX(-50%)",
+      };
 
   return (
     <div
@@ -418,7 +469,9 @@ function ProfileTourStep({ onClose }: { onClose: () => void }) {
             XPとバッジを集めよう
           </h2>
           <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
-            {"訪問するたびにXPとバッジが貯まります\n興味外ジャンルへの脱却訪問はボーナスXP！"}
+            {
+              "訪問するたびにXPとバッジが貯まります\n興味外ジャンルへの脱却訪問はボーナスXP！"
+            }
           </p>
         </div>
 
@@ -454,10 +507,7 @@ function LogoutModal({
   useModalClose(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div
-        className="absolute inset-0"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0" onClick={onClose} />
       <div className="relative bg-gray-900 rounded-2xl p-6 mx-6 w-full max-w-sm shadow-xl">
         <h3 className="text-lg font-bold text-center mb-2 text-white">
           ログアウトしますか？

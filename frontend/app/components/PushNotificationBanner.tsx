@@ -18,7 +18,9 @@ export default function PushNotificationBanner({ token }: { token: string }) {
       </span>
       <div className="flex-1">
         <p className="text-sm font-bold text-gray-100 mb-0.5">通知を受け取る</p>
-        <p className="text-xs text-gray-400">新しい場所の提案をお知らせします</p>
+        <p className="text-xs text-gray-400">
+          新しい場所の提案をお知らせします
+        </p>
       </div>
       <div className="flex flex-col gap-1.5 shrink-0">
         <button

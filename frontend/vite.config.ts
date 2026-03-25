@@ -36,7 +36,10 @@ const injectOgpPlugin = {
     ].join("\n    ");
     const patched = html
       .replace('lang="en"', 'lang="ja"')
-      .replace("<title>Loading...</title>", "<title>Roamble - 一歩踏み出す体験を経験値に</title>")
+      .replace(
+        "<title>Loading...</title>",
+        "<title>Roamble - 一歩踏み出す体験を経験値に</title>",
+      )
       .replace("</head>", `    ${metaTags}\n  </head>`);
     writeFileSync(indexPath, patched, "utf-8");
   },

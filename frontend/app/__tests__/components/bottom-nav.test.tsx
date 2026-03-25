@@ -22,7 +22,11 @@ vi.mock("react-router", async () => {
       const resolvedClass =
         typeof className === "function" ? className({ isActive }) : className;
       return (
-        <a href={to} className={resolvedClass} data-testid={`nav-${to.replace("/", "")}`}>
+        <a
+          href={to}
+          className={resolvedClass}
+          data-testid={`nav-${to.replace("/", "")}`}
+        >
           {children}
         </a>
       );

@@ -25,7 +25,10 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
-import { getNotificationSettings, updateNotificationSettings } from "~/api/notifications";
+import {
+  getNotificationSettings,
+  updateNotificationSettings,
+} from "~/api/notifications";
 import { getPushPermissionState } from "~/lib/push";
 
 const defaultSettings = {
@@ -61,8 +64,12 @@ describe("Settings - 通知タブ", () => {
   test("通知タブが表示される（Push通知とメール通知セクション）", async () => {
     render(<NotificationTab token="test-token" />);
 
-    expect(await screen.findByRole("heading", { name: /Push通知/ })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /メール通知/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /Push通知/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /メール通知/ }),
+    ).toBeInTheDocument();
   });
 
   test("Push許可済み時: 許可ステータスが表示される", async () => {
@@ -70,9 +77,11 @@ describe("Settings - 通知タブ", () => {
 
     render(<NotificationTab token="test-token" />);
 
-    expect(await screen.findByText("通知が許可されています")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "通知を許可する" })
+      await screen.findByText("通知が許可されています"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "通知を許可する" }),
     ).not.toBeInTheDocument();
   });
 
@@ -82,7 +91,7 @@ describe("Settings - 通知タブ", () => {
     render(<NotificationTab token="test-token" />);
 
     expect(
-      await screen.findByRole("button", { name: "通知を許可する" })
+      await screen.findByRole("button", { name: "通知を許可する" }),
     ).toBeInTheDocument();
   });
 
@@ -92,10 +101,10 @@ describe("Settings - 通知タブ", () => {
     render(<NotificationTab token="test-token" />);
 
     expect(
-      await screen.findByText("通知が拒否されています")
+      await screen.findByText("通知が拒否されています"),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "通知を許可する" })
+      screen.queryByRole("button", { name: "通知を許可する" }),
     ).not.toBeInTheDocument();
   });
 
@@ -103,15 +112,21 @@ describe("Settings - 通知タブ", () => {
     render(<NotificationTab token="test-token" />);
 
     // 設定ロード完了まで待機
-    const masterToggle = await screen.findByRole("switch", { name: "Push通知" });
+    const masterToggle = await screen.findByRole("switch", {
+      name: "Push通知",
+    });
     expect(masterToggle).toBeChecked();
 
     // マスタートグルをOFF
     fireEvent.click(masterToggle);
 
     // Push個別トグルがdisabledになること
-    expect(screen.getByRole("switch", { name: "デイリーリフレッシュ" })).toBeDisabled();
-    expect(screen.getByRole("switch", { name: "ストリークリマインダー" })).toBeDisabled();
+    expect(
+      screen.getByRole("switch", { name: "デイリーリフレッシュ" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("switch", { name: "ストリークリマインダー" }),
+    ).toBeDisabled();
     expect(screen.getByRole("switch", { name: "週次サマリー" })).toBeDisabled();
     expect(screen.getByRole("switch", { name: "月次サマリー" })).toBeDisabled();
   });
@@ -127,7 +142,7 @@ describe("Settings - 通知タブ", () => {
     await waitFor(() => {
       expect(updateNotificationSettings).toHaveBeenCalledWith(
         "test-token",
-        expect.objectContaining({ streak_reminder: false })
+        expect.objectContaining({ streak_reminder: false }),
       );
     });
   });

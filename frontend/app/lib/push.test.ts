@@ -1,5 +1,9 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import { subscribePush, unsubscribePush, getPushPermissionState } from "~/lib/push";
+import {
+  subscribePush,
+  unsubscribePush,
+  getPushPermissionState,
+} from "~/lib/push";
 
 vi.mock("~/api/notifications", () => ({
   getVapidPublicKey: vi.fn().mockResolvedValue("BTestVapidKey"),
@@ -7,7 +11,10 @@ vi.mock("~/api/notifications", () => ({
   unsubscribePushFromBackend: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { subscribePushToBackend, unsubscribePushFromBackend } from "~/api/notifications";
+import {
+  subscribePushToBackend,
+  unsubscribePushFromBackend,
+} from "~/api/notifications";
 
 describe("push", () => {
   beforeEach(() => {
@@ -91,7 +98,7 @@ describe("push", () => {
       expect(result).toBe(true);
       expect(subscribePushToBackend).toHaveBeenCalledWith(
         "test-token",
-        mockSubscriptionJSON
+        mockSubscriptionJSON,
       );
     });
 
@@ -164,7 +171,7 @@ describe("push", () => {
       await unsubscribePush("test-token");
       expect(unsubscribePushFromBackend).toHaveBeenCalledWith(
         "test-token",
-        "https://example.com/push"
+        "https://example.com/push",
       );
     });
 

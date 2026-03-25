@@ -9,6 +9,7 @@ import { getCategoryInfoByKey } from "~/utils/category-map";
 import { getPlacePhoto } from "~/api/places";
 import { sendVisitMemoSaved } from "~/lib/gtag";
 import type { Visit } from "~/types/visit";
+import { getUser } from "~/lib/auth";
 
 // React Router v7 の型は +types/ から自動生成される想定だが、
 // worktreeではまだ生成されていないためinlineで型を定義する
@@ -61,7 +62,11 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
 
       // 写真を取得（photo_referenceを渡してRedis TTL失効後も再解決できるようにする）
       try {
-        const photoUrl = await getPlacePhoto(token, data.place_id, data.photo_reference);
+        const photoUrl = await getPlacePhoto(
+          token,
+          data.place_id,
+          data.photo_reference,
+        );
         setPhotoUrl(photoUrl);
       } catch {
         // 写真取得失敗はスキップ
@@ -150,9 +155,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
           <div
             className="w-full h-48 bg-gray-700 bg-center bg-cover bg-no-repeat"
             style={
-              photoUrl
-                ? { backgroundImage: `url("${photoUrl}")` }
-                : undefined
+              photoUrl ? { backgroundImage: `url("${photoUrl}")` } : undefined
             }
           >
             {!photoUrl && (

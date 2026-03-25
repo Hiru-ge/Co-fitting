@@ -4,7 +4,11 @@ import type { MetaFunction } from "react-router";
 
 export const meta: MetaFunction = () => [
   { title: "Roamble：一歩踏み出す体験を経験値に" },
-  { name: "description", content: "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。" },
+  {
+    name: "description",
+    content:
+      "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。",
+  },
 ];
 
 type FormState = "idle" | "submitting" | "success" | "error";
@@ -19,7 +23,10 @@ export default function LP() {
     try {
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({
           access_key: import.meta.env.VITE_WEB3FORMS_KEY,
           email,
@@ -112,7 +119,9 @@ export default function LP() {
           </ul>
           <p className="mt-6 text-sm text-center text-white/60 leading-relaxed">
             それは、あなたの
-            <span className="font-semibold text-white">「コンフォートゾーン」</span>
+            <span className="font-semibold text-white">
+              「コンフォートゾーン」
+            </span>
             が壁になっているサインです。
           </p>
         </div>
@@ -162,7 +171,10 @@ export default function LP() {
                 <h3 className="font-bold text-base mb-1">2. 一歩を記録する</h3>
                 <p className="text-sm text-white/70 leading-relaxed">
                   提案された場所に実際に行き、「行った！」ボタンを押すことで
-                  <span className="font-semibold text-primary"> XP（経験値）</span>
+                  <span className="font-semibold text-primary">
+                    {" "}
+                    XP（経験値）
+                  </span>
                   を獲得できます。「怖かったけど行けた」という成功体験が、確かな数値として積み上がります。
                 </p>
               </div>
@@ -191,7 +203,9 @@ export default function LP() {
                 <h3 className="font-bold text-base mb-1">3. 成長を実感する</h3>
                 <p className="text-sm text-white/70 leading-relaxed">
                   訪問履歴が増えるたび、レベルアップやバッジ獲得を通じて、行動範囲とともに
-                  <span className="font-semibold text-white">自分自身の可能性</span>
+                  <span className="font-semibold text-white">
+                    自分自身の可能性
+                  </span>
                   も広がっていく実感が得られます。
                 </p>
               </div>
@@ -290,20 +304,26 @@ export default function LP() {
             iOS版リリース通知を受け取る
           </h2>
           <p className="text-sm text-white/60 mb-6 text-center">
-            iOS版の開発を進めています。<br />
+            iOS版の開発を進めています。
+            <br />
             リリース時にメールでお知らせしますので、メールアドレスを登録してください。
           </p>
 
           {formState === "success" ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <span className="material-symbols-outlined text-primary text-4xl">check_circle</span>
+              <span className="material-symbols-outlined text-primary text-4xl">
+                check_circle
+              </span>
               <p className="font-semibold">登録しました！</p>
               <p className="text-sm text-white/60">
                 iOS版がリリースされたらメールでお知らせします。
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col sm:flex-row gap-3"
+            >
               <input
                 type="email"
                 value={email}
@@ -341,7 +361,9 @@ export default function LP() {
             さっそく始める
           </h2>
           <p className="text-sm text-white/60 mb-6">
-            現在Webベータ版を公開中です。<br />合言葉をお持ちの方はそのまま始められます。
+            現在Webベータ版を公開中です。
+            <br />
+            合言葉をお持ちの方はそのまま始められます。
           </p>
           <a
             href="/beta-gate"

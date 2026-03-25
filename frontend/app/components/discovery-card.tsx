@@ -54,7 +54,7 @@ export default function DiscoveryCard({
       setOffset({ x: 0, y: 0 });
       cardRef.current?.setPointerCapture(e.pointerId);
     },
-    [isTopCard, isSwiping]
+    [isTopCard, isSwiping],
   );
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -97,6 +97,7 @@ export default function DiscoveryCard({
     ? `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg)`
     : `scale(${stackScale})`;
 
+  // eslint-disable-next-line react-hooks/refs
   const cardTransition = dragging.current
     ? "none"
     : "transform 0.3s ease-out, opacity 0.3s ease-out";
@@ -164,19 +165,19 @@ export default function DiscoveryCard({
           style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
         >
           <a
-          data-testid="google-maps-link"
-          href={buildGoogleMapsPlaceUrl(place.place_id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {place.name}
-          <span className="flex items-center gap-1 text-white text-sm hover:text-white transition-colors">
-          (Google Mapsで開く)
-          </span>
-        </a>
+            data-testid="google-maps-link"
+            href={buildGoogleMapsPlaceUrl(place.place_id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {place.name}
+            <span className="flex items-center gap-1 text-white text-sm hover:text-white transition-colors">
+              (Google Mapsで開く)
+            </span>
+          </a>
         </h2>
         <div className="flex items-center justify-between">
           <div

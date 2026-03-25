@@ -13,6 +13,7 @@ describe("users API", () => {
     id: 123,
     email: "test@example.com",
     display_name: "Updated User",
+    search_radius: 500,
     avatar_url: null,
     created_at: "2026-02-15T10:00:00Z",
     updated_at: "2026-02-15T10:00:00Z",
@@ -29,31 +30,26 @@ describe("users API", () => {
 
       const result = await updateDisplayName(mockToken, newDisplayName);
 
-      expect(mockApiCall).toHaveBeenCalledWith(
-        "/api/users/me",
-        mockToken,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ display_name: newDisplayName }),
-        }
-      );
+      expect(mockApiCall).toHaveBeenCalledWith("/api/users/me", mockToken, {
+        method: "PATCH",
+        body: JSON.stringify({ display_name: newDisplayName }),
+      });
       expect(result).toEqual(mockUser);
     });
 
     it("should handle empty display name", async () => {
       const emptyDisplayName = "";
-      mockApiCall.mockResolvedValue({ ...mockUser, display_name: emptyDisplayName });
+      mockApiCall.mockResolvedValue({
+        ...mockUser,
+        display_name: emptyDisplayName,
+      });
 
       const result = await updateDisplayName(mockToken, emptyDisplayName);
 
-      expect(mockApiCall).toHaveBeenCalledWith(
-        "/api/users/me",
-        mockToken,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ display_name: emptyDisplayName }),
-        }
-      );
+      expect(mockApiCall).toHaveBeenCalledWith("/api/users/me", mockToken, {
+        method: "PATCH",
+        body: JSON.stringify({ display_name: emptyDisplayName }),
+      });
       expect(result.display_name).toBe(emptyDisplayName);
     });
 
@@ -64,14 +60,10 @@ describe("users API", () => {
 
       const result = await updateDisplayName(mockToken, specialDisplayName);
 
-      expect(mockApiCall).toHaveBeenCalledWith(
-        "/api/users/me",
-        mockToken,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ display_name: specialDisplayName }),
-        }
-      );
+      expect(mockApiCall).toHaveBeenCalledWith("/api/users/me", mockToken, {
+        method: "PATCH",
+        body: JSON.stringify({ display_name: specialDisplayName }),
+      });
       expect(result.display_name).toBe(specialDisplayName);
     });
 
@@ -82,21 +74,19 @@ describe("users API", () => {
 
       await updateDisplayName(mockToken, longDisplayName);
 
-      expect(mockApiCall).toHaveBeenCalledWith(
-        "/api/users/me",
-        mockToken,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ display_name: longDisplayName }),
-        }
-      );
+      expect(mockApiCall).toHaveBeenCalledWith("/api/users/me", mockToken, {
+        method: "PATCH",
+        body: JSON.stringify({ display_name: longDisplayName }),
+      });
     });
 
     it("should propagate apiCall errors", async () => {
       const apiError = new Error("Server error");
       mockApiCall.mockRejectedValue(apiError);
 
-      await expect(updateDisplayName(mockToken, "Test Name")).rejects.toThrow("Server error");
+      await expect(updateDisplayName(mockToken, "Test Name")).rejects.toThrow(
+        "Server error",
+      );
     });
 
     it("should return user object from response", async () => {
@@ -104,6 +94,7 @@ describe("users API", () => {
         id: 456,
         email: "updated@example.com",
         display_name: "Updated Name",
+        search_radius: 500,
         avatar_url: null,
         created_at: "2026-02-15T10:00:00Z",
         updated_at: "2026-02-15T10:00:00Z",
@@ -128,14 +119,10 @@ describe("users API", () => {
 
       for (const token of tokenFormats) {
         await updateDisplayName(token, "Test Name");
-        expect(mockApiCall).toHaveBeenCalledWith(
-          "/api/users/me",
-          token,
-          {
-            method: "PATCH",
-            body: JSON.stringify({ display_name: "Test Name" }),
-          }
-        );
+        expect(mockApiCall).toHaveBeenCalledWith("/api/users/me", token, {
+          method: "PATCH",
+          body: JSON.stringify({ display_name: "Test Name" }),
+        });
       }
     });
 
@@ -146,18 +133,13 @@ describe("users API", () => {
       await updateDisplayName(mockToken, displayName);
 
       const expectedBody = JSON.stringify({ display_name: displayName });
-      expect(mockApiCall).toHaveBeenCalledWith(
-        "/api/users/me",
-        mockToken,
-        {
-          method: "PATCH",
-          body: expectedBody,
-        }
-      );
-      
+      expect(mockApiCall).toHaveBeenCalledWith("/api/users/me", mockToken, {
+        method: "PATCH",
+        body: expectedBody,
+      });
+
       // JSON.stringifyが適切にエスケープしていることを確認
       expect(expectedBody).toContain('\\"Name\\"');
     });
   });
-
 });

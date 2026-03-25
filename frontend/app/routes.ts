@@ -1,12 +1,15 @@
-import { type RouteConfig, index, route, layout } from "@react-router/dev/routes";
+import {
+  type RouteConfig,
+  index,
+  route,
+  layout,
+} from "@react-router/dev/routes";
 
 export default [
   index("routes/index.tsx"),
 
   // 認証レイアウト
-  layout("layouts/auth-layout.tsx", [
-    route("login", "routes/login.tsx"),
-  ]),
+  layout("layouts/auth-layout.tsx", [route("login", "routes/login.tsx")]),
 
   // オンボーディング（ボトムナビなし）
   route("onboarding", "routes/onboarding.tsx"),
