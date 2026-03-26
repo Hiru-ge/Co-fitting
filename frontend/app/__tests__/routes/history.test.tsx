@@ -48,6 +48,24 @@ const mockFormatShortDate = vi.mocked(formatShortDate);
 const mockGroupByMonth = vi.mocked(groupByMonth);
 
 // サンプルデータ
+const mockVisitWithPhoto: Visit = {
+  id: 10,
+  user_id: 1,
+  place_id: "place_with_photo",
+  place_name: "写真あり店舗",
+  vicinity: "東京都新宿区",
+  category: "カフェ",
+  lat: 35.6895,
+  lng: 139.6917,
+  rating: null,
+  memo: null,
+  photo_reference: "places/ChIJxxx/photos/AUyyy",
+  xp_earned: 50,
+  is_breakout: false,
+  visited_at: "2026-02-15T10:00:00Z",
+  created_at: "2026-02-15T10:00:00Z",
+};
+
 const mockUser: User = {
   id: 1,
   email: "test@example.com",
@@ -398,7 +416,8 @@ describe("History", () => {
   });
 
   describe("Photo loading", () => {
-    it("should load photos for all visits via getPlacePhoto", async () => {
+    it("photo_referenceがない訪問はgetPlacePhotoを呼ばない", async () => {
+      // mockVisitsはすべてphoto_referenceなし
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
 
       render(
@@ -410,26 +429,36 @@ describe("History", () => {
       );
 
       await waitFor(() => {
+        expect(screen.getByText("カフェA")).toBeInTheDocument();
+      });
+
+      expect(mockGetPlacePhoto).not.toHaveBeenCalled();
+    });
+
+    it("photo_referenceがある訪問はgetPlacePhotoを呼ぶ", async () => {
+      mockListVisits.mockResolvedValue({
+        visits: [mockVisitWithPhoto],
+        total: 1,
+      });
+
+      render(
+        <MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
         expect(mockGetPlacePhoto).toHaveBeenCalledWith(
           mockToken,
-          "place1",
-          undefined,
-        );
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(
-          mockToken,
-          "place2",
-          undefined,
-        );
-        expect(mockGetPlacePhoto).toHaveBeenCalledWith(
-          mockToken,
-          "place3",
-          undefined,
+          "place_with_photo",
+          "places/ChIJxxx/photos/AUyyy",
         );
       });
     });
 
-    it("should display default camera icon when photo fails to load", async () => {
-      mockGetPlacePhoto.mockRejectedValue(new Error("Network error"));
+    it("photo_referenceなしの訪問はプレースホルダーアイコンを表示する", async () => {
       mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
 
       render(
@@ -441,15 +470,19 @@ describe("History", () => {
       );
 
       await waitFor(() => {
-        // カメラアイコンが表示されることを確認
         expect(screen.getByText("photo_camera")).toBeInTheDocument();
       });
+
+      expect(mockGetPlacePhoto).not.toHaveBeenCalled();
     });
 
     it("should display photo when successfully loaded", async () => {
       const photoUrl = "https://example.com/photo.jpg";
       mockGetPlacePhoto.mockResolvedValue(photoUrl);
-      mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
+      mockListVisits.mockResolvedValue({
+        visits: [mockVisitWithPhoto],
+        total: 1,
+      });
 
       render(
         <MemoryRouter>
@@ -460,7 +493,6 @@ describe("History", () => {
       );
 
       await waitFor(() => {
-        // 背景画像としてphoto_urlが設定されることを確認
         const imageElement = document.querySelector(
           '[style*="background-image"]',
         );
@@ -492,13 +524,11 @@ describe("History", () => {
     });
 
     it("should continue working when photo loading fails for some visits", async () => {
-      // 1つ目は成功、2つ目は失敗
-      mockGetPlacePhoto
-        .mockResolvedValueOnce("https://example.com/photo1.jpg")
-        .mockRejectedValueOnce(new Error("Photo load error"));
+      // photo_referenceあり1件は失敗、なし1件はスキップ
+      mockGetPlacePhoto.mockRejectedValueOnce(new Error("Photo load error"));
 
       mockListVisits.mockResolvedValue({
-        visits: mockVisits.slice(0, 2),
+        visits: [mockVisitWithPhoto, mockVisits[1]],
         total: 2,
       });
 
@@ -512,7 +542,7 @@ describe("History", () => {
 
       await waitFor(() => {
         // エラーに関係なく、訪問記録は表示される
-        expect(screen.getByText("カフェA")).toBeInTheDocument();
+        expect(screen.getByText("写真あり店舗")).toBeInTheDocument();
         expect(screen.getByText("公園B")).toBeInTheDocument();
       });
     });
