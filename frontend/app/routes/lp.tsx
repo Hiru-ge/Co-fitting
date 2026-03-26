@@ -97,44 +97,67 @@ export default function LP() {
 
   return (
     <div className="min-h-dvh bg-bg-dark text-white">
+      {/* ── Sticky Header ── */}
+      <header className="sticky top-0 z-50 bg-bg-dark/80 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+          <span className="font-bold font-display-alt text-primary text-lg">
+            Roamble
+          </span>
+          <a
+            href="#ios-notify"
+            className="px-4 py-1.5 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
+          >
+            iOS版通知を受け取る
+          </a>
+        </div>
+      </header>
+
       {/* ── Hero ── */}
-      <section className="flex flex-col items-center justify-center px-6 pt-16 pb-12 text-center">
-        <h1 className="text-5xl font-bold font-display-alt tracking-tight text-primary mb-4">
-          Roamble
-        </h1>
-        <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6">
-          知らない場所への一歩を、経験値に。
-        </p>
-        <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8">
-          知らない場所に踏み出すたびに、
-          <span className="font-semibold text-primary">経験値（XP）</span>
-          が積み上がる。
-          <br />
-          日常の行動圏が、小さな冒険のフィールドになる。
-        </p>
-        <a
-          href="#ios-notify"
-          className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
-        >
-          iOS版リリース通知を受け取る
-        </a>
-        {/* Hero Screenshots */}
-        <div className="mt-12 flex items-end justify-center gap-3 px-2">
-          <img
-            src="/images/lp/history.png"
-            alt="訪問履歴画面"
-            className="w-28 sm:w-36 rounded-2xl shadow-lg -rotate-3"
-          />
-          <img
-            src="/images/lp/home.png"
-            alt="スポット提案画面"
-            className="w-32 sm:w-40 rounded-2xl shadow-xl z-10"
-          />
-          <img
-            src="/images/lp/profile.png"
-            alt="マイページ画面"
-            className="w-28 sm:w-36 rounded-2xl shadow-lg rotate-3"
-          />
+      <section className="px-6 pt-16 pb-12">
+        <div className="max-w-5xl mx-auto">
+          {/* PC: 2カラム、モバイル: 縦積み */}
+          <div className="flex flex-col items-center text-center lg:flex-row lg:items-center lg:text-left lg:gap-16">
+            {/* テキスト */}
+            <div className="lg:flex-1">
+              <h1 className="text-5xl font-bold font-display-alt tracking-tight text-primary mb-4">
+                Roamble
+              </h1>
+              <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
+                知らない場所への一歩を、経験値に。
+              </p>
+              <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
+                知らない場所に踏み出すたびに、
+                <span className="font-semibold text-primary">経験値（XP）</span>
+                が積み上がる。
+                <br />
+                日常の行動圏が、小さな冒険のフィールドになる。
+              </p>
+              <a
+                href="#ios-notify"
+                className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
+              >
+                iOS版リリース通知を受け取る
+              </a>
+            </div>
+            {/* スクリーンショット */}
+            <div className="mt-12 lg:mt-0 flex items-end justify-center gap-3 px-2 lg:flex-shrink-0">
+              <img
+                src="/images/lp/history.png"
+                alt="訪問履歴画面"
+                className="w-28 sm:w-36 lg:w-40 rounded-2xl shadow-lg -rotate-3"
+              />
+              <img
+                src="/images/lp/home.png"
+                alt="スポット提案画面"
+                className="w-32 sm:w-40 lg:w-48 rounded-2xl shadow-xl z-10"
+              />
+              <img
+                src="/images/lp/profile.png"
+                alt="マイページ画面"
+                className="w-28 sm:w-36 lg:w-40 rounded-2xl shadow-lg rotate-3"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -143,11 +166,11 @@ export default function LP() {
 
       {/* ── Pain Points ── */}
       <section className="px-6 py-12">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             こんな経験、ありませんか？
           </h2>
-          <ul className="space-y-4 text-sm text-white/80">
+          <ul className="space-y-4 text-sm text-white/80 lg:grid lg:grid-cols-2 lg:gap-x-12 lg:space-y-0 lg:gap-y-4">
             {[
               "気になる店があるのに一人で入る勇気が出ない",
               "結局いつものチェーン店、いつもの行動範囲に落ち着く",
@@ -177,90 +200,106 @@ export default function LP() {
 
       {/* ── Features ── */}
       <section className="px-6 py-12">
-        <div className="max-w-md mx-auto">
-          <h2 className="text-xl font-bold font-display mb-8 text-center">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-xl font-bold font-display mb-12 text-center">
             Roambleで、日常をクエストにする
           </h2>
 
-          <div className="space-y-8">
+          <div className="space-y-16 lg:space-y-20">
             {/* Feature 1 */}
-            <div className="flex items-start gap-5">
-              <div className="shrink-0 w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-2xl">
-                  explore
-                </span>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16">
+              <div className="lg:flex-1 space-y-8">
+                <div className="flex items-start gap-5">
+                  <div className="shrink-0 w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary text-2xl">
+                      explore
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base mb-1">1. 背中を押す</h3>
+                    <p className="text-sm text-white/70 leading-relaxed">
+                      現在地の近くから「まだ行ったことのない場所」を提案します。それはただの目的地ではなく、コンフォートゾーンを広げるための小さなクエストになります。
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-base mb-1">1. 背中を押す</h3>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  現在地の近くから「まだ行ったことのない場所」を提案します。それはただの目的地ではなく、コンフォートゾーンを広げるための小さなクエストになります。
-                </p>
+              <div className="mt-6 lg:mt-0 flex justify-center lg:flex-shrink-0">
+                <img
+                  src="/images/lp/home.png"
+                  alt="スポット提案画面"
+                  className="w-48 sm:w-56 lg:w-64 rounded-2xl shadow-lg"
+                />
               </div>
-            </div>
-            <div className="flex justify-center">
-              <img
-                src="/images/lp/home.png"
-                alt="スポット提案画面"
-                className="w-48 sm:w-56 rounded-2xl shadow-lg"
-              />
             </div>
 
             {/* Feature 2 */}
-            <div className="flex items-start gap-5">
-              <div className="shrink-0 w-12 h-12 rounded-full bg-primary-purple/15 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary-purple text-2xl">
-                  flag
-                </span>
+            <div className="flex flex-col lg:flex-row-reverse lg:items-center lg:gap-16">
+              <div className="lg:flex-1 space-y-8">
+                <div className="flex items-start gap-5">
+                  <div className="shrink-0 w-12 h-12 rounded-full bg-primary-purple/15 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-primary-purple text-2xl">
+                      flag
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base mb-1">
+                      2. 一歩を記録する
+                    </h3>
+                    <p className="text-sm text-white/70 leading-relaxed">
+                      提案された場所に実際に行き、「行った！」ボタンを押すことで
+                      <span className="font-semibold text-primary">
+                        {" "}
+                        XP（経験値）
+                      </span>
+                      を獲得できます。「怖かったけど行けた」という成功体験が、確かな数値として積み上がります。
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-base mb-1">2. 一歩を記録する</h3>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  提案された場所に実際に行き、「行った！」ボタンを押すことで
-                  <span className="font-semibold text-primary">
-                    {" "}
-                    XP（経験値）
-                  </span>
-                  を獲得できます。「怖かったけど行けた」という成功体験が、確かな数値として積み上がります。
-                </p>
+              <div className="mt-6 lg:mt-0 flex justify-center gap-4 lg:flex-shrink-0">
+                <img
+                  src="/images/lp/xp-modal.png"
+                  alt="XP獲得画面"
+                  className="w-40 sm:w-48 lg:w-52 rounded-2xl shadow-lg"
+                />
+                <img
+                  src="/images/lp/batch-modal.png"
+                  alt="バッジ獲得画面"
+                  className="w-40 sm:w-48 lg:w-52 rounded-2xl shadow-lg"
+                />
               </div>
-            </div>
-            <div className="flex justify-center gap-4">
-              <img
-                src="/images/lp/xp-modal.png"
-                alt="XP獲得画面"
-                className="w-40 sm:w-48 rounded-2xl shadow-lg"
-              />
-              <img
-                src="/images/lp/batch-modal.png"
-                alt="バッジ獲得画面"
-                className="w-40 sm:w-48 rounded-2xl shadow-lg"
-              />
             </div>
 
             {/* Feature 3 */}
-            <div className="flex items-start gap-5">
-              <div className="shrink-0 w-12 h-12 rounded-full bg-accent-orange/15 flex items-center justify-center">
-                <span className="material-symbols-outlined text-accent-orange text-2xl">
-                  trending_up
-                </span>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:gap-16">
+              <div className="lg:flex-1 space-y-8">
+                <div className="flex items-start gap-5">
+                  <div className="shrink-0 w-12 h-12 rounded-full bg-accent-orange/15 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-accent-orange text-2xl">
+                      trending_up
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base mb-1">
+                      3. 成長を実感する
+                    </h3>
+                    <p className="text-sm text-white/70 leading-relaxed">
+                      訪問履歴が増えるたび、レベルアップやバッジ獲得を通じて、行動範囲とともに
+                      <span className="font-semibold text-white">
+                        自分自身の可能性
+                      </span>
+                      も広がっていく実感が得られます。
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-base mb-1">3. 成長を実感する</h3>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  訪問履歴が増えるたび、レベルアップやバッジ獲得を通じて、行動範囲とともに
-                  <span className="font-semibold text-white">
-                    自分自身の可能性
-                  </span>
-                  も広がっていく実感が得られます。
-                </p>
+              <div className="mt-6 lg:mt-0 flex justify-center lg:flex-shrink-0">
+                <img
+                  src="/images/lp/profile-batch.png"
+                  alt="バッジ一覧画面"
+                  className="w-48 sm:w-56 lg:w-64 rounded-2xl shadow-lg"
+                />
               </div>
-            </div>
-            <div className="flex justify-center">
-              <img
-                src="/images/lp/profile-batch.png"
-                alt="バッジ一覧画面"
-                className="w-48 sm:w-56 rounded-2xl shadow-lg"
-              />
             </div>
           </div>
         </div>
@@ -271,7 +310,7 @@ export default function LP() {
 
       {/* ── Demo Video ── */}
       <section className="px-6 py-12">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             使ってみた動画
           </h2>
@@ -303,7 +342,7 @@ export default function LP() {
 
       {/* ── About the Developer ── */}
       <section className="px-6 py-12">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             作っている人
           </h2>
@@ -344,7 +383,7 @@ export default function LP() {
 
       {/* ── iOS Notify ── */}
       <section id="ios-notify" className="px-6 py-12">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-3 text-center">
             iOS版リリース通知を受け取る
           </h2>
@@ -401,7 +440,7 @@ export default function LP() {
 
       {/* ── Start Now CTA ── */}
       <section className="px-6 py-12 text-center">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-4">
             さっそく始める
           </h2>
