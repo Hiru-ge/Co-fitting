@@ -105,10 +105,10 @@ export default function Root() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Roamble：一歩踏み出す体験を経験値に</title>
+        <title>Roamble：知らない場所への一歩を、経験値に。</title>
         <meta
           name="description"
-          content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。"
+          content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。"
         />
         {/* beforeinstallprompt を早期キャプチャ */}
         <script

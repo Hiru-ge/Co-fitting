@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /lp
+Allow: /privacy
+Disallow: /home
+Disallow: /history
+Disallow: /profile
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /beta-gate
+Disallow: /pwa-prompt
+Disallow: /login
+
+Sitemap: https://roamble.app/sitemap.xml

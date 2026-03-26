@@ -3,11 +3,56 @@ import { Link } from "react-router";
 import type { MetaFunction } from "react-router";
 
 export const meta: MetaFunction = () => [
-  { title: "Roamble：一歩踏み出す体験を経験値に" },
+  { title: "Roamble：知らない場所への一歩を、経験値に。" },
   {
     name: "description",
     content:
-      "「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。",
+      "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの場所を提案し、行くたびにXP・バッジで成長を実感。iOSアプリも近日公開。",
+  },
+  { property: "og:type", content: "website" },
+  { property: "og:url", content: "https://roamble.app/lp" },
+  {
+    property: "og:title",
+    content: "Roamble：知らない場所への一歩を、経験値に。",
+  },
+  {
+    property: "og:description",
+    content:
+      "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの場所を提案し、行くたびにXP・バッジで成長が実感できる。",
+  },
+  { property: "og:image", content: "https://roamble.app/ogp.png" },
+  { property: "og:site_name", content: "Roamble" },
+  { property: "og:locale", content: "ja_JP" },
+  { name: "twitter:card", content: "summary_large_image" },
+  { name: "twitter:site", content: "@roamble_app" },
+  {
+    name: "twitter:title",
+    content: "Roamble：知らない場所への一歩を、経験値に。",
+  },
+  {
+    name: "twitter:description",
+    content:
+      "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの場所を提案し、行くたびにXP・バッジで成長が実感できる。",
+  },
+  { name: "twitter:image", content: "https://roamble.app/ogp.png" },
+  { tagName: "link", rel: "canonical", href: "https://roamble.app/lp" },
+  {
+    "script:ld+json": {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: "Roamble",
+      description:
+        "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの新しい場所を提案し、訪問するたびにXP・バッジで成長を実感できる。",
+      url: "https://roamble.app/lp",
+      applicationCategory: "LifestyleApplication",
+      operatingSystem: "Web",
+      inLanguage: "ja",
+      author: {
+        "@type": "Person",
+        name: "Hiru_ge",
+        url: "https://x.com/Hiru_ge",
+      },
+    },
   },
 ];
 
@@ -58,14 +103,14 @@ export default function LP() {
           Roamble
         </h1>
         <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6">
-          一歩踏み出す体験を経験値に
+          知らない場所への一歩を、経験値に。
         </p>
         <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8">
-          「新しい場所に行きたいけど、勇気が出ない」
+          知らない場所に踏み出すたびに、
+          <span className="font-semibold text-primary">経験値（XP）</span>
+          が積み上がる。
           <br />
-          そんなあなたの背中を押し、一歩踏み出す体験を
-          <span className="font-semibold text-primary"> 経験値（XP）</span>
-          に変える。
+          日常の行動圏が、小さな冒険のフィールドになる。
         </p>
         <a
           href="#ios-notify"

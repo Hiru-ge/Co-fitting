@@ -18,9 +18,9 @@ const injectOgpPlugin = {
       return; // dev mode など build/client が存在しない場合はスキップ
     }
     const metaTags = [
-      '<meta name="description" content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。">',
-      '<meta property="og:title" content="Roamble - 一歩踏み出す体験を経験値に">',
-      '<meta property="og:description" content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。">',
+      '<meta name="description" content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。">',
+      '<meta property="og:title" content="Roamble：知らない場所への一歩を、経験値に。">',
+      '<meta property="og:description" content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。">',
       '<meta property="og:type" content="website">',
       '<meta property="og:url" content="https://roamble.app/lp">',
       '<meta property="og:image" content="https://roamble.app/ogp.png">',
@@ -30,15 +30,15 @@ const injectOgpPlugin = {
       '<meta property="og:locale" content="ja_JP">',
       '<meta name="twitter:card" content="summary_large_image">',
       '<meta name="twitter:site" content="@roamble_app">',
-      '<meta name="twitter:title" content="Roamble：一歩踏み出す体験を経験値に">',
-      '<meta name="twitter:description" content="「新しい場所に行きたいけど、勇気が出ない」そんな背中を押し、一歩踏み出す体験を経験値（XP）に変えるWebアプリ。">',
+      '<meta name="twitter:title" content="Roamble：知らない場所への一歩を、経験値に。">',
+      '<meta name="twitter:description" content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。">',
       '<meta name="twitter:image" content="https://roamble.app/ogp.png">',
     ].join("\n    ");
     const patched = html
       .replace('lang="en"', 'lang="ja"')
       .replace(
         "<title>Loading...</title>",
-        "<title>Roamble - 一歩踏み出す体験を経験値に</title>",
+        "<title>Roamble：知らない場所への一歩を、経験値に。</title>",
       )
       .replace("</head>", `    ${metaTags}\n  </head>`);
     writeFileSync(indexPath, patched, "utf-8");
