@@ -17,5 +17,10 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(clients.openWindow(event.notification.data?.url || "/"));
+  const rawUrl = event.notification.data?.url || "/";
+  const base = self.registration.scope;
+  const url = new URL(rawUrl, base);
+  url.searchParams.set("utm_source", "push_notification");
+  url.searchParams.set("utm_medium", "push");
+  event.waitUntil(clients.openWindow(url.toString()));
 });

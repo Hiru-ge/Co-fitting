@@ -1,13 +1,34 @@
+import { useEffect } from "react";
 import { usePushBannerVisible } from "~/hooks/use-push-banner-visible";
 import { subscribePush } from "~/lib/push";
+import {
+  sendPushBannerShown,
+  sendPushBannerDismissed,
+  sendPushPermissionGranted,
+  sendPushPermissionDenied,
+} from "~/lib/gtag";
 
 export default function PushNotificationBanner({ token }: { token: string }) {
   const { visible, dismiss } = usePushBannerVisible();
 
+  useEffect(() => {
+    if (visible) sendPushBannerShown();
+  }, [visible]);
+
   if (!visible) return null;
 
   async function handleAllow() {
-    await subscribePush(token);
+    const success = await subscribePush(token);
+    if (success) {
+      sendPushPermissionGranted("banner");
+    } else {
+      sendPushPermissionDenied("banner");
+    }
+    dismiss();
+  }
+
+  function handleDismiss() {
+    sendPushBannerDismissed();
     dismiss();
   }
 
@@ -32,7 +53,7 @@ export default function PushNotificationBanner({ token }: { token: string }) {
         </button>
         <button
           type="button"
-          onClick={dismiss}
+          onClick={handleDismiss}
           className="px-3 py-1 rounded-full text-gray-400 text-xs"
         >
           後で

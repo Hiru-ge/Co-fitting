@@ -132,3 +132,23 @@ export function sendBadgeEarned(badgeName: string) {
 export function sendLevelUp(newLevel: number) {
   gtag("event", "level_up", { new_level: newLevel });
 }
+
+export function sendPushBannerShown() {
+  gtag("event", "push_banner_shown");
+}
+
+export function sendPushBannerDismissed() {
+  gtag("event", "push_banner_dismissed");
+}
+
+export function sendPushPermissionGranted(source: "banner" | "settings") {
+  gtag("event", "push_permission_granted", { source });
+}
+
+export function sendPushPermissionDenied(source: "banner" | "settings") {
+  gtag("event", "push_permission_denied", { source });
+}
+
+export function sendNotificationSettingChanged(field: string, value: boolean) {
+  gtag("event", "notification_setting_changed", { field, value });
+}

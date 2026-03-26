@@ -4,3 +4,4 @@
 backend/roamble
 *.log
 tmp/
+.mcp.json

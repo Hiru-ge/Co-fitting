@@ -6,6 +6,11 @@ import {
 import { getPushPermissionState, subscribePush } from "~/lib/push";
 import type { NotificationSettings } from "~/types/notification";
 import NotificationToggle from "~/components/NotificationToggle";
+import {
+  sendPushPermissionGranted,
+  sendPushPermissionDenied,
+  sendNotificationSettingChanged,
+} from "~/lib/gtag";
 
 export default function NotificationTab({ token }: { token: string }) {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
@@ -44,11 +49,17 @@ export default function NotificationTab({ token }: { token: string }) {
     if (!settings) return;
     setSettings({ ...settings, [field]: value });
     await updateNotificationSettings(token, { [field]: value });
+    sendNotificationSettingChanged(field, value);
   }
 
   async function handleSubscribePush() {
     const success = await subscribePush(token);
-    if (success) setPushPermission("granted");
+    if (success) {
+      setPushPermission("granted");
+      sendPushPermissionGranted("settings");
+    } else {
+      sendPushPermissionDenied("settings");
+    }
   }
 
   if (!settings) {
