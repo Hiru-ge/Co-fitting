@@ -10,6 +10,7 @@
 ### フロントエンド
 
 - [ ] `localStorage` に保存しているトークンに対して XSS リスクがある場合、Content-Security-Policy ヘッダーが設定されているか（`public/_headers` に CSP 未設定。ベータ版では許容範囲だが、正式リリース前に追加推奨）
+- [ ] リフレッシュトークンを httpOnly Cookie に移行する（現状は `localStorage` に保存しており、XSS が刺さると盗まれるリスクがある。対応にはバックエンドでの Cookie 発行・CSRF 対策とセットで実装が必要。ユーザー数が増えるフェーズで対応を検討）
 s
 ---
 
@@ -54,6 +55,136 @@ s
 
 - [ ] 除外ジャンルのフィルタリングロジックを `getExcludedGenreNames()` 関数に切り出し
 - [ ] トグル状態管理をカスタムフックに切り出し検討
+
+---
+
+## バックエンドコード読解から洗い出したバグ修正・リファクタリング
+
+### バグ修正
+
+#### ストリークリマインダー送信タイミング修正（Issue #305）
+
+**🔴 RED**
+- [ ] `backend/services/scheduler_test.go` に `TestFetchStreakReminderTargets_SevenDaysAgo` テスト追加（前回訪問から7日経過したユーザーが対象になるか検証）
+
+**🟢 GREEN**
+- [ ] `backend/services/scheduler.go` の `fetchStreakReminderTargets`: `AddDate(0, 0, -6)` → `AddDate(0, 0, -7)` に修正
+- [ ] 変数名 `sixDaysAgoJST` / `sixDaysAgoEnd` → `sevenDaysAgoJST` / `sevenDaysAgoEnd` に変更
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
+#### 提案の filter_open_now デフォルト値修正（Issue #306）
+
+**🔴 RED**
+- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_FilterOpenNowDefault` テスト追加（パラメータ未指定時に filter_open_now=true として動作するか検証）
+
+**🟢 GREEN**
+- [ ] `backend/handlers/suggestion.go` の `filter_open_now` パラメータのデフォルト値を `true` に変更
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
+#### ストリークボーナスXPのジャンル熟練度加算バグ修正（Issue #307）
+
+**🔴 RED**
+- [ ] `backend/services/gamification_test.go` にストリークボーナスXPが熟練度に加算されないことを検証するテスト追加
+
+**🟢 GREEN**
+- [ ] `backend/services/gamification.go` の `applyXPAndProgression`: ストリークボーナス分のXPを `UpdateGenreProficiency` に渡さないよう修正
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
+#### ユーザー登録時の NotificationSettings 初期レコード作成（Issue #308）
+
+**🔴 RED**
+- [ ] `backend/handlers/google_oauth_test.go` にOAuth完了時に `NotificationSettings` レコードが作成されるか検証するテスト追加
+
+**🟢 GREEN**
+- [ ] `backend/handlers/google_oauth.go` のユーザー登録処理に `NotificationSettings` の初期レコード作成を追加
+- [ ] `backend/handlers/notification.go` の `GetNotificationSettings` から `FirstOrCreate` を `First` に変更
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
+### 削除
+
+#### 未使用コード・dead code の削除（Issue #309）
+
+- [ ] `backend/middleware/rate_limit.go` を削除
+- [ ] `backend/middleware/error_handler.go` を削除
+- [ ] `backend/database/migrate.go` の適用済み一時パッチ3ブロック削除（`is_comfort_zone` 改名・`latitude`/`longitude`/`password_hash` 削除・`monthly_summary` デフォルト更新）
+- [ ] `backend/handlers/place_photo.go` の旧Places API互換コード削除（`resolveLegacyPhotoURL` / `isNewAPIPhotoRef` / `getBaseURL` / `getNewAPIBaseURL` / `getHTTPClient`）
+- [ ] `backend/handlers/visit.go` の `createVisitRequest.Rating` / `createVisitRequest.Memo` フィールド削除（Issue #304 と合わせて整理）
+- [ ] `backend/handlers/visit.go` の `ListVisits` から `from` / `until` パラメータ削除
+
+---
+
+### リファクタリング
+
+#### haversineDistance・jst の utils への切り出し（Issue #310）
+
+- [ ] `backend/utils/geo.go` を新規作成し `haversineDistance` を定義
+- [ ] `backend/utils/time.go` を新規作成し `JST` タイムゾーン定数を定義
+- [ ] `visit.go` / `gamification.go` / `user.go` の重複定義を削除して `utils` からインポートするよう変更
+
+---
+
+#### suggestion.go ビジネスロジックのサービス層への移動（Issue #311）
+
+- [ ] `backend/services/suggestion.go` を新規作成
+- [ ] `filterOutVisited` / `filterOpenNowPlaces` / `buildPersonalizedSelections` / `isBreakoutVisit` / `classifyByInterest` / `selectPersonalizedPlaces` をサービス層へ移動
+- [ ] `UpdateInterests` / `UpdateMe` のリロードカウント重複処理を共通関数に切り出し
+- [ ] `RunWeeklySummaryNotification` / `RunMonthlySummaryNotification` を `runSummaryNotification` に共通化
+
+---
+
+#### テスト専用コードの testutil への分離（Issue #312）
+
+- [ ] `backend/services/push.go` の `newPushServiceWithClient` を `backend/services/push_test.go` に移動
+- [ ] `backend/handlers/place_photo.go` の `BaseURL` / `HTTPClient` フィールドと `getBaseURL` / `getNewAPIBaseURL` / `getHTTPClient` を削除し、テスト側でモックを差し替える設計に変更
+- [ ] `backend/services/scheduler.go` の `EntryCount` を削除（テストで必要なら `testutil/` に別途定義）
+
+---
+
+#### 環境変数の config.go への集約（Issue #313）
+
+- [ ] `backend/config/config.go` にすべての環境変数の読み込みと起動時バリデーションを集約
+  - 対象: `MYSQL_*`（db.go）/ `REDIS_*`（redis.go）/ `PORT`（main.go）/ `ALLOWED_ORIGIN`（cors.go）/ `GOOGLE_*`（google_oauth.go）等
+- [ ] `ALLOWED_ORIGIN` 未設定時のフォールバック削除（未設定ならエラー）
+- [ ] 各ファイルの `os.Getenv` 直接呼び出しを `config` パッケージ経由に変更
+
+---
+
+#### 提案データの Redis/localStorage 二重管理の解消（Issue #314）
+
+> 詳細は `docs/redis-localstorage.md` を参照。
+
+- [ ] フロントエンドの提案キャッシュ（`SUGGESTIONS_CACHE_KEY`）を localStorage から削除し Redis 経由に統一
+- [ ] 「今日の提案を全件完了したか」フラグ（`COMPLETED_KEY`）を localStorage から削除し Redis の `suggestion:count:*` に統一
+- [ ] 複数端末でのキャッシュ整合性を確認
+
+---
+
+#### バックエンド全体の命名改善（Issue #315）
+
+- [ ] `resolveGenreInfo` → `deriveGenreFromPlaceTypes` 等、実態に合う名前へ
+- [ ] `ProcessGamification` → `AwardXPAndBadges` 等へ
+- [ ] `applyXPAndProgression` → `persistXPAndProgression` 等へ
+- [ ] `buildXPBreakdown` → `buildXPComponents` 等へ
+- [ ] `ForceReload` / `processForceReload` → `Reload` / `processReload` へ
+- [ ] Redis キー生成関数の命名統一（`Generate*Key` 等）/ 削除系を `Delete*` に統一
+- [ ] `scheduler.go` の `build*` → `aggregate*` / `collect*` 等へ
+- [ ] `email.go` の `Build*` → `Build*HTML` 等へ
 
 ---
 
