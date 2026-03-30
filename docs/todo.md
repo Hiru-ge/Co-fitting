@@ -223,9 +223,9 @@ s
 
 #### haversineDistance・jst の utils への切り出し（Issue #310）
 
-- [ ] `backend/utils/geo.go` を新規作成し `haversineDistance` を定義
-- [ ] `backend/utils/time.go` を新規作成し `JST` タイムゾーン定数を定義
-- [ ] `visit.go` / `gamification.go` / `user.go` の重複定義を削除して `utils` からインポートするよう変更
+- [x] `backend/utils/geo.go` を新規作成し `haversineDistance` を定義
+- [x] `backend/utils/time.go` を新規作成し `JST` タイムゾーン定数を定義
+- [x] `visit.go` / `gamification.go` / `user.go` の重複定義を削除して `utils` からインポートするよう変更
 
 ---
 

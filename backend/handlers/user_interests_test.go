@@ -13,6 +13,7 @@ import (
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -348,8 +349,7 @@ func TestUpdateInterestsWithRefreshSuggestions(t *testing.T) {
 
 		// 事前に日次キャッシュを擬似的に設定しておく
 		ctx := context.Background()
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		today := time.Now().In(jst).Format("2006-01-02")
+		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", user.ID)
 		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.67, 139.65, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
 
@@ -404,8 +404,7 @@ func TestUpdateInterestsWithRefreshSuggestions(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		today := time.Now().In(jst).Format("2006-01-02")
+		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", user.ID)
 
 		// リロード上限まで消費済みにする

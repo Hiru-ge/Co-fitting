@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"errors"
-	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -26,8 +26,6 @@ const (
 	// MaxDailyVisits は1日の訪問記録上限
 	MaxDailyVisits = 3
 )
-
-var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
 
 type genreResolution struct {
 	IsBreakout bool
@@ -52,8 +50,8 @@ func resolveGenreInfo(db *gorm.DB, userID uint64, placeTypes []string) genreReso
 }
 
 func countTodayVisitsJST(db *gorm.DB, userID uint64) (int64, error) {
-	now := time.Now().In(jst)
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+	now := time.Now().In(utils.JST)
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, utils.JST)
 	todayEnd := todayStart.Add(24 * time.Hour)
 
 	var count int64
@@ -70,18 +68,6 @@ type VisitHandler struct {
 
 // checkinDistanceThreshold は訪問記録を受け付ける施設からの最大距離（メートル）
 const checkinDistanceThreshold = 200.0
-
-// haversineDistance は2点間の距離をメートル単位で返す（Haversine公式）
-func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
-	const R = 6371000.0
-	toRad := func(deg float64) float64 { return deg * math.Pi / 180 }
-	dLat := toRad(lat2 - lat1)
-	dLng := toRad(lng2 - lng1)
-	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
-		math.Cos(toRad(lat1))*math.Cos(toRad(lat2))*math.Sin(dLng/2)*math.Sin(dLng/2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-	return R * c
-}
 
 type createVisitRequest struct {
 	PlaceID        string   `json:"place_id" binding:"required"`
@@ -142,7 +128,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	// バックエンド距離検証（production環境のみ、GPS未取得(0,0)の場合はスキップ）
 	if h.Environment != "development" && (req.UserLat != 0 || req.UserLng != 0) {
-		dist := haversineDistance(req.UserLat, req.UserLng, req.Lat, req.Lng)
+		dist := utils.HaversineDistance(req.UserLat, req.UserLng, req.Lat, req.Lng)
 		if dist > checkinDistanceThreshold {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "too far from place", "code": "TOO_FAR_FROM_PLACE"})
 			return

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 )
@@ -32,7 +33,7 @@ type NotificationScheduler struct {
 
 // NewNotificationScheduler は NotificationScheduler を初期化して返す
 func NewNotificationScheduler(push PushSender, email EmailSender, db *gorm.DB) *NotificationScheduler {
-	c := cron.New(cron.WithLocation(jst))
+	c := cron.New(cron.WithLocation(utils.JST))
 	return &NotificationScheduler{
 		cron:  c,
 		push:  push,
@@ -168,11 +169,11 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 		return
 	}
 
-	now := time.Now().In(jst)
+	now := time.Now().In(utils.JST)
 	// 前月の範囲を計算
 	lastMonth := now.AddDate(0, -1, 0)
-	monthStart := time.Date(lastMonth.Year(), lastMonth.Month(), 1, 0, 0, 0, 0, jst)
-	monthEnd := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, jst)
+	monthStart := time.Date(lastMonth.Year(), lastMonth.Month(), 1, 0, 0, 0, 0, utils.JST)
+	monthEnd := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, utils.JST)
 	monthLabel := fmt.Sprintf("%d年%d月", lastMonth.Year(), int(lastMonth.Month()))
 
 	for _, target := range targets {

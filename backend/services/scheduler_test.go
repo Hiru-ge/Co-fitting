@@ -7,6 +7,7 @@ import (
 
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,13 +105,12 @@ func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
 	cleanupPushSubscriptions(t)
 	cleanupUsers(t)
 
-	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-	now := time.Now().In(jst)
+	now := time.Now().In(utils.JST)
 	weekday := int(now.Weekday())
 	if weekday == 0 {
 		weekday = 7
 	}
-	thisMonday := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, jst)
+	thisMonday := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, utils.JST)
 	lastMonday := thisMonday.AddDate(0, 0, -7)
 
 	// userA: 今週訪問済み → 対象外

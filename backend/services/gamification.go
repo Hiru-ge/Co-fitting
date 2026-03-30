@@ -2,10 +2,10 @@ package services
 
 import (
 	"encoding/json"
-	"math"
 	"time"
 
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/utils"
 	"gorm.io/gorm"
 )
 
@@ -19,17 +19,6 @@ const (
 
 // エリアパイオニアバッジの距離閾値（メートル）
 const AreaPioneerDistanceM = 10000.0
-
-func haversineDistance(lat1, lng1, lat2, lng2 float64) float64 {
-	const earthRadiusM = 6371000.0
-	dLat := (lat2 - lat1) * math.Pi / 180
-	dLng := (lng2 - lng1) * math.Pi / 180
-	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
-		math.Cos(lat1*math.Pi/180)*math.Cos(lat2*math.Pi/180)*
-			math.Sin(dLng/2)*math.Sin(dLng/2)
-	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
-	return earthRadiusM * c
-}
 
 // レベルテーブル: インデックスiのレベル(i+1)はthresholds[i]以上で到達
 // Lv.1〜30の指数カーブ（等差増加: 各ステップの増分が67XPずつ増加）、
@@ -177,30 +166,27 @@ func UpdateStreak(db *gorm.DB, userID uint64, visitedAt time.Time) error {
 	}
 }
 
-var jst = time.FixedZone("Asia/Tokyo", 9*60*60)
-
 // isNightVisitJST はJST時刻で深夜帯（23:00〜翌5:00未満）かどうかを返す
 func isNightVisitJST(t time.Time) bool {
-	h := t.In(jst).Hour()
+	h := t.In(utils.JST).Hour()
 	return h >= 23 || h < 5
 }
 
 // isWeekendVisitJST はJST時刻で土曜日または日曜日かどうかを返す
 func isWeekendVisitJST(t time.Time) bool {
-	w := t.In(jst).Weekday()
+	w := t.In(utils.JST).Weekday()
 	return w == time.Saturday || w == time.Sunday
 }
 
 // weekStart は指定時刻が属する週の月曜日（0時0分0秒JST）を返す
-// 他のJST判定関数（isNightVisitJST, isWeekendVisitJST）とタイムゾーンを統一
 func weekStart(t time.Time) time.Time {
-	t = t.In(jst)
+	t = t.In(utils.JST)
 	weekday := int(t.Weekday())
 	if weekday == 0 {
 		weekday = 7 // Sunday → 7
 	}
 	monday := t.AddDate(0, 0, -(weekday - 1))
-	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, jst)
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, utils.JST)
 }
 
 // UpdateGenreProficiency はジャンル別熟練度を更新する
@@ -310,7 +296,7 @@ func CheckAndAwardBadges(db *gorm.DB, userID uint64, isBreakout bool, visitCount
 					if pv.Latitude == 0 && pv.Longitude == 0 {
 						continue
 					}
-					if haversineDistance(currentLat, currentLng, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
+					if utils.HaversineDistance(currentLat, currentLng, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
 						earned = true
 						break
 					}
@@ -357,7 +343,7 @@ func isFirstAreaVisit(tx *gorm.DB, userID uint64, visit models.Visit) bool {
 		if pv.Latitude == 0 && pv.Longitude == 0 {
 			continue
 		}
-		if haversineDistance(visit.Latitude, visit.Longitude, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
+		if utils.HaversineDistance(visit.Latitude, visit.Longitude, pv.Latitude, pv.Longitude) >= AreaPioneerDistanceM {
 			return true
 		}
 	}

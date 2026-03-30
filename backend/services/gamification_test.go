@@ -9,6 +9,7 @@ import (
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
 	"github.com/Hiru-ge/roamble/testutil"
+	"github.com/Hiru-ge/roamble/utils"
 	"gorm.io/gorm"
 )
 
@@ -194,14 +195,13 @@ func TestUpdateStreak(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak2@example.com")
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		now := time.Now().In(jst)
+		now := time.Now().In(utils.JST)
 		weekday := int(now.Weekday())
 		if weekday == 0 {
 			weekday = 7
 		}
 		thisMonday := now.AddDate(0, 0, -(weekday - 1))
-		lastVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 10, 0, 0, 0, jst)
+		lastVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 10, 0, 0, 0, utils.JST)
 		// 同じ週の水曜に再訪問
 		thisWednesday := lastVisit.AddDate(0, 0, 2)
 
@@ -229,16 +229,15 @@ func TestUpdateStreak(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak3@example.com")
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		now := time.Now().In(jst)
+		now := time.Now().In(utils.JST)
 		weekday := int(now.Weekday())
 		if weekday == 0 {
 			weekday = 7
 		}
 		thisMonday := now.AddDate(0, 0, -(weekday - 1))
 		lastMonday := thisMonday.AddDate(0, 0, -7)
-		lastVisit := time.Date(lastMonday.Year(), lastMonday.Month(), lastMonday.Day(), 10, 0, 0, 0, jst)
-		thisVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 10, 0, 0, 0, jst)
+		lastVisit := time.Date(lastMonday.Year(), lastMonday.Month(), lastMonday.Day(), 10, 0, 0, 0, utils.JST)
+		thisVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 10, 0, 0, 0, utils.JST)
 
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 3,
@@ -261,15 +260,14 @@ func TestUpdateStreak(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak4@example.com")
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		now := time.Now().In(jst)
+		now := time.Now().In(utils.JST)
 		weekday := int(now.Weekday())
 		if weekday == 0 {
 			weekday = 7
 		}
 		thisMonday := now.AddDate(0, 0, -(weekday - 1))
 		twoWeeksAgoMonday := thisMonday.AddDate(0, 0, -14)
-		lastVisit := time.Date(twoWeeksAgoMonday.Year(), twoWeeksAgoMonday.Month(), twoWeeksAgoMonday.Day(), 10, 0, 0, 0, jst)
+		lastVisit := time.Date(twoWeeksAgoMonday.Year(), twoWeeksAgoMonday.Month(), twoWeeksAgoMonday.Day(), 10, 0, 0, 0, utils.JST)
 
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 5,
@@ -292,16 +290,15 @@ func TestUpdateStreak(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak5@example.com")
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		now := time.Now().In(jst)
+		now := time.Now().In(utils.JST)
 		weekday := int(now.Weekday())
 		if weekday == 0 {
 			weekday = 7
 		}
 		thisMonday := now.AddDate(0, 0, -(weekday - 1))
 		lastSunday := thisMonday.AddDate(0, 0, -1) // 今週月曜の前日 = 先週日曜
-		lastVisit := time.Date(lastSunday.Year(), lastSunday.Month(), lastSunday.Day(), 23, 0, 0, 0, jst)
-		thisVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 9, 0, 0, 0, jst)
+		lastVisit := time.Date(lastSunday.Year(), lastSunday.Month(), lastSunday.Day(), 23, 0, 0, 0, utils.JST)
+		thisVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 9, 0, 0, 0, utils.JST)
 
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 2,
@@ -621,8 +618,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "night1@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		nightVisitTime := time.Date(2024, 1, 15, 23, 0, 0, 0, jst)
+		nightVisitTime := time.Date(2024, 1, 15, 23, 0, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
@@ -655,8 +651,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "night2@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		nightVisitTime := time.Date(2024, 1, 16, 4, 0, 0, 0, jst)
+		nightVisitTime := time.Date(2024, 1, 16, 4, 0, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
@@ -689,8 +684,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "night3@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		dayVisitTime := time.Date(2024, 1, 15, 15, 0, 0, 0, jst)
+		dayVisitTime := time.Date(2024, 1, 15, 15, 0, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
@@ -723,9 +717,8 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "weekend1@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-20 は土曜日（JST）
-		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, jst)
+		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 3; i++ {
 			testDB.Create(&models.Visit{
@@ -760,9 +753,8 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "weekend2@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-21 は日曜日（JST）
-		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, jst)
+		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 3; i++ {
 			testDB.Create(&models.Visit{
@@ -797,9 +789,8 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "weekend3@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-20 は土曜日（JST）
-		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, jst)
+		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 2; i++ {
 			testDB.Create(&models.Visit{
@@ -830,9 +821,8 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "weekend4@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-15 は月曜日（JST）
-		mondayTime := time.Date(2024, 1, 15, 14, 0, 0, 0, jst)
+		mondayTime := time.Date(2024, 1, 15, 14, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 3; i++ {
 			testDB.Create(&models.Visit{
@@ -863,10 +853,9 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		user := createUser(t, "weekend5@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 		// 2024-01-20 土曜, 2024-01-21 日曜
-		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, jst)
-		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, jst)
+		saturdayTime := time.Date(2024, 1, 20, 14, 0, 0, 0, utils.JST)
+		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID: user.ID, PlaceID: "place_sat_mixed_1", PlaceName: "土曜スポット1",
@@ -1519,15 +1508,13 @@ func TestGenreProficiencyExcludesStreakBonus(t *testing.T) {
 // =============================================
 
 func TestNightVisitBoundaries(t *testing.T) {
-	jstZone := time.FixedZone("Asia/Tokyo", 9*60*60)
-
 	t.Run("22時59分JSTの訪問ではナイトウォーカーバッジを獲得しない（h=22 → false）", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "night_boundary1@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 2024-01-15 22:59 JST（深夜帯の1分前）
-		visitTime := time.Date(2024, 1, 15, 22, 59, 0, 0, jstZone)
+		visitTime := time.Date(2024, 1, 15, 22, 59, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
@@ -1557,7 +1544,7 @@ func TestNightVisitBoundaries(t *testing.T) {
 		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 2024-01-16 5:00 JST（深夜帯終了後の境界）
-		visitTime := time.Date(2024, 1, 16, 5, 0, 0, 0, jstZone)
+		visitTime := time.Date(2024, 1, 16, 5, 0, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
@@ -1587,7 +1574,7 @@ func TestNightVisitBoundaries(t *testing.T) {
 		database.SeedMasterData(testDB) //nolint:errcheck
 
 		// 2024-01-16 4:59 JST（深夜帯終了の1分前）
-		visitTime := time.Date(2024, 1, 16, 4, 59, 0, 0, jstZone)
+		visitTime := time.Date(2024, 1, 16, 4, 59, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,

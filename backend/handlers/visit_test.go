@@ -12,6 +12,7 @@ import (
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -1845,7 +1846,6 @@ func TestCreateVisit_Gamification(t *testing.T) {
 
 func TestDailyVisitLimit(t *testing.T) {
 	router := setupVisitRouter()
-	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
 
 	t.Run("当日3件完了後に4件目の訪問で429 Too Many Requests", func(t *testing.T) {
 		cleanupUsers(t)
@@ -1854,8 +1854,8 @@ func TestDailyVisitLimit(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		// JST基準で今日の訪問を3件直接DBに作成
-		now := time.Now().In(jst)
-		todayJST := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+		now := time.Now().In(utils.JST)
+		todayJST := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 3; i++ {
 			visit := models.Visit{
@@ -1907,8 +1907,8 @@ func TestDailyVisitLimit(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		// JST基準で今日の訪問を2件直接DBに作成
-		now := time.Now().In(jst)
-		todayJST := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
+		now := time.Now().In(utils.JST)
+		todayJST := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 2; i++ {
 			visit := models.Visit{
@@ -1952,8 +1952,8 @@ func TestDailyVisitLimit(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		// JST基準で昨日の訪問を3件直接DBに作成
-		now := time.Now().In(jst)
-		yesterdayJST := time.Date(now.Year(), now.Month(), now.Day()-1, 12, 0, 0, 0, jst)
+		now := time.Now().In(utils.JST)
+		yesterdayJST := time.Date(now.Year(), now.Month(), now.Day()-1, 12, 0, 0, 0, utils.JST)
 
 		for i := 0; i < 3; i++ {
 			visit := models.Visit{
@@ -2250,7 +2250,7 @@ func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		// 1件目、2件目を直接DBに作成（今日のJST内）
-		now := time.Now().In(jst)
+		now := time.Now().In(utils.JST)
 		for i := 0; i < 2; i++ {
 			testDB.Create(&models.Visit{
 				UserID:    user.ID,

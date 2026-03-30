@@ -300,8 +300,7 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	reloadCountRemaining := database.MaxDailyReloads
 	if c.Query("refresh_suggestions") == "true" && h.RedisClient != nil {
 		ctx := c.Request.Context()
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		today := time.Now().In(jst).Format("2006-01-02")
+		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", userID)
 
 		currentCount, _ := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
@@ -428,8 +427,7 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 	reloadCountRemaining := database.MaxDailyReloads
 	if c.Query("refresh_suggestions") == "true" && req.SearchRadius != nil && h.RedisClient != nil {
 		ctx := c.Request.Context()
-		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-		today := time.Now().In(jst).Format("2006-01-02")
+		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", userID)
 
 		currentCount, _ := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
