@@ -169,10 +169,10 @@
 **Places APIキャッシュキーがここに定義されていない**
 - `suggestion.go` 内で `"places:v2:%s"` というキーをハードコードしている。他のキーは `redis.go` に集約されているのに、このキーだけ漏れている
 
-**提案キャッシュ・完了フラグの二重管理（要解消）**
-- 提案データが Redis（`suggestion:daily:*`）と localStorage（`SUGGESTIONS_CACHE_KEY`）の両方にキャッシュされている
-- 「今日の提案を全件完了したか」も Redis（`suggestion:count:*`）と localStorage（`COMPLETED_KEY`）に重複している
-- 複数端末対応のため localStorage 側を廃止して Redis に一本化すべき。詳細は `docs/redis-localstorage.md` を参照
+**提案キャッシュ・完了フラグの二重管理（Issue #314 で解消済み）**
+- 提案データの localStorage キャッシュ（`SUGGESTIONS_CACHE_KEY`）を廃止し、Redis（`suggestion:daily:*`）に統一済み
+- 「今日の提案を全件完了したか」の localStorage フラグ（`COMPLETED_KEY`）を廃止し、Redis（`suggestion:count:*`）に統一済み
+- 複数端末で同一状態になるように改善済み。詳細は `docs/redis-localstorage.md` を参照
 
 **コメント文が過剰**
 - 『リーダブル・コード』的に「コードから読み取れることをコメントで繰り返すな」という観点から、単純なGet/Set/Delete関数のコメントは冗長。例えば `SetDailySuggestionCache` のコメントは「Redisに今日の提案データを保存する」と書いてあるが、関数名と引数名で自明なので削除しても問題ない。これを削除してわからなくなるようであれば、関数名や引数名が不適切な可能性がある

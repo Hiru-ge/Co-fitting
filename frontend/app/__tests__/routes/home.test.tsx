@@ -873,7 +873,7 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     });
   });
 
-  test("3件全て訪問後に再マウントしてもコンプリート画面が表示される（APIを再呼び出ししない）", async () => {
+  test("3件全て訪問後に再マウントしてもコンプリート画面が表示される（APIで状態復元）", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const { createVisit } = await import("~/api/visits");
     // バックエンドの訪問件数に基づくコンプリート判定: 3件目でdaily_completed=trueを返す
@@ -916,23 +916,29 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     // コンポーネントをアンマウント（BottomNavで他の画面に遷移した想定）
     unmount();
 
+    // 再マウント時はサーバーが completed=true を返す想定
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [],
+      completed: true,
+    });
+
     // 再マウント（BottomNavで/homeに戻った想定）
     renderHome();
 
-    // APIを再呼び出しせずにコンプリート画面が即表示される
+    // APIの応答によりコンプリート画面が表示される
     await waitFor(() => {
       expect(
         screen.getByRole("region", { name: "コンプリート" }),
       ).toBeInTheDocument();
     });
 
-    // 再マウント後にAPIが追加で呼ばれていないことを確認
+    // 再マウント後は API が1回追加で呼ばれる
     expect(vi.mocked(getSuggestions).mock.calls.length).toBe(
-      callCountBeforeRemount,
+      callCountBeforeRemount + 1,
     );
   });
 
-  test("コンプリートフラグはlocalStorageで保持される（タブを閉じても当日中は有効）", async () => {
+  test("コンプリート状態は再マウント時のAPI応答で復元される", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
@@ -951,7 +957,11 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     // アンマウント
     unmount();
 
-    // 再マウント: localStorageからコンプリート状態を復元
+    // 再マウント: APIが再び completed=true を返す
+    vi.mocked(getSuggestions).mockResolvedValueOnce({
+      places: [],
+      completed: true,
+    });
     renderHome();
 
     await waitFor(() => {
@@ -1170,7 +1180,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     expect(vi.mocked(getSuggestions).mock.calls.length).toBe(1);
   });
 
-  test("提案取得後にアンマウント→再マウントしても getSuggestions が再呼び出しされない（位置変化に関係なく）", async () => {
+  test("提案取得後にアンマウント→再マウントすると getSuggestions は再呼び出しされる（位置変化に関係なく）", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const { getCurrentPosition } = await import("~/utils/geolocation");
 
@@ -1200,18 +1210,18 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     });
     renderHome();
 
-    // sessionStorageキャッシュから復元されるため、提案カードはすぐに表示される
+    // 再マウント後も API 応答で提案カードが表示される
     await waitFor(() => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
 
-    // 再マウント後に getSuggestions が追加で呼ばれていないことを確認
+    // 再マウント後に getSuggestions が1回追加で呼ばれることを確認
     expect(vi.mocked(getSuggestions).mock.calls.length).toBe(
-      callCountAfterFirstMount,
+      callCountAfterFirstMount + 1,
     );
   });
 
-  test("forceReload（リロードボタン押下）時は localStorage キャッシュを無視して再取得する", async () => {
+  test("forceReload（リロードボタン押下）時は再取得する", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const user = userEvent.setup();
 

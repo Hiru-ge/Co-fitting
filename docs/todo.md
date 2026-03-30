@@ -259,9 +259,9 @@ s
 
 > 詳細は `docs/redis-localstorage.md` を参照。
 
-- [ ] フロントエンドの提案キャッシュ（`SUGGESTIONS_CACHE_KEY`）を localStorage から削除し Redis 経由に統一
-- [ ] 「今日の提案を全件完了したか」フラグ（`COMPLETED_KEY`）を localStorage から削除し Redis の `suggestion:count:*` に統一
-- [ ] 複数端末でのキャッシュ整合性を確認
+- [x] フロントエンドの提案キャッシュ（`SUGGESTIONS_CACHE_KEY`）を localStorage から削除し Redis 経由に統一
+- [x] 「今日の提案を全件完了したか」フラグ（`COMPLETED_KEY`）を localStorage から削除し Redis の `suggestion:count:*` に統一
+- [x] 複数端末でのキャッシュ整合性を確認
 
 ---
 

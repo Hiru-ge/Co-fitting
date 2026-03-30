@@ -13,10 +13,6 @@ import type { GenreTag, Interest } from "~/types/genre";
 import { useModalClose } from "~/hooks/use-modal-close";
 import { useFormMessage } from "~/hooks/use-form-message";
 import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
-import {
-  clearSuggestionsCache,
-  getReloadCountRemaining,
-} from "~/hooks/use-suggestions";
 import NotificationTab from "~/components/NotificationTab";
 
 type TabId = "user" | "suggestion" | "notification";
@@ -508,9 +504,6 @@ function SuggestionTab({
     setIsSaving(true);
     try {
       await updateInterests(token, selectedIds, withRefresh);
-      if (withRefresh) {
-        clearSuggestionsCache();
-      }
       sendInterestsUpdated(selectedIds.length);
       setInterestMsg(
         withRefresh
@@ -528,9 +521,6 @@ function SuggestionTab({
     setIsSavingRadius(true);
     try {
       await updateSearchRadius(token, selectedRadius, withRefresh);
-      if (withRefresh) {
-        clearSuggestionsCache();
-      }
       sendSearchRadiusUpdated(selectedRadius / 1000);
       setRadiusMsg(
         withRefresh
@@ -547,25 +537,15 @@ function SuggestionTab({
   async function handleSaveInterests(e: React.FormEvent) {
     e.preventDefault();
     resetInterestMsg();
-    const remaining = getReloadCountRemaining();
-    if (remaining > 0) {
-      setPendingSave("interests");
-      setShowRefreshModal(true);
-      return;
-    }
-    await doSaveInterests(false);
+    setPendingSave("interests");
+    setShowRefreshModal(true);
   }
 
   async function handleSaveRadius(e: React.FormEvent) {
     e.preventDefault();
     resetRadiusMsg();
-    const remaining = getReloadCountRemaining();
-    if (remaining > 0) {
-      setPendingSave("radius");
-      setShowRefreshModal(true);
-      return;
-    }
-    await doSaveRadius(false);
+    setPendingSave("radius");
+    setShowRefreshModal(true);
   }
 
   async function handleConfirmRefresh() {

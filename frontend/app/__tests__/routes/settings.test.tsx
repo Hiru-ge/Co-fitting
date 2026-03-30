@@ -81,11 +81,6 @@ vi.mock("~/api/genres", () => ({
   }),
 }));
 
-vi.mock("~/hooks/use-suggestions", () => ({
-  clearSuggestionsCache: vi.fn(),
-  getReloadCountRemaining: vi.fn().mockReturnValue(3),
-}));
-
 import Settings from "~/routes/settings";
 import {
   updateDisplayName,
@@ -93,10 +88,6 @@ import {
   updateSearchRadius,
 } from "~/api/users";
 import { updateInterests } from "~/api/genres";
-import {
-  clearSuggestionsCache,
-  getReloadCountRemaining,
-} from "~/hooks/use-suggestions";
 
 const mockUser = {
   id: 1,
@@ -137,8 +128,6 @@ function renderSettings() {
 describe("設定画面", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // テストごとにリロード残回数のデフォルト値を復元する
-    vi.mocked(getReloadCountRemaining).mockReturnValue(3);
     // jsdom は matchMedia 未実装のためスタブを注入
     Object.defineProperty(window, "matchMedia", {
       writable: true,
@@ -430,49 +419,6 @@ describe("設定画面", () => {
 
       expect(updateInterests).not.toHaveBeenCalled();
       expect(screen.queryByText("提案が更新されます")).not.toBeInTheDocument();
-    });
-
-    test("リロード残0の場合はモーダルなしで保存される", async () => {
-      vi.mocked(getReloadCountRemaining).mockReturnValue(0);
-      const user = await switchToSuggestionTab();
-
-      await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
-
-      // モーダルは表示されぺにダイレクト保存
-      await waitFor(() => {
-        expect(updateInterests).toHaveBeenCalledWith(
-          "test-token",
-          [1, 3, 4, 2],
-          false,
-        );
-      });
-      expect(screen.queryByText("提案が更新されます")).not.toBeInTheDocument();
-    });
-
-    test("リロード残0の場合、翔日反映メッセージが表示される", async () => {
-      vi.mocked(getReloadCountRemaining).mockReturnValue(0);
-      const user = await switchToSuggestionTab();
-
-      await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/明日リセット時に反映されます/),
-        ).toBeInTheDocument();
-      });
-    });
-
-    test("リロード残0の場合、clearSuggestionsCacheは呼ばれない", async () => {
-      vi.mocked(getReloadCountRemaining).mockReturnValue(0);
-      const user = await switchToSuggestionTab();
-
-      await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
-
-      await waitFor(() => expect(updateInterests).toHaveBeenCalled());
-      expect(clearSuggestionsCache).not.toHaveBeenCalled();
     });
 
     test("興味タグが3つ未満だと保存ボタンが無効", async () => {
