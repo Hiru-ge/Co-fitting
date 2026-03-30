@@ -36,6 +36,7 @@ type logoutRequest struct {
 // @Param        body  body  refreshRequest  true  "リフレッシュトークン"
 // @Success      200  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req refreshRequest

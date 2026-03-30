@@ -16,32 +16,6 @@ type HealthHandler struct {
 	RedisClient *redis.Client
 }
 
-// HealthCheck godoc
-// @Summary      ヘルスチェック
-// @Description  サーバー・DB・Redisのヘルスチェック用エンドポイント
-// @Tags         Health
-// @Produce      json
-// @Success      200  {object}  map[string]string
-// @Failure      503  {object}  map[string]string
-// @Router       /health [get]
-func (h *HealthHandler) HealthCheck(c *gin.Context) {
-	dbStatus := h.checkDB()
-	redisStatus := h.checkRedis()
-
-	overallStatus := "ok"
-	httpStatus := http.StatusOK
-	if dbStatus == "error" || redisStatus == "error" {
-		overallStatus = "degraded"
-		httpStatus = http.StatusServiceUnavailable
-	}
-
-	c.JSON(httpStatus, gin.H{
-		"status": overallStatus,
-		"db":     dbStatus,
-		"redis":  redisStatus,
-	})
-}
-
 func (h *HealthHandler) checkDB() string {
 	if h.DB == nil {
 		return "unknown"
@@ -68,4 +42,30 @@ func (h *HealthHandler) checkRedis() string {
 		return "error"
 	}
 	return "ok"
+}
+
+// HealthCheck godoc
+// @Summary      ヘルスチェック
+// @Description  サーバー・DB・Redisのヘルスチェック用エンドポイント
+// @Tags         Health
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Failure      503  {object}  map[string]string
+// @Router       /health [get]
+func (h *HealthHandler) HealthCheck(c *gin.Context) {
+	dbStatus := h.checkDB()
+	redisStatus := h.checkRedis()
+
+	overallStatus := "ok"
+	httpStatus := http.StatusOK
+	if dbStatus == "error" || redisStatus == "error" {
+		overallStatus = "degraded"
+		httpStatus = http.StatusServiceUnavailable
+	}
+
+	c.JSON(httpStatus, gin.H{
+		"status": overallStatus,
+		"db":     dbStatus,
+		"redis":  redisStatus,
+	})
 }

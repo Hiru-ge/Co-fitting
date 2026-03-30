@@ -103,9 +103,11 @@ type createVisitResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        body  body  createVisitRequest  true  "訪問記録データ"
-// @Success      201  {object}  models.Visit
+// @Success      201  {object}  createVisitResponse
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      429  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/visits [post]
 func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -222,6 +224,16 @@ type mapVisitItem struct {
 	VisitedAt  string  `json:"visited_at"`
 }
 
+type mapVisitsResponse struct {
+	Visits []mapVisitItem `json:"visits"`
+	Total  int64          `json:"total"`
+}
+
+type listVisitsResponse struct {
+	Visits []models.Visit `json:"visits"`
+	Total  int64          `json:"total"`
+}
+
 // GetMapData godoc
 // @Summary      マップ表示用訪問データ取得
 // @Description  マップ表示に必要な位置情報・ジャンル情報を最適化して取得する
@@ -231,6 +243,7 @@ type mapVisitItem struct {
 // @Param        offset  query  int  false  "オフセット（デフォルト0）"
 // @Success      200  {object}  handlers.mapVisitsResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /api/visits/map [get]
 func (h *VisitHandler) GetMapData(c *gin.Context) {
@@ -288,9 +301,9 @@ func (h *VisitHandler) GetMapData(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"visits": items,
-		"total":  total,
+	c.JSON(http.StatusOK, mapVisitsResponse{
+		Visits: items,
+		Total:  total,
 	})
 }
 
@@ -304,6 +317,7 @@ func (h *VisitHandler) GetMapData(c *gin.Context) {
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/visits/{id} [get]
 func (h *VisitHandler) GetVisit(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -321,7 +335,11 @@ func (h *VisitHandler) GetVisit(c *gin.Context) {
 
 	var visit models.Visit
 	if err := h.DB.Where("id = ? AND user_id = ?", id, userID).First(&visit).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "visit not found"})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "visit not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve visit"})
 		return
 	}
 
@@ -337,6 +355,7 @@ func (h *VisitHandler) GetVisit(c *gin.Context) {
 // @Param        offset  query  int  false  "オフセット（デフォルト0）"
 // @Success      200  {object}  handlers.listVisitsResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /api/visits [get]
 func (h *VisitHandler) ListVisits(c *gin.Context) {
@@ -382,9 +401,9 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"visits": visits,
-		"total":  total,
+	c.JSON(http.StatusOK, listVisitsResponse{
+		Visits: visits,
+		Total:  total,
 	})
 }
 
@@ -406,6 +425,7 @@ type updateVisitRequest struct {
 // @Failure      401  {object}  map[string]string
 // @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/visits/{id} [patch]
 func (h *VisitHandler) UpdateVisit(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)

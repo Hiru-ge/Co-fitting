@@ -21,6 +21,7 @@ type betaVerifyRequest struct {
 // @Produce      json
 // @Param        body body betaVerifyRequest true "合言葉"
 // @Success      200  {object}  map[string]bool
+// @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Router       /api/beta/verify [post]
 func (h *BetaHandler) VerifyPassphrase(c *gin.Context) {

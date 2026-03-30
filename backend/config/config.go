@@ -70,42 +70,32 @@ type AppConfig struct {
 	Beta         *BetaConfig
 }
 
-func LoadAppConfig() (*AppConfig, error) {
-	jwtCfg, err := LoadJWTConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load JWT config: %w", err)
+func parseDurationMinutes(envKey string, defaultMinutes int) (time.Duration, error) {
+	val := os.Getenv(envKey)
+	if val == "" {
+		return time.Duration(defaultMinutes) * time.Minute, nil
 	}
 
-	dbCfg, err := LoadDatabaseConfig()
+	minutes, err := strconv.Atoi(val)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load database config: %w", err)
+		return 0, fmt.Errorf("invalid %s: %w", envKey, err)
 	}
 
-	redisCfg, err := LoadRedisConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load redis config: %w", err)
+	return time.Duration(minutes) * time.Minute, nil
+}
+
+func parseBoolEnv(envKey string, defaultValue bool) (bool, error) {
+	val := strings.TrimSpace(os.Getenv(envKey))
+	if val == "" {
+		return defaultValue, nil
 	}
 
-	corsCfg, err := LoadCORSConfig()
+	parsed, err := strconv.ParseBool(val)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load CORS config: %w", err)
+		return false, fmt.Errorf("invalid %s: %w", envKey, err)
 	}
 
-	serverCfg, err := LoadServerConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load server config: %w", err)
-	}
-
-	return &AppConfig{
-		JWT:          jwtCfg,
-		Database:     dbCfg,
-		Redis:        redisCfg,
-		CORS:         corsCfg,
-		Server:       serverCfg,
-		Google:       LoadGoogleConfig(),
-		Notification: LoadNotificationConfig(),
-		Beta:         LoadBetaConfig(),
-	}, nil
+	return parsed, nil
 }
 
 type JWTConfig struct {
@@ -240,30 +230,40 @@ func LoadBetaConfig() *BetaConfig {
 	return &BetaConfig{Passphrase: os.Getenv("BETA_PASSPHRASE")}
 }
 
-func parseDurationMinutes(envKey string, defaultMinutes int) (time.Duration, error) {
-	val := os.Getenv(envKey)
-	if val == "" {
-		return time.Duration(defaultMinutes) * time.Minute, nil
-	}
-
-	minutes, err := strconv.Atoi(val)
+func LoadAppConfig() (*AppConfig, error) {
+	jwtCfg, err := LoadJWTConfig()
 	if err != nil {
-		return 0, fmt.Errorf("invalid %s: %w", envKey, err)
+		return nil, fmt.Errorf("failed to load JWT config: %w", err)
 	}
 
-	return time.Duration(minutes) * time.Minute, nil
-}
-
-func parseBoolEnv(envKey string, defaultValue bool) (bool, error) {
-	val := strings.TrimSpace(os.Getenv(envKey))
-	if val == "" {
-		return defaultValue, nil
-	}
-
-	parsed, err := strconv.ParseBool(val)
+	dbCfg, err := LoadDatabaseConfig()
 	if err != nil {
-		return false, fmt.Errorf("invalid %s: %w", envKey, err)
+		return nil, fmt.Errorf("failed to load database config: %w", err)
 	}
 
-	return parsed, nil
+	redisCfg, err := LoadRedisConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load redis config: %w", err)
+	}
+
+	corsCfg, err := LoadCORSConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load CORS config: %w", err)
+	}
+
+	serverCfg, err := LoadServerConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load server config: %w", err)
+	}
+
+	return &AppConfig{
+		JWT:          jwtCfg,
+		Database:     dbCfg,
+		Redis:        redisCfg,
+		CORS:         corsCfg,
+		Server:       serverCfg,
+		Google:       LoadGoogleConfig(),
+		Notification: LoadNotificationConfig(),
+		Beta:         LoadBetaConfig(),
+	}, nil
 }

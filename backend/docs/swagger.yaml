@@ -1,29 +1,34 @@
 basePath: /
 definitions:
-  handlers.PlaceResult:
+  handlers.NotificationSettingsResponse:
     properties:
-      is_comfort_zone:
+      daily_suggestion:
         type: boolean
-      is_interest_match:
+      email_enabled:
         type: boolean
-      lat:
-        type: number
-      lng:
-        type: number
-      name:
+      monthly_summary:
+        type: boolean
+      push_enabled:
+        type: boolean
+      streak_reminder:
+        type: boolean
+      weekly_summary:
+        type: boolean
+    type: object
+  handlers.SubscribePushRequest:
+    properties:
+      auth:
         type: string
-      photo_reference:
+      endpoint:
         type: string
-      place_id:
+      p256dh:
         type: string
-      rating:
-        type: number
-      types:
-        items:
-          type: string
-        type: array
-      vicinity:
+      user_agent:
         type: string
+    required:
+    - auth
+    - endpoint
+    - p256dh
     type: object
   handlers.SuggestionResult:
     properties:
@@ -33,10 +38,37 @@ definitions:
         type: string
       places:
         items:
-          $ref: '#/definitions/handlers.PlaceResult'
+          $ref: '#/definitions/services.PlaceResult'
         type: array
       reload_count_remaining:
         type: integer
+    type: object
+  handlers.UnsubscribePushRequest:
+    properties:
+      endpoint:
+        type: string
+    required:
+    - endpoint
+    type: object
+  handlers.UpdateNotificationSettingsRequest:
+    properties:
+      daily_suggestion:
+        type: boolean
+      email_enabled:
+        type: boolean
+      monthly_summary:
+        type: boolean
+      push_enabled:
+        type: boolean
+      streak_reminder:
+        type: boolean
+      weekly_summary:
+        type: boolean
+    type: object
+  handlers.VAPIDKeyResponse:
+    properties:
+      vapid_public_key:
+        type: string
     type: object
   handlers.allBadgeResponse:
     properties:
@@ -62,6 +94,31 @@ definitions:
       name:
         type: string
     type: object
+  handlers.betaVerifyRequest:
+    properties:
+      passphrase:
+        type: string
+    required:
+    - passphrase
+    type: object
+  handlers.cacheKeyStats:
+    properties:
+      key:
+        type: string
+      memory_bytes:
+        type: integer
+      ttl_seconds:
+        type: integer
+    type: object
+  handlers.cacheStatsResponse:
+    properties:
+      key_count:
+        type: integer
+      keys:
+        items:
+          $ref: '#/definitions/handlers.cacheKeyStats'
+        type: array
+    type: object
   handlers.createVisitRequest:
     properties:
       category:
@@ -70,18 +127,23 @@ definitions:
         type: number
       lng:
         type: number
-      memo:
+      photo_reference:
+        description: 画像参照（Redis TTL失効後の再解決に使用）
         type: string
       place_id:
         type: string
       place_name:
         type: string
       place_types:
-        description: '任意: is_comfort_zone自動判定に使用'
+        description: '任意: is_breakout自動判定に使用'
         items:
           type: string
         type: array
-      rating:
+      user_lat:
+        description: ユーザーの現在緯度（距離検証用）
+        type: number
+      user_lng:
+        description: ユーザーの現在経度（距離検証用）
         type: number
       vicinity:
         type: string
@@ -94,6 +156,62 @@ definitions:
     - place_id
     - place_name
     - visited_at
+    type: object
+  handlers.createVisitResponse:
+    properties:
+      category:
+        type: string
+      created_at:
+        type: string
+      daily_completed:
+        description: 今回の訪問で本日の3件上限に達したか
+        type: boolean
+      genre_tag_id:
+        type: integer
+      id:
+        type: integer
+      is_breakout:
+        type: boolean
+      lat:
+        type: number
+      level_up:
+        description: 今回の訪問でレベルアップしたか
+        type: boolean
+      lng:
+        type: number
+      memo:
+        type: string
+      new_badges:
+        description: 今回獲得した新バッジ
+        items:
+          $ref: '#/definitions/models.Badge'
+        type: array
+      new_level:
+        description: 現在のレベル
+        type: integer
+      photo_reference:
+        type: string
+      place_id:
+        type: string
+      place_name:
+        type: string
+      rating:
+        type: number
+      total_xp:
+        description: ユーザー累計XP
+        type: integer
+      user_id:
+        type: integer
+      vicinity:
+        type: string
+      visited_at:
+        type: string
+      xp_breakdown:
+        allOf:
+        - $ref: '#/definitions/services.XPBreakdown'
+        description: XP計算内訳
+      xp_earned:
+        type: integer
     type: object
   handlers.genreTagResponse:
     properties:
@@ -133,21 +251,20 @@ definitions:
       name:
         type: string
     type: object
+  handlers.listVisitsResponse:
+    properties:
+      total:
+        type: integer
+      visits:
+        items:
+          $ref: '#/definitions/models.Visit'
+        type: array
+    type: object
   handlers.logoutRequest:
     properties:
       refresh_token:
         description: オプション（下位互換性のため）
         type: string
-    type: object  handlers.listVisitsResponse:
-    properties:
-      total:
-        description: 訪問記録の総件数
-        type: integer
-      visits:
-        description: 訪問記録の一覧
-        items:
-          $ref: '#/definitions/models.Visit'
-        type: array
     type: object
   handlers.mapVisitItem:
     properties:
@@ -171,14 +288,13 @@ definitions:
   handlers.mapVisitsResponse:
     properties:
       total:
-        description: 訪問記録の総件数
         type: integer
       visits:
-        description: マップ表示用訪問データの一覧
         items:
           $ref: '#/definitions/handlers.mapVisitItem'
         type: array
-    type: object  handlers.proficiencyResponse:
+    type: object
+  handlers.proficiencyResponse:
     properties:
       category:
         type: string
@@ -202,6 +318,8 @@ definitions:
     type: object
   handlers.suggestionRequest:
     properties:
+      filter_open_now:
+        type: boolean
       force_reload:
         type: boolean
       lat:
@@ -214,6 +332,23 @@ definitions:
     - lat
     - lng
     type: object
+  handlers.testLoginRequest:
+    properties:
+      display_name:
+        type: string
+      email:
+        type: string
+    required:
+    - display_name
+    - email
+    type: object
+  handlers.triggerNotificationRequest:
+    properties:
+      type:
+        type: string
+    required:
+    - type
+    type: object
   handlers.updateInterestsRequest:
     properties:
       genre_tag_ids:
@@ -223,12 +358,50 @@ definitions:
     required:
     - genre_tag_ids
     type: object
+  handlers.updateInterestsResponse:
+    properties:
+      interests:
+        items:
+          $ref: '#/definitions/handlers.interestResponse'
+        type: array
+      reload_count_remaining:
+        type: integer
+    type: object
   handlers.updateMeRequest:
     properties:
       display_name:
         type: string
       search_radius:
         type: integer
+    type: object
+  handlers.updateMeResponse:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      level:
+        type: integer
+      reload_count_remaining:
+        type: integer
+      search_radius:
+        type: integer
+      settings_json:
+        type: string
+      streak_count:
+        type: integer
+      streak_last:
+        type: string
+      total_xp:
+        type: integer
+      updated_at:
+        type: string
     type: object
   handlers.updateVisitRequest:
     properties:
@@ -239,9 +412,9 @@ definitions:
     type: object
   handlers.userStatsResponse:
     properties:
-      challenge_visits:
+      breakout_visits:
         type: integer
-      comfort_zone_visits:
+      challenge_visits:
         type: integer
       level:
         type: integer
@@ -253,6 +426,19 @@ definitions:
         type: integer
       total_xp:
         type: integer
+    type: object
+  models.Badge:
+    properties:
+      condition_json:
+        type: string
+      description:
+        type: string
+      icon_url:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
     type: object
   models.User:
     properties:
@@ -291,13 +477,15 @@ definitions:
         type: integer
       id:
         type: integer
-      is_comfort_zone:
+      is_breakout:
         type: boolean
       lat:
         type: number
       lng:
         type: number
       memo:
+        type: string
+      photo_reference:
         type: string
       place_id:
         type: string
@@ -312,6 +500,45 @@ definitions:
       visited_at:
         type: string
       xp_earned:
+        type: integer
+    type: object
+  services.PlaceResult:
+    properties:
+      is_breakout:
+        type: boolean
+      is_interest_match:
+        type: boolean
+      lat:
+        type: number
+      lng:
+        type: number
+      name:
+        type: string
+      open_now:
+        type: boolean
+      photo_reference:
+        type: string
+      place_id:
+        type: string
+      rating:
+        type: number
+      types:
+        items:
+          type: string
+        type: array
+      vicinity:
+        type: string
+    type: object
+  services.XPBreakdown:
+    properties:
+      base_xp:
+        description: ベースXP（通常50 or 脱却100）
+        type: integer
+      first_area_bonus:
+        description: 初エリアボーナス
+        type: integer
+      streak_bonus:
+        description: ストリークボーナス
         type: integer
     type: object
 host: localhost:8000
@@ -425,6 +652,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: トークンリフレッシュ
       tags:
       - Auth
@@ -446,9 +679,165 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: 全バッジ一覧取得
       tags:
       - Badges
+  /api/beta/verify:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 合言葉
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.betaVerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: ベータ合言葉照合
+      tags:
+      - Beta
+  /api/dev/auth/test-login:
+    post:
+      consumes:
+      - application/json
+      description: 指定emailのユーザーでテストログインし、JWTアクセストークン/リフレッシュトークンを返す（development環境のみ有効）
+      parameters:
+      - description: テストログイン情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.testLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: テストログイン（開発用）
+      tags:
+      - Dev
+  /api/dev/notifications/trigger:
+    post:
+      consumes:
+      - application/json
+      description: 指定した通知タイプを即時実行する（development環境のみ有効）
+      parameters:
+      - description: 通知タイプ
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.triggerNotificationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "503":
+          description: Service Unavailable
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 通知即時発火（開発用）
+      tags:
+      - Dev
+  /api/dev/suggestions/cache:
+    delete:
+      description: 提案関連のRedisキャッシュを削除する（development環境のみ有効）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 提案キャッシュ削除（開発用）
+      tags:
+      - Dev
+  /api/dev/suggestions/stats:
+    get:
+      description: 提案関連キャッシュのキー数・TTL・メモリ使用量を返す（development環境のみ有効）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.cacheStatsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 提案キャッシュ統計取得（開発用）
+      tags:
+      - Dev
   /api/genres:
     get:
       description: ジャンルタグマスタの全一覧をカテゴリ順で返す
@@ -467,9 +856,232 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: 全ジャンルタグ一覧取得
       tags:
       - Genres
+  /api/notifications/push/subscribe:
+    delete:
+      consumes:
+      - application/json
+      description: 指定endpointのPush通知購読をDBから削除する。存在しない場合も204を返す（冪等）。
+      parameters:
+      - description: 解除するendpoint
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UnsubscribePushRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Push購読解除
+      tags:
+      - Notifications
+    post:
+      consumes:
+      - application/json
+      description: Push通知購読をDBに登録する。同一endpointが存在する場合はUpsert。
+      parameters:
+      - description: 購読情報
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SubscribePushRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Push購読登録
+      tags:
+      - Notifications
+  /api/notifications/push/vapid-key:
+    get:
+      description: Web Push通知用のVAPID公開鍵を返す
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.VAPIDKeyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: VAPID公開鍵取得
+      tags:
+      - Notifications
+  /api/notifications/settings:
+    get:
+      description: ユーザーの通知設定を取得する
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.NotificationSettingsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 通知設定取得
+      tags:
+      - Notifications
+    put:
+      consumes:
+      - application/json
+      description: ユーザーの通知設定を更新する。送信されたフィールドのみ更新（部分更新）。
+      parameters:
+      - description: 更新する通知設定
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateNotificationSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.NotificationSettingsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 通知設定更新
+      tags:
+      - Notifications
+  /api/places/{placeId}/photo:
+    get:
+      description: Place ID に対応する写真URLを取得する。キャッシュ未ヒット時のみ photo_reference を使って解決する
+      parameters:
+      - description: Place ID
+        in: path
+        name: placeId
+        required: true
+        type: string
+      - description: Google Places Photo Reference（キャッシュ未ヒット時に必須）
+        in: query
+        name: photo_reference
+        type: string
+      - description: 画像最大幅ピクセル（デフォルト2000）
+        in: query
+        name: maxWidth
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 施設写真URL取得
+      tags:
+      - Places
   /api/suggestions:
     post:
       consumes:
@@ -477,6 +1089,7 @@ paths:
       description: |-
         指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
         notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
+        filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
       parameters:
       - description: 位置情報と半径
         in: body
@@ -505,6 +1118,12 @@ paths:
             type: object
         "404":
           description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -566,14 +1185,25 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: ユーザー情報取得
       tags:
       - Users
     patch:
       consumes:
       - application/json
-      description: JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）
+      description: JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）。refresh_suggestions=true
+        かつ search_radius 変更時はリロード1回分を消費して提案キャッシュをクリアする。
       parameters:
+      - description: true の場合（提案半径変更時）、提案キャッシュをクリアしリロードカウントを消費する
+        in: query
+        name: refresh_suggestions
+        type: boolean
       - description: 更新情報
         in: body
         name: body
@@ -586,7 +1216,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.User'
+            $ref: '#/definitions/handlers.updateMeResponse'
         "400":
           description: Bad Request
           schema:
@@ -601,6 +1231,12 @@ paths:
             type: object
         "404":
           description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -626,6 +1262,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: 獲得バッジ一覧取得
       tags:
       - Users
@@ -647,14 +1289,24 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: ユーザー興味タグ取得
       tags:
       - Users
     put:
       consumes:
       - application/json
-      description: JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）
+      description: JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）。refresh_suggestions=true を指定するとリロード1回分を消費して提案キャッシュをクリアする。
       parameters:
+      - description: true の場合、提案キャッシュをクリアしリロードカウントを消費する
+        in: query
+        name: refresh_suggestions
+        type: boolean
       - description: 興味タグIDリスト
         in: body
         name: body
@@ -667,9 +1319,7 @@ paths:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/handlers.interestResponse'
-            type: array
+            $ref: '#/definitions/handlers.updateInterestsResponse'
         "400":
           description: Bad Request
           schema:
@@ -678,6 +1328,12 @@ paths:
             type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -703,6 +1359,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: ジャンル別熟練度取得
       tags:
       - Users
@@ -724,6 +1386,12 @@ paths:
             type: object
         "404":
           description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -756,6 +1424,14 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
       summary: 訪問履歴取得
       tags:
       - Visits
@@ -776,7 +1452,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/models.Visit'
+            $ref: '#/definitions/handlers.createVisitResponse'
         "400":
           description: Bad Request
           schema:
@@ -785,6 +1461,18 @@ paths:
             type: object
         "401":
           description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -822,6 +1510,12 @@ paths:
             type: object
         "404":
           description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -876,6 +1570,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: 訪問記録更新
       tags:
       - Visits
@@ -904,17 +1604,31 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
       summary: マップ表示用訪問データ取得
       tags:
       - Visits
   /health:
     get:
-      description: サーバーのヘルスチェック用エンドポイント
+      description: サーバー・DB・Redisのヘルスチェック用エンドポイント
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: Service Unavailable
           schema:
             additionalProperties:
               type: string

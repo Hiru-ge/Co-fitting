@@ -227,101 +227,6 @@ const defaultSearchRadius uint = 3000
 // 最大検索半径（メートル）— API課金制御
 const maxSearchRadius uint = 50000
 
-// Suggest godoc
-// @Summary      場所の提案
-// @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
-// @Description  notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
-// @Description  filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
-// @Tags         Suggestion
-// @Accept       json
-// @Produce      json
-// @Param        body  body  suggestionRequest  true  "位置情報と半径"
-// @Success      200  {object}  SuggestionResult
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /api/suggestions [post]
-// @Security     BearerAuth
-func (h *SuggestionHandler) Suggest(c *gin.Context) {
-	var req suggestionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "code": "INVALID_REQUEST"})
-		return
-	}
-
-	userID, ok := middleware.GetUserIDFromContext(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
-		return
-	}
-
-	req.Radius = h.resolveRadius(userID, req.Radius)
-
-	ctx := c.Request.Context()
-	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-	today := time.Now().In(jst).Format("2006-01-02")
-	userIDStr := strconv.FormatUint(userID, 10)
-
-	reloadCount := h.getReloadCount(ctx, userIDStr, today)
-
-	if req.Reload {
-		newCount, done, status, body := h.reload(ctx, userIDStr, today, req, reloadCount)
-		if done {
-			c.JSON(status, body)
-			return
-		}
-		reloadCount = newCount
-	}
-
-	reloadRemaining := database.MaxDailyReloads - reloadCount
-	if reloadRemaining < 0 {
-		reloadRemaining = 0
-	}
-
-	if result, found := h.findDailySuggestionCache(ctx, userID, userIDStr, today, req, reloadRemaining); found {
-		c.JSON(http.StatusOK, *result)
-		return
-	}
-
-	cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
-	places, err := h.fetchPlacesFromCacheOrAPI(ctx, req, cacheKey)
-	if err != nil {
-		log.Printf("NearbySearch error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
-		return
-	}
-
-	if len(places) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found", "code": "NO_NEARBY_PLACES"})
-		return
-	}
-
-	if req.FilterOpenNow {
-		places = services.FilterOpenNowPlaces(places)
-		if len(places) == 0 {
-			c.JSON(http.StatusNotFound, gin.H{"error": "no open places found", "code": "NO_OPEN_PLACES"})
-			return
-		}
-	}
-
-	unvisited := services.FilterOutVisited(h.DB, userID, places)
-	if len(unvisited) == 0 {
-		c.JSON(http.StatusOK, SuggestionResult{Completed: true, Notice: "ALL_VISITED_NEARBY"})
-		return
-	}
-
-	selected, notice := services.BuildPersonalizedSelections(h.DB, userID, unvisited)
-
-	if h.RedisClient != nil {
-		data, _ := json.Marshal(selected)
-		if err := database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour); err != nil {
-			log.Printf("suggestion: failed to set daily suggestions cache: %v", err)
-		}
-	}
-
-	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice, ReloadCountRemaining: &reloadRemaining})
-}
-
 // resolveRadius はリクエストの radius が未指定の場合、ユーザーの設定値またはデフォルト値で補完する。
 func (h *SuggestionHandler) resolveRadius(userID uint64, requestedRadius uint) uint {
 	radius := requestedRadius
@@ -470,4 +375,100 @@ func (h *SuggestionHandler) fetchPlacesFromCacheOrAPI(ctx context.Context, req s
 	}
 
 	return places, nil
+}
+
+// Suggest godoc
+// @Summary      場所の提案
+// @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
+// @Description  notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
+// @Description  filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
+// @Tags         Suggestion
+// @Accept       json
+// @Produce      json
+// @Param        body  body  suggestionRequest  true  "位置情報と半径"
+// @Success      200  {object}  SuggestionResult
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/suggestions [post]
+// @Security     BearerAuth
+func (h *SuggestionHandler) Suggest(c *gin.Context) {
+	var req suggestionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "code": "INVALID_REQUEST"})
+		return
+	}
+
+	userID, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	req.Radius = h.resolveRadius(userID, req.Radius)
+
+	ctx := c.Request.Context()
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+	today := time.Now().In(jst).Format("2006-01-02")
+	userIDStr := strconv.FormatUint(userID, 10)
+
+	reloadCount := h.getReloadCount(ctx, userIDStr, today)
+
+	if req.Reload {
+		newCount, done, status, body := h.reload(ctx, userIDStr, today, req, reloadCount)
+		if done {
+			c.JSON(status, body)
+			return
+		}
+		reloadCount = newCount
+	}
+
+	reloadRemaining := database.MaxDailyReloads - reloadCount
+	if reloadRemaining < 0 {
+		reloadRemaining = 0
+	}
+
+	if result, found := h.findDailySuggestionCache(ctx, userID, userIDStr, today, req, reloadRemaining); found {
+		c.JSON(http.StatusOK, *result)
+		return
+	}
+
+	cacheKey := fmt.Sprintf("suggestions:%.4f:%.4f:%d", req.Lat, req.Lng, req.Radius)
+	places, err := h.fetchPlacesFromCacheOrAPI(ctx, req, cacheKey)
+	if err != nil {
+		log.Printf("NearbySearch error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
+		return
+	}
+
+	if len(places) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no nearby places found", "code": "NO_NEARBY_PLACES"})
+		return
+	}
+
+	if req.FilterOpenNow {
+		places = services.FilterOpenNowPlaces(places)
+		if len(places) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "no open places found", "code": "NO_OPEN_PLACES"})
+			return
+		}
+	}
+
+	unvisited := services.FilterOutVisited(h.DB, userID, places)
+	if len(unvisited) == 0 {
+		c.JSON(http.StatusOK, SuggestionResult{Completed: true, Notice: "ALL_VISITED_NEARBY"})
+		return
+	}
+
+	selected, notice := services.BuildPersonalizedSelections(h.DB, userID, unvisited)
+
+	if h.RedisClient != nil {
+		data, _ := json.Marshal(selected)
+		if err := database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour); err != nil {
+			log.Printf("suggestion: failed to set daily suggestions cache: %v", err)
+		}
+	}
+
+	c.JSON(http.StatusOK, SuggestionResult{Places: selected, Notice: notice, ReloadCountRemaining: &reloadRemaining})
 }

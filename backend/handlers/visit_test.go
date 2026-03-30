@@ -16,10 +16,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func setupVisitRouter() *gin.Engine {
-	return setupVisitRouterWithEnv("development")
-}
-
 func setupVisitRouterWithEnv(env string) *gin.Engine {
 	visitHandler := &VisitHandler{DB: testDB, Environment: env}
 
@@ -29,6 +25,10 @@ func setupVisitRouterWithEnv(env string) *gin.Engine {
 	r.PATCH("/api/visits/:id", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.UpdateVisit)
 	r.GET("/api/visits/:id", middleware.JWTAuth(testAuthHandler.JWTCfg.Secret, testRedisClient), visitHandler.GetVisit)
 	return r
+}
+
+func setupVisitRouter() *gin.Engine {
+	return setupVisitRouterWithEnv("development")
 }
 
 func createTestUserForVisit(t *testing.T) models.User {

@@ -34,6 +34,24 @@ func NewRateLimiter(limit int, window time.Duration) *RateLimiter {
 	}
 }
 
+// gcIfNeeded は古い IP エントリを定期的に削除する（メモリリーク防止）。
+// rl.mu を保持している状態で呼ぶこと。
+func (rl *RateLimiter) gcIfNeeded() {
+	if time.Since(rl.lastGC) < 5*time.Minute {
+		return
+	}
+	threshold := time.Now().Add(-rl.window * 2)
+	for ip, e := range rl.entries {
+		e.mu.Lock()
+		expired := e.windowAt.Before(threshold)
+		e.mu.Unlock()
+		if expired {
+			delete(rl.entries, ip)
+		}
+	}
+	rl.lastGC = time.Now()
+}
+
 func (rl *RateLimiter) allow(ip string) bool {
 	rl.mu.Lock()
 	entry, ok := rl.entries[ip]
@@ -58,24 +76,6 @@ func (rl *RateLimiter) allow(ip string) bool {
 	}
 	entry.count++
 	return true
-}
-
-// gcIfNeeded は古い IP エントリを定期的に削除する（メモリリーク防止）。
-// rl.mu を保持している状態で呼ぶこと。
-func (rl *RateLimiter) gcIfNeeded() {
-	if time.Since(rl.lastGC) < 5*time.Minute {
-		return
-	}
-	threshold := time.Now().Add(-rl.window * 2)
-	for ip, e := range rl.entries {
-		e.mu.Lock()
-		expired := e.windowAt.Before(threshold)
-		e.mu.Unlock()
-		if expired {
-			delete(rl.entries, ip)
-		}
-	}
-	rl.lastGC = time.Now()
 }
 
 // RateLimit は指定された RateLimiter を使う Gin ミドルウェアを返す。

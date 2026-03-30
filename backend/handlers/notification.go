@@ -59,6 +59,27 @@ func (h *NotificationHandler) GetVAPIDPublicKey(c *gin.Context) {
 	c.JSON(http.StatusOK, VAPIDKeyResponse{VAPIDPublicKey: h.VAPIDPublicKey})
 }
 
+// upsertPushSubscription はPush購読をUpsertする。
+// 新規登録の場合は true、既存レコードの更新の場合は false を返す。
+// MySQL の ON DUPLICATE KEY UPDATE は INSERT=1行、UPDATE=2行を返す。
+func upsertPushSubscription(db *gorm.DB, userID uint64, endpoint, p256dh, auth, userAgent string) (isNew bool, err error) {
+	sub := models.PushSubscription{
+		UserID:    userID,
+		Endpoint:  endpoint,
+		P256DH:    p256dh,
+		Auth:      auth,
+		UserAgent: userAgent,
+	}
+	result := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "endpoint"}},
+		DoUpdates: clause.AssignmentColumns([]string{"user_id", "p256_dh", "auth", "user_agent"}),
+	}).Create(&sub)
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected == 1, nil
+}
+
 // SubscribePush godoc
 // @Summary      Push購読登録
 // @Description  Push通知購読をDBに登録する。同一endpointが存在する場合はUpsert。
@@ -71,6 +92,7 @@ func (h *NotificationHandler) GetVAPIDPublicKey(c *gin.Context) {
 // @Success      200  {object}  map[string]string
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/notifications/push/subscribe [post]
 func (h *NotificationHandler) SubscribePush(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -108,6 +130,7 @@ func (h *NotificationHandler) SubscribePush(c *gin.Context) {
 // @Success      204
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/notifications/push/subscribe [delete]
 func (h *NotificationHandler) UnsubscribePush(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -198,6 +221,10 @@ func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update notification settings"})
 			return
 		}
+		if err := h.DB.Where("user_id = ?", userID).First(&settings).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get updated notification settings"})
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, NotificationSettingsResponse{
@@ -210,8 +237,9 @@ func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
 	})
 }
 
+// GetNotificationSettings godoc
 // @Summary      通知設定取得
-// @Description  ユーザーの通知設定を取得する。レコードが存在しない場合はデフォルト値で自動作成して返す。
+// @Description  ユーザーの通知設定を取得する
 // @Tags         Notifications
 // @Produce      json
 // @Security     BearerAuth
@@ -219,27 +247,6 @@ func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /api/notifications/settings [get]
-// upsertPushSubscription はPush購読をUpsertする。
-// 新規登録の場合は true、既存レコードの更新の場合は false を返す。
-// MySQL の ON DUPLICATE KEY UPDATE は INSERT=1行、UPDATE=2行を返す。
-func upsertPushSubscription(db *gorm.DB, userID uint64, endpoint, p256dh, auth, userAgent string) (isNew bool, err error) {
-	sub := models.PushSubscription{
-		UserID:    userID,
-		Endpoint:  endpoint,
-		P256DH:    p256dh,
-		Auth:      auth,
-		UserAgent: userAgent,
-	}
-	result := db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "endpoint"}},
-		DoUpdates: clause.AssignmentColumns([]string{"user_id", "p256_dh", "auth", "user_agent"}),
-	}).Create(&sub)
-	if result.Error != nil {
-		return false, result.Error
-	}
-	return result.RowsAffected == 1, nil
-}
-
 func (h *NotificationHandler) GetNotificationSettings(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
 	if !ok {

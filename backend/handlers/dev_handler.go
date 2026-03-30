@@ -33,6 +33,15 @@ type cacheKeyStats struct {
 	MemoryBytes int64  `json:"memory_bytes"`
 }
 
+// ResetSuggestionCache godoc
+// @Summary      提案キャッシュ削除（開発用）
+// @Description  提案関連のRedisキャッシュを削除する（development環境のみ有効）
+// @Tags         Dev
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]string
+// @Router       /api/dev/suggestions/cache [delete]
 func (h *DevHandler) ResetSuggestionCache(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -54,6 +63,15 @@ func (h *DevHandler) ResetSuggestionCache(c *gin.Context) {
 	})
 }
 
+// GetSuggestionStats godoc
+// @Summary      提案キャッシュ統計取得（開発用）
+// @Description  提案関連キャッシュのキー数・TTL・メモリ使用量を返す（development環境のみ有効）
+// @Tags         Dev
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  cacheStatsResponse
+// @Failure      500  {object}  map[string]string
+// @Router       /api/dev/suggestions/stats [get]
 func (h *DevHandler) GetSuggestionStats(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -104,6 +122,16 @@ type testLoginRequest struct {
 // Docker ネットワーク経由では RemoteAddr がゲートウェイ IP になるため、
 // localhost IP フィルタは機能しない。環境変数による環境ガードを唯一の防衛とする。
 // ユーザーが存在しない場合は作成し、JWT トークンペアを返す。
+// @Summary      テストログイン（開発用）
+// @Description  指定emailのユーザーでテストログインし、JWTアクセストークン/リフレッシュトークンを返す（development環境のみ有効）
+// @Tags         Dev
+// @Accept       json
+// @Produce      json
+// @Param        body  body  testLoginRequest  true  "テストログイン情報"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /api/dev/auth/test-login [post]
 func (h *DevHandler) TestLogin(c *gin.Context) {
 	var req testLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -156,6 +184,17 @@ type triggerNotificationRequest struct {
 
 // TriggerNotification は開発環境専用の通知即時発火エンドポイント。
 // type に "daily_suggestion" / "streak_reminder" / "weekly_summary" / "monthly_summary" を指定する。
+// @Summary      通知即時発火（開発用）
+// @Description  指定した通知タイプを即時実行する（development環境のみ有効）
+// @Tags         Dev
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body  triggerNotificationRequest  true  "通知タイプ"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      503  {object}  map[string]string
+// @Router       /api/dev/notifications/trigger [post]
 func (h *DevHandler) TriggerNotification(c *gin.Context) {
 	if h.Scheduler == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "scheduler not initialized"})

@@ -7,17 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// SeedMasterData inserts initial master data (idempotent)
-func SeedMasterData(db *gorm.DB) error {
-	if err := seedGenreTags(db); err != nil {
-		return fmt.Errorf("failed to seed genre_tags: %w", err)
-	}
-	if err := seedBadges(db); err != nil {
-		return fmt.Errorf("failed to seed badges: %w", err)
-	}
-	return nil
-}
-
 func seedGenreTags(db *gorm.DB) error {
 	tags := []models.GenreTag{
 		// 飲食
@@ -147,6 +136,17 @@ func seedBadges(db *gorm.DB) error {
 			FirstOrCreate(&b).Error; err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// SeedMasterData inserts initial master data (idempotent)
+func SeedMasterData(db *gorm.DB) error {
+	if err := seedGenreTags(db); err != nil {
+		return fmt.Errorf("failed to seed genre_tags: %w", err)
+	}
+	if err := seedBadges(db); err != nil {
+		return fmt.Errorf("failed to seed badges: %w", err)
 	}
 	return nil
 }

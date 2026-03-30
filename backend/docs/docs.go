@@ -177,6 +177,15 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -203,6 +212,249 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/beta/verify": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Beta"
+                ],
+                "summary": "ベータ合言葉照合",
+                "parameters": [
+                    {
+                        "description": "合言葉",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.betaVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/dev/auth/test-login": {
+            "post": {
+                "description": "指定emailのユーザーでテストログインし、JWTアクセストークン/リフレッシュトークンを返す（development環境のみ有効）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dev"
+                ],
+                "summary": "テストログイン（開発用）",
+                "parameters": [
+                    {
+                        "description": "テストログイン情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.testLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/dev/notifications/trigger": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定した通知タイプを即時実行する（development環境のみ有効）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dev"
+                ],
+                "summary": "通知即時発火（開発用）",
+                "parameters": [
+                    {
+                        "description": "通知タイプ",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.triggerNotificationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/dev/suggestions/cache": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "提案関連のRedisキャッシュを削除する（development環境のみ有効）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dev"
+                ],
+                "summary": "提案キャッシュ削除（開発用）",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/dev/suggestions/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "提案関連キャッシュのキー数・TTL・メモリ使用量を返す（development環境のみ有効）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dev"
+                ],
+                "summary": "提案キャッシュ統計取得（開発用）",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.cacheStatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -241,6 +493,354 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/push/subscribe": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Push通知購読をDBに登録する。同一endpointが存在する場合はUpsert。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Push購読登録",
+                "parameters": [
+                    {
+                        "description": "購読情報",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SubscribePushRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定endpointのPush通知購読をDBから削除する。存在しない場合も204を返す（冪等）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Push購読解除",
+                "parameters": [
+                    {
+                        "description": "解除するendpoint",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UnsubscribePushRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/push/vapid-key": {
+            "get": {
+                "description": "Web Push通知用のVAPID公開鍵を返す",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "VAPID公開鍵取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.VAPIDKeyResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ユーザーの通知設定を取得する",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "通知設定取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.NotificationSettingsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ユーザーの通知設定を更新する。送信されたフィールドのみ更新（部分更新）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "通知設定更新",
+                "parameters": [
+                    {
+                        "description": "更新する通知設定",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UpdateNotificationSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.NotificationSettingsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/places/{placeId}/photo": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Place ID に対応する写真URLを取得する。キャッシュ未ヒット時のみ photo_reference を使って解決する",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Places"
+                ],
+                "summary": "施設写真URL取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Place ID",
+                        "name": "placeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Google Places Photo Reference（キャッシュ未ヒット時に必須）",
+                        "name": "photo_reference",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "画像最大幅ピクセル（デフォルト2000）",
+                        "name": "maxWidth",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -252,7 +852,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）\nnotice が \"NO_INTEREST_PLACES\" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）",
+                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）\nnotice が \"NO_INTEREST_PLACES\" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）\nfilter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない",
                 "consumes": [
                     "application/json"
                 ],
@@ -307,6 +907,15 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -339,6 +948,15 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -396,7 +1014,7 @@ const docTemplate = `{
                 }
             },
             "patch": {
-                "description": "JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）",
+                "description": "JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius 変更時はリロード1回分を消費して提案キャッシュをクリアする。",
                 "consumes": [
                     "application/json"
                 ],
@@ -408,6 +1026,12 @@ const docTemplate = `{
                 ],
                 "summary": "ユーザー情報更新",
                 "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "true の場合（提案半径変更時）、提案キャッシュをクリアしリロードカウントを消費する",
+                        "name": "refresh_suggestions",
+                        "in": "query"
+                    },
                     {
                         "description": "更新情報",
                         "name": "body",
@@ -422,7 +1046,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/handlers.updateMeResponse"
                         }
                     },
                     "400": {
@@ -445,6 +1069,15 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -483,6 +1116,15 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -515,11 +1157,20 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             },
             "put": {
-                "description": "JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）",
+                "description": "JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）。refresh_suggestions=true を指定するとリロード1回分を消費して提案キャッシュをクリアする。",
                 "consumes": [
                     "application/json"
                 ],
@@ -531,6 +1182,12 @@ const docTemplate = `{
                 ],
                 "summary": "ユーザー興味タグ更新",
                 "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "true の場合、提案キャッシュをクリアしリロードカウントを消費する",
+                        "name": "refresh_suggestions",
+                        "in": "query"
+                    },
                     {
                         "description": "興味タグIDリスト",
                         "name": "body",
@@ -545,10 +1202,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handlers.interestResponse"
-                            }
+                            "$ref": "#/definitions/handlers.updateInterestsResponse"
                         }
                     },
                     "400": {
@@ -562,6 +1216,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -594,6 +1257,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -638,12 +1310,26 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         },
         "/api/visits": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "ユーザーの訪問履歴を一覧取得する（visited_at降順）",
                 "produces": [
                     "application/json"
@@ -681,9 +1367,19 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
-            }, {
+            },
+            "post": {
                 "description": "ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）",
                 "consumes": [
                     "application/json"
@@ -710,7 +1406,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/models.Visit"
+                            "$ref": "#/definitions/handlers.createVisitResponse"
                         }
                     },
                     "400": {
@@ -730,12 +1426,35 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         },
         "/api/visits/map": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "マップ表示に必要な位置情報・ジャンル情報を最適化して取得する",
                 "produces": [
                     "application/json"
@@ -767,6 +1486,15 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -823,6 +1551,15 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -904,13 +1641,22 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         },
         "/health": {
             "get": {
-                "description": "サーバーのヘルスチェック用エンドポイント",
+                "description": "サーバー・DB・Redisのヘルスチェック用エンドポイント",
                 "produces": [
                     "application/json"
                 ],
@@ -927,46 +1673,62 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
-        "handlers.PlaceResult": {
+        "handlers.NotificationSettingsResponse": {
             "type": "object",
             "properties": {
-                "is_comfort_zone": {
+                "daily_suggestion": {
                     "type": "boolean"
                 },
-                "is_interest_match": {
+                "email_enabled": {
                     "type": "boolean"
                 },
-                "lat": {
-                    "type": "number"
+                "monthly_summary": {
+                    "type": "boolean"
                 },
-                "lng": {
-                    "type": "number"
+                "push_enabled": {
+                    "type": "boolean"
                 },
-                "name": {
+                "streak_reminder": {
+                    "type": "boolean"
+                },
+                "weekly_summary": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handlers.SubscribePushRequest": {
+            "type": "object",
+            "required": [
+                "auth",
+                "endpoint",
+                "p256dh"
+            ],
+            "properties": {
+                "auth": {
                     "type": "string"
                 },
-                "photo_reference": {
+                "endpoint": {
                     "type": "string"
                 },
-                "place_id": {
+                "p256dh": {
                     "type": "string"
                 },
-                "rating": {
-                    "type": "number"
-                },
-                "types": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "vicinity": {
+                "user_agent": {
                     "type": "string"
                 }
             }
@@ -983,11 +1745,53 @@ const docTemplate = `{
                 "places": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.PlaceResult"
+                        "$ref": "#/definitions/services.PlaceResult"
                     }
                 },
                 "reload_count_remaining": {
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.UnsubscribePushRequest": {
+            "type": "object",
+            "required": [
+                "endpoint"
+            ],
+            "properties": {
+                "endpoint": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UpdateNotificationSettingsRequest": {
+            "type": "object",
+            "properties": {
+                "daily_suggestion": {
+                    "type": "boolean"
+                },
+                "email_enabled": {
+                    "type": "boolean"
+                },
+                "monthly_summary": {
+                    "type": "boolean"
+                },
+                "push_enabled": {
+                    "type": "boolean"
+                },
+                "streak_reminder": {
+                    "type": "boolean"
+                },
+                "weekly_summary": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handlers.VAPIDKeyResponse": {
+            "type": "object",
+            "properties": {
+                "vapid_public_key": {
+                    "type": "string"
                 }
             }
         },
@@ -1028,6 +1832,45 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.betaVerifyRequest": {
+            "type": "object",
+            "required": [
+                "passphrase"
+            ],
+            "properties": {
+                "passphrase": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.cacheKeyStats": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "memory_bytes": {
+                    "type": "integer"
+                },
+                "ttl_seconds": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.cacheStatsResponse": {
+            "type": "object",
+            "properties": {
+                "key_count": {
+                    "type": "integer"
+                },
+                "keys": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.cacheKeyStats"
+                    }
+                }
+            }
+        },
         "handlers.createVisitRequest": {
             "type": "object",
             "required": [
@@ -1048,7 +1891,8 @@ const docTemplate = `{
                 "lng": {
                     "type": "number"
                 },
-                "memo": {
+                "photo_reference": {
+                    "description": "画像参照（Redis TTL失効後の再解決に使用）",
                     "type": "string"
                 },
                 "place_id": {
@@ -1058,13 +1902,18 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "place_types": {
-                    "description": "任意: is_comfort_zone自動判定に使用",
+                    "description": "任意: is_breakout自動判定に使用",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "rating": {
+                "user_lat": {
+                    "description": "ユーザーの現在緯度（距離検証用）",
+                    "type": "number"
+                },
+                "user_lng": {
+                    "description": "ユーザーの現在経度（距離検証用）",
                     "type": "number"
                 },
                 "vicinity": {
@@ -1072,6 +1921,90 @@ const docTemplate = `{
                 },
                 "visited_at": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.createVisitResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "daily_completed": {
+                    "description": "今回の訪問で本日の3件上限に達したか",
+                    "type": "boolean"
+                },
+                "genre_tag_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_breakout": {
+                    "type": "boolean"
+                },
+                "lat": {
+                    "type": "number"
+                },
+                "level_up": {
+                    "description": "今回の訪問でレベルアップしたか",
+                    "type": "boolean"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "memo": {
+                    "type": "string"
+                },
+                "new_badges": {
+                    "description": "今回獲得した新バッジ",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Badge"
+                    }
+                },
+                "new_level": {
+                    "description": "現在のレベル",
+                    "type": "integer"
+                },
+                "photo_reference": {
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "place_name": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "total_xp": {
+                    "description": "ユーザー累計XP",
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "vicinity": {
+                    "type": "string"
+                },
+                "visited_at": {
+                    "type": "string"
+                },
+                "xp_breakdown": {
+                    "description": "XP計算内訳",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.XPBreakdown"
+                        }
+                    ]
+                },
+                "xp_earned": {
+                    "type": "integer"
                 }
             }
         },
@@ -1134,12 +2067,69 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.listVisitsResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                },
+                "visits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Visit"
+                    }
+                }
+            }
+        },
         "handlers.logoutRequest": {
             "type": "object",
             "properties": {
                 "refresh_token": {
                     "description": "オプション（下位互換性のため）",
                     "type": "string"
+                }
+            }
+        },
+        "handlers.mapVisitItem": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "genre_tag_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "place_name": {
+                    "type": "string"
+                },
+                "visited_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.mapVisitsResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                },
+                "visits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.mapVisitItem"
+                    }
                 }
             }
         },
@@ -1184,6 +2174,9 @@ const docTemplate = `{
                 "lng"
             ],
             "properties": {
+                "filter_open_now": {
+                    "type": "boolean"
+                },
                 "force_reload": {
                     "type": "boolean"
                 },
@@ -1195,6 +2188,32 @@ const docTemplate = `{
                 },
                 "radius": {
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.testLoginRequest": {
+            "type": "object",
+            "required": [
+                "display_name",
+                "email"
+            ],
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.triggerNotificationRequest": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -1212,6 +2231,20 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.updateInterestsResponse": {
+            "type": "object",
+            "properties": {
+                "interests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.interestResponse"
+                    }
+                },
+                "reload_count_remaining": {
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.updateMeRequest": {
             "type": "object",
             "properties": {
@@ -1220,6 +2253,50 @@ const docTemplate = `{
                 },
                 "search_radius": {
                     "type": "integer"
+                }
+            }
+        },
+        "handlers.updateMeResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "reload_count_remaining": {
+                    "type": "integer"
+                },
+                "search_radius": {
+                    "type": "integer"
+                },
+                "settings_json": {
+                    "type": "string"
+                },
+                "streak_count": {
+                    "type": "integer"
+                },
+                "streak_last": {
+                    "type": "string"
+                },
+                "total_xp": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -1237,10 +2314,10 @@ const docTemplate = `{
         "handlers.userStatsResponse": {
             "type": "object",
             "properties": {
-                "challenge_visits": {
+                "breakout_visits": {
                     "type": "integer"
                 },
-                "comfort_zone_visits": {
+                "challenge_visits": {
                     "type": "integer"
                 },
                 "level": {
@@ -1257,6 +2334,26 @@ const docTemplate = `{
                 },
                 "total_xp": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.Badge": {
+            "type": "object",
+            "properties": {
+                "condition_json": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -1316,7 +2413,7 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "is_comfort_zone": {
+                "is_breakout": {
                     "type": "boolean"
                 },
                 "lat": {
@@ -1326,6 +2423,9 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "memo": {
+                    "type": "string"
+                },
+                "photo_reference": {
                     "type": "string"
                 },
                 "place_id": {
@@ -1347,6 +2447,64 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "xp_earned": {
+                    "type": "integer"
+                }
+            }
+        },
+        "services.PlaceResult": {
+            "type": "object",
+            "properties": {
+                "is_breakout": {
+                    "type": "boolean"
+                },
+                "is_interest_match": {
+                    "type": "boolean"
+                },
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "open_now": {
+                    "type": "boolean"
+                },
+                "photo_reference": {
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "rating": {
+                    "type": "number"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "vicinity": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.XPBreakdown": {
+            "type": "object",
+            "properties": {
+                "base_xp": {
+                    "description": "ベースXP（通常50 or 脱却100）",
+                    "type": "integer"
+                },
+                "first_area_bonus": {
+                    "description": "初エリアボーナス",
+                    "type": "integer"
+                },
+                "streak_bonus": {
+                    "description": "ストリークボーナス",
                     "type": "integer"
                 }
             }

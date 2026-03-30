@@ -32,6 +32,7 @@ type UserHandler struct {
 // @Success      200  {object}  models.User
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me [get]
 func (h *UserHandler) GetMe(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -71,6 +72,7 @@ type userStatsResponse struct {
 // @Success      200  {object}  userStatsResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me/stats [get]
 func (h *UserHandler) GetStats(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -122,6 +124,7 @@ type badgeResponse struct {
 // @Produce      json
 // @Success      200  {array}   badgeResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me/badges [get]
 func (h *UserHandler) GetBadges(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -166,6 +169,7 @@ type proficiencyResponse struct {
 // @Produce      json
 // @Success      200  {array}   proficiencyResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me/proficiency [get]
 func (h *UserHandler) GetProficiency(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -208,6 +212,7 @@ type interestResponse struct {
 // @Produce      json
 // @Success      200  {array}   interestResponse
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me/interests [get]
 func (h *UserHandler) GetInterests(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -245,6 +250,18 @@ type updateInterestsResponse struct {
 	ReloadCountRemaining int                `json:"reload_count_remaining"`
 }
 
+// consumeReloadForSuggestions は提案キャッシュをクリアしリロードカウントを消費する。
+// 残り回数を返す。上限に達している場合は 0 を返す。
+func consumeReloadForSuggestions(ctx context.Context, rc *redis.Client, userIDStr, today string) int {
+	currentCount, _ := database.GetDailyReloadCount(ctx, rc, userIDStr, today)
+	if currentCount < database.MaxDailyReloads {
+		database.ClearDailySuggestionsCache(ctx, rc, userIDStr) //nolint:errcheck
+		newCount, _ := database.IncrementDailyReloadCount(ctx, rc, userIDStr, today, 24*time.Hour)
+		return database.MaxDailyReloads - newCount
+	}
+	return 0
+}
+
 // UpdateInterests godoc
 // @Summary      ユーザー興味タグ更新
 // @Description  JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）。refresh_suggestions=true を指定するとリロード1回分を消費して提案キャッシュをクリアする。
@@ -256,6 +273,7 @@ type updateInterestsResponse struct {
 // @Success      200  {object}  updateInterestsResponse
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me/interests [put]
 func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -328,18 +346,6 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	})
 }
 
-// consumeReloadForSuggestions は提案キャッシュをクリアしリロードカウントを消費する。
-// 残り回数を返す。上限に達している場合は 0 を返す。
-func consumeReloadForSuggestions(ctx context.Context, rc *redis.Client, userIDStr, today string) int {
-	currentCount, _ := database.GetDailyReloadCount(ctx, rc, userIDStr, today)
-	if currentCount < database.MaxDailyReloads {
-		database.ClearDailySuggestionsCache(ctx, rc, userIDStr) //nolint:errcheck
-		newCount, _ := database.IncrementDailyReloadCount(ctx, rc, userIDStr, today, 24*time.Hour)
-		return database.MaxDailyReloads - newCount
-	}
-	return 0
-}
-
 // 提案半径の最小・最大値（メートル）
 const minSearchRadius uint = 3000
 const maxSettingRadius uint = 30000
@@ -366,6 +372,7 @@ type updateMeResponse struct {
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
 // @Router       /api/users/me [patch]
 func (h *UserHandler) UpdateMe(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)

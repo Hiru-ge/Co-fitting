@@ -276,6 +276,12 @@ s
 - [x] `scheduler.go` の `build*` → `aggregate*` / `collect*` 等へ
 - [x] `email.go` の `Build*` → `Build*HTML` 等へ
 
+#### バックエンドの関数定義順変更（Issue #319）
+
+- [x] `backend/services/scheduler.go` を依存順（サブ関数・補助型を上）に並べ替え、`Start` などのコア処理を下側に配置
+- [x] `backend/handlers/suggestion.go` で `Suggest` を補助関数群の下に移動
+- [x] 本ルールを `CLAUDE.md` に明文化し、今後も同順序を維持する運用に統一
+
 ---
 
 ## Phase 2 計画 — 通知機能（実装済み）

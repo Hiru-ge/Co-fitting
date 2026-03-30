@@ -241,6 +241,25 @@ func IsBreakoutVisit(db *gorm.DB, userID uint64, genreName string) bool {
 	return result.Error != nil || prof.Level < breakoutLevelThreshold
 }
 
+// selectRandomPlaces は候補から最大n件をランダムに選出する
+func selectRandomPlaces(candidates []PlaceResult, n int) []PlaceResult {
+	if len(candidates) <= n {
+		return candidates
+	}
+
+	shuffled := make([]PlaceResult, len(candidates))
+	copy(shuffled, candidates)
+	for i := len(shuffled) - 1; i > 0; i-- {
+		j := rand.IntN(i + 1)
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	}
+	return shuffled[:n]
+}
+
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 // ClassifyByInterest は候補を興味内・興味外に分類し、興味内には IsInterestMatch=true を設定する
 func ClassifyByInterest(places []PlaceResult, interestGenreNames map[string]bool) (inInterest, outOfInterest []PlaceResult) {
 	for _, p := range places {
@@ -315,23 +334,4 @@ func BuildPersonalizedSelections(db *gorm.DB, userID uint64, unvisited []PlaceRe
 	}
 
 	return selected, notice
-}
-
-// selectRandomPlaces は候補から最大n件をランダムに選出する
-func selectRandomPlaces(candidates []PlaceResult, n int) []PlaceResult {
-	if len(candidates) <= n {
-		return candidates
-	}
-
-	shuffled := make([]PlaceResult, len(candidates))
-	copy(shuffled, candidates)
-	for i := len(shuffled) - 1; i > 0; i-- {
-		j := rand.IntN(i + 1)
-		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
-	}
-	return shuffled[:n]
-}
-
-func boolPtr(b bool) *bool {
-	return &b
 }

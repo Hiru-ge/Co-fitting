@@ -39,36 +39,9 @@ func NewPushService(db *gorm.DB, publicKey, privateKey, subject string) *PushSer
 	}
 }
 
-// SendToUser は指定ユーザーの全購読先に対してプッシュ通知を並行送信する
-func (s *PushService) SendToUser(userID uint64, payload PushPayload) error {
-	var subs []models.PushSubscription
-	if err := s.db.Where("user_id = ?", userID).Find(&subs).Error; err != nil {
-		return fmt.Errorf("push: fetch subscriptions: %w", err)
-	}
-
-	if len(subs) == 0 {
-		return nil
-	}
-
-	message, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("push: marshal payload: %w", err)
-	}
-
-	var wg sync.WaitGroup
-	for _, sub := range subs {
-		sub := sub
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := s.sendOne(sub, message); err != nil {
-				log.Printf("push: send error for endpoint %s: %v", sub.Endpoint, err)
-			}
-		}()
-	}
-	wg.Wait()
-
-	return nil
+// cleanupSubscription は期限切れの購読をDBから削除する
+func (s *PushService) cleanupSubscription(endpoint string) error {
+	return s.db.Where("endpoint = ?", endpoint).Delete(&models.PushSubscription{}).Error
 }
 
 // sendOne は1件の購読先にプッシュ通知を送信し、410/404時には購読を削除する
@@ -106,7 +79,34 @@ func (s *PushService) sendOne(sub models.PushSubscription, message []byte) error
 	return nil
 }
 
-// cleanupSubscription は期限切れの購読をDBから削除する
-func (s *PushService) cleanupSubscription(endpoint string) error {
-	return s.db.Where("endpoint = ?", endpoint).Delete(&models.PushSubscription{}).Error
+// SendToUser は指定ユーザーの全購読先に対してプッシュ通知を並行送信する
+func (s *PushService) SendToUser(userID uint64, payload PushPayload) error {
+	var subs []models.PushSubscription
+	if err := s.db.Where("user_id = ?", userID).Find(&subs).Error; err != nil {
+		return fmt.Errorf("push: fetch subscriptions: %w", err)
+	}
+
+	if len(subs) == 0 {
+		return nil
+	}
+
+	message, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("push: marshal payload: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	for _, sub := range subs {
+		sub := sub
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := s.sendOne(sub, message); err != nil {
+				log.Printf("push: send error for endpoint %s: %v", sub.Endpoint, err)
+			}
+		}()
+	}
+	wg.Wait()
+
+	return nil
 }

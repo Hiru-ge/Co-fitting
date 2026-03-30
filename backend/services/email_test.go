@@ -9,6 +9,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// containsEmoji は文字列にUnicode絵文字が含まれているかを判定する
+func containsEmoji(s string) bool {
+	for _, r := range s {
+		if (r >= 0x1F600 && r <= 0x1F64F) ||
+			(r >= 0x1F300 && r <= 0x1F5FF) ||
+			(r >= 0x1F680 && r <= 0x1F6FF) ||
+			(r >= 0x1F900 && r <= 0x1F9FF) ||
+			(r >= 0x2600 && r <= 0x26FF) ||
+			(r >= 0x2700 && r <= 0x27BF) ||
+			(r >= 0x1FA00 && r <= 0x1FA6F) ||
+			(r >= 0x1FA70 && r <= 0x1FAFF) {
+			return true
+		}
+	}
+	return false
+}
+
 func TestBuildStreakReminderEmail(t *testing.T) {
 	svc := services.NewEmailService("dummy-key", "noreply@roamble.app")
 
@@ -117,21 +134,4 @@ func TestBadgeItemsFromNames(t *testing.T) {
 	assert.Contains(t, items[1].IconURL, "badge-explore.svg")
 	assert.Equal(t, "未知のバッジ", items[2].Name)
 	assert.Contains(t, items[2].IconURL, "badge-default.svg")
-}
-
-// containsEmoji は文字列にUnicode絵文字が含まれているかを判定する
-func containsEmoji(s string) bool {
-	for _, r := range s {
-		if (r >= 0x1F600 && r <= 0x1F64F) ||
-			(r >= 0x1F300 && r <= 0x1F5FF) ||
-			(r >= 0x1F680 && r <= 0x1F6FF) ||
-			(r >= 0x1F900 && r <= 0x1F9FF) ||
-			(r >= 0x2600 && r <= 0x26FF) ||
-			(r >= 0x2700 && r <= 0x27BF) ||
-			(r >= 0x1FA00 && r <= 0x1FA6F) ||
-			(r >= 0x1FA70 && r <= 0x1FAFF) {
-			return true
-		}
-	}
-	return false
 }

@@ -125,6 +125,17 @@ func calcGenreLevel(xp int) int {
 	return level
 }
 
+// weekStart は指定時刻が属する週の月曜日（0時0分0秒JST）を返す
+func weekStart(t time.Time) time.Time {
+	t = t.In(utils.JST)
+	weekday := int(t.Weekday())
+	if weekday == 0 {
+		weekday = 7 // Sunday → 7
+	}
+	monday := t.AddDate(0, 0, -(weekday - 1))
+	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, utils.JST)
+}
+
 // UpdateStreak はストリークを更新する（カレンダー週ベース方式）
 // JST の月〜日を1週として、週単位で streak_count を管理する
 // 同じ週に再訪問 → 変化なし（StreakLastのみ更新）
@@ -176,17 +187,6 @@ func isNightVisitJST(t time.Time) bool {
 func isWeekendVisitJST(t time.Time) bool {
 	w := t.In(utils.JST).Weekday()
 	return w == time.Saturday || w == time.Sunday
-}
-
-// weekStart は指定時刻が属する週の月曜日（0時0分0秒JST）を返す
-func weekStart(t time.Time) time.Time {
-	t = t.In(utils.JST)
-	weekday := int(t.Weekday())
-	if weekday == 0 {
-		weekday = 7 // Sunday → 7
-	}
-	monday := t.AddDate(0, 0, -(weekday - 1))
-	return time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, utils.JST)
 }
 
 // UpdateGenreProficiency はジャンル別熟練度を更新する
