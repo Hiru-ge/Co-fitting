@@ -59,14 +59,14 @@ const mockVisits = [
   },
 ];
 
-// 固定時刻 2026-03-16（3月）における今月の範囲内: 2026-03-10T01:00:00Z
+// 固定時刻 2026-03-16（3月）における先月（2月）の範囲内: 2026-02-10T01:00:00Z
 const mockBadges = [
   {
     id: 2,
     name: "探検家",
     description: "5箇所を訪問",
     icon_url: "",
-    earned_at: "2026-03-10T01:00:00.000Z",
+    earned_at: "2026-02-10T01:00:00.000Z",
   },
 ];
 
@@ -164,22 +164,38 @@ describe("SummaryMonthly", () => {
 
     await expect(clientLoader()).rejects.toThrow();
   });
+
+  test("periodラベルが先月の月として表示される", async () => {
+    const { default: SummaryMonthly } = await import("./summary.monthly");
+    render(
+      <MemoryRouter>
+        <SummaryMonthly
+          loaderData={{ user: mockUser, token: "mock-token" }}
+          params={{}}
+          matches={[] as any}
+        />
+      </MemoryRouter>,
+    );
+
+    // 2026-03-16 固定 → 先月は 2026年2月
+    expect(await screen.findByText("2026年2月")).toBeInTheDocument();
+  });
 });
 
 // ---- バッジフィルタリングのロジック単体テスト ----
 // getMonthRange() は Date.now() に依存するため、vi.useFakeTimers() で現在時刻を固定する。
 // 固定日時: 2026-03-16 12:00 JST (= 2026-03-16T03:00:00Z)
-// → 月の範囲: 2026-03-01 00:00 JST (= 2026-02-28T15:00:00Z) 〜 2026-04-01 00:00 JST (= 2026-03-31T15:00:00Z)
+// → 先月の範囲: 2026-02-01 00:00 JST (= 2026-01-31T15:00:00Z) 〜 2026-03-01 00:00 JST (= 2026-02-28T15:00:00Z)
 
 describe("SummaryMonthly バッジフィルタリング", () => {
   // 2026-03-16 12:00 JST に固定 (UTC: 03:00:00)
   const FIXED_NOW = new Date("2026-03-16T03:00:00Z").getTime();
 
-  // この月の範囲（JST基準: 2026年3月）
-  // from  = 2026-03-01 00:00 JST = 2026-02-28T15:00:00.000Z
-  // until = 2026-04-01 00:00 JST = 2026-03-31T15:00:00.000Z
-  const MONTH_FROM = "2026-02-28T15:00:00.000Z";
-  const MONTH_UNTIL = "2026-03-31T15:00:00.000Z";
+  // 先月の範囲（JST基準: 2026年2月）
+  // from  = 2026-02-01 00:00 JST = 2026-01-31T15:00:00.000Z
+  // until = 2026-03-01 00:00 JST = 2026-02-28T15:00:00.000Z
+  const MONTH_FROM = "2026-01-31T15:00:00.000Z";
+  const MONTH_UNTIL = "2026-02-28T15:00:00.000Z";
 
   beforeEach(() => {
     // Date のみフェイクにし、setTimeout/setInterval はリアルのまま保持する。
@@ -198,30 +214,30 @@ describe("SummaryMonthly バッジフィルタリング", () => {
   });
 
   test("earned_at が月の範囲内のバッジのみ表示される", async () => {
-    // 期間内: 2026-03-10 10:00 JST (= 2026-03-10T01:00:00Z)
-    // 期間外（先月）: 2026-02-28 10:00 JST (= 2026-02-28T01:00:00Z)
-    // 期間外（翌月）: 2026-04-01 10:00 JST (= 2026-04-01T01:00:00Z)
+    // 期間内: 2026-02-10 10:00 JST (= 2026-02-10T01:00:00Z)
+    // 期間外（先々月）: 2026-01-28 10:00 JST (= 2026-01-28T01:00:00Z)
+    // 期間外（今月）: 2026-03-01 10:00 JST (= 2026-03-01T01:00:00Z)
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
         name: "月内バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-10T01:00:00.000Z",
+        earned_at: "2026-02-10T01:00:00.000Z",
       },
       {
         id: 2,
         name: "先月バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-02-28T01:00:00.000Z",
+        earned_at: "2026-01-28T01:00:00.000Z",
       },
       {
         id: 3,
         name: "翌月バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-04-01T01:00:00.000Z",
+        earned_at: "2026-03-01T01:00:00.000Z",
       },
     ]);
 
@@ -302,28 +318,28 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         name: "バッジX",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-05T00:00:00.000Z",
+        earned_at: "2026-02-05T00:00:00.000Z",
       },
       {
         id: 2,
         name: "バッジY",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-15T00:00:00.000Z",
+        earned_at: "2026-02-15T00:00:00.000Z",
       },
       {
         id: 3,
         name: "バッジZ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-28T00:00:00.000Z",
+        earned_at: "2026-02-25T00:00:00.000Z",
       },
       {
         id: 4,
         name: "範囲外バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-02-01T00:00:00.000Z",
+        earned_at: "2026-01-15T00:00:00.000Z",
       },
     ]);
 
@@ -351,14 +367,14 @@ describe("SummaryMonthly バッジフィルタリング", () => {
         name: "先月バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-02-10T00:00:00.000Z",
+        earned_at: "2026-01-10T00:00:00.000Z",
       },
       {
         id: 2,
         name: "来月バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-04-10T00:00:00.000Z",
+        earned_at: "2026-03-10T00:00:00.000Z",
       },
     ]);
 

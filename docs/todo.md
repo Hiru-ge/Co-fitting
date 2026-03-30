@@ -138,12 +138,12 @@ s
 **月間サマリー（Issue #317）**
 
 **🔴 RED**
-- [ ] `frontend/app/routes/summary.monthly.test.tsx` の期間ラベルテスト: 期待値を先月の月ラベルに変更
+- [x] `frontend/app/routes/summary.monthly.test.tsx` の期間ラベルテスト: 期待値を先月の月ラベルに変更
 
 **🟢 GREEN**
-- [ ] `frontend/app/routes/summary.monthly.tsx` の `getMonthRange()`: `from` を先月1日、`until` を今月1日に変更
-- [ ] `label` を `${year}年${month}月`（先月）に変更
-- [ ] 表示テキストを「今月」→「先月」に変更（greeting）
+- [x] `frontend/app/routes/summary.monthly.tsx` の `getMonthRange()`: `from` を先月1日、`until` を今月1日に変更
+- [x] `label` を `${year}年${month}月`（先月）に変更
+- [x] 表示テキストを「今月」→「先月」に変更（greeting）
 
 **🔵 REFACTOR**
 - [ ] なし

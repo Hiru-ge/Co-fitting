@@ -10,7 +10,7 @@ import SummaryLayout from "~/components/SummaryLayout";
 
 export { protectedLoader as clientLoader };
 
-/** 今月1日0時 JST〜翌月1日0時 JST の ISO 文字列と月ラベルを返す */
+/** 先月1日0時 JST〜今月1日0時 JST の ISO 文字列と月ラベルを返す */
 function getMonthRange(): { from: string; until: string; label: string } {
   const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
   const nowJST = new Date(Date.now() + JST_OFFSET_MS);
@@ -18,12 +18,14 @@ function getMonthRange(): { from: string; until: string; label: string } {
   const year = nowJST.getUTCFullYear();
   const month = nowJST.getUTCMonth(); // 0-indexed
 
-  // 今月1日 00:00 JST
-  const fromUTC = Date.UTC(year, month, 1) - JST_OFFSET_MS;
-  // 翌月1日 00:00 JST
-  const untilUTC = Date.UTC(year, month + 1, 1) - JST_OFFSET_MS;
+  // 先月1日 00:00 JST
+  const fromUTC = Date.UTC(year, month - 1, 1) - JST_OFFSET_MS;
+  // 今月1日 00:00 JST (= 先月末の翌日0時)
+  const untilUTC = Date.UTC(year, month, 1) - JST_OFFSET_MS;
 
-  const label = `${year}年${month + 1}月`;
+  // labelは fromUTC から計算（1月の場合に前年12月を正しく表示するため）
+  const fromDate = new Date(fromUTC + JST_OFFSET_MS);
+  const label = `${fromDate.getUTCFullYear()}年${fromDate.getUTCMonth() + 1}月`;
 
   return {
     from: new Date(fromUTC).toISOString(),
@@ -87,7 +89,7 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
   return (
     <SummaryLayout
       title={`${label}の冒険まとめ`}
-      greeting={`${user.display_name}さん、今月もいろんな場所を冒険したね!`}
+      greeting={`${user.display_name}さん、先月もいろんな場所を冒険したね!`}
       period={label}
       isLoading={isLoading}
       visits={visits}
