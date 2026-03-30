@@ -430,10 +430,6 @@ func applyXPAndProgression(tx *gorm.DB, userID uint64, visit models.Visit, xpEar
 		if err = tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", finalXP).Error; err != nil {
 			return
 		}
-		// ストリークボーナスもジャンル熟練度に反映（ユーザーXPと同一にする）
-		if err = UpdateGenreProficiency(tx, userID, visit.GenreTagID, streakBonus); err != nil {
-			return
-		}
 	}
 
 	levelUp = newLevel > oldLevel

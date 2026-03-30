@@ -144,13 +144,15 @@ s
 
 ---
 
-#### ストリークボーナスXPのジャンル熟練度加算バグ修正（Issue #307）
+#### ストリークボーナスXPをジャンル熟練度に加算しない仕様変更（Issue #307）
+
+> ストリークボーナスXPは「継続行動への報酬」であり、特定ジャンルへの習熟度とは無関係。ユーザーの総XP・レベルには加算するが、ジャンル熟練度には反映しない。
 
 **🔴 RED**
-- [ ] `backend/services/gamification_test.go` にストリークボーナスXPが熟練度に加算されないことを検証するテスト追加
+- [x] `backend/services/gamification_test.go` にストリークボーナスXPが熟練度に加算されないことを検証するテスト追加
 
 **🟢 GREEN**
-- [ ] `backend/services/gamification.go` の `applyXPAndProgression`: ストリークボーナス分のXPを `UpdateGenreProficiency` に渡さないよう修正
+- [x] `backend/services/gamification.go` の `applyXPAndProgression`: ストリークボーナス分のXPを `UpdateGenreProficiency` に渡さないよう修正
 
 **🔵 REFACTOR**
 - [ ] なし

@@ -1458,8 +1458,10 @@ func TestUpdateGenreProficiencyLevel30Cap(t *testing.T) {
 // Issue #265: ストリークボーナスのジャンル熟練度反映テスト
 // =============================================
 
-func TestGenreProficiencyIncludesStreakBonus(t *testing.T) {
-	t.Run("ProcessGamificationのストリークボーナスXPがジャンル熟練度に反映される", func(t *testing.T) {
+// ストリークボーナスXPは継続行動への報酬であり、特定ジャンルへの習熟度とは無関係。
+// ユーザーの総XP・レベルには加算されるが、ジャンル熟練度には反映しない仕様。
+func TestGenreProficiencyExcludesStreakBonus(t *testing.T) {
+	t.Run("ストリークボーナスXPはジャンル熟練度に加算されない（ベースXPのみ反映）", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "genre_streak@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
@@ -1503,9 +1505,11 @@ func TestGenreProficiencyIncludesStreakBonus(t *testing.T) {
 		var prof models.GenreProficiency
 		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, tag.ID).First(&prof)
 
-		// ジャンル熟練度XPはユーザーが獲得したXP（ストリーク含む）と一致するはず
-		if prof.XP != result.XPEarned {
-			t.Errorf("genre proficiency XP (%d) should match XPEarned (%d) including streak bonus", prof.XP, result.XPEarned)
+		// ジャンル熟練度XPにはベースXPのみが加算され、ストリークボーナスは含まれないはず
+		// 通常訪問: 50XP（ストリーク50XPは除外）
+		expectedProfXP := result.XPBreakdown.BaseXP + result.XPBreakdown.FirstAreaBonus
+		if prof.XP != expectedProfXP {
+			t.Errorf("genre proficiency XP (%d) should be base XP only (%d), not include streak bonus", prof.XP, expectedProfXP)
 		}
 	})
 }
