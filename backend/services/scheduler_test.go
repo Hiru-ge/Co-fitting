@@ -52,7 +52,7 @@ func TestSchedulerJobsRegistered(t *testing.T) {
 	sched.Start()
 	defer sched.Stop()
 
-	assert.Equal(t, 4, sched.EntryCount(), "4件のジョブが登録されるべき")
+	assert.Equal(t, 4, services.NotificationSchedulerEntryCount(sched), "4件のジョブが登録されるべき")
 }
 
 // TestRunDailySuggestionNotification_SendsToSubscribers はPush購読ユーザーに

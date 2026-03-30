@@ -6,26 +6,43 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
 
-func noRedirectClient(mockServer *httptest.Server) *http.Client {
-	client := mockServer.Client()
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-	return client
+type rewriteTransport struct {
+	target *url.URL
+	base   http.RoundTripper
 }
 
-func newTestPhotoHandler(mockServer *httptest.Server) *PlacePhotoHandler {
-	return &PlacePhotoHandler{
-		RedisClient: testRedisClient,
-		APIKey:      "test-api-key",
-		HTTPClient:  noRedirectClient(mockServer),
-		BaseURL:     mockServer.URL,
+func (t *rewriteTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	rewritten := req.Clone(req.Context())
+	rewritten.URL.Scheme = t.target.Scheme
+	rewritten.URL.Host = t.target.Host
+	rewritten.Host = t.target.Host
+	return t.base.RoundTrip(rewritten)
+}
+
+func useMockPlacesAPI(t *testing.T, mockServer *httptest.Server) {
+	t.Helper()
+
+	target, err := url.Parse(mockServer.URL)
+	if err != nil {
+		t.Fatalf("failed to parse mock server URL: %v", err)
 	}
+
+	prev := http.DefaultTransport
+	http.DefaultTransport = &rewriteTransport{
+		target: target,
+		base:   mockServer.Client().Transport,
+	}
+
+	t.Cleanup(func() {
+		http.DefaultTransport = prev
+	})
 }
 
 func setupPhotoRouter(handler *PlacePhotoHandler) *gin.Engine {
@@ -40,12 +57,11 @@ func TestPlacePhoto(t *testing.T) {
 			t.Fatal("API should not be called")
 		}))
 		defer mockServer.Close()
+		useMockPlacesAPI(t, mockServer)
 
 		handler := &PlacePhotoHandler{
 			RedisClient: nil,
 			APIKey:      "test-api-key",
-			HTTPClient:  noRedirectClient(mockServer),
-			BaseURL:     mockServer.URL,
 		}
 		router := setupPhotoRouter(handler)
 
@@ -68,6 +84,9 @@ func TestPlacePhoto(t *testing.T) {
 		expectedCDNURL := "https://lh3.googleusercontent.com/places/test-photo-cdn"
 
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !strings.HasPrefix(r.URL.Path, "/v1/places/test_place/photos/test_ref_123/media") {
+				t.Errorf("unexpected path: %s", r.URL.Path)
+			}
 			if r.URL.Query().Get("key") != "test-api-key" {
 				t.Errorf("Expected key 'test-api-key', got '%s'", r.URL.Query().Get("key"))
 			}
@@ -75,12 +94,11 @@ func TestPlacePhoto(t *testing.T) {
 			w.WriteHeader(http.StatusFound)
 		}))
 		defer mockServer.Close()
+		useMockPlacesAPI(t, mockServer)
 
 		handler := &PlacePhotoHandler{
 			RedisClient: nil,
 			APIKey:      "test-api-key",
-			HTTPClient:  noRedirectClient(mockServer),
-			BaseURL:     mockServer.URL,
 		}
 		router := setupPhotoRouter(handler)
 
@@ -104,12 +122,11 @@ func TestPlacePhoto(t *testing.T) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 		defer mockServer.Close()
+		useMockPlacesAPI(t, mockServer)
 
 		handler := &PlacePhotoHandler{
 			RedisClient: nil,
 			APIKey:      "test-api-key",
-			HTTPClient:  noRedirectClient(mockServer),
-			BaseURL:     mockServer.URL,
 		}
 		router := setupPhotoRouter(handler)
 
@@ -144,8 +161,9 @@ func TestPlacePhoto(t *testing.T) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 		defer mockServer.Close()
+		useMockPlacesAPI(t, mockServer)
 
-		handler := newTestPhotoHandler(mockServer)
+		handler := &PlacePhotoHandler{RedisClient: testRedisClient, APIKey: "test-api-key"}
 		router := setupPhotoRouter(handler)
 
 		w := httptest.NewRecorder()
@@ -189,8 +207,9 @@ func TestPlacePhoto(t *testing.T) {
 			w.WriteHeader(http.StatusInternalServerError)
 		}))
 		defer mockServer.Close()
+		useMockPlacesAPI(t, mockServer)
 
-		handler := newTestPhotoHandler(mockServer)
+		handler := &PlacePhotoHandler{RedisClient: testRedisClient, APIKey: "test-api-key"}
 		router := setupPhotoRouter(handler)
 
 		// photo_referenceを指定しない
@@ -222,12 +241,11 @@ func TestPlacePhoto(t *testing.T) {
 			w.WriteHeader(http.StatusFound)
 		}))
 		defer mockServer.Close()
+		useMockPlacesAPI(t, mockServer)
 
 		handler := &PlacePhotoHandler{
 			RedisClient: nil,
 			APIKey:      "test-api-key",
-			HTTPClient:  noRedirectClient(mockServer),
-			BaseURL:     mockServer.URL,
 		}
 		router := setupPhotoRouter(handler)
 

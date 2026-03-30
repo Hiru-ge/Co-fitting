@@ -68,11 +68,6 @@ func (s *NotificationScheduler) Stop() {
 	s.cron.Stop()
 }
 
-// EntryCount は登録済みジョブ数を返す
-func (s *NotificationScheduler) EntryCount() int {
-	return len(s.cron.Entries())
-}
-
 // RunDailySuggestionNotification はPush購読ユーザー全員にデイリーサジェスション通知を送信する
 func (s *NotificationScheduler) RunDailySuggestionNotification() {
 	userIDs, err := fetchDailySuggestionTargetUserIDs(s.db)

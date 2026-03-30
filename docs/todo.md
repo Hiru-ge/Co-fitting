@@ -240,9 +240,9 @@ s
 
 #### テスト専用コードの testutil への分離（Issue #312）
 
-- [ ] `backend/services/push.go` の `newPushServiceWithClient` を `backend/services/push_test.go` に移動
-- [ ] `backend/handlers/place_photo.go` の `BaseURL` / `HTTPClient` フィールドと `getBaseURL` / `getNewAPIBaseURL` / `getHTTPClient` を削除し、テスト側でモックを差し替える設計に変更
-- [ ] `backend/services/scheduler.go` の `EntryCount` を削除（テストで必要なら `testutil/` に別途定義）
+- [x] `backend/services/push.go` の `newPushServiceWithClient` を `backend/services/push_test.go` に移動
+- [x] `backend/handlers/place_photo.go` の `BaseURL` / `HTTPClient` フィールドと `getBaseURL` / `getNewAPIBaseURL` / `getHTTPClient` を削除し、テスト側でモックを差し替える設計に変更
+- [x] `backend/services/scheduler.go` の `EntryCount` を削除（テストで必要なら `testutil/` に別途定義）
 
 ---
 

@@ -16,29 +16,21 @@ import (
 type PlacePhotoHandler struct {
 	RedisClient *redis.Client
 	APIKey      string
-	HTTPClient  *http.Client
-	BaseURL     string
 }
 
-func (h *PlacePhotoHandler) resolvePhotoURL(photoRef string, maxWidth int) (string, error) {
-	baseURL := h.BaseURL
-	if baseURL == "" {
-		baseURL = "https://places.googleapis.com"
-	}
+const placesAPIBaseURL = "https://places.googleapis.com"
 
+func (h *PlacePhotoHandler) resolvePhotoURL(photoRef string, maxWidth int) (string, error) {
 	url := fmt.Sprintf(
 		"%s/v1/%s/media?maxWidthPx=%d&key=%s",
-		baseURL, photoRef, maxWidth, h.APIKey,
+		placesAPIBaseURL, photoRef, maxWidth, h.APIKey,
 	)
 
-	client := h.HTTPClient
-	if client == nil {
-		client = &http.Client{
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				return http.ErrUseLastResponse
-			},
-			Timeout: 10 * time.Second,
-		}
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: 10 * time.Second,
 	}
 
 	resp, err := client.Get(url)

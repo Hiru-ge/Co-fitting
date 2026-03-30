@@ -39,17 +39,6 @@ func NewPushService(db *gorm.DB, publicKey, privateKey, subject string) *PushSer
 	}
 }
 
-// newPushServiceWithClient はHTTPClientを注入可能な PushService を返す（テスト用）
-func newPushServiceWithClient(db *gorm.DB, publicKey, privateKey, subject string, client webpush.HTTPClient) *PushService {
-	return &PushService{
-		db:              db,
-		vapidPublicKey:  publicKey,
-		vapidPrivateKey: privateKey,
-		vapidSubject:    subject,
-		httpClient:      client,
-	}
-}
-
 // SendToUser は指定ユーザーの全購読先に対してプッシュ通知を並行送信する
 func (s *PushService) SendToUser(userID uint64, payload PushPayload) error {
 	var subs []models.PushSubscription
