@@ -123,12 +123,12 @@ s
 **週間サマリー（Issue #316）**
 
 **🔴 RED**
-- [ ] `frontend/app/routes/summary.weekly.test.tsx` の期間ラベルテスト: 期待値を `"3/16（月）〜 3/22（日）"` → `"3/9（月）〜 3/15（日）"` に変更（固定日時2026-03-16月曜基準で先週を参照）
-- [ ] バッジフィルタリングテストの `WEEK_FROM` / `WEEK_UNTIL` と各 `earned_at` を先週範囲（`2026-03-08T15:00:00.000Z` 〜 `2026-03-15T15:00:00.000Z`）に合わせて更新
+- [x] `frontend/app/routes/summary.weekly.test.tsx` の期間ラベルテスト: 期待値を `"3/16（月）〜 3/22（日）"` → `"3/9（月）〜 3/15（日）"` に変更（固定日時2026-03-16月曜基準で先週を参照）
+- [x] バッジフィルタリングテストの `WEEK_FROM` / `WEEK_UNTIL` と各 `earned_at` を先週範囲（`2026-03-08T15:00:00.000Z` 〜 `2026-03-15T15:00:00.000Z`）に合わせて更新
 
 **🟢 GREEN**
-- [ ] `frontend/app/routes/summary.weekly.tsx` の `getWeekRange()`: `from` を `mondayMidnightUTC - 7日`、`until` を `mondayMidnightUTC`（今週月曜）に変更
-- [ ] 表示テキストを「今週」→「先週」に変更（title・greeting）
+- [x] `frontend/app/routes/summary.weekly.tsx` の `getWeekRange()`: `from` を `mondayMidnightUTC - 7日`、`until` を `mondayMidnightUTC`（今週月曜）に変更
+- [x] 表示テキストを「今週」→「先週」に変更（title・greeting）
 
 **🔵 REFACTOR**
 - [ ] なし

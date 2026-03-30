@@ -59,14 +59,14 @@ const mockVisits = [
   },
 ];
 
-// 固定時刻 2026-03-16（月曜）における今週の範囲内: 2026-03-17T01:00:00Z
+// 固定時刻 2026-03-16（月曜）における先週の範囲内: 2026-03-10T01:00:00Z
 const mockBadges = [
   {
     id: 1,
     name: "初冒険者",
     description: "初めての訪問",
     icon_url: "",
-    earned_at: "2026-03-17T01:00:00.000Z",
+    earned_at: "2026-03-10T01:00:00.000Z",
   },
 ];
 
@@ -194,9 +194,9 @@ describe("SummaryWeekly", () => {
       </MemoryRouter>,
     );
 
-    // 2026-03-16 (月) 固定 → 週は 3/16（月）〜 3/22（日）
+    // 2026-03-16 (月) 固定 → 先週は 3/9（月）〜 3/15（日）
     expect(
-      await screen.findByText("3/16（月）〜 3/22（日）"),
+      await screen.findByText("3/9（月）〜 3/15（日）"),
     ).toBeInTheDocument();
   });
 });
@@ -204,17 +204,17 @@ describe("SummaryWeekly", () => {
 // ---- バッジフィルタリングのロジック単体テスト ----
 // getWeekRange() は Date.now() に依存するため、vi.useFakeTimers() で現在時刻を固定する。
 // 固定日時: 2026-03-16 月曜日 12:00 JST (= 2026-03-16T03:00:00Z)
-// → 週の範囲: 2026-03-16 00:00 JST (= 2026-03-15T15:00:00Z) 〜 2026-03-23 00:00 JST (= 2026-03-22T15:00:00Z)
+// → 先週の範囲: 2026-03-09 00:00 JST (= 2026-03-08T15:00:00Z) 〜 2026-03-16 00:00 JST (= 2026-03-15T15:00:00Z)
 
 describe("SummaryWeekly バッジフィルタリング", () => {
   // 2026-03-16 月曜日 12:00 JST に固定 (UTC: 03:00:00)
   const FIXED_NOW = new Date("2026-03-16T03:00:00Z").getTime();
 
-  // この週の範囲（JST基準）
-  // from  = 2026-03-16 00:00 JST = 2026-03-15T15:00:00.000Z
-  // until = 2026-03-23 00:00 JST = 2026-03-22T15:00:00.000Z
-  const WEEK_FROM = "2026-03-15T15:00:00.000Z";
-  const WEEK_UNTIL = "2026-03-22T15:00:00.000Z";
+  // 先週の範囲（JST基準）
+  // from  = 2026-03-09 00:00 JST = 2026-03-08T15:00:00.000Z
+  // until = 2026-03-16 00:00 JST = 2026-03-15T15:00:00.000Z
+  const WEEK_FROM = "2026-03-08T15:00:00.000Z";
+  const WEEK_UNTIL = "2026-03-15T15:00:00.000Z";
 
   beforeEach(() => {
     // Date のみフェイクにし、setTimeout/setInterval はリアルのまま保持する。
@@ -236,27 +236,30 @@ describe("SummaryWeekly バッジフィルタリング", () => {
     // 期間内: 2026-03-17 10:00 JST (= 2026-03-17T01:00:00Z)
     // 期間外（前週）: 2026-03-14 10:00 JST (= 2026-03-14T01:00:00Z)
     // 期間外（翌週）: 2026-03-23 10:00 JST (= 2026-03-23T01:00:00Z)
+    // 期間内: 2026-03-10 10:00 JST (= 2026-03-10T01:00:00Z)
+    // 期間外（前週）: 2026-03-07 10:00 JST (= 2026-03-07T01:00:00Z)
+    // 期間外（翌週）: 2026-03-17 10:00 JST (= 2026-03-17T01:00:00Z)
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
         name: "週内バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-17T01:00:00.000Z",
+        earned_at: "2026-03-10T01:00:00.000Z",
       },
       {
         id: 2,
         name: "前週バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-14T01:00:00.000Z",
+        earned_at: "2026-03-07T01:00:00.000Z",
       },
       {
         id: 3,
         name: "翌週バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-23T01:00:00.000Z",
+        earned_at: "2026-03-17T01:00:00.000Z",
       },
     ]);
 
@@ -337,28 +340,28 @@ describe("SummaryWeekly バッジフィルタリング", () => {
         name: "バッジA",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-16T05:00:00.000Z",
+        earned_at: "2026-03-09T05:00:00.000Z",
       },
       {
         id: 2,
         name: "バッジB",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-18T08:00:00.000Z",
+        earned_at: "2026-03-11T08:00:00.000Z",
       },
       {
         id: 3,
         name: "バッジC",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-20T12:00:00.000Z",
+        earned_at: "2026-03-13T12:00:00.000Z",
       },
       {
         id: 4,
         name: "範囲外バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-10T00:00:00.000Z",
+        earned_at: "2026-03-08T00:00:00.000Z",
       },
     ]);
 
@@ -386,7 +389,7 @@ describe("SummaryWeekly バッジフィルタリング", () => {
         name: "先週バッジ",
         description: "",
         icon_url: "",
-        earned_at: "2026-03-09T00:00:00.000Z",
+        earned_at: "2026-03-01T00:00:00.000Z",
       },
       {
         id: 2,

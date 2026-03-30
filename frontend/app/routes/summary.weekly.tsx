@@ -25,14 +25,13 @@ function getWeekRange(): { from: string; until: string; label: string } {
       nowJST.getUTCDate() - daysFromMonday,
     ) - JST_OFFSET_MS;
 
-  const from = new Date(mondayMidnightUTC).toISOString();
-  const until = new Date(
-    mondayMidnightUTC + 7 * 24 * 60 * 60 * 1000,
-  ).toISOString();
+  const lastMondayMidnightUTC = mondayMidnightUTC - 7 * 24 * 60 * 60 * 1000;
+  const from = new Date(lastMondayMidnightUTC).toISOString();
+  const until = new Date(mondayMidnightUTC).toISOString();
 
-  const mondayDate = new Date(mondayMidnightUTC + JST_OFFSET_MS);
+  const mondayDate = new Date(lastMondayMidnightUTC + JST_OFFSET_MS);
   const sundayDate = new Date(
-    mondayMidnightUTC + JST_OFFSET_MS + 6 * 24 * 60 * 60 * 1000,
+    lastMondayMidnightUTC + JST_OFFSET_MS + 6 * 24 * 60 * 60 * 1000,
   );
   const fmt = (d: Date) => `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
   const label = `${fmt(mondayDate)}（月）〜 ${fmt(sundayDate)}（日）`;
@@ -94,8 +93,8 @@ export default function SummaryWeekly({ loaderData }: Route.ComponentProps) {
 
   return (
     <SummaryLayout
-      title="今週の冒険、どうだった?"
-      greeting={`${user.display_name}さん、今週もお疲れ!`}
+      title="先週の冒険、どうだった?"
+      greeting={`${user.display_name}さん、先週もお疲れ!`}
       period={label}
       isLoading={isLoading}
       visits={visits}
