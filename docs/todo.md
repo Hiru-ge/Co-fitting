@@ -105,13 +105,16 @@ s
 
 ---
 
-#### 提案の filter_open_now デフォルト値修正（Issue #306）
+#### 今すぐ行ける場所のみ表示トグルUI実装（Issue #318）
+
+> **背景**: Issue #306（`filter_open_now` デフォルト値を `true` に変更する修正）を再設計。デフォルトを常時ONにすると「営業時間データが存在しない場所が一律除外される」「別に営業時間外でも表示して欲しいユーザーはいそう(すぐにいくわけじゃないユーザー等)」という問題が考えられた。真にやってほしいことは「ユーザーが任意に切り替えられるトグルUIを提供し、ONにしたときは営業時間内 OR 営業時間データなしのスポットを表示する」ことだと判断し、要件を整理して再起票。
 
 **🔴 RED**
-- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_FilterOpenNowDefault` テスト追加（パラメータ未指定時に filter_open_now=true として動作するか検証）
+- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_FilterOpenNow_IncludesNoHours` テスト追加（`filter_open_now=true` 時に営業時間データなしの場所が含まれることを検証）
 
 **🟢 GREEN**
-- [ ] `backend/handlers/suggestion.go` の `filter_open_now` パラメータのデフォルト値を `true` に変更
+- [ ] `backend/handlers/suggestion.go` の `filter_open_now=true` 時のフィルタロジックを「営業時間内 OR 営業時間データなし」に修正
+- [ ] `frontend/app/routes/suggestions.tsx`（または提案画面）に「今すぐ行ける場所のみ」トグル追加、ON時に `filter_open_now=true` を送信
 
 **🔵 REFACTOR**
 - [ ] なし
