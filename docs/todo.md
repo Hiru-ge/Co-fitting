@@ -116,6 +116,40 @@ s
 
 ---
 
+#### 週間・月間サマリーページの参照期間バグ修正（Issue #316、#317）
+
+**背景**: プッシュ通知からリンクされる週間・月間サマリーページで、「先週・先月」ではなく「今週・今月」（未来を含む期間）の訪問履歴を参照してしまっている。
+
+**週間サマリー（Issue #316）**
+
+**🔴 RED**
+- [ ] `frontend/app/routes/summary.weekly.test.tsx` の期間ラベルテスト: 期待値を `"3/16（月）〜 3/22（日）"` → `"3/9（月）〜 3/15（日）"` に変更（固定日時2026-03-16月曜基準で先週を参照）
+- [ ] バッジフィルタリングテストの `WEEK_FROM` / `WEEK_UNTIL` と各 `earned_at` を先週範囲（`2026-03-08T15:00:00.000Z` 〜 `2026-03-15T15:00:00.000Z`）に合わせて更新
+
+**🟢 GREEN**
+- [ ] `frontend/app/routes/summary.weekly.tsx` の `getWeekRange()`: `from` を `mondayMidnightUTC - 7日`、`until` を `mondayMidnightUTC`（今週月曜）に変更
+- [ ] 表示テキストを「今週」→「先週」に変更（title・greeting）
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
+**月間サマリー（Issue #317）**
+
+**🔴 RED**
+- [ ] `frontend/app/routes/summary.monthly.test.tsx` の期間ラベルテスト: 期待値を先月の月ラベルに変更
+
+**🟢 GREEN**
+- [ ] `frontend/app/routes/summary.monthly.tsx` の `getMonthRange()`: `from` を先月1日、`until` を今月1日に変更
+- [ ] `label` を `${year}年${month}月`（先月）に変更
+- [ ] 表示テキストを「今月」→「先月」に変更（greeting）
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
 ### 削除
 
 #### 未使用コード・dead code の削除（Issue #309）
