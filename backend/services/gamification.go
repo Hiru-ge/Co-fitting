@@ -350,8 +350,8 @@ func isFirstAreaVisit(tx *gorm.DB, userID uint64, visit models.Visit) bool {
 	return false
 }
 
-// buildXPBreakdown はXP計算内訳を構築して返す（副作用なし）
-func buildXPBreakdown(isBreakout, isFirstArea bool, streakBonus int) *XPBreakdown {
+// buildXPComponents はXP計算内訳を構築して返す（副作用なし）
+func buildXPComponents(isBreakout, isFirstArea bool, streakBonus int) *XPBreakdown {
 	baseXP := XPNormalVisit
 	if isBreakout {
 		baseXP = XPComfortBreak
@@ -367,9 +367,9 @@ func buildXPBreakdown(isBreakout, isFirstArea bool, streakBonus int) *XPBreakdow
 	}
 }
 
-// applyXPAndProgression はXP・レベル・熟練度・ストリークをDBに反映し、
+// persistXPProgressAndStreak はXP・レベル・熟練度・ストリークをDBに反映し、
 // 最終XP・newTotalXP・newLevel・levelUp・streakBonus を返す
-func applyXPAndProgression(tx *gorm.DB, userID uint64, visit models.Visit, xpEarned int) (finalXP, newTotalXP, newLevel int, levelUp bool, streakBonus int, err error) {
+func persistXPProgressAndStreak(tx *gorm.DB, userID uint64, visit models.Visit, xpEarned int) (finalXP, newTotalXP, newLevel int, levelUp bool, streakBonus int, err error) {
 	if err = tx.Model(&models.Visit{}).Where("id = ?", visit.ID).Update("xp_earned", xpEarned).Error; err != nil {
 		return
 	}
@@ -422,16 +422,16 @@ func applyXPAndProgression(tx *gorm.DB, userID uint64, visit models.Visit, xpEar
 	return
 }
 
-// ProcessGamification は訪問記録に対してゲーミフィケーション処理を行い、結果を返す
+// ApplyVisitGamification は訪問記録に対してゲーミフィケーション処理を行い、結果を返す
 // トランザクション内で: XP計算・users更新・ジャンル熟練度更新・バッジ付与・ストリーク更新を実行
-func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*GamificationResult, error) {
+func ApplyVisitGamification(db *gorm.DB, userID uint64, visit models.Visit) (*GamificationResult, error) {
 	var result GamificationResult
 
 	err := db.Transaction(func(tx *gorm.DB) error {
 		isFirstArea := isFirstAreaVisit(tx, userID, visit)
 		xpEarned := CalcXP(visit.IsBreakout, isFirstArea)
 
-		finalXP, newTotalXP, newLevel, levelUp, streakBonus, err := applyXPAndProgression(tx, userID, visit, xpEarned)
+		finalXP, newTotalXP, newLevel, levelUp, streakBonus, err := persistXPProgressAndStreak(tx, userID, visit, xpEarned)
 		if err != nil {
 			return err
 		}
@@ -440,7 +440,7 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		result.TotalXP = newTotalXP
 		result.NewLevel = newLevel
 		result.LevelUp = levelUp
-		result.XPBreakdown = buildXPBreakdown(visit.IsBreakout, isFirstArea, streakBonus)
+		result.XPBreakdown = buildXPComponents(visit.IsBreakout, isFirstArea, streakBonus)
 
 		var visitCount int64
 		tx.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&visitCount)

@@ -84,16 +84,16 @@ func ScanKeysByPattern(ctx context.Context, client *redis.Client, pattern string
 	return allKeys, nil
 }
 
-// DailySuggestionCacheKey は日次提案キャッシュのキーを生成する
+// GenerateDailySuggestionCacheKey は日次提案キャッシュのキーを生成する
 // フォーマット: suggestion:daily:{userID}:{date}:{lat}_{lng}
-func DailySuggestionCacheKey(userID string, date string, lat, lng float64) string {
+func GenerateDailySuggestionCacheKey(userID string, date string, lat, lng float64) string {
 	return fmt.Sprintf("suggestion:daily:%s:%s:%.2f_%.2f", userID, date, lat, lng)
 }
 
 // GetDailySuggestions は日次提案キャッシュを取得する
 // キャッシュミスの場合は空文字列を返す
 func GetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64) (string, error) {
-	key := DailySuggestionCacheKey(userID, date, lat, lng)
+	key := GenerateDailySuggestionCacheKey(userID, date, lat, lng)
 	result, err := client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return "", nil
@@ -106,7 +106,7 @@ func GetDailySuggestions(ctx context.Context, client *redis.Client, userID strin
 
 // SetDailySuggestions は日次提案キャッシュを保存する
 func SetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64, data string, ttl time.Duration) error {
-	key := DailySuggestionCacheKey(userID, date, lat, lng)
+	key := GenerateDailySuggestionCacheKey(userID, date, lat, lng)
 	return client.Set(ctx, key, data, ttl).Err()
 }
 
@@ -121,16 +121,16 @@ func ClearDailySuggestionsCache(ctx context.Context, client *redis.Client, userI
 // 「ClearDailySuggestionsCache」でリストキャッシュが削除されてもこのフラグは消えない。
 // これにより、「全提案を訪問後に興味タグを変更」しても当日の提案権利が復活しない。
 
-// DailyLimitReachedKey は日次提案上限到達フラグのキーを生成する
+// GenerateDailyLimitReachedKey は日次提案上限到達フラグのキーを生成する
 // フォーマット: suggestion:count:{userID}:{date}
-func DailyLimitReachedKey(userID string, date string) string {
+func GenerateDailyLimitReachedKey(userID string, date string) string {
 	return fmt.Sprintf("suggestion:count:%s:%s", userID, date)
 }
 
 // IsDailyLimitReached は当日の提案上限に達しているかを返す
 // フラグが無ければ false を返す
 func IsDailyLimitReached(ctx context.Context, client *redis.Client, userID string, date string) (bool, error) {
-	key := DailyLimitReachedKey(userID, date)
+	key := GenerateDailyLimitReachedKey(userID, date)
 	_, err := client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return false, nil
@@ -143,7 +143,7 @@ func IsDailyLimitReached(ctx context.Context, client *redis.Client, userID strin
 
 // SetDailyLimitReached は当日の提案上限到達を記録する
 func SetDailyLimitReached(ctx context.Context, client *redis.Client, userID string, date string, ttl time.Duration) error {
-	key := DailyLimitReachedKey(userID, date)
+	key := GenerateDailyLimitReachedKey(userID, date)
 	return client.Set(ctx, key, 1, ttl).Err()
 }
 
@@ -153,15 +153,15 @@ func SetDailyLimitReached(ctx context.Context, client *redis.Client, userID stri
 // MaxDailyReloads は1日あたりのリロード上限回数
 const MaxDailyReloads = 3
 
-// DailyReloadCountKey は日次リロードカウントのキーを生成する
-func DailyReloadCountKey(userID string, date string) string {
+// GenerateDailyReloadCountKey は日次リロードカウントのキーを生成する
+func GenerateDailyReloadCountKey(userID string, date string) string {
 	return fmt.Sprintf("suggestion:reload:%s:%s", userID, date)
 }
 
 // GetDailyReloadCount は当日のリロード回数を返す
 // キーが未設定の場合は 0 を返す
 func GetDailyReloadCount(ctx context.Context, client *redis.Client, userID string, date string) (int, error) {
-	key := DailyReloadCountKey(userID, date)
+	key := GenerateDailyReloadCountKey(userID, date)
 	result, err := client.Get(ctx, key).Int()
 	if err == redis.Nil {
 		return 0, nil
@@ -175,7 +175,7 @@ func GetDailyReloadCount(ctx context.Context, client *redis.Client, userID strin
 // IncrementDailyReloadCount は当日のリロードカウントを1増やし、新しいカウントを返す
 // キーが存在しない場合は1からスタート（TTL設定あり）
 func IncrementDailyReloadCount(ctx context.Context, client *redis.Client, userID string, date string, ttl time.Duration) (int, error) {
-	key := DailyReloadCountKey(userID, date)
+	key := GenerateDailyReloadCountKey(userID, date)
 	newCount, err := client.Incr(ctx, key).Result()
 	if err != nil {
 		return 0, fmt.Errorf("failed to increment daily reload count: %w", err)

@@ -40,7 +40,7 @@ type MonthlySummaryData struct {
 	TotalXP    int
 	NewBadges  []BadgeItem
 	AssetBase  string
-	Month      string // 例: "2026年3月"
+	YearMonth  string // 例: "2026年3月"
 }
 
 // badgeIconMap はバッジ名からメール用アイコンファイル名へのマッピング
@@ -113,9 +113,9 @@ func isEmptySummary(visitCount int) bool {
 	return visitCount == 0
 }
 
-// BuildWeeklySummaryEmail は週次サマリーメールのHTMLを返す
+// BuildWeeklySummaryHTML は週次サマリーメールのHTMLを返す
 // 訪問件数がゼロの場合は空状態専用テンプレートを使用する
-func (s *EmailService) BuildWeeklySummaryEmail(data WeeklySummaryData) (string, error) {
+func (s *EmailService) BuildWeeklySummaryHTML(data WeeklySummaryData) (string, error) {
 	data.AssetBase = emailAssetBaseURL
 	tmplName := "weekly_summary.html"
 	if isEmptySummary(data.VisitCount) {
@@ -128,9 +128,9 @@ func (s *EmailService) BuildWeeklySummaryEmail(data WeeklySummaryData) (string, 
 	return buf.String(), nil
 }
 
-// BuildMonthlySummaryEmail は月次サマリーメールのHTMLを返す
+// BuildMonthlySummaryHTML は月次サマリーメールのHTMLを返す
 // 訪問件数がゼロの場合は空状態専用テンプレートを使用する
-func (s *EmailService) BuildMonthlySummaryEmail(data MonthlySummaryData) (string, error) {
+func (s *EmailService) BuildMonthlySummaryHTML(data MonthlySummaryData) (string, error) {
 	data.AssetBase = emailAssetBaseURL
 	tmplName := "monthly_summary.html"
 	if isEmptySummary(data.VisitCount) {
@@ -161,7 +161,7 @@ func (s *EmailService) SendStreakReminder(toEmail, userName string, streakWeeks 
 
 // SendWeeklySummary は週次サマリーメールを送信する
 func (s *EmailService) SendWeeklySummary(toEmail string, data WeeklySummaryData) error {
-	html, err := s.BuildWeeklySummaryEmail(data)
+	html, err := s.BuildWeeklySummaryHTML(data)
 	if err != nil {
 		return err
 	}
@@ -177,14 +177,14 @@ func (s *EmailService) SendWeeklySummary(toEmail string, data WeeklySummaryData)
 
 // SendMonthlySummary は月次サマリーメールを送信する
 func (s *EmailService) SendMonthlySummary(toEmail string, data MonthlySummaryData) error {
-	html, err := s.BuildMonthlySummaryEmail(data)
+	html, err := s.BuildMonthlySummaryHTML(data)
 	if err != nil {
 		return err
 	}
 	params := &resend.SendEmailRequest{
 		From:    s.fromAddress,
 		To:      []string{toEmail},
-		Subject: fmt.Sprintf("【Roamble】%sの冒険まとめ", data.Month),
+		Subject: fmt.Sprintf("【Roamble】%sの冒険まとめ", data.YearMonth),
 		Html:    html,
 	}
 	_, err = s.client.Emails.Send(params)

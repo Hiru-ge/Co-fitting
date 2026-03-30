@@ -32,7 +32,7 @@ type genreResolution struct {
 	GenreTagID *uint64
 }
 
-func resolveGenreInfo(db *gorm.DB, userID uint64, placeTypes []string) genreResolution {
+func resolveGenreFromPlaceTypes(db *gorm.DB, userID uint64, placeTypes []string) genreResolution {
 	if len(placeTypes) == 0 {
 		return genreResolution{}
 	}
@@ -153,7 +153,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	// is_breakout の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
 	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
-	genre := resolveGenreInfo(h.DB, userID, req.PlaceTypes)
+	genre := resolveGenreFromPlaceTypes(h.DB, userID, req.PlaceTypes)
 
 	visit := models.Visit{
 		UserID:         userID,
@@ -177,7 +177,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	// DB保存後の当日訪問件数でコンプリート判定（todayCount は保存前の件数なので +1 が保存後の件数）
 	dailyCompleted := todayCount+1 >= MaxDailyVisits
 
-	gamifResult, err := services.ProcessGamification(h.DB, userID, visit)
+	gamifResult, err := services.ApplyVisitGamification(h.DB, userID, visit)
 	if err != nil {
 		// ゲーミフィケーション処理失敗は訪問記録自体を無効化しない（ログのみ）
 		// 最低限の情報でレスポンスを返す

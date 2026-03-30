@@ -46,19 +46,19 @@ func NewNotificationScheduler(push PushSender, email EmailSender, db *gorm.DB) *
 func (s *NotificationScheduler) Start() {
 	// デイリーサジェスション: 毎朝7時 JST
 	s.cron.AddFunc("0 7 * * *", func() { //nolint:errcheck
-		s.RunDailySuggestionNotification()
+		s.SendDailySuggestionNotifications()
 	})
 	// ストリークリマインダー: 毎週日曜7時 JST（今週未訪問で「今日行かないとストリーク切れる」ユーザーに送信）
 	s.cron.AddFunc("0 7 * * 0", func() { //nolint:errcheck
-		s.RunStreakReminderNotification()
+		s.SendStreakReminderNotifications()
 	})
 	// 週次サマリー: 毎週月曜朝10時 JST
 	s.cron.AddFunc("0 10 * * 1", func() { //nolint:errcheck
-		s.RunWeeklySummaryNotification()
+		s.SendWeeklySummaryNotifications()
 	})
 	// 月次サマリー: 毎月1日朝10時 JST
 	s.cron.AddFunc("0 10 1 * *", func() { //nolint:errcheck
-		s.RunMonthlySummaryNotification()
+		s.SendMonthlySummaryNotifications()
 	})
 	s.cron.Start()
 }
@@ -68,8 +68,8 @@ func (s *NotificationScheduler) Stop() {
 	s.cron.Stop()
 }
 
-// RunDailySuggestionNotification はPush購読ユーザー全員にデイリーサジェスション通知を送信する
-func (s *NotificationScheduler) RunDailySuggestionNotification() {
+// SendDailySuggestionNotifications はPush購読ユーザー全員にデイリーサジェスション通知を送信する
+func (s *NotificationScheduler) SendDailySuggestionNotifications() {
 	userIDs, err := fetchDailySuggestionTargetUserIDs(s.db)
 	if err != nil {
 		log.Printf("scheduler: daily suggestion: fetch targets: %v", err)
@@ -89,8 +89,8 @@ func (s *NotificationScheduler) RunDailySuggestionNotification() {
 	}
 }
 
-// RunStreakReminderNotification は今週未訪問（streak_last が今週月曜より前）かつ streak_count > 0 のユーザーにリマインダーを送信する
-func (s *NotificationScheduler) RunStreakReminderNotification() {
+// SendStreakReminderNotifications は今週未訪問（streak_last が今週月曜より前）かつ streak_count > 0 のユーザーにリマインダーを送信する
+func (s *NotificationScheduler) SendStreakReminderNotifications() {
 	targets, err := fetchStreakReminderTargets(s.db)
 	if err != nil {
 		log.Printf("scheduler: streak reminder: fetch targets: %v", err)
@@ -117,9 +117,9 @@ func (s *NotificationScheduler) RunStreakReminderNotification() {
 	}
 }
 
-// RunWeeklySummaryNotification は週次サマリー設定ONのユーザー全員にサマリーを送信する。
+// SendWeeklySummaryNotifications は週次サマリー設定ONのユーザー全員にサマリーを送信する。
 // 集計対象は常に先週（lastWeekStart()）の範囲。本番スケジューラー（月曜10時）では正しく動作する。
-func (s *NotificationScheduler) RunWeeklySummaryNotification() {
+func (s *NotificationScheduler) SendWeeklySummaryNotifications() {
 	targets, err := fetchWeeklySummaryTargets(s.db)
 	if err != nil {
 		log.Printf("scheduler: weekly summary: fetch targets: %v", err)
@@ -129,13 +129,13 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 	weekStart := lastWeekStart()
 	weekEnd := weekStart.AddDate(0, 0, 7)
 
-	s.sendToTargets(
+	s.dispatchSummaryNotifications(
 		"weekly summary",
 		targets,
 		func(t notificationTarget) bool { return t.WeeklySummary },
 		PushPayload{Title: "先週のサマリーが届いてるよ！", Body: "あなたの冒険を振り返ってみよう", URL: "/summary/weekly"},
 		func(t notificationTarget) error {
-			data, err := buildWeeklySummaryData(s.db, t, weekStart, weekEnd)
+			data, err := collectWeeklySummaryData(s.db, t, weekStart, weekEnd)
 			if err != nil {
 				return err
 			}
@@ -144,9 +144,9 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 	)
 }
 
-// RunMonthlySummaryNotification は月次サマリー設定ONのユーザー全員にサマリーを送信する。
+// SendMonthlySummaryNotifications は月次サマリー設定ONのユーザー全員にサマリーを送信する。
 // 集計対象は常に前月の範囲。本番スケジューラー（毎月1日10時）では正しく動作する。
-func (s *NotificationScheduler) RunMonthlySummaryNotification() {
+func (s *NotificationScheduler) SendMonthlySummaryNotifications() {
 	targets, err := fetchMonthlySummaryTargets(s.db)
 	if err != nil {
 		log.Printf("scheduler: monthly summary: fetch targets: %v", err)
@@ -159,13 +159,13 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 	monthEnd := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, utils.JST)
 	monthLabel := fmt.Sprintf("%d年%d月", lastMonth.Year(), int(lastMonth.Month()))
 
-	s.sendToTargets(
+	s.dispatchSummaryNotifications(
 		"monthly summary",
 		targets,
 		func(t notificationTarget) bool { return t.MonthlySummary },
 		PushPayload{Title: fmt.Sprintf("%sのサマリーが届いてるよ！", monthLabel), Body: "あなたの冒険を振り返ってみよう", URL: "/summary/monthly"},
 		func(t notificationTarget) error {
-			data, err := buildMonthlySummaryData(s.db, t, monthStart, monthEnd, monthLabel)
+			data, err := collectMonthlySummaryData(s.db, t, monthStart, monthEnd, monthLabel)
 			if err != nil {
 				return err
 			}
@@ -174,8 +174,8 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 	)
 }
 
-// sendToTargets は週次・月次サマリー通知の共通送信ロジック
-func (s *NotificationScheduler) sendToTargets(
+// dispatchSummaryNotifications は週次・月次サマリー通知の共通送信ロジック
+func (s *NotificationScheduler) dispatchSummaryNotifications(
 	logName string,
 	targets []notificationTarget,
 	isEnabled func(t notificationTarget) bool,
@@ -313,8 +313,8 @@ func fetchSummaryTargets(db *gorm.DB, settingColumn string) ([]notificationTarge
 	return targets, nil
 }
 
-// buildWeeklySummaryData は週次サマリーのメールデータを構築する
-func buildWeeklySummaryData(db *gorm.DB, target notificationTarget, weekStart, weekEnd time.Time) (WeeklySummaryData, error) {
+// collectWeeklySummaryData は週次サマリーのメールデータを構築する
+func collectWeeklySummaryData(db *gorm.DB, target notificationTarget, weekStart, weekEnd time.Time) (WeeklySummaryData, error) {
 	var visits []models.Visit
 	if err := db.Where("user_id = ? AND visited_at >= ? AND visited_at < ?", target.UserID, weekStart, weekEnd).
 		Find(&visits).Error; err != nil {
@@ -346,8 +346,8 @@ func buildWeeklySummaryData(db *gorm.DB, target notificationTarget, weekStart, w
 	}, nil
 }
 
-// buildMonthlySummaryData は月次サマリーのメールデータを構築する
-func buildMonthlySummaryData(db *gorm.DB, target notificationTarget, monthStart, monthEnd time.Time, monthLabel string) (MonthlySummaryData, error) {
+// collectMonthlySummaryData は月次サマリーのメールデータを構築する
+func collectMonthlySummaryData(db *gorm.DB, target notificationTarget, monthStart, monthEnd time.Time, monthLabel string) (MonthlySummaryData, error) {
 	var visits []models.Visit
 	if err := db.Where("user_id = ? AND visited_at >= ? AND visited_at < ?", target.UserID, monthStart, monthEnd).
 		Find(&visits).Error; err != nil {
@@ -376,7 +376,7 @@ func buildMonthlySummaryData(db *gorm.DB, target notificationTarget, monthStart,
 		VisitCount: len(visits),
 		TotalXP:    totalXP,
 		NewBadges:  BadgeItemsFromNames(newBadgeNames),
-		Month:      monthLabel,
+		YearMonth:  monthLabel,
 	}, nil
 }
 

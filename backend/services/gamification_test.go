@@ -1049,7 +1049,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 }
 
 // =============================================
-// ProcessGamification 統合テスト
+// ApplyVisitGamification 統合テスト
 // =============================================
 
 func TestProcessGamification(t *testing.T) {
@@ -1070,9 +1070,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		if result.XPEarned < 50 {
@@ -1100,9 +1100,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		if result.XPEarned < 100 {
@@ -1132,9 +1132,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		if !result.LevelUp {
@@ -1162,9 +1162,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		var updated models.Visit
@@ -1198,9 +1198,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		// 通常訪問50XP + ストリーク5週×10=50XP = 100XP
@@ -1234,9 +1234,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		// 通常訪問50XP + ストリーク上限100XP = 150XP
@@ -1278,9 +1278,9 @@ func TestProcessGamification(t *testing.T) {
 		}
 		testDB.Create(&newVisit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, newVisit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, newVisit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		// 通常訪問50XP + 初エリアボーナス30XP = 80XP
@@ -1326,9 +1326,9 @@ func TestProcessGamification(t *testing.T) {
 		nearVisit.GenreTagID = &tag.ID
 		testDB.Save(&nearVisit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, nearVisit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, nearVisit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		// 通常訪問50XP のみ（初エリアボーナス30XP は付かない）
@@ -1477,9 +1477,9 @@ func TestGenreProficiencyExcludesStreakBonus(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		// ストリーク5週×10XP = 50XP のボーナスが発生する
@@ -1605,7 +1605,7 @@ func TestNightVisitBoundaries(t *testing.T) {
 
 // Issue #227: XP計算内訳テスト
 func TestProcessGamificationXPBreakdown(t *testing.T) {
-	t.Run("ProcessGamificationはXP内訳情報(XPBreakdown)を返す", func(t *testing.T) {
+	t.Run("ApplyVisitGamificationはXP内訳情報(XPBreakdown)を返す", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_breakdown@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
@@ -1624,9 +1624,9 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
 		if result.XPBreakdown == nil {
@@ -1662,9 +1662,9 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 		}
 		testDB.Create(&visit)
 
-		result, err := services.ProcessGamification(testDB, user.ID, visit)
+		result, err := services.ApplyVisitGamification(testDB, user.ID, visit)
 		if err != nil {
-			t.Fatalf("ProcessGamification failed: %v", err)
+			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 		if result.XPBreakdown == nil {
 			t.Fatal("expected XPBreakdown to be non-nil")

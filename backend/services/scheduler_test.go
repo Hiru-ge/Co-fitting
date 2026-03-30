@@ -91,7 +91,7 @@ func TestRunDailySuggestionNotification_SendsToSubscribers(t *testing.T) {
 
 	mockPush := &mockPushSender{}
 	sched := services.NewNotificationScheduler(mockPush, nil, testDB)
-	sched.RunDailySuggestionNotification()
+	sched.SendDailySuggestionNotifications()
 
 	calledIDs := mockPush.CalledUserIDs()
 	assert.Contains(t, calledIDs, user1.ID, "Push購読ありユーザーにSendToUserが呼ばれるべき")
@@ -145,7 +145,7 @@ func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
 
 	mockPush := &mockPushSender{}
 	sched := services.NewNotificationScheduler(mockPush, nil, testDB)
-	sched.RunStreakReminderNotification()
+	sched.SendStreakReminderNotifications()
 
 	calledIDs := mockPush.CalledUserIDs()
 	assert.NotContains(t, calledIDs, userA.ID, "今週訪問済みユーザーには送らない")

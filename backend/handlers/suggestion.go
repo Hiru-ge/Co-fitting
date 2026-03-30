@@ -217,7 +217,7 @@ type suggestionRequest struct {
 	Lat           float64 `json:"lat" binding:"required"`
 	Lng           float64 `json:"lng" binding:"required"`
 	Radius        uint    `json:"radius"`
-	ForceReload   bool    `json:"force_reload"`
+	Reload        bool    `json:"force_reload"`
 	FilterOpenNow bool    `json:"filter_open_now"`
 }
 
@@ -264,8 +264,8 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 
 	reloadCount := h.getReloadCount(ctx, userIDStr, today)
 
-	if req.ForceReload {
-		newCount, done, status, body := h.processForceReload(ctx, userIDStr, today, req, reloadCount)
+	if req.Reload {
+		newCount, done, status, body := h.reload(ctx, userIDStr, today, req, reloadCount)
 		if done {
 			c.JSON(status, body)
 			return
@@ -278,7 +278,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		reloadRemaining = 0
 	}
 
-	if result, found := h.checkDailyCacheResult(ctx, userID, userIDStr, today, req, reloadRemaining); found {
+	if result, found := h.findDailySuggestionCache(ctx, userID, userIDStr, today, req, reloadRemaining); found {
 		c.JSON(http.StatusOK, *result)
 		return
 	}
@@ -351,10 +351,10 @@ func (h *SuggestionHandler) getReloadCount(ctx context.Context, userIDStr, today
 	return rc
 }
 
-// processForceReload は force_reload フラグの処理を行う。
+// reload は force_reload フラグの処理を行う。
 // done=true の場合、caller は status/body でレスポンスを返して終了すべき。
 // done=false の場合、reloadCount には更新後の値が入る。
-func (h *SuggestionHandler) processForceReload(ctx context.Context, userIDStr, today string, req suggestionRequest, reloadCount int) (newCount int, done bool, status int, body interface{}) {
+func (h *SuggestionHandler) reload(ctx context.Context, userIDStr, today string, req suggestionRequest, reloadCount int) (newCount int, done bool, status int, body interface{}) {
 	if h.RedisClient == nil {
 		return reloadCount, false, 0, nil
 	}
@@ -388,9 +388,9 @@ func (h *SuggestionHandler) processForceReload(ctx context.Context, userIDStr, t
 	return newCount, false, 0, nil
 }
 
-// checkDailyCacheResult は日次キャッシュを確認し、有効なキャッシュがあれば SuggestionResult を返す。
+// findDailySuggestionCache は日次キャッシュを確認し、有効なキャッシュがあれば SuggestionResult を返す。
 // found=true の場合、caller はその result を返して終了すべき。
-func (h *SuggestionHandler) checkDailyCacheResult(ctx context.Context, userID uint64, userIDStr, today string, req suggestionRequest, reloadRemaining int) (*SuggestionResult, bool) {
+func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID uint64, userIDStr, today string, req suggestionRequest, reloadRemaining int) (*SuggestionResult, bool) {
 	if h.RedisClient == nil {
 		return nil, false
 	}

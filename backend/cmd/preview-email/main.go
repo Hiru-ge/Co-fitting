@@ -17,7 +17,7 @@ func main() {
 			return svc.BuildStreakReminderEmail("ひるげ", 5)
 		},
 		"weekly_summary.html": func() (string, error) {
-			return svc.BuildWeeklySummaryEmail(services.WeeklySummaryData{
+			return svc.BuildWeeklySummaryHTML(services.WeeklySummaryData{
 				UserName:   "ひるげ",
 				VisitCount: 7,
 				TotalXP:    420,
@@ -25,27 +25,27 @@ func main() {
 			})
 		},
 		"weekly_summary_empty.html": func() (string, error) {
-			return svc.BuildWeeklySummaryEmail(services.WeeklySummaryData{
+			return svc.BuildWeeklySummaryHTML(services.WeeklySummaryData{
 				UserName:   "ひるげ",
 				VisitCount: 0,
 				TotalXP:    0,
 			})
 		},
 		"monthly_summary.html": func() (string, error) {
-			return svc.BuildMonthlySummaryEmail(services.MonthlySummaryData{
+			return svc.BuildMonthlySummaryHTML(services.MonthlySummaryData{
 				UserName:   "ひるげ",
 				VisitCount: 18,
 				TotalXP:    1250,
 				NewBadges:  services.BadgeItemsFromNames([]string{"最初の一歩", "エリアパイオニア", "ナイトウォーカー"}),
-				Month:      "2026年3月",
+				YearMonth:  "2026年3月",
 			})
 		},
 		"monthly_summary_empty.html": func() (string, error) {
-			return svc.BuildMonthlySummaryEmail(services.MonthlySummaryData{
+			return svc.BuildMonthlySummaryHTML(services.MonthlySummaryData{
 				UserName:   "ひるげ",
 				VisitCount: 0,
 				TotalXP:    0,
-				Month:      "2026年3月",
+				YearMonth:  "2026年3月",
 			})
 		},
 	}

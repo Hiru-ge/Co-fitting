@@ -170,15 +170,15 @@ func (h *DevHandler) TriggerNotification(c *gin.Context) {
 
 	switch req.Type {
 	case "daily_suggestion":
-		h.Scheduler.RunDailySuggestionNotification()
+		h.Scheduler.SendDailySuggestionNotifications()
 	case "streak_reminder":
-		h.Scheduler.RunStreakReminderNotification()
+		h.Scheduler.SendStreakReminderNotifications()
 	case "weekly_summary":
 		// 集計対象は「先週」（月〜日）。今週分をテストしたい場合は先週のデータを用意すること。
-		h.Scheduler.RunWeeklySummaryNotification()
+		h.Scheduler.SendWeeklySummaryNotifications()
 	case "monthly_summary":
 		// 集計対象は「前月」。今月分をテストしたい場合は前月のデータを用意すること。
-		h.Scheduler.RunMonthlySummaryNotification()
+		h.Scheduler.SendMonthlySummaryNotifications()
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid type",

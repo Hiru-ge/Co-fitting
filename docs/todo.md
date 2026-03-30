@@ -267,14 +267,14 @@ s
 
 #### バックエンド全体の命名改善（Issue #315）
 
-- [ ] `resolveGenreInfo` → `deriveGenreFromPlaceTypes` 等、実態に合う名前へ
-- [ ] `ProcessGamification` → `AwardXPAndBadges` 等へ
-- [ ] `applyXPAndProgression` → `persistXPAndProgression` 等へ
-- [ ] `buildXPBreakdown` → `buildXPComponents` 等へ
-- [ ] `ForceReload` / `processForceReload` → `Reload` / `processReload` へ
-- [ ] Redis キー生成関数の命名統一（`Generate*Key` 等）/ 削除系を `Delete*` に統一
-- [ ] `scheduler.go` の `build*` → `aggregate*` / `collect*` 等へ
-- [ ] `email.go` の `Build*` → `Build*HTML` 等へ
+- [x] `resolveGenreInfo` → `resolveGenreFromPlaceTypes` 等、実態に合う名前へ
+- [x] `ProcessGamification` → `AwardXPAndBadges` 等へ
+- [x] `applyXPAndProgression` → `persistXPAndProgression` 等へ
+- [x] `buildXPBreakdown` → `buildXPComponents` 等へ
+- [x] `ForceReload` / `processForceReload` → `Reload` / `processReload` へ
+- [x] Redis キー生成関数の命名統一（`Generate*Key` 等）/ 削除系を `Delete*` に統一
+- [x] `scheduler.go` の `build*` → `aggregate*` / `collect*` 等へ
+- [x] `email.go` の `Build*` → `Build*HTML` 等へ
 
 ---
 

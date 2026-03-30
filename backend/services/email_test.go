@@ -31,7 +31,7 @@ func TestBuildWeeklySummaryEmail(t *testing.T) {
 		NewBadges:  services.BadgeItemsFromNames([]string{"最初の一歩"}),
 	}
 
-	html, err := svc.BuildWeeklySummaryEmail(data)
+	html, err := svc.BuildWeeklySummaryHTML(data)
 
 	require.NoError(t, err)
 	assert.True(t, strings.Contains(html, "テストユーザーさん"), "ユーザー名+さんが含まれていること")
@@ -52,10 +52,10 @@ func TestBuildMonthlySummaryEmail(t *testing.T) {
 		VisitCount: 12,
 		TotalXP:    800,
 		NewBadges:  services.BadgeItemsFromNames([]string{"最初の一歩"}),
-		Month:      "2026年3月",
+		YearMonth:  "2026年3月",
 	}
 
-	html, err := svc.BuildMonthlySummaryEmail(data)
+	html, err := svc.BuildMonthlySummaryHTML(data)
 
 	require.NoError(t, err)
 	assert.True(t, strings.Contains(html, "テストユーザーさん"), "ユーザー名+さんが含まれていること")
@@ -77,7 +77,7 @@ func TestBuildWeeklySummaryEmptyEmail(t *testing.T) {
 		NewBadges:  []services.BadgeItem{},
 	}
 
-	html, err := svc.BuildWeeklySummaryEmail(data)
+	html, err := svc.BuildWeeklySummaryHTML(data)
 
 	require.NoError(t, err)
 	assert.True(t, strings.Contains(html, "テストユーザーさん"), "ユーザー名+さんが含まれていること")
@@ -94,10 +94,10 @@ func TestBuildMonthlySummaryEmptyEmail(t *testing.T) {
 		VisitCount: 0,
 		TotalXP:    0,
 		NewBadges:  []services.BadgeItem{},
-		Month:      "2026年3月",
+		YearMonth:  "2026年3月",
 	}
 
-	html, err := svc.BuildMonthlySummaryEmail(data)
+	html, err := svc.BuildMonthlySummaryHTML(data)
 
 	require.NoError(t, err)
 	assert.True(t, strings.Contains(html, "テストユーザーさん"), "ユーザー名+さんが含まれていること")
