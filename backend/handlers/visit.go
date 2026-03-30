@@ -15,16 +15,11 @@ import (
 )
 
 const (
-	// MaxListLimit は ListVisits API の limit パラメータ上限
-	MaxListLimit = 100
-	// DefaultListLimit は ListVisits API の limit パラメータデフォルト値
+	MaxListLimit     = 100
 	DefaultListLimit = 20
-	// MaxMapLimit は GetMapData API の limit パラメータ上限
-	MaxMapLimit = 2000
-	// DefaultMapLimit は GetMapData API の limit パラメータデフォルト値
-	DefaultMapLimit = 2000
-	// MaxDailyVisits は1日の訪問記録上限
-	MaxDailyVisits = 3
+	MaxMapLimit      = 2000
+	DefaultMapLimit  = 2000
+	MaxDailyVisits   = 3
 )
 
 type genreResolution struct {
@@ -76,24 +71,22 @@ type createVisitRequest struct {
 	Category       string   `json:"category" binding:"required"`
 	Lat            float64  `json:"lat" binding:"required"`
 	Lng            float64  `json:"lng" binding:"required"`
-	PlaceTypes     []string `json:"place_types"`     // 任意: is_breakout自動判定に使用
-	PhotoReference *string  `json:"photo_reference"` // 画像参照（Redis TTL失効後の再解決に使用）
+	PlaceTypes     []string `json:"place_types"`
+	PhotoReference *string  `json:"photo_reference"`
 	VisitedAt      string   `json:"visited_at" binding:"required"`
-	UserLat        float64  `json:"user_lat"` // ユーザーの現在緯度（距離検証用）
-	UserLng        float64  `json:"user_lng"` // ユーザーの現在経度（距離検証用）
+	UserLat        float64  `json:"user_lat"`
+	UserLng        float64  `json:"user_lng"`
 }
 
-// createVisitResponse はゲーミフィケーション情報を含むCreateVisitのレスポンス
-// models.Visit を埋め込み、xp_earnedはVisit.XpEarnedで（Goの仕様により外側フィールドが優先）、
-// total_xp/level_up/new_level/new_badges/daily_completedをゲーミフィケーション情報として追加する
+// createVisitResponse はゲーミフィケーション情報付きの訪問作成レスポンス。
 type createVisitResponse struct {
 	models.Visit
-	TotalXP        int                   `json:"total_xp"`               // ユーザー累計XP
-	LevelUp        bool                  `json:"level_up"`               // 今回の訪問でレベルアップしたか
-	NewLevel       int                   `json:"new_level"`              // 現在のレベル
-	NewBadges      []models.Badge        `json:"new_badges"`             // 今回獲得した新バッジ
-	DailyCompleted bool                  `json:"daily_completed"`        // 今回の訪問で本日の3件上限に達したか
-	XPBreakdown    *services.XPBreakdown `json:"xp_breakdown,omitempty"` // XP計算内訳
+	TotalXP        int                   `json:"total_xp"`
+	LevelUp        bool                  `json:"level_up"`
+	NewLevel       int                   `json:"new_level"`
+	NewBadges      []models.Badge        `json:"new_badges"`
+	DailyCompleted bool                  `json:"daily_completed"`
+	XPBreakdown    *services.XPBreakdown `json:"xp_breakdown,omitempty"`
 }
 
 // CreateVisit godoc
@@ -122,7 +115,6 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// 座標のバリデーション
 	if req.Lat < -90 || req.Lat > 90 || req.Lng < -180 || req.Lng > 180 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid coordinates", "code": "INVALID_COORDINATES"})
 		return
@@ -181,8 +173,6 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	gamifResult, err := services.ApplyVisitGamification(h.DB, userID, visit)
 	if err != nil {
-		// ゲーミフィケーション処理失敗は訪問記録自体を無効化しない（ログのみ）
-		// 最低限の情報でレスポンスを返す
 		c.JSON(http.StatusCreated, createVisitResponse{
 			Visit:          visit,
 			TotalXP:        0,

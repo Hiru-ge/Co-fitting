@@ -116,12 +116,8 @@ type testLoginRequest struct {
 	DisplayName string `json:"display_name" binding:"required"`
 }
 
-// TestLogin は開発環境専用のテストログインエンドポイント。
-// セキュリティ: routes.go の `environment == "development"` チェックにより本番環境では
-// このルート自体が登録されないため、エンドポイントは存在しない（一次防衛）。
-// Docker ネットワーク経由では RemoteAddr がゲートウェイ IP になるため、
-// localhost IP フィルタは機能しない。環境変数による環境ガードを唯一の防衛とする。
-// ユーザーが存在しない場合は作成し、JWT トークンペアを返す。
+// TestLogin は development 環境限定のテストログインエンドポイント。
+// 指定ユーザーが存在しない場合は作成し、JWTトークンペアを返す。
 // @Summary      テストログイン（開発用）
 // @Description  指定emailのユーザーでテストログインし、JWTアクセストークン/リフレッシュトークンを返す（development環境のみ有効）
 // @Tags         Dev
@@ -213,10 +209,8 @@ func (h *DevHandler) TriggerNotification(c *gin.Context) {
 	case "streak_reminder":
 		h.Scheduler.SendStreakReminderNotifications()
 	case "weekly_summary":
-		// 集計対象は「先週」（月〜日）。今週分をテストしたい場合は先週のデータを用意すること。
 		h.Scheduler.SendWeeklySummaryNotifications()
 	case "monthly_summary":
-		// 集計対象は「前月」。今月分をテストしたい場合は前月のデータを用意すること。
 		h.Scheduler.SendMonthlySummaryNotifications()
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{

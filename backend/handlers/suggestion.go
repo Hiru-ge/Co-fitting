@@ -16,6 +16,7 @@ import (
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
+	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
@@ -25,7 +26,6 @@ type PlacesSearcher interface {
 	NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]services.PlaceResult, error)
 }
 
-// GooglePlacesClient は New Places API (v1) を net/http で直接呼び出すクライアント
 type GooglePlacesClient struct {
 	APIKey     string
 	HTTPClient *http.Client
@@ -61,7 +61,6 @@ func (g *GooglePlacesClient) getHTTPClient() *http.Client {
 	return &http.Client{Timeout: 10 * time.Second}
 }
 
-// nearbySearchRequest は New Places API (v1) searchNearby のリクエストボディ
 type nearbySearchAPIRequest struct {
 	IncludedTypes       []string                     `json:"includedTypes"`
 	LocationRestriction nearbySearchLocationRestrict `json:"locationRestriction"`
@@ -84,7 +83,6 @@ type nearbySearchLatLng struct {
 	Longitude float64 `json:"longitude"`
 }
 
-// nearbySearchAPIResponse は New Places API (v1) searchNearby のレスポンス
 type nearbySearchAPIResponse struct {
 	Places []nearbySearchPlace `json:"places"`
 }
@@ -203,9 +201,6 @@ type SuggestionHandler struct {
 	Places      PlacesSearcher
 }
 
-// SuggestionResult は提案APIのレスポンス型
-// notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内に見つからなかったことを示す
-// completed が true の場合、本日の3件提案を全て訪問済みであることを示す
 type SuggestionResult struct {
 	Places               []services.PlaceResult `json:"places"`
 	Notice               string                 `json:"notice,omitempty"`
@@ -221,13 +216,10 @@ type suggestionRequest struct {
 	FilterOpenNow bool    `json:"filter_open_now"`
 }
 
-// デフォルトの検索半径（メートル）
 const defaultSearchRadius uint = 3000
 
-// 最大検索半径（メートル）— API課金制御
 const maxSearchRadius uint = 50000
 
-// resolveRadius はリクエストの radius が未指定の場合、ユーザーの設定値またはデフォルト値で補完する。
 func (h *SuggestionHandler) resolveRadius(userID uint64, requestedRadius uint) uint {
 	radius := requestedRadius
 	if radius == 0 {
@@ -244,21 +236,17 @@ func (h *SuggestionHandler) resolveRadius(userID uint64, requestedRadius uint) u
 	return radius
 }
 
-// getReloadCount は Redis からリロードカウントを取得する。Redis 未接続時は 0 を返す。
-func (h *SuggestionHandler) getReloadCount(ctx context.Context, userIDStr, today string) int {
+func (h *SuggestionHandler) getReloadCount(ctx context.Context, userIDStr, today string) (int, error) {
 	if h.RedisClient == nil {
-		return 0
+		return 0, nil
 	}
 	rc, err := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
 	if err != nil {
-		return 0
+		return 0, nil
 	}
-	return rc
+	return rc, nil
 }
 
-// reload は force_reload フラグの処理を行う。
-// done=true の場合、caller は status/body でレスポンスを返して終了すべき。
-// done=false の場合、reloadCount には更新後の値が入る。
 func (h *SuggestionHandler) reload(ctx context.Context, userIDStr, today string, req suggestionRequest, reloadCount int) (newCount int, done bool, status int, body interface{}) {
 	if h.RedisClient == nil {
 		return reloadCount, false, 0, nil
@@ -293,8 +281,6 @@ func (h *SuggestionHandler) reload(ctx context.Context, userIDStr, today string,
 	return newCount, false, 0, nil
 }
 
-// findDailySuggestionCache は日次キャッシュを確認し、有効なキャッシュがあれば SuggestionResult を返す。
-// found=true の場合、caller はその result を返して終了すべき。
 func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID uint64, userIDStr, today string, req suggestionRequest, reloadRemaining int) (*SuggestionResult, bool) {
 	if h.RedisClient == nil {
 		return nil, false
@@ -337,8 +323,6 @@ func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID
 	return nil, false
 }
 
-// fetchPlacesFromCacheOrAPI は Places API キャッシュを確認し、なければ API を呼び出す。
-// フィルタ済みの PlaceResult スライスを返す。
 func (h *SuggestionHandler) fetchPlacesFromCacheOrAPI(ctx context.Context, req suggestionRequest, cacheKey string) ([]services.PlaceResult, error) {
 	var places []services.PlaceResult
 
@@ -409,11 +393,10 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 	req.Radius = h.resolveRadius(userID, req.Radius)
 
 	ctx := c.Request.Context()
-	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
-	today := time.Now().In(jst).Format("2006-01-02")
+	today := time.Now().In(utils.JST).Format("2006-01-02")
 	userIDStr := strconv.FormatUint(userID, 10)
 
-	reloadCount := h.getReloadCount(ctx, userIDStr, today)
+	reloadCount, _ := h.getReloadCount(ctx, userIDStr, today)
 
 	if req.Reload {
 		newCount, done, status, body := h.reload(ctx, userIDStr, today, req, reloadCount)

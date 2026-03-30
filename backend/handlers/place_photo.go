@@ -9,10 +9,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// PlacePhotoHandler は施設写真URLの解決とキャッシュを担う。
-//
-// セキュリティ注意: APIキー（APIKey フィールド）はサーバーサイドでのみ使用し、
-// フロントエンドには露出しない。
 type PlacePhotoHandler struct {
 	RedisClient *redis.Client
 	APIKey      string

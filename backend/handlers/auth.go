@@ -24,7 +24,7 @@ type refreshRequest struct {
 }
 
 type logoutRequest struct {
-	RefreshToken string `json:"refresh_token"` // オプション（下位互換性のため）
+	RefreshToken string `json:"refresh_token"` // オプション
 }
 
 // RefreshToken godoc

@@ -105,7 +105,7 @@ func main() {
 
 	log.Println("Database connected and migrated successfully")
 	defer func() {
-		if err := database.Close(); err != nil {
+		if err := database.Close(db); err != nil {
 			log.Printf("Error closing database: %v", err)
 		}
 	}()
