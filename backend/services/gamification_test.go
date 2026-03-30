@@ -70,46 +70,31 @@ func getOrCreateGenreTag(t *testing.T, name string) models.GenreTag {
 
 func TestCalcXP(t *testing.T) {
 	t.Run("通常訪問（is_breakout=false）は50XP", func(t *testing.T) {
-		xp := services.CalcXP(false, false, false)
+		xp := services.CalcXP(false, false)
 		if xp != 50 {
 			t.Errorf("expected 50, got %d", xp)
 		}
 	})
 
 	t.Run("脱却訪問（is_breakout=true）は100XP", func(t *testing.T) {
-		xp := services.CalcXP(true, false, false)
+		xp := services.CalcXP(true, false)
 		if xp != 100 {
 			t.Errorf("expected 100, got %d", xp)
 		}
 	})
 
 	t.Run("初めてのエリアボーナス+30XP", func(t *testing.T) {
-		xp := services.CalcXP(false, true, false)
+		xp := services.CalcXP(false, true)
 		if xp != 80 {
 			t.Errorf("expected 80 (50+30), got %d", xp)
 		}
 	})
 
-	t.Run("感想メモ記入ボーナス+10XP", func(t *testing.T) {
-		xp := services.CalcXP(false, false, true)
-		if xp != 60 {
-			t.Errorf("expected 60 (50+10), got %d", xp)
-		}
-	})
-
-	t.Run("脱却+初エリア+メモ =140XP", func(t *testing.T) {
-		xp := services.CalcXP(true, true, true)
-		// 100 + 30 + 10 = 140
-		if xp != 140 {
-			t.Errorf("expected 140, got %d", xp)
-		}
-	})
-
-	t.Run("通常+初エリア+メモ =90XP", func(t *testing.T) {
-		xp := services.CalcXP(false, true, true)
-		// 50 + 30 + 10 = 90
-		if xp != 90 {
-			t.Errorf("expected 90, got %d", xp)
+	t.Run("脱却+初エリア =130XP", func(t *testing.T) {
+		xp := services.CalcXP(true, true)
+		// 100 + 30 = 130
+		if xp != 130 {
+			t.Errorf("expected 130, got %d", xp)
 		}
 	})
 }
@@ -1661,7 +1646,7 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 		}
 		// base_xp + その他 = XPEarned
 		sum := result.XPBreakdown.BaseXP + result.XPBreakdown.FirstAreaBonus +
-			result.XPBreakdown.MemoBonus + result.XPBreakdown.StreakBonus
+			result.XPBreakdown.StreakBonus
 		if sum != result.XPEarned {
 			t.Errorf("XPBreakdown合計(%d) != XPEarned(%d)", sum, result.XPEarned)
 		}

@@ -118,6 +118,29 @@ s
 
 ---
 
+#### メモボーナスXP廃止・createVisitRequest からメモ/レーティング削除（Issue #304）
+
+**背景**: メモボーナス (+10 XP) が実装済みだが、訪問新規登録UIにメモ入力欄がないためYAGNI違反。訪問後編集 (PATCH) にはメモUIがあるためそちらは残す。DBカラムも保留。
+
+**🔴 RED**
+- [x] `backend/services/gamification_test.go` の `TestCalcXP`: `hasMemo` 引数削除・メモボーナスケース削除（脱却+初エリア=130XP に変更）
+- [x] `backend/services/gamification_test.go` の XPBreakdown合計検証から `MemoBonus` 参照を削除
+- [x] `backend/handlers/visit_test.go` の `感想メモ入力で+10XPボーナス` テストケース削除
+
+**🟢 GREEN**
+- [x] `backend/services/gamification.go`: `XPMemoBonus` 定数削除
+- [x] `backend/services/gamification.go`: `CalcXP` から `hasMemo bool` 引数削除・メモボーナス計算削除
+- [x] `backend/services/gamification.go`: `XPBreakdown` から `MemoBonus` フィールド削除
+- [x] `backend/services/gamification.go`: `buildXPBreakdown` から `hasMemo` 引数・計算削除
+- [x] `backend/services/gamification.go`: `ProcessGamification` から `hasMemo` 算出・渡しを削除
+- [x] `backend/handlers/visit.go`: `createVisitRequest` から `Rating`・`Memo` フィールド削除
+- [x] `backend/handlers/visit.go`: `CreateVisit` ハンドラでの `Rating`/`Memo` セットを削除
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
 #### ストリークボーナスXPのジャンル熟練度加算バグ修正（Issue #307）
 
 **🔴 RED**

@@ -1975,59 +1975,6 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 	})
 
-	t.Run("感想メモ入力で+10XPボーナス", func(t *testing.T) {
-		cleanupUsers(t)
-		user := createTestUserForVisit(t)
-		token := generateTestToken(user.ID)
-
-		// メモなし訪問
-		bodyNoMemo := map[string]interface{}{
-			"place_id":   "ChIJgamif_nomemo",
-			"place_name": "テスト1",
-			"category":   "cafe",
-			"lat":        35.677,
-			"lng":        139.650,
-			"visited_at": "2024-03-01T10:00:00Z",
-		}
-		jsonNoMemo, _ := json.Marshal(bodyNoMemo)
-		w1 := httptest.NewRecorder()
-		req1, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonNoMemo))
-		req1.Header.Set("Content-Type", "application/json")
-		req1.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-		router.ServeHTTP(w1, req1)
-		var resp1 map[string]interface{}
-		json.Unmarshal(w1.Body.Bytes(), &resp1) //nolint:errcheck
-		xp1, _ := resp1["xp_earned"].(float64)
-
-		// メモあり訪問
-		cleanupUsers(t)
-		user2 := createTestUserForVisit(t)
-		token2 := generateTestToken(user2.ID)
-
-		bodyWithMemo := map[string]interface{}{
-			"place_id":   "ChIJgamif_withmemo",
-			"place_name": "テスト2",
-			"category":   "cafe",
-			"lat":        35.677,
-			"lng":        139.650,
-			"memo":       "とても良かった！",
-			"visited_at": "2024-03-01T10:00:00Z",
-		}
-		jsonWithMemo, _ := json.Marshal(bodyWithMemo)
-		w2 := httptest.NewRecorder()
-		req2, _ := http.NewRequest("POST", "/api/visits", bytes.NewBuffer(jsonWithMemo))
-		req2.Header.Set("Content-Type", "application/json")
-		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token2))
-		router.ServeHTTP(w2, req2)
-		var resp2 map[string]interface{}
-		json.Unmarshal(w2.Body.Bytes(), &resp2) //nolint:errcheck
-		xp2, _ := resp2["xp_earned"].(float64)
-
-		if xp2 != xp1+10 {
-			t.Errorf("Expected memo bonus +10XP: no_memo=%v, with_memo=%v", xp1, xp2)
-		}
-	})
-
 	t.Run("レベルアップ時にlevel_up=trueとnew_levelが返る", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createTestUserForVisit(t)

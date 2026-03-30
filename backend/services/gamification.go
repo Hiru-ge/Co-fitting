@@ -13,7 +13,6 @@ const (
 	XPNormalVisit        = 50  // 通常訪問
 	XPComfortBreak       = 100 // 脱却訪問
 	XPFirstArea          = 30  // 初めてのエリアボーナス
-	XPMemoBonus          = 10  // 感想メモ記入ボーナス
 	XPStreakBonusPerWeek = 10  // ストリークボーナス（1週あたり）
 	XPStreakBonusMax     = 100 // ストリークボーナス上限（10週連続から固定）
 )
@@ -80,7 +79,6 @@ type GamificationResult struct {
 type XPBreakdown struct {
 	BaseXP         int `json:"base_xp"`          // ベースXP（通常50 or 脱却100）
 	FirstAreaBonus int `json:"first_area_bonus"` // 初エリアボーナス
-	MemoBonus      int `json:"memo_bonus"`       // メモボーナス
 	StreakBonus    int `json:"streak_bonus"`     // ストリークボーナス
 }
 
@@ -92,17 +90,13 @@ type badgeCondition struct {
 // CalcXP はXPを計算して返す
 // isBreakout: 興味ジャンル外ならtrue（脱却訪問）
 // isFirstArea: 初めてのエリア訪問ならtrue
-// hasMemo: 感想メモありならtrue
-func CalcXP(isBreakout bool, isFirstArea bool, hasMemo bool) int {
+func CalcXP(isBreakout bool, isFirstArea bool) int {
 	xp := XPNormalVisit
 	if isBreakout {
 		xp = XPComfortBreak
 	}
 	if isFirstArea {
 		xp += XPFirstArea
-	}
-	if hasMemo {
-		xp += XPMemoBonus
 	}
 	return xp
 }
@@ -371,7 +365,7 @@ func isFirstAreaVisit(tx *gorm.DB, userID uint64, visit models.Visit) bool {
 }
 
 // buildXPBreakdown はXP計算内訳を構築して返す（副作用なし）
-func buildXPBreakdown(isBreakout, isFirstArea, hasMemo bool, streakBonus int) *XPBreakdown {
+func buildXPBreakdown(isBreakout, isFirstArea bool, streakBonus int) *XPBreakdown {
 	baseXP := XPNormalVisit
 	if isBreakout {
 		baseXP = XPComfortBreak
@@ -380,14 +374,9 @@ func buildXPBreakdown(isBreakout, isFirstArea, hasMemo bool, streakBonus int) *X
 	if isFirstArea {
 		firstAreaBonusXP = XPFirstArea
 	}
-	memoBonusXP := 0
-	if hasMemo {
-		memoBonusXP = XPMemoBonus
-	}
 	return &XPBreakdown{
 		BaseXP:         baseXP,
 		FirstAreaBonus: firstAreaBonusXP,
-		MemoBonus:      memoBonusXP,
 		StreakBonus:    streakBonus,
 	}
 }
@@ -458,8 +447,7 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 
 	err := db.Transaction(func(tx *gorm.DB) error {
 		isFirstArea := isFirstAreaVisit(tx, userID, visit)
-		hasMemo := visit.Memo != nil && *visit.Memo != ""
-		xpEarned := CalcXP(visit.IsBreakout, isFirstArea, hasMemo)
+		xpEarned := CalcXP(visit.IsBreakout, isFirstArea)
 
 		finalXP, newTotalXP, newLevel, levelUp, streakBonus, err := applyXPAndProgression(tx, userID, visit, xpEarned)
 		if err != nil {
@@ -470,7 +458,7 @@ func ProcessGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Gamif
 		result.TotalXP = newTotalXP
 		result.NewLevel = newLevel
 		result.LevelUp = levelUp
-		result.XPBreakdown = buildXPBreakdown(visit.IsBreakout, isFirstArea, hasMemo, streakBonus)
+		result.XPBreakdown = buildXPBreakdown(visit.IsBreakout, isFirstArea, streakBonus)
 
 		var visitCount int64
 		tx.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&visitCount)

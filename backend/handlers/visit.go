@@ -90,9 +90,7 @@ type createVisitRequest struct {
 	Category       string   `json:"category" binding:"required"`
 	Lat            float64  `json:"lat" binding:"required"`
 	Lng            float64  `json:"lng" binding:"required"`
-	PlaceTypes     []string `json:"place_types"` // 任意: is_breakout自動判定に使用
-	Rating         *float32 `json:"rating"`
-	Memo           *string  `json:"memo"`
+	PlaceTypes     []string `json:"place_types"`     // 任意: is_breakout自動判定に使用
 	PhotoReference *string  `json:"photo_reference"` // 画像参照（Redis TTL失効後の再解決に使用）
 	VisitedAt      string   `json:"visited_at" binding:"required"`
 	UserLat        float64  `json:"user_lat"` // ユーザーの現在緯度（距離検証用）
@@ -179,8 +177,6 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		Category:       req.Category,
 		Latitude:       req.Lat,
 		Longitude:      req.Lng,
-		Rating:         req.Rating,
-		Memo:           req.Memo,
 		PhotoReference: req.PhotoReference,
 		IsBreakout:     genre.IsBreakout,
 		GenreTagID:     genre.GenreTagID,
