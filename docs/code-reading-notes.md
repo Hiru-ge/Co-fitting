@@ -180,7 +180,7 @@
 
 ### middleware/rate_limit.go 固有の問題
 
-- **未使用のため削除候補（YAGNI）**: `NewRateLimiter` / `RateLimit` はどこからも呼ばれていない。Google APIのレートリミット（Googleのクォータ保護）とは目的が違い（こちらはバックエンド保護用）、二重実装ではないが、Phase 1小規模運用では不要。使う時点で実装すればよい
+- `routes.go` で登録済み。本番では機能している
 
 ### middleware/error_handler.go 固有の問題
 

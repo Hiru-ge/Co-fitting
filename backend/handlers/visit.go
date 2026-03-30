@@ -380,19 +380,6 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 	query := h.DB.Where("user_id = ?", userID)
 	countQuery := h.DB.Model(&models.Visit{}).Where("user_id = ?", userID)
 
-	if from := c.Query("from"); from != "" {
-		if t, err := time.Parse(time.RFC3339Nano, from); err == nil {
-			query = query.Where("visited_at >= ?", t)
-			countQuery = countQuery.Where("visited_at >= ?", t)
-		}
-	}
-	if until := c.Query("until"); until != "" {
-		if t, err := time.Parse(time.RFC3339Nano, until); err == nil {
-			query = query.Where("visited_at < ?", t)
-			countQuery = countQuery.Where("visited_at < ?", t)
-		}
-	}
-
 	visits := make([]models.Visit, 0)
 	if err := query.
 		Order("visited_at DESC").

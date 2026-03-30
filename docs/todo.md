@@ -211,12 +211,11 @@ s
 
 #### 未使用コード・dead code の削除（Issue #309）
 
-- [ ] `backend/middleware/rate_limit.go` を削除
-- [ ] `backend/middleware/error_handler.go` を削除
-- [ ] `backend/database/migrate.go` の適用済み一時パッチ3ブロック削除（`is_comfort_zone` 改名・`latitude`/`longitude`/`password_hash` 削除・`monthly_summary` デフォルト更新）
-- [ ] `backend/handlers/place_photo.go` の旧Places API互換コード削除（`resolveLegacyPhotoURL` / `isNewAPIPhotoRef` / `getBaseURL` / `getNewAPIBaseURL` / `getHTTPClient`）
-- [ ] `backend/handlers/visit.go` の `createVisitRequest.Rating` / `createVisitRequest.Memo` フィールド削除（Issue #304 と合わせて整理）
-- [ ] `backend/handlers/visit.go` の `ListVisits` から `from` / `until` パラメータ削除
+- [x] `backend/middleware/error_handler.go` を削除
+- [x] `backend/database/migrate.go` の適用済み一時パッチ3ブロック削除（`is_comfort_zone` 改名・`latitude`/`longitude`/`password_hash` 削除・`monthly_summary` デフォルト更新）
+- [x] `backend/handlers/place_photo.go` の旧Places API互換コード削除（`resolveLegacyPhotoURL` / `isNewAPIPhotoRef` / `getBaseURL` / `getNewAPIBaseURL` / `getHTTPClient`）
+- [x] `backend/handlers/visit.go` の `createVisitRequest.Rating` / `createVisitRequest.Memo` フィールド削除（Issue #304 と合わせて整理）
+- [x] `backend/handlers/visit.go` の `ListVisits` から `from` / `until` パラメータ削除
 
 ---
 

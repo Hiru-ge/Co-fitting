@@ -13,9 +13,6 @@ import (
 //
 // セキュリティ注意: APIキー（APIKey フィールド）はサーバーサイドでのみ使用し、
 // フロントエンドには露出しない。
-// 運用対策として Google Cloud Console で以下の制限を推奨:
-//   - 「APIの制限」でこのキーが使用できるAPIをPlaces APIのみに制限する
-//   - 「アプリケーションの制限」でIPアドレス制限（サーバーIPのみ許可）を設定する
 type PlacePhotoHandler struct {
 	RedisClient *redis.Client
 	APIKey      string
@@ -23,78 +20,27 @@ type PlacePhotoHandler struct {
 	BaseURL     string
 }
 
-func (h *PlacePhotoHandler) getBaseURL() string {
-	if h.BaseURL != "" {
-		return h.BaseURL
-	}
-	return "https://maps.googleapis.com"
-}
-
-func (h *PlacePhotoHandler) getNewAPIBaseURL() string {
-	if h.BaseURL != "" {
-		return h.BaseURL
-	}
-	return "https://places.googleapis.com"
-}
-
-func (h *PlacePhotoHandler) getHTTPClient() *http.Client {
-	if h.HTTPClient != nil {
-		return h.HTTPClient
-	}
-	return &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-		Timeout: 10 * time.Second,
-	}
-}
-
 func (h *PlacePhotoHandler) resolvePhotoURL(photoRef string, maxWidth int) (string, error) {
-	// New Places API (v1) の写真リソース名形式 (places/xxx/photos/yyy) かどうかを判定
-	if isNewAPIPhotoRef(photoRef) {
-		return h.resolveNewAPIPhotoURL(photoRef, maxWidth)
+	baseURL := h.BaseURL
+	if baseURL == "" {
+		baseURL = "https://places.googleapis.com"
 	}
-	return h.resolveLegacyPhotoURL(photoRef, maxWidth)
-}
 
-// isNewAPIPhotoRef は New Places API 形式の写真リソース名かどうかを判定する
-func isNewAPIPhotoRef(ref string) bool {
-	// New API: "places/{placeId}/photos/{photoId}" 形式
-	return len(ref) > 7 && ref[:7] == "places/"
-}
-
-// resolveNewAPIPhotoURL は New Places API (v1) の写真URLを解決する
-func (h *PlacePhotoHandler) resolveNewAPIPhotoURL(photoRef string, maxWidth int) (string, error) {
 	url := fmt.Sprintf(
 		"%s/v1/%s/media?maxWidthPx=%d&key=%s",
-		h.getNewAPIBaseURL(), photoRef, maxWidth, h.APIKey,
+		baseURL, photoRef, maxWidth, h.APIKey,
 	)
 
-	client := h.getHTTPClient()
-	resp, err := client.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("failed to request photo URL: %w", err)
-	}
-	defer resp.Body.Close() //nolint:errcheck
-
-	if resp.StatusCode == http.StatusFound || resp.StatusCode == http.StatusMovedPermanently {
-		location := resp.Header.Get("Location")
-		if location != "" {
-			return location, nil
+	client := h.HTTPClient
+	if client == nil {
+		client = &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+			Timeout: 10 * time.Second,
 		}
 	}
 
-	return "", fmt.Errorf("unexpected response status: %d", resp.StatusCode)
-}
-
-// resolveLegacyPhotoURL は旧 Places API の写真URLを解決する（既存キャッシュ互換）
-func (h *PlacePhotoHandler) resolveLegacyPhotoURL(photoRef string, maxWidth int) (string, error) {
-	url := fmt.Sprintf(
-		"%s/maps/api/place/photo?maxwidth=%d&photo_reference=%s&key=%s",
-		h.getBaseURL(), maxWidth, photoRef, h.APIKey,
-	)
-
-	client := h.getHTTPClient()
 	resp, err := client.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("failed to request photo URL: %w", err)

@@ -68,9 +68,6 @@ func TestPlacePhoto(t *testing.T) {
 		expectedCDNURL := "https://lh3.googleusercontent.com/places/test-photo-cdn"
 
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Query().Get("photo_reference") != "test_ref_123" {
-				t.Errorf("Expected photo_reference 'test_ref_123', got '%s'", r.URL.Query().Get("photo_reference"))
-			}
 			if r.URL.Query().Get("key") != "test-api-key" {
 				t.Errorf("Expected key 'test-api-key', got '%s'", r.URL.Query().Get("key"))
 			}
@@ -88,7 +85,7 @@ func TestPlacePhoto(t *testing.T) {
 		router := setupPhotoRouter(handler)
 
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/places/test_place/photo?photo_reference=test_ref_123", nil)
+		req, _ := http.NewRequest("GET", "/api/places/test_place/photo?photo_reference=places%2Ftest_place%2Fphotos%2Ftest_ref_123", nil)
 		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
@@ -117,7 +114,7 @@ func TestPlacePhoto(t *testing.T) {
 		router := setupPhotoRouter(handler)
 
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/places/test_place/photo?photo_reference=bad_ref", nil)
+		req, _ := http.NewRequest("GET", "/api/places/test_place/photo?photo_reference=places%2Fbad_place%2Fphotos%2Fbad_ref", nil)
 		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusInternalServerError {
@@ -218,8 +215,8 @@ func TestPlacePhoto(t *testing.T) {
 
 	t.Run("maxWidthパラメータが正しく渡される", func(t *testing.T) {
 		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Query().Get("maxwidth") != "800" {
-				t.Errorf("Expected maxwidth '800', got '%s'", r.URL.Query().Get("maxwidth"))
+			if r.URL.Query().Get("maxWidthPx") != "800" {
+				t.Errorf("Expected maxWidthPx '800', got '%s'", r.URL.Query().Get("maxWidthPx"))
 			}
 			w.Header().Set("Location", "https://lh3.googleusercontent.com/places/test")
 			w.WriteHeader(http.StatusFound)
@@ -235,7 +232,7 @@ func TestPlacePhoto(t *testing.T) {
 		router := setupPhotoRouter(handler)
 
 		w := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/api/places/test_place/photo?photo_reference=ref&maxWidth=800", nil)
+		req, _ := http.NewRequest("GET", "/api/places/test_place/photo?photo_reference=places%2Ftest_place%2Fphotos%2Fref&maxWidth=800", nil)
 		router.ServeHTTP(w, req)
 
 		if w.Code != http.StatusOK {
