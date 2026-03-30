@@ -162,11 +162,11 @@ s
 #### ユーザー登録時の NotificationSettings 初期レコード作成（Issue #308）
 
 **🔴 RED**
-- [ ] `backend/handlers/google_oauth_test.go` にOAuth完了時に `NotificationSettings` レコードが作成されるか検証するテスト追加
+- [x] `backend/handlers/google_oauth_test.go` にOAuth完了時に `NotificationSettings` レコードが作成されるか検証するテスト追加
 
 **🟢 GREEN**
-- [ ] `backend/handlers/google_oauth.go` のユーザー登録処理に `NotificationSettings` の初期レコード作成を追加
-- [ ] `backend/handlers/notification.go` の `GetNotificationSettings` から `FirstOrCreate` を `First` に変更
+- [x] `backend/handlers/google_oauth.go` のユーザー登録処理に `NotificationSettings` の初期レコード作成を追加
+- [x] `backend/handlers/notification.go` の `GetNotificationSettings` から `FirstOrCreate` を `First` に変更
 
 **🔵 REFACTOR**
 - [ ] なし

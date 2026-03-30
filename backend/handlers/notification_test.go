@@ -297,42 +297,6 @@ func TestGetNotificationSettings_WithRecord(t *testing.T) {
 	}
 }
 
-func TestGetNotificationSettings_NoRecord(t *testing.T) {
-	cleanupUsers(t)
-	testDB.Exec("DELETE FROM notification_settings")
-
-	user := createTestUserByEmail(t, "ns-norecord@example.com", "NS NoRecord User")
-	token := generateTestToken(user.ID)
-
-	h := &NotificationHandler{DB: testDB}
-	router := setupGetNotificationSettingsRouter(h)
-
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/api/notifications/settings", nil)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Errorf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
-	}
-
-	var resp NotificationSettingsResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
-		t.Fatalf("レスポンスのパースに失敗: %v", err)
-	}
-
-	// レコードなし → デフォルト値（PushEnabled: true）
-	if resp.PushEnabled != true {
-		t.Errorf("Expected PushEnabled=true (default), got %v", resp.PushEnabled)
-	}
-	if resp.StreakReminder != true {
-		t.Errorf("Expected StreakReminder=true (default), got %v", resp.StreakReminder)
-	}
-	if resp.MonthlySummary != true {
-		t.Errorf("Expected MonthlySummary=true (default), got %v", resp.MonthlySummary)
-	}
-}
-
 func TestGetNotificationSettings_Unauthorized(t *testing.T) {
 	h := &NotificationHandler{DB: testDB}
 	router := setupGetNotificationSettingsRouter(h)

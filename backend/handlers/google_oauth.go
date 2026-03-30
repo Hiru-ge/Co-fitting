@@ -162,6 +162,13 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
 			return
 		}
+
+		notificationSettings := models.NotificationSettings{UserID: user.ID}
+		if err := h.DB.Create(&notificationSettings).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create notification settings"})
+			return
+		}
+
 		isNewUser = true
 	}
 

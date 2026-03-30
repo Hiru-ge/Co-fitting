@@ -42,6 +42,7 @@ func setupOAuthRouter(handler *OAuthHandler) *gin.Engine {
 
 func cleanupForOAuth(t *testing.T) {
 	t.Helper()
+	testDB.Exec("DELETE FROM notification_settings")
 	testDB.Exec("DELETE FROM user_badges")
 	testDB.Exec("DELETE FROM genre_proficiency")
 	testDB.Exec("DELETE FROM user_interests")
@@ -241,6 +242,42 @@ func TestGoogleOAuth(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "noname", user.DisplayName)
 		assert.Nil(t, user.AvatarURL)
+	})
+
+	t.Run("新規ユーザー登録時にNotificationSettingsレコードが作成される", func(t *testing.T) {
+		cleanupForOAuth(t)
+
+		verifier := &mockGoogleVerifier{
+			userInfo: &GoogleUserInfo{
+				Sub:           "google-sub-notif",
+				Email:         "notifuser@gmail.com",
+				EmailVerified: true,
+				Name:          "Notif User",
+				Picture:       "",
+			},
+		}
+
+		handler := newTestOAuthHandler(verifier)
+		router := setupOAuthRouter(handler)
+
+		body := map[string]string{"id_token": "valid-token-notif"}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/auth/oauth/google", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var user models.User
+		err := testDB.Where("email = ?", "notifuser@gmail.com").First(&user).Error
+		require.NoError(t, err)
+
+		var settings models.NotificationSettings
+		err = testDB.Where("user_id = ?", user.ID).First(&settings).Error
+		require.NoError(t, err, "NotificationSettingsレコードが作成されているべき")
+		assert.Equal(t, user.ID, settings.UserID)
 	})
 
 	t.Run("アバターURLなしの新規ユーザーでavatar_urlがnil", func(t *testing.T) {

@@ -248,7 +248,7 @@ func (h *NotificationHandler) GetNotificationSettings(c *gin.Context) {
 	}
 
 	var settings models.NotificationSettings
-	if err := h.DB.FirstOrCreate(&settings, models.NotificationSettings{UserID: userID}).Error; err != nil {
+	if err := h.DB.Where("user_id = ?", userID).First(&settings).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get notification settings"})
 		return
 	}
