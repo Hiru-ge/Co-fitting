@@ -302,15 +302,7 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 		ctx := c.Request.Context()
 		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", userID)
-
-		currentCount, _ := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
-		if currentCount < database.MaxDailyReloads {
-			database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr) //nolint:errcheck
-			newCount, _ := database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
-			reloadCountRemaining = database.MaxDailyReloads - newCount
-		} else {
-			reloadCountRemaining = 0
-		}
+		reloadCountRemaining = consumeReloadForSuggestions(ctx, h.RedisClient, userIDStr, today)
 	}
 
 	var interests []interestResponse
@@ -334,6 +326,18 @@ func (h *UserHandler) UpdateInterests(c *gin.Context) {
 		Interests:            interests,
 		ReloadCountRemaining: reloadCountRemaining,
 	})
+}
+
+// consumeReloadForSuggestions は提案キャッシュをクリアしリロードカウントを消費する。
+// 残り回数を返す。上限に達している場合は 0 を返す。
+func consumeReloadForSuggestions(ctx context.Context, rc *redis.Client, userIDStr, today string) int {
+	currentCount, _ := database.GetDailyReloadCount(ctx, rc, userIDStr, today)
+	if currentCount < database.MaxDailyReloads {
+		database.ClearDailySuggestionsCache(ctx, rc, userIDStr) //nolint:errcheck
+		newCount, _ := database.IncrementDailyReloadCount(ctx, rc, userIDStr, today, 24*time.Hour)
+		return database.MaxDailyReloads - newCount
+	}
+	return 0
 }
 
 // 提案半径の最小・最大値（メートル）
@@ -429,15 +433,7 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		ctx := c.Request.Context()
 		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", userID)
-
-		currentCount, _ := database.GetDailyReloadCount(ctx, h.RedisClient, userIDStr, today)
-		if currentCount < database.MaxDailyReloads {
-			database.ClearDailySuggestionsCache(ctx, h.RedisClient, userIDStr) //nolint:errcheck
-			newCount, _ := database.IncrementDailyReloadCount(ctx, h.RedisClient, userIDStr, today, 24*time.Hour)
-			reloadCountRemaining = database.MaxDailyReloads - newCount
-		} else {
-			reloadCountRemaining = 0
-		}
+		reloadCountRemaining = consumeReloadForSuggestions(ctx, h.RedisClient, userIDStr, today)
 	}
 
 	c.JSON(http.StatusOK, updateMeResponse{

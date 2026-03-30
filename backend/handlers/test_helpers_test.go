@@ -28,6 +28,9 @@ func generateTestToken(userID uint64) string {
 	return token
 }
 
+// boolPtr はテスト用に bool のポインタを返すヘルパー。
+func boolPtr(b bool) *bool { return &b }
+
 // createTestUserByEmail は任意のメールアドレスでテストユーザーを作成する汎用ヘルパー。
 // 各テストファイル内の createTestUser* 系関数はこれを呼び出す。
 func createTestUserByEmail(t *testing.T, email, displayName string) models.User {

@@ -36,9 +36,9 @@ func resolveGenreInfo(db *gorm.DB, userID uint64, placeTypes []string) genreReso
 	if len(placeTypes) == 0 {
 		return genreResolution{}
 	}
-	genreName := getGenreNameFromTypes(placeTypes)
+	genreName := services.GetGenreNameFromTypes(placeTypes)
 	resolution := genreResolution{
-		IsBreakout: isBreakoutVisit(db, userID, genreName),
+		IsBreakout: services.IsBreakoutVisit(db, userID, genreName),
 	}
 	if genreName != "" {
 		var genreTag models.GenreTag

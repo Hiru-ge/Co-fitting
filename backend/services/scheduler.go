@@ -134,30 +134,19 @@ func (s *NotificationScheduler) RunWeeklySummaryNotification() {
 	weekStart := lastWeekStart()
 	weekEnd := weekStart.AddDate(0, 0, 7)
 
-	for _, target := range targets {
-		data, err := buildWeeklySummaryData(s.db, target, weekStart, weekEnd)
-		if err != nil {
-			log.Printf("scheduler: weekly summary: build data for user %d: %v", target.UserID, err)
-			continue
-		}
-
-		if s.push != nil && target.PushEnabled && target.WeeklySummary {
-			payload := PushPayload{
-				Title: "先週のサマリーが届いてるよ！",
-				Body:  "あなたの冒険を振り返ってみよう",
-				URL:   "/summary/weekly",
+	s.sendToTargets(
+		"weekly summary",
+		targets,
+		func(t notificationTarget) bool { return t.WeeklySummary },
+		PushPayload{Title: "先週のサマリーが届いてるよ！", Body: "あなたの冒険を振り返ってみよう", URL: "/summary/weekly"},
+		func(t notificationTarget) error {
+			data, err := buildWeeklySummaryData(s.db, t, weekStart, weekEnd)
+			if err != nil {
+				return err
 			}
-			if err := s.push.SendToUser(target.UserID, payload); err != nil {
-				log.Printf("scheduler: weekly summary: push to user %d: %v", target.UserID, err)
-			}
-		}
-
-		if s.email != nil && target.EmailEnabled && target.WeeklySummary && target.Email != "" {
-			if err := s.email.SendWeeklySummary(target.Email, data); err != nil {
-				log.Printf("scheduler: weekly summary: email to user %d: %v", target.UserID, err)
-			}
-		}
-	}
+			return s.email.SendWeeklySummary(t.Email, data)
+		},
+	)
 }
 
 // RunMonthlySummaryNotification は月次サマリー設定ONのユーザー全員にサマリーを送信する。
@@ -170,39 +159,47 @@ func (s *NotificationScheduler) RunMonthlySummaryNotification() {
 	}
 
 	now := time.Now().In(utils.JST)
-	// 前月の範囲を計算
 	lastMonth := now.AddDate(0, -1, 0)
 	monthStart := time.Date(lastMonth.Year(), lastMonth.Month(), 1, 0, 0, 0, 0, utils.JST)
 	monthEnd := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, utils.JST)
 	monthLabel := fmt.Sprintf("%d年%d月", lastMonth.Year(), int(lastMonth.Month()))
 
+	s.sendToTargets(
+		"monthly summary",
+		targets,
+		func(t notificationTarget) bool { return t.MonthlySummary },
+		PushPayload{Title: fmt.Sprintf("%sのサマリーが届いてるよ！", monthLabel), Body: "あなたの冒険を振り返ってみよう", URL: "/summary/monthly"},
+		func(t notificationTarget) error {
+			data, err := buildMonthlySummaryData(s.db, t, monthStart, monthEnd, monthLabel)
+			if err != nil {
+				return err
+			}
+			return s.email.SendMonthlySummary(t.Email, data)
+		},
+	)
+}
+
+// sendToTargets は週次・月次サマリー通知の共通送信ロジック
+func (s *NotificationScheduler) sendToTargets(
+	logName string,
+	targets []notificationTarget,
+	isEnabled func(t notificationTarget) bool,
+	pushPayload PushPayload,
+	sendEmailFn func(t notificationTarget) error,
+) {
 	for _, target := range targets {
-		data, err := buildMonthlySummaryData(s.db, target, monthStart, monthEnd, monthLabel)
-		if err != nil {
-			log.Printf("scheduler: monthly summary: build data for user %d: %v", target.UserID, err)
-			continue
-		}
-
-		if s.push != nil && target.PushEnabled && target.MonthlySummary {
-			payload := PushPayload{
-				Title: fmt.Sprintf("%sのサマリーが届いてるよ！", monthLabel),
-				Body:  "あなたの冒険を振り返ってみよう",
-				URL:   "/summary/monthly",
-			}
-			if err := s.push.SendToUser(target.UserID, payload); err != nil {
-				log.Printf("scheduler: monthly summary: push to user %d: %v", target.UserID, err)
+		if s.push != nil && target.PushEnabled && isEnabled(target) {
+			if err := s.push.SendToUser(target.UserID, pushPayload); err != nil {
+				log.Printf("scheduler: %s: push to user %d: %v", logName, target.UserID, err)
 			}
 		}
-
-		if s.email != nil && target.EmailEnabled && target.MonthlySummary && target.Email != "" {
-			if err := s.email.SendMonthlySummary(target.Email, data); err != nil {
-				log.Printf("scheduler: monthly summary: email to user %d: %v", target.UserID, err)
+		if s.email != nil && target.EmailEnabled && isEnabled(target) && target.Email != "" {
+			if err := sendEmailFn(target); err != nil {
+				log.Printf("scheduler: %s: email to user %d: %v", logName, target.UserID, err)
 			}
 		}
 	}
 }
-
-// --- リポジトリ関数 ---
 
 // fetchDailySuggestionTargetUserIDs はデイリーサジェスション通知対象ユーザーIDを返す
 // 条件: push_subscriptions に1件以上あり、通知設定で push_enabled=true かつ daily_suggestion=true

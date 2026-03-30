@@ -231,10 +231,10 @@ s
 
 #### suggestion.go ビジネスロジックのサービス層への移動（Issue #311）
 
-- [ ] `backend/services/suggestion.go` を新規作成
-- [ ] `filterOutVisited` / `filterOpenNowPlaces` / `buildPersonalizedSelections` / `isBreakoutVisit` / `classifyByInterest` / `selectPersonalizedPlaces` をサービス層へ移動
-- [ ] `UpdateInterests` / `UpdateMe` のリロードカウント重複処理を共通関数に切り出し
-- [ ] `RunWeeklySummaryNotification` / `RunMonthlySummaryNotification` を `runSummaryNotification` に共通化
+- [x] `backend/services/suggestion.go` を新規作成
+- [x] `filterOutVisited` / `filterOpenNowPlaces` / `buildPersonalizedSelections` / `isBreakoutVisit` / `classifyByInterest` / `selectPersonalizedPlaces` をサービス層へ移動
+- [x] `UpdateInterests` / `UpdateMe` のリロードカウント重複処理を共通関数に切り出し
+- [x] `RunWeeklySummaryNotification` / `RunMonthlySummaryNotification` を `sendToTargets` に共通化
 
 ---
 

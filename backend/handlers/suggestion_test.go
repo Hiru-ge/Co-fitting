@@ -13,27 +13,28 @@ import (
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/services"
 	"github.com/gin-gonic/gin"
 )
 
 type mockPlacesClient struct {
-	Results []PlaceResult
+	Results []services.PlaceResult
 	Err     error
 }
 
-func (m *mockPlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error) {
+func (m *mockPlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]services.PlaceResult, error) {
 	return m.Results, m.Err
 }
 
 // trackingMockPlacesClient はAPI呼び出し回数を追跡するモック
 type trackingMockPlacesClient struct {
-	Results    []PlaceResult
+	Results    []services.PlaceResult
 	Err        error
 	CallCount  int
 	LastRadius uint
 }
 
-func (m *trackingMockPlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]PlaceResult, error) {
+func (m *trackingMockPlacesClient) NearbySearch(ctx context.Context, lat, lng float64, radius uint) ([]services.PlaceResult, error) {
 	m.CallCount++
 	m.LastRadius = radius
 	return m.Results, m.Err
@@ -73,11 +74,11 @@ func cleanupAllSuggestionCache(t *testing.T) {
 	database.DeleteKeysByPattern(ctx, testRedisClient, "suggestions:*") //nolint:errcheck
 }
 
-// parseSuggestions は SuggestionResult ラッパーから []PlaceResult を取り出すテストヘルパー
-func parseSuggestions(t *testing.T, body []byte) []PlaceResult {
+// parseSuggestions は SuggestionResult ラッパーから []services.PlaceResult を取り出すテストヘルパー
+func parseSuggestions(t *testing.T, body []byte) []services.PlaceResult {
 	t.Helper()
 	var result struct {
-		Places []PlaceResult `json:"places"`
+		Places []services.PlaceResult `json:"places"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
 		t.Fatalf("Failed to parse suggestion response: %v. Body: %s", err, string(body))
@@ -91,7 +92,7 @@ func createTestUser(t *testing.T) models.User {
 }
 
 func TestSuggest(t *testing.T) {
-	mockPlaces := []PlaceResult{
+	mockPlaces := []services.PlaceResult{
 		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
@@ -222,7 +223,7 @@ func TestSuggest(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mock := &mockPlacesClient{Results: []PlaceResult{}}
+		mock := &mockPlacesClient{Results: []services.PlaceResult{}}
 		router := setupSuggestionRouter(mock)
 
 		body := map[string]interface{}{
@@ -269,7 +270,7 @@ func TestSuggest(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mixedPlaces := []PlaceResult{
+		mixedPlaces := []services.PlaceResult{
 			{PlaceID: "realestate_1", Name: "○○不動産", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"real_estate_agency", "point_of_interest", "establishment"}},
 			{PlaceID: "city_1", Name: "渋谷区", Vicinity: "東京都", Lat: 35.6640, Lng: 139.6982, Rating: 0, Types: []string{"locality", "political"}},
 			{PlaceID: "cafe_1", Name: "隠れ家カフェ", Vicinity: "渋谷区1-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"cafe", "food", "point_of_interest", "establishment"}},
@@ -312,7 +313,7 @@ func TestSuggest(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		onlyBadPlaces := []PlaceResult{
+		onlyBadPlaces := []services.PlaceResult{
 			{PlaceID: "realestate_1", Name: "○○不動産", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"real_estate_agency", "establishment"}},
 			{PlaceID: "city_1", Name: "渋谷区", Vicinity: "東京都", Lat: 35.6640, Lng: 139.6982, Rating: 0, Types: []string{"locality", "political"}},
 		}
@@ -376,8 +377,8 @@ func TestSuggest(t *testing.T) {
 		}
 
 		var result struct {
-			Completed bool          `json:"completed"`
-			Places    []PlaceResult `json:"places"`
+			Completed bool                   `json:"completed"`
+			Places    []services.PlaceResult `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
@@ -396,7 +397,7 @@ func TestSuggest(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mock := &mockPlacesClient{Results: []PlaceResult{}}
+		mock := &mockPlacesClient{Results: []services.PlaceResult{}}
 		router := setupSuggestionRouter(mock)
 
 		body := map[string]interface{}{
@@ -458,7 +459,7 @@ func TestSuggestDailyCache(t *testing.T) {
 		t.Skip("Redis not available")
 	}
 
-	mockPlaces := []PlaceResult{
+	mockPlaces := []services.PlaceResult{
 		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
@@ -599,7 +600,7 @@ func TestSuggestDailyCache(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		twoPlaces := []PlaceResult{
+		twoPlaces := []services.PlaceResult{
 			{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 			{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		}
@@ -808,8 +809,8 @@ func TestSuggestDailyCache(t *testing.T) {
 		}
 
 		var completedResp struct {
-			Completed bool          `json:"completed"`
-			Places    []PlaceResult `json:"places"`
+			Completed bool                   `json:"completed"`
+			Places    []services.PlaceResult `json:"places"`
 		}
 		json.Unmarshal(w2.Body.Bytes(), &completedResp) //nolint:errcheck
 		if !completedResp.Completed {
@@ -821,7 +822,7 @@ func TestSuggestDailyCache(t *testing.T) {
 // TestInterestUpdateDoesNotResetDailyLimit は Issue #166 の回帰テスト
 // 全提案を使い切った後に興味タグを変更しても、3件提案の権利は復活しないことを確認する
 func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
-	mockPlaces := []PlaceResult{
+	mockPlaces := []services.PlaceResult{
 		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
@@ -890,8 +891,8 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 		}
 
 		var w2Resp struct {
-			Completed bool          `json:"completed"`
-			Places    []PlaceResult `json:"places"`
+			Completed bool                   `json:"completed"`
+			Places    []services.PlaceResult `json:"places"`
 		}
 		json.Unmarshal(w2.Body.Bytes(), &w2Resp) //nolint:errcheck
 		if !w2Resp.Completed {
@@ -914,8 +915,8 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 		}
 
 		var w3Resp struct {
-			Completed bool          `json:"completed"`
-			Places    []PlaceResult `json:"places"`
+			Completed bool                   `json:"completed"`
+			Places    []services.PlaceResult `json:"places"`
 		}
 		json.Unmarshal(w3.Body.Bytes(), &w3Resp) //nolint:errcheck
 		if !w3Resp.Completed {
@@ -926,12 +927,12 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 
 func TestPersonalizedSuggest(t *testing.T) {
 	// 興味内: cafe（"カフェ"）、興味外: museum（"博物館・科学館"）
-	cafePlaces := []PlaceResult{
+	cafePlaces := []services.PlaceResult{
 		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
 	}
-	museumPlaces := []PlaceResult{
+	museumPlaces := []services.PlaceResult{
 		{PlaceID: "museum_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
 		{PlaceID: "museum_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
 		{PlaceID: "museum_3", Name: "博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
@@ -1159,8 +1160,8 @@ func TestPersonalizedSuggest(t *testing.T) {
 		}
 
 		var result struct {
-			Places []PlaceResult `json:"places"`
-			Notice string        `json:"notice"`
+			Places []services.PlaceResult `json:"places"`
+			Notice string                 `json:"notice"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
@@ -1191,7 +1192,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 
 	t.Run("radius=60000 should be limited to 50000", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
-			Results: []PlaceResult{
+			Results: []services.PlaceResult{
 				{PlaceID: "place1", Name: "Test Place 1", Types: []string{"restaurant"}},
 			},
 			Err: nil,
@@ -1231,7 +1232,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 
 	t.Run("radius=30000 should remain 30000", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
-			Results: []PlaceResult{
+			Results: []services.PlaceResult{
 				{PlaceID: "place2", Name: "Test Place 2", Types: []string{"cafe"}},
 			},
 			Err: nil,
@@ -1282,7 +1283,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 		customToken := generateTestToken(userWithRadius.ID)
 
 		mock := &trackingMockPlacesClient{
-			Results: []PlaceResult{
+			Results: []services.PlaceResult{
 				{PlaceID: "place_r", Name: "Test Place R", Types: []string{"cafe"}},
 			},
 			Err: nil,
@@ -1321,7 +1322,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 
 	t.Run("radius=0 のときユーザーのsearch_radius設定値(デフォルト10000)が使われる", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
-			Results: []PlaceResult{
+			Results: []services.PlaceResult{
 				{PlaceID: "place3", Name: "Test Place 3", Types: []string{"park"}},
 			},
 			Err: nil,
@@ -1362,12 +1363,12 @@ func TestSuggestRadiusLimit(t *testing.T) {
 
 // === Issue #178: is_interest_match フラグのテスト ===
 func TestInterestMatchFlag(t *testing.T) {
-	cafePlaces := []PlaceResult{
+	cafePlaces := []services.PlaceResult{
 		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
 	}
-	museumPlaces := []PlaceResult{
+	museumPlaces := []services.PlaceResult{
 		{PlaceID: "museum_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
 		{PlaceID: "museum_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
 		{PlaceID: "museum_3", Name: "博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
@@ -1469,11 +1470,11 @@ func TestInterestMatchFlag(t *testing.T) {
 // TestBreakoutModeSuggestion は Issue #179 の脱却モードテスト
 // 提案APIレスポンスの各施設に is_interest_match フラグが正しく設定されることを確認する
 func TestBreakoutModeSuggestion(t *testing.T) {
-	cafePlaces := []PlaceResult{
+	cafePlaces := []services.PlaceResult{
 		{PlaceID: "cafe_bm_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "cafe_bm_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 	}
-	museumPlaces := []PlaceResult{
+	museumPlaces := []services.PlaceResult{
 		{PlaceID: "museum_bm_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
 		{PlaceID: "museum_bm_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
 	}
@@ -1601,7 +1602,7 @@ func TestSuggestForceReload(t *testing.T) {
 		t.Skip("Redis not available")
 	}
 
-	mockPlaces := []PlaceResult{
+	mockPlaces := []services.PlaceResult{
 		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
@@ -1787,8 +1788,8 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 
 		var result struct {
-			Places               []PlaceResult `json:"places"`
-			ReloadCountRemaining *int          `json:"reload_count_remaining"`
+			Places               []services.PlaceResult `json:"places"`
+			ReloadCountRemaining *int                   `json:"reload_count_remaining"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response: %v. Body: %s", err, w.Body.String())
@@ -1815,8 +1816,8 @@ func TestSuggestForceReload(t *testing.T) {
 		router.ServeHTTP(w2, req2)
 
 		var result2 struct {
-			Places               []PlaceResult `json:"places"`
-			ReloadCountRemaining *int          `json:"reload_count_remaining"`
+			Places               []services.PlaceResult `json:"places"`
+			ReloadCountRemaining *int                   `json:"reload_count_remaining"`
 		}
 		json.Unmarshal(w2.Body.Bytes(), &result2) //nolint:errcheck
 		if result2.ReloadCountRemaining == nil || *result2.ReloadCountRemaining != 2 {
@@ -1907,12 +1908,12 @@ func TestSuggestForceReload(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		cafePlaces := []PlaceResult{
+		cafePlaces := []services.PlaceResult{
 			{PlaceID: "cafe_r1", Name: "カフェR1", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 			{PlaceID: "cafe_r2", Name: "カフェR2", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 			{PlaceID: "cafe_r3", Name: "カフェR3", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
 		}
-		museumPlaces := []PlaceResult{
+		museumPlaces := []services.PlaceResult{
 			{PlaceID: "museum_r1", Name: "博物館R1", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
 			{PlaceID: "museum_r2", Name: "博物館R2", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
 			{PlaceID: "museum_r3", Name: "博物館R3", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
@@ -1987,7 +1988,7 @@ func TestCorruptedCacheHandling(t *testing.T) {
 		t.Skip("Redis not available")
 	}
 
-	mockPlaces := []PlaceResult{
+	mockPlaces := []services.PlaceResult{
 		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
@@ -2066,7 +2067,7 @@ func TestCorruptedCacheHandling(t *testing.T) {
 // TestProficiencyBasedComfortZone は Issue #198 の熟練度ベース脱却判定テスト
 // 提案APIレスポンスに is_breakout フラグが設定されることを確認する
 func TestProficiencyBasedComfortZone(t *testing.T) {
-	cafePlaces := []PlaceResult{
+	cafePlaces := []services.PlaceResult{
 		{PlaceID: "cafe_prof_1", Name: "カフェX", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "cafe_prof_2", Name: "カフェY", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 		{PlaceID: "cafe_prof_3", Name: "カフェZ", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
@@ -2189,11 +2190,11 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 
 	t.Run("selectPersonalizedPlacesは興味内2枠+完全ランダム1枠で選出する（Issue #222）", func(t *testing.T) {
 		// 興味内ぴったり2件（2枠に対して2件）→ 必ず2件とも選ばれ、残り1枠は興味外から
-		inInterest := []PlaceResult{
+		inInterest := []services.PlaceResult{
 			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 		}
-		outOfInterest := []PlaceResult{
+		outOfInterest := []services.PlaceResult{
 			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 			{PlaceID: "museum_sel_3", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
@@ -2202,7 +2203,7 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 		// 複数回試行しても常に同じパターンになることを確認
 		const trials = 20
 		for i := 0; i < trials; i++ {
-			selected := selectPersonalizedPlaces(inInterest, outOfInterest)
+			selected := services.SelectPersonalizedPlaces(inInterest, outOfInterest)
 
 			if len(selected) != 3 {
 				t.Fatalf("trial %d: Expected 3 selected places, got %d", i, len(selected))
@@ -2240,19 +2241,19 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 
 	t.Run("selectPersonalizedPlacesは興味内3件以上あっても2枠に制限する（Issue #222）", func(t *testing.T) {
 		// 興味内3件、興味外4件 → 2枠のみ興味内、1枠はすべての残り候補からランダム
-		inInterest := []PlaceResult{
+		inInterest := []services.PlaceResult{
 			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 			{PlaceID: "cafe_sel_3", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 		}
-		outOfInterest := []PlaceResult{
+		outOfInterest := []services.PlaceResult{
 			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 			{PlaceID: "museum_sel_3", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 			{PlaceID: "museum_sel_4", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 		}
 
-		selected := selectPersonalizedPlaces(inInterest, outOfInterest)
+		selected := services.SelectPersonalizedPlaces(inInterest, outOfInterest)
 
 		if len(selected) != 3 {
 			t.Fatalf("Expected 3 selected places, got %d", len(selected))
@@ -2275,15 +2276,15 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 
 	t.Run("selectPersonalizedPlacesは興味内が2未満の場合は全件使い残りをランダム補充", func(t *testing.T) {
 		// 興味内1件のみ
-		inInterest := []PlaceResult{
+		inInterest := []services.PlaceResult{
 			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
 		}
-		outOfInterest := []PlaceResult{
+		outOfInterest := []services.PlaceResult{
 			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
 		}
 
-		selected := selectPersonalizedPlaces(inInterest, outOfInterest)
+		selected := services.SelectPersonalizedPlaces(inInterest, outOfInterest)
 
 		if len(selected) != 3 {
 			t.Errorf("Expected 3 selected places, got %d", len(selected))
@@ -2309,14 +2310,14 @@ func TestProficiencyBasedComfortZone(t *testing.T) {
 // TestGymGenreMapping は gym / fitness_center タイプが "スポーツジム" にマッピングされることを確認する
 func TestGymGenreMapping(t *testing.T) {
 	t.Run("gymタイプはスポーツジムにマッピングされる", func(t *testing.T) {
-		name := getGenreNameFromTypes([]string{"gym"})
+		name := services.GetGenreNameFromTypes([]string{"gym"})
 		if name != "スポーツジム" {
 			t.Errorf("expected 'スポーツジム', got '%s'", name)
 		}
 	})
 
 	t.Run("fitness_centerタイプはスポーツジムにマッピングされる", func(t *testing.T) {
-		name := getGenreNameFromTypes([]string{"fitness_center"})
+		name := services.GetGenreNameFromTypes([]string{"fitness_center"})
 		if name != "スポーツジム" {
 			t.Errorf("expected 'スポーツジム', got '%s'", name)
 		}
@@ -2334,7 +2335,7 @@ func TestGymGenreMapping(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: gymTag.ID})
 
-		gymPlaces := []PlaceResult{
+		gymPlaces := []services.PlaceResult{
 			{PlaceID: "gym_195_1", Name: "フィットネスジムA", Vicinity: "渋谷区3-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"gym"}},
 			{PlaceID: "gym_195_2", Name: "フィットネスジムB", Vicinity: "渋谷区3-2", Lat: 35.6763, Lng: 139.6504, Rating: 3.8, Types: []string{"gym"}},
 			{PlaceID: "gym_195_3", Name: "フィットネスジムC", Vicinity: "渋谷区3-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.9, Types: []string{"fitness_center"}},
@@ -2392,22 +2393,22 @@ func TestNewGenreTypeMapping(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.placeType+"→"+tt.genre, func(t *testing.T) {
-			name := getGenreNameFromTypes([]string{tt.placeType})
+			name := services.GetGenreNameFromTypes([]string{tt.placeType})
 			if name != tt.genre {
 				t.Errorf("expected '%s', got '%s'", tt.genre, name)
 			}
 		})
 	}
 
-	// visitableTypes にも含まれていることを確認
-	t.Run("新ジャンルタイプがvisitableTypesに含まれる", func(t *testing.T) {
+	// services.VisitableTypes にも含まれていることを確認
+	t.Run("新ジャンルタイプがservices.VisitableTypesに含まれる", func(t *testing.T) {
 		newTypes := []string{
 			"ramen_restaurant", "karaoke", "amusement_center", "video_arcade",
 			"public_bath", "sauna", "stadium", "beach", "lake", "river",
 		}
 		for _, tp := range newTypes {
-			if !visitableTypes[tp] {
-				t.Errorf("'%s' should be in visitableTypes", tp)
+			if !services.VisitableTypes[tp] {
+				t.Errorf("'%s' should be in services.VisitableTypes", tp)
 			}
 		}
 	})
@@ -2576,7 +2577,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 		}
 	})
 
-	t.Run("includedTypesにvisitableTypesが指定される", func(t *testing.T) {
+	t.Run("includedTypesにservices.VisitableTypesが指定される", func(t *testing.T) {
 		var receivedTypes []string
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var reqBody struct {
@@ -2600,12 +2601,12 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 		if len(receivedTypes) == 0 {
 			t.Error("expected includedTypes to be sent in request")
 		}
-		// visitableTypes のキーがすべて含まれていることを確認
+		// services.VisitableTypes のキーがすべて含まれていることを確認
 		typeSet := make(map[string]bool)
 		for _, tp := range receivedTypes {
 			typeSet[tp] = true
 		}
-		for vt := range visitableTypes {
+		for vt := range services.VisitableTypes {
 			if !typeSet[vt] {
 				t.Errorf("visitableType '%s' not found in includedTypes", vt)
 			}
@@ -2616,7 +2617,7 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 // TestVisitedFilterWithTimeThreshold は Issue #197 の訪問済みフィルタ閾値テスト
 // 30日以内の訪問済み施設は除外され、31日以上前の訪問済み施設は再提案候補に含まれることを確認する
 func TestVisitedFilterWithTimeThreshold(t *testing.T) {
-	mockPlaces := []PlaceResult{
+	mockPlaces := []services.PlaceResult{
 		{PlaceID: "thresh_1", Name: "Cafe A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "thresh_2", Name: "Park B", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
 		{PlaceID: "thresh_3", Name: "Restaurant C", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
@@ -2757,9 +2758,9 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 		}
 
 		var result struct {
-			Completed bool          `json:"completed"`
-			Notice    string        `json:"notice"`
-			Places    []PlaceResult `json:"places"`
+			Completed bool                   `json:"completed"`
+			Notice    string                 `json:"notice"`
+			Places    []services.PlaceResult `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
@@ -2815,9 +2816,9 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 		}
 
 		var result struct {
-			Completed bool          `json:"completed"`
-			Notice    string        `json:"notice"`
-			Places    []PlaceResult `json:"places"`
+			Completed bool                   `json:"completed"`
+			Notice    string                 `json:"notice"`
+			Places    []services.PlaceResult `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
@@ -2843,7 +2844,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mockPlaces := []PlaceResult{
+		mockPlaces := []services.PlaceResult{
 			{PlaceID: "open_1", Name: "Open Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}, OpenNow: &openNow},
 			{PlaceID: "closed_1", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"restaurant"}, OpenNow: &closedNow},
 			{PlaceID: "open_2", Name: "Open Park", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"park"}, OpenNow: &openNow},
@@ -2886,7 +2887,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mockPlaces := []PlaceResult{
+		mockPlaces := []services.PlaceResult{
 			{PlaceID: "closed_only", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, OpenNow: &closedNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
@@ -2929,7 +2930,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mockPlaces := []PlaceResult{
+		mockPlaces := []services.PlaceResult{
 			{PlaceID: "closed_1", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, OpenNow: &closedNow},
 			{PlaceID: "closed_2", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.5, Types: []string{"restaurant"}, OpenNow: &closedNow},
 		}
@@ -2961,7 +2962,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		mockPlaces := []PlaceResult{
+		mockPlaces := []services.PlaceResult{
 			{PlaceID: "unknown_hours", Name: "Unknown Hours Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}, OpenNow: nil},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}

@@ -13,6 +13,7 @@ import (
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/middleware"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/Hiru-ge/roamble/services"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -455,12 +456,12 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		t.Skip("Redisクライアントが設定されていません")
 	}
 
-	cafePlaces := []PlaceResult{
+	cafePlaces := []services.PlaceResult{
 		{PlaceID: "cache_cafe_1", Name: "キャッシュカフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "cache_cafe_2", Name: "キャッシュカフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 		{PlaceID: "cache_cafe_3", Name: "キャッシュカフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
 	}
-	museumPlaces := []PlaceResult{
+	museumPlaces := []services.PlaceResult{
 		{PlaceID: "cache_museum_1", Name: "キャッシュ博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
 		{PlaceID: "cache_museum_2", Name: "キャッシュ博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
 		{PlaceID: "cache_museum_3", Name: "キャッシュ博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
