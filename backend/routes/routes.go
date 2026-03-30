@@ -27,12 +27,13 @@ type Deps struct {
 	NotificationHandler *handlers.NotificationHandler
 	JWTSecret           string
 	RedisClient         *redis.Client
+	AllowedOrigins      []string
 	Environment         string
 }
 
 func Setup(router *gin.Engine, deps Deps) {
 	// グローバルミドルウェア
-	router.Use(middleware.CORS())
+	router.Use(middleware.CORS(deps.AllowedOrigins))
 	router.Use(middleware.RateLimit(middleware.NewRateLimiter(120, time.Minute)))
 
 	// ヘルスチェック

@@ -18,6 +18,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
@@ -61,15 +62,12 @@ func main() {
 	}
 
 	// Push送信
-	vapidPublic := os.Getenv("VAPID_PUBLIC_KEY")
-	vapidPrivate := os.Getenv("VAPID_PRIVATE_KEY")
-	vapidSubject := os.Getenv("VAPID_SUBJECT")
-
-	if vapidPublic == "" || vapidPrivate == "" || vapidSubject == "" {
+	notificationCfg := config.LoadNotificationConfig()
+	if !notificationCfg.IsPushConfigComplete() {
 		log.Fatal("VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT が未設定です")
 	}
 
-	pushSvc := services.NewPushService(db, vapidPublic, vapidPrivate, vapidSubject)
+	pushSvc := services.NewPushService(db, notificationCfg.VAPIDPublicKey, notificationCfg.VAPIDPrivateKey, notificationCfg.VAPIDSubject)
 	payload := services.PushPayload{
 		Title: *title,
 		Body:  *body,

@@ -3,20 +3,15 @@ package middleware
 import (
 	"fmt"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 )
 
 func TestCORS_WithAllowedOrigin(t *testing.T) {
-	// 環境変数を設定
-	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com") //nolint:errcheck
-	defer os.Unsetenv("ALLOWED_ORIGIN")                //nolint:errcheck
-
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(CORS())
+	r.Use(CORS([]string{"https://roamble.com"}))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "ok"})
 	})
@@ -35,18 +30,15 @@ func TestCORS_WithAllowedOrigin(t *testing.T) {
 	}
 }
 
-func TestCORS_WithDefaultOrigin(t *testing.T) {
-	// 環境変数をクリア
-	os.Unsetenv("ALLOWED_ORIGIN") //nolint:errcheck
-
+func TestCORS_WithSingleOrigin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(CORS())
+	r.Use(CORS([]string{"http://localhost:5173"}))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "ok"})
 	})
 
-	// デフォルト値での動作をテスト
+	// 単一オリジン設定での動作をテスト
 	req := httptest.NewRequest("OPTIONS", "/test", nil)
 	req.Header.Set("Origin", "http://localhost:5173")
 	req.Header.Set("Access-Control-Request-Method", "GET")
@@ -54,20 +46,16 @@ func TestCORS_WithDefaultOrigin(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// デフォルトオリジンが設定されていることを確認
+	// 設定したオリジンが許可されていることを確認
 	if w.Header().Get("Access-Control-Allow-Origin") != "http://localhost:5173" {
 		t.Errorf("Expected Access-Control-Allow-Origin to be 'http://localhost:5173', got '%s'", w.Header().Get("Access-Control-Allow-Origin"))
 	}
 }
 
 func TestCORS_WithMultipleOrigins(t *testing.T) {
-	// カンマ区切りで複数オリジンを設定
-	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com,http://localhost:5173,https://dev.roamble.com") //nolint:errcheck
-	defer os.Unsetenv("ALLOWED_ORIGIN")                                                              //nolint:errcheck
-
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(CORS())
+	r.Use(CORS([]string{"https://roamble.com", "http://localhost:5173", "https://dev.roamble.com"}))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "ok"})
 	})
@@ -96,13 +84,9 @@ func TestCORS_WithMultipleOrigins(t *testing.T) {
 }
 
 func TestCORS_DisallowedOrigin(t *testing.T) {
-	// 特定のオリジンのみ許可
-	os.Setenv("ALLOWED_ORIGIN", "https://roamble.com") //nolint:errcheck
-	defer os.Unsetenv("ALLOWED_ORIGIN")                //nolint:errcheck
-
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.Use(CORS())
+	r.Use(CORS([]string{"https://roamble.com"}))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "ok"})
 	})

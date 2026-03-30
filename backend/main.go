@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/Hiru-ge/roamble/config"
 	"github.com/Hiru-ge/roamble/database"
@@ -17,12 +16,12 @@ import (
 	"gorm.io/gorm"
 )
 
-func initOAuthHandler(db *gorm.DB, jwtCfg *config.JWTConfig, redisClient *redis.Client) *handlers.OAuthHandler {
-	googleClientID := os.Getenv("GOOGLE_OAUTH_CLIENT_ID")
+func initOAuthHandler(db *gorm.DB, jwtCfg *config.JWTConfig, redisClient *redis.Client, googleClientID string) *handlers.OAuthHandler {
 	if googleClientID == "" {
 		log.Println("Warning: GOOGLE_OAUTH_CLIENT_ID not set, Google OAuth endpoint disabled")
 		return nil
 	}
+
 	log.Println("Google OAuth handler initialized")
 	return &handlers.OAuthHandler{
 		DB:          db,
@@ -34,24 +33,18 @@ func initOAuthHandler(db *gorm.DB, jwtCfg *config.JWTConfig, redisClient *redis.
 	}
 }
 
-func initNotificationScheduler(db *gorm.DB) *services.NotificationScheduler {
-	vapidPublicKey := os.Getenv("VAPID_PUBLIC_KEY")
-	vapidPrivateKey := os.Getenv("VAPID_PRIVATE_KEY")
-	vapidSubject := os.Getenv("VAPID_SUBJECT")
-	resendAPIKey := os.Getenv("RESEND_API_KEY")
-	emailFrom := os.Getenv("NOTIFICATION_EMAIL_FROM")
-
+func initNotificationScheduler(db *gorm.DB, notificationCfg *config.NotificationConfig) *services.NotificationScheduler {
 	var pushSvc services.PushSender
-	if vapidPublicKey != "" && vapidPrivateKey != "" {
-		pushSvc = services.NewPushService(db, vapidPublicKey, vapidPrivateKey, vapidSubject)
+	if notificationCfg.IsPushConfigComplete() {
+		pushSvc = services.NewPushService(db, notificationCfg.VAPIDPublicKey, notificationCfg.VAPIDPrivateKey, notificationCfg.VAPIDSubject)
 		log.Println("Notification push service initialized")
 	} else {
 		log.Println("Warning: VAPID keys not set, push notifications disabled")
 	}
 
 	var emailSvc services.EmailSender
-	if resendAPIKey != "" && emailFrom != "" {
-		emailSvc = services.NewEmailService(resendAPIKey, emailFrom)
+	if notificationCfg.IsEmailConfigComplete() {
+		emailSvc = services.NewEmailService(notificationCfg.ResendAPIKey, notificationCfg.EmailFrom)
 		log.Println("Notification email service initialized")
 	} else {
 		log.Println("Warning: Resend config not set, email notifications disabled")
@@ -60,16 +53,17 @@ func initNotificationScheduler(db *gorm.DB) *services.NotificationScheduler {
 	return services.NewNotificationScheduler(pushSvc, emailSvc, db)
 }
 
-func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client) (*handlers.SuggestionHandler, *handlers.PlacePhotoHandler) {
-	placesAPIKey := os.Getenv("GOOGLE_PLACES_API_KEY")
+func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client, placesAPIKey string) (*handlers.SuggestionHandler, *handlers.PlacePhotoHandler) {
 	if placesAPIKey == "" {
 		log.Println("Warning: GOOGLE_PLACES_API_KEY not set, suggestions endpoint disabled")
 		return nil, nil
 	}
+
 	placesClient, err := handlers.NewGooglePlacesClient(placesAPIKey)
 	if err != nil {
 		log.Fatalf("Failed to create Google Places client: %v", err)
 	}
+
 	log.Println("Google Places API client initialized")
 	return &handlers.SuggestionHandler{
 			DB:          db,
@@ -95,6 +89,11 @@ func main() {
 		log.Println("No .env file found, using system environment variables")
 	}
 
+	appCfg, err := config.LoadAppConfig()
+	if err != nil {
+		log.Fatalf("Failed to load app config: %v", err)
+	}
+
 	db, err := database.Init()
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -105,7 +104,6 @@ func main() {
 	}
 
 	log.Println("Database connected and migrated successfully")
-
 	defer func() {
 		if err := database.Close(); err != nil {
 			log.Printf("Error closing database: %v", err)
@@ -123,43 +121,19 @@ func main() {
 		}
 	}()
 
-	jwtCfg, err := config.LoadJWTConfig()
-	if err != nil {
-		log.Fatalf("Failed to load JWT config: %v", err)
-	}
-
-	authHandler := &handlers.AuthHandler{
-		DB:          db,
-		JWTCfg:      jwtCfg,
-		RedisClient: redisClient,
-	}
+	jwtCfg := appCfg.JWT
+	authHandler := &handlers.AuthHandler{DB: db, JWTCfg: jwtCfg, RedisClient: redisClient}
 	userHandler := &handlers.UserHandler{DB: db, RedisClient: redisClient, JWTCfg: jwtCfg}
 	badgeHandler := &handlers.BadgeHandler{DB: db}
 	genreHandler := &handlers.GenreHandler{DB: db}
+	visitHandler := &handlers.VisitHandler{DB: db, Environment: appCfg.Server.Environment}
+	oauthHandler := initOAuthHandler(db, jwtCfg, redisClient, appCfg.Google.OAuthClientID)
+	suggestionHandler, placePhotoHandler := initPlacesHandlers(db, redisClient, appCfg.Google.PlacesAPIKey)
+	healthHandler := &handlers.HealthHandler{DB: db, RedisClient: redisClient}
+	betaHandler := &handlers.BetaHandler{Passphrase: appCfg.Beta.Passphrase}
+	notificationHandler := &handlers.NotificationHandler{VAPIDPublicKey: appCfg.Notification.VAPIDPublicKey, DB: db}
 
-	environment := os.Getenv("ENVIRONMENT")
-	if environment == "" {
-		environment = "development"
-	}
-
-	visitHandler := &handlers.VisitHandler{DB: db, Environment: environment}
-
-	oauthHandler := initOAuthHandler(db, jwtCfg, redisClient)
-	suggestionHandler, placePhotoHandler := initPlacesHandlers(db, redisClient)
-
-	healthHandler := &handlers.HealthHandler{
-		DB:          db,
-		RedisClient: redisClient,
-	}
-
-	betaHandler := &handlers.BetaHandler{}
-
-	notificationHandler := &handlers.NotificationHandler{
-		VAPIDPublicKey: os.Getenv("VAPID_PUBLIC_KEY"),
-		DB:             db,
-	}
-
-	scheduler := initNotificationScheduler(db)
+	scheduler := initNotificationScheduler(db, appCfg.Notification)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -186,14 +160,11 @@ func main() {
 		NotificationHandler: notificationHandler,
 		JWTSecret:           jwtCfg.Secret,
 		RedisClient:         redisClient,
-		Environment:         environment,
+		AllowedOrigins:      appCfg.CORS.AllowedOrigins,
+		Environment:         appCfg.Server.Environment,
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8000"
-	}
-	if err := router.Run(":" + port); err != nil {
+	if err := router.Run(":" + appCfg.Server.Port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }

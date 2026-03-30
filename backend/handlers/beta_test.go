@@ -17,9 +17,7 @@ func setupBetaRouter(h *BetaHandler) *gin.Engine {
 }
 
 func TestVerifyPassphrase_正しい合言葉で200を返す(t *testing.T) {
-	t.Setenv("BETA_PASSPHRASE", "EARLYROAMER")
-
-	h := &BetaHandler{}
+	h := &BetaHandler{Passphrase: "EARLYROAMER"}
 	router := setupBetaRouter(h)
 
 	body, _ := json.Marshal(map[string]string{"passphrase": "EARLYROAMER"})
@@ -42,9 +40,7 @@ func TestVerifyPassphrase_正しい合言葉で200を返す(t *testing.T) {
 }
 
 func TestVerifyPassphrase_間違った合言葉で401を返す(t *testing.T) {
-	t.Setenv("BETA_PASSPHRASE", "EARLYROAMER")
-
-	h := &BetaHandler{}
+	h := &BetaHandler{Passphrase: "EARLYROAMER"}
 	router := setupBetaRouter(h)
 
 	body, _ := json.Marshal(map[string]string{"passphrase": "WRONGPASSWORD"})
@@ -59,9 +55,7 @@ func TestVerifyPassphrase_間違った合言葉で401を返す(t *testing.T) {
 }
 
 func TestVerifyPassphrase_前後スペースは照合前にトリムされない(t *testing.T) {
-	t.Setenv("BETA_PASSPHRASE", "EARLYROAMER")
-
-	h := &BetaHandler{}
+	h := &BetaHandler{Passphrase: "EARLYROAMER"}
 	router := setupBetaRouter(h)
 
 	// バックエンドはそのまま比較するためスペース付きは不一致
@@ -77,8 +71,6 @@ func TestVerifyPassphrase_前後スペースは照合前にトリムされない
 }
 
 func TestVerifyPassphrase_環境変数未設定時は常に200を返す(t *testing.T) {
-	t.Setenv("BETA_PASSPHRASE", "")
-
 	h := &BetaHandler{}
 	router := setupBetaRouter(h)
 
@@ -94,9 +86,7 @@ func TestVerifyPassphrase_環境変数未設定時は常に200を返す(t *testi
 }
 
 func TestVerifyPassphrase_リクエストボディなしで400を返す(t *testing.T) {
-	t.Setenv("BETA_PASSPHRASE", "EARLYROAMER")
-
-	h := &BetaHandler{}
+	h := &BetaHandler{Passphrase: "EARLYROAMER"}
 	router := setupBetaRouter(h)
 
 	w := httptest.NewRecorder()

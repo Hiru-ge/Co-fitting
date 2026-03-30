@@ -3,8 +3,8 @@ package database
 import (
 	"errors"
 	"fmt"
-	"os"
 
+	"github.com/Hiru-ge/roamble/config"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -16,24 +16,19 @@ import (
 var DB *gorm.DB
 
 func Init() (*gorm.DB, error) {
-	user := os.Getenv("MYSQL_USER")
-	password := os.Getenv("MYSQL_PASSWORD")
-	host := os.Getenv("MYSQL_HOST")
-	port := os.Getenv("MYSQL_PORT")
-	database := os.Getenv("MYSQL_DATABASE")
-
-	if user == "" || password == "" || host == "" || port == "" || database == "" {
-		return nil, errors.New("missing required environment variables for database connection")
+	dbCfg, err := config.LoadDatabaseConfig()
+	if err != nil {
+		return nil, err
 	}
 
 	// Build DSN (Data Source Name)
 	// MYSQL_TLS: TiDB Cloud等TLS必須環境では "tidb" を設定。ローカル開発時は空でよい
 	params := "charset=utf8mb4&parseTime=True&loc=Local"
-	if tlsMode := os.Getenv("MYSQL_TLS"); tlsMode != "" {
-		params += "&tls=" + tlsMode
+	if dbCfg.TLSMode != "" {
+		params += "&tls=" + dbCfg.TLSMode
 	}
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s",
-		user, password, host, port, database, params)
+		dbCfg.User, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.Name, params)
 
 	// Connect to MySQL
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

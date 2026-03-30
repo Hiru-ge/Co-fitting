@@ -4,30 +4,25 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
 	"time"
 
+	"github.com/Hiru-ge/roamble/config"
 	"github.com/redis/go-redis/v9"
 )
 
 var RedisClient *redis.Client
 
 func InitRedis() (*redis.Client, error) {
-	host := os.Getenv("REDIS_HOST")
-	if host == "" {
-		host = "redis"
-	}
-	port := os.Getenv("REDIS_PORT")
-	if port == "" {
-		port = "6379"
+	redisCfg, err := config.LoadRedisConfig()
+	if err != nil {
+		return nil, err
 	}
 
-	password := os.Getenv("REDIS_PASSWORD")
 	opts := &redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", host, port),
-		Password: password,
+		Addr:     fmt.Sprintf("%s:%s", redisCfg.Host, redisCfg.Port),
+		Password: redisCfg.Password,
 	}
-	if os.Getenv("REDIS_TLS") == "true" {
+	if redisCfg.UseTLS {
 		opts.TLSConfig = &tls.Config{}
 	}
 	client := redis.NewClient(opts)

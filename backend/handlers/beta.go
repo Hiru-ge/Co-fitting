@@ -2,12 +2,13 @@ package handlers
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 )
 
-type BetaHandler struct{}
+type BetaHandler struct {
+	Passphrase string
+}
 
 type betaVerifyRequest struct {
 	Passphrase string `json:"passphrase" binding:"required"`
@@ -29,14 +30,13 @@ func (h *BetaHandler) VerifyPassphrase(c *gin.Context) {
 		return
 	}
 
-	expected := os.Getenv("BETA_PASSPHRASE")
-	if expected == "" {
+	if h.Passphrase == "" {
 		// 未設定の場合はベータゲート無効（開発環境向け）
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 		return
 	}
 
-	if req.Passphrase != expected {
+	if req.Passphrase != h.Passphrase {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid passphrase"})
 		return
 	}

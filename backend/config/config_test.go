@@ -68,3 +68,57 @@ func TestLoadJWTConfig_InvalidRefreshExpiry(t *testing.T) {
 		t.Fatal("expected error for invalid JWT_REFRESH_EXPIRY")
 	}
 }
+
+func TestLoadCORSConfig_WithMultipleOrigins(t *testing.T) {
+	t.Setenv("ALLOWED_ORIGIN", "https://roamble.app, http://localhost:5173")
+
+	cfg, err := LoadCORSConfig()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(cfg.AllowedOrigins) != 2 {
+		t.Fatalf("expected 2 origins, got %d", len(cfg.AllowedOrigins))
+	}
+	if cfg.AllowedOrigins[0] != "https://roamble.app" {
+		t.Errorf("unexpected first origin: %s", cfg.AllowedOrigins[0])
+	}
+	if cfg.AllowedOrigins[1] != "http://localhost:5173" {
+		t.Errorf("unexpected second origin: %s", cfg.AllowedOrigins[1])
+	}
+}
+
+func TestLoadCORSConfig_MissingOrigin(t *testing.T) {
+	t.Setenv("ALLOWED_ORIGIN", "")
+
+	_, err := LoadCORSConfig()
+	if err == nil {
+		t.Fatal("expected error when ALLOWED_ORIGIN is not set")
+	}
+}
+
+func TestLoadServerConfig_WithRequiredPort(t *testing.T) {
+	t.Setenv("PORT", "8000")
+	t.Setenv("ENVIRONMENT", "production")
+
+	cfg, err := LoadServerConfig()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg.Port != "8000" {
+		t.Errorf("expected port 8000, got %s", cfg.Port)
+	}
+	if cfg.Environment != "production" {
+		t.Errorf("expected environment production, got %s", cfg.Environment)
+	}
+}
+
+func TestLoadServerConfig_MissingPort(t *testing.T) {
+	t.Setenv("PORT", "")
+
+	_, err := LoadServerConfig()
+	if err == nil {
+		t.Fatal("expected error when PORT is not set")
+	}
+}

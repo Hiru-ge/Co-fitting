@@ -248,10 +248,10 @@ s
 
 #### 環境変数の config.go への集約（Issue #313）
 
-- [ ] `backend/config/config.go` にすべての環境変数の読み込みと起動時バリデーションを集約
+- [x] `backend/config/config.go` にすべての環境変数の読み込みと起動時バリデーションを集約
   - 対象: `MYSQL_*`（db.go）/ `REDIS_*`（redis.go）/ `PORT`（main.go）/ `ALLOWED_ORIGIN`（cors.go）/ `GOOGLE_*`（google_oauth.go）等
-- [ ] `ALLOWED_ORIGIN` 未設定時のフォールバック削除（未設定ならエラー）
-- [ ] 各ファイルの `os.Getenv` 直接呼び出しを `config` パッケージ経由に変更
+- [x] `ALLOWED_ORIGIN` 未設定時のフォールバック削除（未設定ならエラー）
+- [x] 各ファイルの `os.Getenv` 直接呼び出しを `config` パッケージ経由に変更
 
 ---
 
