@@ -62,14 +62,43 @@ s
 
 ### バグ修正
 
-#### ストリークリマインダー送信タイミング修正（Issue #305）
+#### ストリークカウント加算ロジックのバグ修正（Issue #303）
+
+**背景**: 現在は rolling window 方式（`days == 7` のときのみ streak++）のため、毎日訪問するユーザーが「7回ごとに streak++」になる。正しくはカレンダー週（月〜日）ベースで「先週訪問・今週訪問 → streak++」と判定すべき。
 
 **🔴 RED**
-- [ ] `backend/services/scheduler_test.go` に `TestFetchStreakReminderTargets_SevenDaysAgo` テスト追加（前回訪問から7日経過したユーザーが対象になるか検証）
+- [x] `backend/services/gamification_test.go` の `TestUpdateStreak` を週ベースの期待値に書き換え
+  - `"前回から6日後に訪問→streak_count変化なし"` → `"同じ週内の再訪問→streak_count変化なし"` に変更
+  - `"前回から7日後に訪問→streak_count増加"` → `"先週訪問・今週初めて訪問→streak_count増加"` に変更
+  - `"前回から8日後に訪問→streak_countリセット"` → `"2週以上前の訪問→streak_countリセット"` に変更
+  - `"暦週をまたぐ訪問（日曜→翌月曜=1日後）でリセットされない"` → `"暦週をまたぐ訪問（日曜→翌月曜）でstreak++"` に変更（期待値 2→3）
 
 **🟢 GREEN**
-- [ ] `backend/services/scheduler.go` の `fetchStreakReminderTargets`: `AddDate(0, 0, -6)` → `AddDate(0, 0, -7)` に修正
-- [ ] 変数名 `sixDaysAgoJST` / `sixDaysAgoEnd` → `sevenDaysAgoJST` / `sevenDaysAgoEnd` に変更
+- [x] `backend/services/gamification.go` の `UpdateStreak`: rolling window → カレンダー週ベースに変更
+  - `weekStart()` を使い `visitedWeekStart` / `lastWeekStart` を算出
+  - `weekDiff == 0` → 変化なし、`weekDiff == 1` → streak++、`weekDiff >= 2` → リセット
+
+**🔵 REFACTOR**
+- [ ] なし
+
+---
+
+#### ストリークリマインダー送信タイミング修正（Issue #305）
+
+**背景**: ストリーク判定がカレンダー週（月〜日）ベースになったため、リマインダーの条件も「今週まだ訪問していないユーザー」に変更する。日曜日に「今日行かないとストリークが切れる」通知を送る。
+
+**🔴 RED**
+- [x] `backend/services/scheduler_test.go` に `TestFetchStreakReminderTargets_NotVisitedThisWeek` テスト追加
+  - 今週訪問済みユーザー → 対象外
+  - 先週訪問・今週未訪問のユーザー → 対象
+  - streak_count=0 のユーザー → 対象外
+
+**🟢 GREEN**
+- [x] `backend/services/scheduler.go` のcron登録: `"0 7 * * *"` → `"0 7 * * 0"`（毎週日曜7時）に変更、コメントも更新
+- [x] `backend/services/scheduler.go` の `fetchStreakReminderTargets`: 「`streak_last` が今週月曜より前」条件に変更
+  - `weekStart(nowJST)` で今週月曜を算出
+  - `WHERE u.streak_last < thisMonday` に変更
+  - 変数名 `sixDaysAgoJST` / `sixDaysAgoEnd` を削除し `thisWeekMonday` に変更
 
 **🔵 REFACTOR**
 - [ ] なし

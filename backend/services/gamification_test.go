@@ -205,17 +205,27 @@ func TestUpdateStreak(t *testing.T) {
 		}
 	})
 
-	t.Run("前回から6日後に訪問→streak_count変化なし（継続）", func(t *testing.T) {
+	t.Run("同じ週内の再訪問→streak_count変化なし", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak2@example.com")
 
-		base := time.Now().Add(-6 * 24 * time.Hour)
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		now := time.Now().In(jst)
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		thisMonday := now.AddDate(0, 0, -(weekday - 1))
+		lastVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 10, 0, 0, 0, jst)
+		// 同じ週の水曜に再訪問
+		thisWednesday := lastVisit.AddDate(0, 0, 2)
+
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 3,
-			"streak_last":  base,
+			"streak_last":  lastVisit,
 		})
 
-		err := services.UpdateStreak(testDB, user.ID, time.Now())
+		err := services.UpdateStreak(testDB, user.ID, thisWednesday)
 		if err != nil {
 			t.Fatalf("UpdateStreak failed: %v", err)
 		}
@@ -225,22 +235,32 @@ func TestUpdateStreak(t *testing.T) {
 		if updated.StreakCount != 3 {
 			t.Errorf("expected streak_count=3 (no change), got %d", updated.StreakCount)
 		}
-		if updated.StreakLast == nil || !updated.StreakLast.After(base) {
+		if updated.StreakLast == nil || !updated.StreakLast.After(lastVisit) {
 			t.Error("expected streak_last to be updated")
 		}
 	})
 
-	t.Run("前回から7日後に訪問→streak_count増加（継続）", func(t *testing.T) {
+	t.Run("先週訪問・今週初めて訪問→streak_count増加", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak3@example.com")
 
-		base := time.Now().Add(-7 * 24 * time.Hour)
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		now := time.Now().In(jst)
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		thisMonday := now.AddDate(0, 0, -(weekday - 1))
+		lastMonday := thisMonday.AddDate(0, 0, -7)
+		lastVisit := time.Date(lastMonday.Year(), lastMonday.Month(), lastMonday.Day(), 10, 0, 0, 0, jst)
+		thisVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 10, 0, 0, 0, jst)
+
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 3,
-			"streak_last":  base,
+			"streak_last":  lastVisit,
 		})
 
-		err := services.UpdateStreak(testDB, user.ID, time.Now())
+		err := services.UpdateStreak(testDB, user.ID, thisVisit)
 		if err != nil {
 			t.Fatalf("UpdateStreak failed: %v", err)
 		}
@@ -252,15 +272,23 @@ func TestUpdateStreak(t *testing.T) {
 		}
 	})
 
-	t.Run("前回から8日後に訪問→streak_countリセット", func(t *testing.T) {
+	t.Run("2週以上前の訪問→streak_countリセット", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak4@example.com")
 
-		// 9日前: 8日を超えていることを明確にし、DB秒精度の丸めによる境界ゆれを回避
-		nineDaysAgo := time.Now().Add(-9 * 24 * time.Hour)
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		now := time.Now().In(jst)
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7
+		}
+		thisMonday := now.AddDate(0, 0, -(weekday - 1))
+		twoWeeksAgoMonday := thisMonday.AddDate(0, 0, -14)
+		lastVisit := time.Date(twoWeeksAgoMonday.Year(), twoWeeksAgoMonday.Month(), twoWeeksAgoMonday.Day(), 10, 0, 0, 0, jst)
+
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 5,
-			"streak_last":  nineDaysAgo,
+			"streak_last":  lastVisit,
 		})
 
 		err := services.UpdateStreak(testDB, user.ID, time.Now())
@@ -275,34 +303,35 @@ func TestUpdateStreak(t *testing.T) {
 		}
 	})
 
-	t.Run("暦週をまたぐ訪問（日曜→翌月曜=1日後）でリセットされない", func(t *testing.T) {
+	t.Run("暦週をまたぐ訪問（日曜→翌月曜）でstreak++", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "streak5@example.com")
 
-		// 直近の日曜日 23:00 に訪問済みとする
-		now := time.Now()
+		jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+		now := time.Now().In(jst)
 		weekday := int(now.Weekday())
 		if weekday == 0 {
 			weekday = 7
 		}
-		lastSunday := now.AddDate(0, 0, -(weekday)).Truncate(24 * time.Hour).Add(23 * time.Hour)
+		thisMonday := now.AddDate(0, 0, -(weekday - 1))
+		lastSunday := thisMonday.AddDate(0, 0, -1) // 今週月曜の前日 = 先週日曜
+		lastVisit := time.Date(lastSunday.Year(), lastSunday.Month(), lastSunday.Day(), 23, 0, 0, 0, jst)
+		thisVisit := time.Date(thisMonday.Year(), thisMonday.Month(), thisMonday.Day(), 9, 0, 0, 0, jst)
 
 		testDB.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 2,
-			"streak_last":  lastSunday,
+			"streak_last":  lastVisit,
 		})
 
-		// 翌月曜日（1日後）に訪問
-		nextMonday := lastSunday.Add(25 * time.Hour) // 翌月曜の0時を超えた時刻
-		err := services.UpdateStreak(testDB, user.ID, nextMonday)
+		err := services.UpdateStreak(testDB, user.ID, thisVisit)
 		if err != nil {
 			t.Fatalf("UpdateStreak failed: %v", err)
 		}
 
 		var updated models.User
 		testDB.First(&updated, user.ID)
-		if updated.StreakCount != 2 {
-			t.Errorf("expected streak_count=2 (no reset on week boundary), got %d", updated.StreakCount)
+		if updated.StreakCount != 3 {
+			t.Errorf("expected streak_count=3 (streak++ on week boundary), got %d", updated.StreakCount)
 		}
 	})
 }

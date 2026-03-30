@@ -3,6 +3,7 @@ package services_test
 import (
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/Hiru-ge/roamble/models"
 	"github.com/Hiru-ge/roamble/services"
@@ -94,4 +95,60 @@ func TestRunDailySuggestionNotification_SendsToSubscribers(t *testing.T) {
 	calledIDs := mockPush.CalledUserIDs()
 	assert.Contains(t, calledIDs, user1.ID, "Push購読ありユーザーにSendToUserが呼ばれるべき")
 	assert.NotContains(t, calledIDs, user2.ID, "Push購読なしユーザーには呼ばれないべき")
+}
+
+// TestRunStreakReminderNotification_NotVisitedThisWeek は
+// 「今週未訪問かつ streak_count > 0」のユーザーにのみリマインダーが送られることを検証する
+func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
+	cleanupNotificationSettings(t)
+	cleanupPushSubscriptions(t)
+	cleanupUsers(t)
+
+	jst := time.FixedZone("Asia/Tokyo", 9*60*60)
+	now := time.Now().In(jst)
+	weekday := int(now.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	thisMonday := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, jst)
+	lastMonday := thisMonday.AddDate(0, 0, -7)
+
+	// userA: 今週訪問済み → 対象外
+	userA := createUser(t, "streak-remind-a@example.com")
+	testDB.Model(&userA).Updates(map[string]interface{}{
+		"streak_count": 3,
+		"streak_last":  thisMonday.Add(10 * time.Hour),
+	})
+	subA := models.PushSubscription{UserID: userA.ID, Endpoint: "https://push.example.com/remind-a", P256DH: "keyA", Auth: "authA"}
+	require.NoError(t, testDB.Create(&subA).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userA.ID, PushEnabled: true, StreakReminder: true}).Error)
+
+	// userB: 先週訪問・今週未訪問 → 対象
+	userB := createUser(t, "streak-remind-b@example.com")
+	testDB.Model(&userB).Updates(map[string]interface{}{
+		"streak_count": 2,
+		"streak_last":  lastMonday.Add(10 * time.Hour),
+	})
+	subB := models.PushSubscription{UserID: userB.ID, Endpoint: "https://push.example.com/remind-b", P256DH: "keyB", Auth: "authB"}
+	require.NoError(t, testDB.Create(&subB).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userB.ID, PushEnabled: true, StreakReminder: true}).Error)
+
+	// userC: streak_count=0 → 対象外
+	userC := createUser(t, "streak-remind-c@example.com")
+	testDB.Model(&userC).Updates(map[string]interface{}{
+		"streak_count": 0,
+		"streak_last":  lastMonday.Add(10 * time.Hour),
+	})
+	subC := models.PushSubscription{UserID: userC.ID, Endpoint: "https://push.example.com/remind-c", P256DH: "keyC", Auth: "authC"}
+	require.NoError(t, testDB.Create(&subC).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userC.ID, PushEnabled: true, StreakReminder: true}).Error)
+
+	mockPush := &mockPushSender{}
+	sched := services.NewNotificationScheduler(mockPush, nil, testDB)
+	sched.RunStreakReminderNotification()
+
+	calledIDs := mockPush.CalledUserIDs()
+	assert.NotContains(t, calledIDs, userA.ID, "今週訪問済みユーザーには送らない")
+	assert.Contains(t, calledIDs, userB.ID, "先週訪問・今週未訪問ユーザーには送る")
+	assert.NotContains(t, calledIDs, userC.ID, "streak_count=0のユーザーには送らない")
 }

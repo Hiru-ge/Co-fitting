@@ -47,8 +47,8 @@ func (s *NotificationScheduler) Start() {
 	s.cron.AddFunc("0 7 * * *", func() { //nolint:errcheck
 		s.RunDailySuggestionNotification()
 	})
-	// ストリークリマインダー: 毎日朝7時 JST（前回訪問から6日目のユーザーに送信）
-	s.cron.AddFunc("0 7 * * *", func() { //nolint:errcheck
+	// ストリークリマインダー: 毎週日曜7時 JST（今週未訪問で「今日行かないとストリーク切れる」ユーザーに送信）
+	s.cron.AddFunc("0 7 * * 0", func() { //nolint:errcheck
 		s.RunStreakReminderNotification()
 	})
 	// 週次サマリー: 毎週月曜朝10時 JST
@@ -93,7 +93,7 @@ func (s *NotificationScheduler) RunDailySuggestionNotification() {
 	}
 }
 
-// RunStreakReminderNotification は前回訪問から6日経過（あと1日でストリーク切れ）かつstreak>0のユーザーにリマインダーを送信する
+// RunStreakReminderNotification は今週未訪問（streak_last が今週月曜より前）かつ streak_count > 0 のユーザーにリマインダーを送信する
 func (s *NotificationScheduler) RunStreakReminderNotification() {
 	targets, err := fetchStreakReminderTargets(s.db)
 	if err != nil {
@@ -229,12 +229,10 @@ type notificationTarget struct {
 }
 
 // fetchStreakReminderTargets はストリークリマインダー対象ユーザーを返す
-// 条件: streak_count > 0、streak_last がJST本日から6日前の日付、streak_reminder=true
+// 条件: streak_count > 0、streak_last が今週月曜より前（今週未訪問）、streak_reminder=true
 func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
-	// JST基準で6日前の日付範囲を計算（UTC変換）
-	nowJST := time.Now().In(jst)
-	sixDaysAgoJST := time.Date(nowJST.Year(), nowJST.Month(), nowJST.Day(), 0, 0, 0, 0, jst).AddDate(0, 0, -6)
-	sixDaysAgoEnd := sixDaysAgoJST.AddDate(0, 0, 1)
+	// JST基準で今週月曜0時を算出（これより前が「今週未訪問」）
+	thisWeekMonday := weekStart(time.Now())
 
 	type row struct {
 		UserID         uint64
@@ -252,7 +250,7 @@ func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
 			"ns.push_enabled, ns.email_enabled, ns.streak_reminder").
 		Joins("JOIN notification_settings ns ON ns.user_id = u.id").
 		Where("u.streak_count > 0 AND ns.streak_reminder = ?", true).
-		Where("u.streak_last >= ? AND u.streak_last < ?", sixDaysAgoJST, sixDaysAgoEnd).
+		Where("u.streak_last < ?", thisWeekMonday).
 		Scan(&rows).Error
 	if err != nil {
 		return nil, err

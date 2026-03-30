@@ -142,17 +142,11 @@ func calcGenreLevel(xp int) int {
 	return level
 }
 
-// dayStartJST は JST 基準の日付開始時刻（0:00:00 JST）を返す
-func dayStartJST(t time.Time) time.Time {
-	t = t.In(jst)
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, jst)
-}
-
-// UpdateStreak はストリークを更新する（ローリングウィンドウ方式）
-// JST カレンダー日数で判定する（DB の秒精度丸めの影響を受けない）
-// 前回訪問から6日以内（同日含む）→ 変化なし（StreakLastのみ更新）
-// 前回訪問から7日後 → streak_count++
-// 前回訪問から8日以上空いた → リセット（streak_count=1）
+// UpdateStreak はストリークを更新する（カレンダー週ベース方式）
+// JST の月〜日を1週として、週単位で streak_count を管理する
+// 同じ週に再訪問 → 変化なし（StreakLastのみ更新）
+// 隣接する週に訪問（weekDiff==1）→ streak_count++
+// 2週以上空いた（weekDiff>=2）→ リセット（streak_count=1）
 func UpdateStreak(db *gorm.DB, userID uint64, visitedAt time.Time) error {
 	var user models.User
 	if err := db.First(&user, userID).Error; err != nil {
@@ -166,23 +160,22 @@ func UpdateStreak(db *gorm.DB, userID uint64, visitedAt time.Time) error {
 		}).Error
 	}
 
-	// JST 日付単位で差分を計算（時刻の小数秒精度に依存しない）
-	visitedDay := dayStartJST(visitedAt)
-	lastDay := dayStartJST(*user.StreakLast)
-	days := int(visitedDay.Sub(lastDay).Hours() / 24)
+	visitedWeekStart := weekStart(visitedAt)
+	lastWeekStart := weekStart(*user.StreakLast)
+	weekDiff := int(visitedWeekStart.Sub(lastWeekStart).Hours() / (24 * 7))
 
-	switch {
-	case days < 7:
-		// 7日未満（同日〜6日後）→ 変化なし（StreakLastのみ更新）
+	switch weekDiff {
+	case 0:
+		// 同じ週 → 変化なし（StreakLastのみ更新）
 		return db.Model(&user).Update("streak_last", visitedAt).Error
-	case days == 7:
-		// ちょうど7日後 → streak++
+	case 1:
+		// 隣接する週 → streak++
 		return db.Model(&user).Updates(map[string]interface{}{
 			"streak_count": user.StreakCount + 1,
 			"streak_last":  visitedAt,
 		}).Error
 	default:
-		// 8日以上空いた → リセット
+		// 2週以上空いた → リセット
 		return db.Model(&user).Updates(map[string]interface{}{
 			"streak_count": 1,
 			"streak_last":  visitedAt,

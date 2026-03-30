@@ -151,7 +151,8 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 
 ```bash
 # バックエンド（handlers パッケージなど）
-cd backend && go test ./...
+# -p 1 でパッケージを直列実行（並列実行するとDB共有状態が競合してテストが不安定になるため）
+cd backend && go test -p 1 ./...
 
 # フロントエンド（Vitest）
 cd frontend && npx vitest run
@@ -166,6 +167,24 @@ cd frontend && npx playwright test
 ```
 
 E2E テストは `frontend/e2e/main-flow.spec.ts` に定義されている。バックエンドに変更（エンドポイント・認証・リダイレクト）を加えた場合は特に必ず確認すること。バックエンドのコードを変更した場合は `docker-compose restart backend` で再起動してから実行する。
+
+### 3. Lint（lefthook）
+
+ユニットテスト・E2E テストの後、必ず lefthook を通してから完了とすること。
+
+```bash
+# プロジェクトルートで実行
+lefthook run pre-commit
+```
+
+golangci-lint のキャッシュが古くて誤検知することがある。その場合はキャッシュをクリアしてから再実行する：
+
+```bash
+cd backend && golangci-lint cache clean
+cd .. && lefthook run pre-commit
+```
+
+`backend-lint` は `{staged_files}` を使わず全ファイルをチェックするため、`git add` なしでも動作確認できる。
 
 ### 注意事項
 
