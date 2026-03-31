@@ -750,7 +750,7 @@ $(document).ready(function() {
 
         const content = `
             <p>これは今月のおすすめレシピです。</p>
-            <p>このレシピに関する詳細な説明は、こちらの<a href="https://note.com/hiruge/n/n8436ba34a22e" target="_blank" style="color: #876b36; text-decoration: underline;">note</a>から確認することができます。</p>
+            <p>このレシピに関する詳細な説明は、こちらの<a href="https://note.com/hiruge/n/n6dbfba296351" target="_blank" style="color: #876b36; text-decoration: underline;">note</a>から確認することができます。</p>
         `;
 
         ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
