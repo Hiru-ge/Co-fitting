@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # IP取得ライブラリをインストール
-      - name: Public IP Install
+      # ランナーのパブリックIPを取得
+      - name: Get Public IP
         id: ip
-        uses: haythem/public-ip@v1.3
+        run: echo "ipv4=$(curl -s https://checkip.amazonaws.com)" >> $GITHUB_OUTPUT
 
       # BranchをCheckout
       - name: Checkout
