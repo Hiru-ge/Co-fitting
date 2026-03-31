@@ -33,7 +33,7 @@ export default function PushNotificationBanner({ token }: { token: string }) {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-30 rounded-2xl bg-gray-900 border border-white/10 shadow-lg p-4 flex items-start gap-3">
+    <div className="fixed bottom-36 left-4 right-4 z-30 rounded-2xl bg-gray-900 border border-white/10 shadow-lg p-4 flex items-start gap-3">
       <span className="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">
         notifications
       </span>
