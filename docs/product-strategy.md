@@ -1,6 +1,6 @@
 # Roamble — プロダクト戦略書
 
-> コンフォートゾーン脱却支援Webアプリケーション
+> 新しいお店・場所になかなか行けない人のためのWebアプリ
 > 最終更新: 2026-03-11（フェーズ順序修正: Phase 2=通知、Phase 3=iOS、Phase 4=AI強化、Phase 5=ソーシャル）
 
 ---
@@ -176,7 +176,7 @@ Phase 0は**公開環境には置かない**。自分だけでテストし、外
 
 **Product Hunt**（Phase 1完成後）:
 - 13:01 JST に投稿（日付切替直後）
-- タグライン例: "New places feel scary? Roamble nudges you out of your comfort zone — one place at a time, with RPG-style rewards"
+- タグライン例: "Always ending up at the same place? Roamble picks a new spot for you — one random suggestion at a time, with RPG-style rewards"
 - コメント欄をAMA形式で運用。開発背景・ロードマップ・欲しいフィードバックを明示
 
 **X (#BuildInPublic)**（Phase 0から継続）:

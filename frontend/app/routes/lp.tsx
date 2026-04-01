@@ -3,22 +3,22 @@ import { Link } from "react-router";
 import type { MetaFunction } from "react-router";
 
 export const meta: MetaFunction = () => [
-  { title: "Roamble：知らない場所への一歩を、経験値に。" },
+  { title: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ" },
   {
     name: "description",
     content:
-      "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの場所を提案し、行くたびにXP・バッジで成長を実感。iOSアプリも近日公開。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。iOS版も開発予定。",
   },
   { property: "og:type", content: "website" },
   { property: "og:url", content: "https://roamble.app/lp" },
   {
     property: "og:title",
-    content: "Roamble：知らない場所への一歩を、経験値に。",
+    content: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ",
   },
   {
     property: "og:description",
     content:
-      "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの場所を提案し、行くたびにXP・バッジで成長が実感できる。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。iOS版も開発予定。",
   },
   { property: "og:image", content: "https://roamble.app/ogp.png" },
   { property: "og:site_name", content: "Roamble" },
@@ -27,12 +27,12 @@ export const meta: MetaFunction = () => [
   { name: "twitter:site", content: "@roamble_app" },
   {
     name: "twitter:title",
-    content: "Roamble：知らない場所への一歩を、経験値に。",
+    content: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ",
   },
   {
     name: "twitter:description",
     content:
-      "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの場所を提案し、行くたびにXP・バッジで成長が実感できる。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。iOS版も開発予定。",
   },
   { name: "twitter:image", content: "https://roamble.app/ogp.png" },
   { tagName: "link", rel: "canonical", href: "https://roamble.app/lp" },
@@ -42,7 +42,7 @@ export const meta: MetaFunction = () => [
       "@type": "WebApplication",
       name: "Roamble",
       description:
-        "新しい店になかなか入れない人のための、コンフォートゾーン脱却アプリ。近くの新しい場所を提案し、訪問するたびにXP・バッジで成長を実感できる。",
+        "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。",
       url: "https://roamble.app/lp",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
@@ -127,7 +127,7 @@ export default function LP() {
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
                 知らない場所に踏み出すたびに、
-                <span className="font-semibold text-primary">経験値（XP）</span>
+                <span className="font-semibold text-primary">経験値</span>
                 が積み上がる。
                 <br />
                 日常の行動圏が、小さな冒険のフィールドになる。
@@ -186,11 +186,9 @@ export default function LP() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-center text-white/60 leading-relaxed">
-            それは、あなたの
-            <span className="font-semibold text-white">
-              「コンフォートゾーン」
-            </span>
-            が壁になっているサインです。
+            Roambleは、そんなあなたの
+            <span className="font-semibold text-white">勇気ある一歩</span>
+            をサポートします。
           </p>
         </div>
       </section>
@@ -218,7 +216,9 @@ export default function LP() {
                   <div>
                     <h3 className="font-bold text-base mb-1">1. 背中を押す</h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      現在地の近くから「まだ行ったことのない場所」を提案します。それはただの目的地ではなく、コンフォートゾーンを広げるための小さなクエストになります。
+                      現在地の近くから「まだ行ったことのない場所」をランダムに提案します。
+                      <br></br>
+                      選ぶ手間はゼロ。あとは勇気を出して踏み出すだけです。
                     </p>
                   </div>
                 </div>
@@ -249,7 +249,7 @@ export default function LP() {
                       提案された場所に実際に行き、「行った！」ボタンを押すことで
                       <span className="font-semibold text-primary">
                         {" "}
-                        XP（経験値）
+                        経験値
                       </span>
                       を獲得できます。「怖かったけど行けた」という成功体験が、確かな数値として積み上がります。
                     </p>
@@ -347,7 +347,7 @@ export default function LP() {
             作っている人
           </h2>
           <p className="text-sm text-white/70 leading-relaxed text-center mb-6">
-            コンフォートゾーンから出られない課題を持つ個人開発者が、「自分自身が使いたいと思えるアプリを作る」前提で開発に取り組んでいます。
+            新しいお店になかなか踏み出せない課題を持つ個人開発者が、「自分自身が使いたいと思えるアプリを作る」前提で開発に取り組んでいます。
             <br />
             開発の過程は X (Twitter) で #BuildInPublic として公開しています。
           </p>

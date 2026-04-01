@@ -57,7 +57,7 @@ export default function PWAPrompt() {
             Roamble
           </p>
           <p className="text-sm text-white/50">
-            コンフォートゾーンを抜け出そう
+            「また同じ店」を、卒業しよう。
           </p>
         </div>
 
