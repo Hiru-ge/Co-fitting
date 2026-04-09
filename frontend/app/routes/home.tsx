@@ -92,7 +92,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <div className="bg-background flex flex-col">
+    <div className="h-dvh bg-background flex flex-col">
       {isLoading ? (
         <>
           <AppHeader />
@@ -103,8 +103,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       ) : isCompleted ? (
         <>
           <AppHeader />
-          <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
-            <div className="relative w-full aspect-3/5">
+          <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 pb-20 pt-4 overflow-hidden">
+            <div className="flex-1 min-h-0 relative w-full">
               <CompleteCard />
             </div>
           </main>
@@ -121,7 +121,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </p>
             <button
               onClick={() => loadSuggestions()}
-              className="px-6 py-2 bg-primary text-white rounded-full font-bold"
+              className="px-6 py-2 bg-primary text-white rounded-3xl font-bold"
             >
               再試行
             </button>
@@ -134,11 +134,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             isDefaultLocation={isUsingDefaultLocation}
           />
 
-          <main className="flex-1 flex flex-col items-center justify-center px-6 pb-6 pt-4 overflow-hidden">
+          <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 pb-20 pt-4 overflow-hidden">
             {places.length > 0 && (
               <div
                 data-tour="discovery-cards"
-                className="relative w-full aspect-3/5"
+                className="flex-1 min-h-0 relative w-full"
               >
                 {places.slice(0, 3).map((place, i) => (
                   <DiscoveryCard
