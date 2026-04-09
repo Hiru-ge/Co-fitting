@@ -78,6 +78,73 @@ s
 
 ---
 
+## デイリーノートから洗い出した改善・バグ修正
+
+### XP獲得・バッジ取得時の効果音追加（Issue #320）
+
+> **背景**：訪問記録・XP付与・バッジ取得時に効果音がなく達成感が弱い。
+
+**🔴 RED**
+
+- [ ] `frontend/app/lib/sound.ts` の `playSoundEffect()` 呼び出しに対するユニットテスト（Web Audio API をモック）
+
+**🟢 GREEN**
+
+- [ ] 効果音ファイルを `frontend/public/sounds/` に追加（XP獲得音・バッジ取得音）
+- [ ] `frontend/app/lib/sound.ts` に `playSoundEffect(type: 'xp' | 'badge'): void` 実装
+- [ ] 訪問記録完了・バッジ取得確認の各コンポーネントで `playSoundEffect()` を呼び出す
+
+**🔵 REFACTOR**
+
+- [ ] なし
+
+### スポット一時スキップ機能（Issue #321）
+
+> **背景**：気になっているが今日は行けない・行きたくない場合に「N日間この場所を表示しない」と設定できると、提案リストの体感精度が上がる。
+
+**🔴 RED**
+
+- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_ExcludesSkippedSpots` テスト追加（スキップ登録済みの場所が提案に含まれないことを検証）
+
+**🟢 GREEN**
+
+- [ ] `backend/models/skip.go` に `SpotSkip` 構造体追加（`user_id uint64`, `place_id string`, `skip_until time.Time`）
+- [ ] `backend/database/migrate.go` の AutoMigrate に `SpotSkip` 追加
+- [ ] `POST /api/spots/:place_id/skip` エンドポイント実装（ボディ: `{ days: int }`）
+- [ ] `backend/handlers/suggestion.go` のフィルタリングで有効期限内スキップ対象の場所を除外
+- [ ] `frontend/app/api/spots.ts` に `skipSpot(placeId: string, days: number)` 追加
+- [ ] 提案カードに「N日間スキップ」ボタン追加・`skipSpot()` 呼び出し実装
+
+**🔵 REFACTOR**
+
+- [ ] 期限切れ `SpotSkip` レコードの定期削除をスケジューラーに追加
+
+---
+
+### 多言語対応・英語UI（Issue #322）
+
+> **背景**：ベータ版は日本語のみ。Product Hunt等での国際展開・海外ユーザー獲得に向けて、UIを英語に切り替えられるようにする。ブラウザの `Accept-Language` を優先し、設定画面から手動切り替えも可能にする。フォールバックは日本語。
+
+**🔴 RED**
+
+- [ ] `frontend/app/i18n/ja.json` と `en.json` のキー集合が一致することを検証するテスト追加（翻訳漏れをCIで検出）
+
+**🟢 GREEN**
+
+- [ ] `react-i18next` / `i18next` / `i18next-browser-languagedetector` を追加（`npm install react-i18next i18next i18next-browser-languagedetector`）
+- [ ] `frontend/app/i18n/ja.json`（既存日本語テキストをキー化）と `frontend/app/i18n/en.json`（英語翻訳）を作成
+- [ ] `frontend/app/i18n/index.ts` で i18next 初期化（ブラウザ言語検出・フォールバック `ja`）
+- [ ] `frontend/app/root.tsx` に `I18nextProvider` を追加
+- [ ] 各ルートファイルのハードコード文字列を `t('キー')` に置換
+- [ ] `frontend/app/routes/settings.tsx` に言語切り替えセレクタ追加（`ja` / `en`）
+- [ ] バックエンドの主要エラーレスポンス `message` フィールドを `Accept-Language` ヘッダーに応じて日英切り替え
+
+**🔵 REFACTOR**
+
+- [ ] 翻訳キーを `画面名.要素名` の階層構造に統一（例：`suggestions.emptyState`、`profile.levelBadge`）
+
+---
+
 ## Phase 2 計画 — 通知機能（実装済み）
 
 > 詳細は `docs/notification-roadmap.md` を参照。
