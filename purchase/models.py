@@ -60,7 +60,7 @@ class StripeService:
             stripe.Subscription.modify(
                 subscription_id,
                 items=[{
-                    'id': subscription['items']['data'][0].id,
+                    'id': subscription.items.data[0].id,
                     'price': new_price_id,
                 }],
                 proration_behavior='always_invoice',  # 差額を即時請求
@@ -114,8 +114,9 @@ class SubscriptionManager:
         """Checkoutセッション完了時の処理"""
         session = event.data.object
         customer_id = session.customer
-        user_id = session.get("metadata", {}).get("user_id")
-        plan_type = session.get("metadata", {}).get("plan_type", AppConstants.PLAN_BASIC)
+        metadata = getattr(session, 'metadata', None) or {}
+        user_id = getattr(metadata, 'user_id', None)
+        plan_type = getattr(metadata, 'plan_type', AppConstants.PLAN_BASIC)
 
         try:
             user = User.objects.get(id=user_id)
@@ -146,8 +147,9 @@ class SubscriptionManager:
                 # サブスクリプション期間終了日を取得
                 from datetime import datetime
                 period_end_date = None
-                if subscription.get('current_period_end'):
-                    period_end_date = datetime.fromtimestamp(subscription['current_period_end'])
+                current_period_end = getattr(subscription, 'current_period_end', None)
+                if current_period_end:
+                    period_end_date = datetime.fromtimestamp(current_period_end)
 
                 # キャンセルメールを送信
                 if old_plan_type != AppConstants.PLAN_FREE:
@@ -155,10 +157,11 @@ class SubscriptionManager:
 
             elif status in AppConstants.ACTIVE_STATUSES:
                 # アクティブな場合、Price IDまたはメタデータからプランタイプを取得
-                new_plan_type = subscription.get("metadata", {}).get("plan_type")
+                sub_metadata = getattr(subscription, 'metadata', None) or {}
+                new_plan_type = getattr(sub_metadata, 'plan_type', None)
                 if not new_plan_type:
                     # メタデータにない場合、Price IDから判別
-                    price_id = subscription['items']['data'][0]['price']['id']
+                    price_id = subscription.items.data[0].price.id
                     new_plan_type = StripeService.get_plan_type_from_price_id(price_id)
                 if not new_plan_type:
                     # 判別できない場合はBASICとして扱う
@@ -261,14 +264,16 @@ class SubscriptionManager:
             user = User.objects.get(stripe_customer_id=customer_id)
 
             # サブスクリプション情報から現在のプランを取得
-            if invoice.get('subscription'):
+            invoice_subscription = getattr(invoice, 'subscription', None)
+            if invoice_subscription:
                 stripe.api_key = AppConstants.STRIPE_API_KEY
-                subscription = stripe.Subscription.retrieve(invoice['subscription'])
+                subscription = stripe.Subscription.retrieve(invoice_subscription)
 
                 # メタデータまたはPrice IDからプランタイプを取得
-                plan_type = subscription.get("metadata", {}).get("plan_type")
+                sub_metadata = getattr(subscription, 'metadata', None) or {}
+                plan_type = getattr(sub_metadata, 'plan_type', None)
                 if not plan_type:
-                    price_id = subscription['items']['data'][0]['price']['id']
+                    price_id = subscription.items.data[0].price.id
                     plan_type = StripeService.get_plan_type_from_price_id(price_id)
                 if not plan_type:
                     plan_type = AppConstants.PLAN_BASIC
@@ -277,7 +282,7 @@ class SubscriptionManager:
                 user.save()
 
                 # 継続課金メールを送信（初回課金との重複を避けるため、billing_reasonをチェック）
-                billing_reason = invoice.get('billing_reason')
+                billing_reason = getattr(invoice, 'billing_reason', None)
                 if billing_reason == 'subscription_cycle':
                     # 定期更新の場合のみメール送信
                     EmailService.send_subscription_renewed_email(user, plan_type)

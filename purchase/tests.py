@@ -1,5 +1,6 @@
 from django.urls import reverse
 from unittest.mock import MagicMock, patch
+from types import SimpleNamespace
 import json
 from Co_fitting.tests.helpers import create_test_user, create_test_recipe, login_test_user, BaseTestCase
 from recipes.models import PresetRecipe
@@ -70,16 +71,13 @@ class StripePaymentTest(BaseTestCase):
         }
 
         # Stripeのサブスクリプション取得をモック
-        mock_subscription = {
-            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
-            "items": {
-                "data": [{
-                    "price": {
-                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
-                    }
-                }]
-            }
-        }
+        mock_subscription = SimpleNamespace(
+            metadata=SimpleNamespace(plan_type=AppConstants.PLAN_BASIC),
+            items=SimpleNamespace(data=[SimpleNamespace(
+                price=SimpleNamespace(id=AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")),
+                id="si_test123"
+            )])
+        )
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
              patch("stripe.Subscription.retrieve", return_value=mock_subscription):
@@ -381,16 +379,13 @@ class PurchaseWebhookTestCase(BaseTestCase):
         }
 
         # Stripeのサブスクリプション取得をモック
-        mock_subscription = {
-            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
-            "items": {
-                "data": [{
-                    "price": {
-                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
-                    }
-                }]
-            }
-        }
+        mock_subscription = SimpleNamespace(
+            metadata=SimpleNamespace(plan_type=AppConstants.PLAN_BASIC),
+            items=SimpleNamespace(data=[SimpleNamespace(
+                price=SimpleNamespace(id=AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")),
+                id="si_test123"
+            )])
+        )
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
              patch("stripe.Subscription.retrieve", return_value=mock_subscription):
@@ -513,16 +508,13 @@ class PurchaseIntegrationTestCase(BaseTestCase):
         }
 
         # Stripeのサブスクリプション取得をモック
-        mock_subscription = {
-            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
-            "items": {
-                "data": [{
-                    "price": {
-                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
-                    }
-                }]
-            }
-        }
+        mock_subscription = SimpleNamespace(
+            metadata=SimpleNamespace(plan_type=AppConstants.PLAN_BASIC),
+            items=SimpleNamespace(data=[SimpleNamespace(
+                price=SimpleNamespace(id=AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")),
+                id="si_test123"
+            )])
+        )
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
              patch("stripe.Subscription.retrieve", return_value=mock_subscription):
@@ -1296,15 +1288,14 @@ class SubscriptionManagerEdgeCaseTestCase(BaseTestCase):
         self.user.stripe_customer_id = 'cus_test123'
         self.user.save()
 
-        mock_subscription = {
-            "id": "sub_test123",
-            "metadata": {"plan_type": AppConstants.PLAN_PREMIUM},
-            "items": {
-                "data": [{
-                    "price": {"id": "price_test"}
-                }]
-            }
-        }
+        mock_subscription = SimpleNamespace(
+            id="sub_test123",
+            metadata=SimpleNamespace(plan_type=AppConstants.PLAN_PREMIUM),
+            items=SimpleNamespace(data=[SimpleNamespace(
+                price=SimpleNamespace(id="price_test"),
+                id="si_test123"
+            )])
+        )
         mock_retrieve.return_value = mock_subscription
 
         event_data = {
