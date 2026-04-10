@@ -21,6 +21,7 @@ steps:
       - roamble-backend
       - --image=asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest
       - --region=asia-northeast1
+      - --min-instances=0
 
 images:
   - asia-northeast1-docker.pkg.dev/roamble/roamble/backend:latest
