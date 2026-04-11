@@ -519,8 +519,6 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 | Method | Path | Phase | 備考 |
 |--------|------|-------|------|
-| ~~POST~~ | ~~`/api/auth/signup`~~ | ~~Phase 0~~ | **廃止** — Google OAuth移行により削除 |
-| ~~POST~~ | ~~`/api/auth/login`~~ | ~~Phase 0~~ | **廃止** — Google OAuth移行により削除 |
 | POST | `/api/auth/refresh` | Phase 0 | |
 | POST | `/api/auth/logout` | Phase 0 | |
 | POST | `/api/auth/oauth/google` | Phase 1 | **認証の唯一のエントリポイント** |
@@ -531,17 +529,18 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 |--------|------|-------|
 | GET | `/api/users/me` | Phase 0 | |
 | PATCH | `/api/users/me` | Phase 1 | display_name・search_radius を更新可（avatar_urlはGoogle提供）。`?refresh_suggestions=true` を付与 + search_radius 変更時はキャッシュクリア + リロードカウントインクリメント。レスポンスに `reload_count_remaining` を含む |
-| ~~PATCH~~ | ~~`/api/users/me/email`~~ | ~~Phase 1~~ | **廃止** — Google OAuth移行により削除 |
 | GET | `/api/users/me/stats` | Phase 1 | |
 | DELETE | `/api/users/me` | Phase 1 | |
+| GET | `/api/users/me/interests` | Phase 1 |
+| PUT | `/api/users/me/interests` | Phase 1 | `?refresh_suggestions=true` を付与するとキャッシュクリア + リロードカウントインクリメント。レスポンス: `{ interests: Interest[], reload_count_remaining: number }` |
+| GET | `/api/users/me/badges` | Phase 1 |
+| GET | `/api/users/me/proficiency` | Phase 1 |
 
 ### 5.3 興味タグ
 
 | Method | Path | Phase |
 |--------|------|-------|
 | GET | `/api/genres` | Phase 1 |
-| GET | `/api/users/me/interests` | Phase 1 |
-| PUT | `/api/users/me/interests` | Phase 1 | `?refresh_suggestions=true` を付与するとキャッシュクリア + リロードカウントインクリメント。レスポンス: `{ interests: Interest[], reload_count_remaining: number }` |
 
 ### 5.4 提案
 
@@ -569,9 +568,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 | Method | Path | Phase |
 |--------|------|-------|
-| GET | `/api/users/me/badges` | Phase 1 |
 | GET | `/api/badges` | Phase 1 |
-| GET | `/api/users/me/proficiency` | Phase 1 |
 
 ### 5.8 通知
 

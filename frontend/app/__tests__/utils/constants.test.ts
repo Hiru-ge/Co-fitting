@@ -32,7 +32,7 @@ describe("constants", () => {
     const constants = await import("../../utils/constants");
     expect(constants.API_BASE_URL).toBeDefined();
     expect(typeof constants.API_BASE_URL).toBe("string");
-    expect(constants.API_BASE_URL.startsWith("http")).toBe(true);
+    expect(constants.API_BASE_URL!.startsWith("http")).toBe(true);
   });
 
   it("その他の定数は変更されない", async () => {

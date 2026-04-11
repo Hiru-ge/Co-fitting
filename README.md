@@ -98,10 +98,10 @@ make db-shell
 │   │   ├── layouts/            # 共通レイアウト（app-layout, auth-layout）
 │   │   ├── components/         # 再利用UIコンポーネント（card, modal, toast, nav...）
 │   │   ├── hooks/              # カスタムフック
-│   │   ├── api/                # APIクライアント（client.ts + 各エンドポイント）
-│   │   ├── lib/                # 認証・トークン管理・GA・PWA などのユーティリティ
-│   │   ├── types/              # TypeScript型定義
-│   │   ├── utils/              # 汎用ユーティリティ（level, badge-icon, geolocation...）
+│   │   ├── api/                # バックエンドAPIへのリクエスト層（送信・レスポンス返却のみ。状態管理しない）
+│   │   ├── lib/                # アプリ固有の統合層（トークン管理・GA・PWA など、状態や副作用を伴うもの）
+│   │   ├── types/              # TypeScript型定義（複数ファイルをまたいで参照される共有型のみ。単一ファイル内でしか使わない型はそのファイル内にインライン定義する）
+│   │   ├── utils/              # 汎用ユーティリティ（ドメイン知識ゼロ。どのアプリにも持ち出せるもの）
 │   │   └── __tests__/          # Vitest ユニットテスト
 │   ├── e2e/                    # Playwright E2Eテスト
 │   ├── Dockerfile

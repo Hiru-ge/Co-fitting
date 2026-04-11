@@ -15,7 +15,7 @@ import { GA4_ID, sendPageView } from "~/lib/gtag";
 import { registerSW } from "virtual:pwa-register";
 registerSW({ immediate: true });
 
-/** /beta-gate 以外の全ルートでベータ版合言葉を確認する */
+/** パスに応じてベータ版合言葉を要求する */
 export async function clientLoader({ request }: { request: Request }) {
   const { pathname } = new URL(request.url);
   if (

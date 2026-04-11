@@ -83,6 +83,7 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 - API呼び出しは `app/api/client.ts` の `apiCall()` ヘルパー経由で行う
 - **ベータ合言葉**管理は `app/lib/beta-access.ts` に集約。`isUnlocked` / `unlockBeta` / `lockBeta`。未解錠ユーザーは `root.tsx` の `clientLoader` で `/beta-gate` にリダイレクトされる。`VITE_BETA_PASSPHRASE` 環境変数で合言葉を設定（ローカルの `.env` では `EARLYROAMER`）。ベータ期間終了後は本変数を削除し beta-gate ルートを廃止する
 - **GA4 イベント送信**は `app/lib/gtag.ts` に集約。`sendVisitRecorded` / `sendBadgeEarned` / `sendSuggestionGenerated` 等のラッパー関数を使い、直接 `window.gtag()` を呼び出さないこと。`VITE_GA4_ID` が未設定のときは noop になる（ローカル開発では送信されない）
+- **`components/` への切り出し基準**: 以下のいずれかを満たす場合に切り出す。(1) 「ロジックが壊れてもE2E・手動確認では気づきにくい」 — state遷移・条件付きレンダリング分岐・DOM計算・外部コンテキスト統合などのロジックを持つ場合は `components/` に出してテストを書く。(2) 「現在実際に2箇所以上で使われている」 — 純粋な表示ラッパーであっても、既に複数ファイルで使われているなら切り出してDRYにする。「将来使い回せそう」という予測を理由にした先行切り出しはしない。(3) 「親ファイルが読みにくくなるほど複雑になっている」 — 単一責任を超えて親コンポーネントの認知負荷が上がっている場合は分割する（Kent C. Dodds "When to Break Up a Component"）。JSXの行数が多いこと自体は判断基準にならない。実際の問題（読みにくさ・テストの困難・チームの摩擦）を経験してから分割する。
 
 ## アーキテクチャ方針
 
