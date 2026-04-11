@@ -57,36 +57,38 @@ func cleanupDailySuggestionKeys(t *testing.T) {
 	}
 }
 
+func TestGenerateDailySuggestionCacheKey_NoLatLng(t *testing.T) {
+	t.Run("緯度経度が異なっても同一ユーザー・日付なら同じキーが返る", func(t *testing.T) {
+		key1 := GenerateDailySuggestionCacheKey("user1", "2026-04-11")
+		key2 := GenerateDailySuggestionCacheKey("user1", "2026-04-11")
+		if key1 != key2 {
+			t.Errorf("Expected same key for same user/date regardless of location, got '%s' and '%s'", key1, key2)
+		}
+	})
+}
+
 func TestDailySuggestionCacheKey(t *testing.T) {
 	t.Run("キャッシュキーが正しいフォーマットで生成される", func(t *testing.T) {
-		key := GenerateDailySuggestionCacheKey("123", "2026-02-15", 35.6762, 139.6503)
-		expected := "suggestion:daily:123:2026-02-15:35.68_139.65"
+		key := GenerateDailySuggestionCacheKey("123", "2026-02-15")
+		expected := "suggestion:daily:123:2026-02-15"
 		if key != expected {
 			t.Errorf("Expected key '%s', got '%s'", expected, key)
 		}
 	})
 
 	t.Run("異なるユーザーIDで異なるキーが生成される", func(t *testing.T) {
-		key1 := GenerateDailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
-		key2 := GenerateDailySuggestionCacheKey("user2", "2026-02-15", 35.68, 139.65)
+		key1 := GenerateDailySuggestionCacheKey("user1", "2026-02-15")
+		key2 := GenerateDailySuggestionCacheKey("user2", "2026-02-15")
 		if key1 == key2 {
 			t.Errorf("Expected different keys for different users, got same: '%s'", key1)
 		}
 	})
 
 	t.Run("異なる日付で異なるキーが生成される", func(t *testing.T) {
-		key1 := GenerateDailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65)
-		key2 := GenerateDailySuggestionCacheKey("123", "2026-02-16", 35.68, 139.65)
+		key1 := GenerateDailySuggestionCacheKey("123", "2026-02-15")
+		key2 := GenerateDailySuggestionCacheKey("123", "2026-02-16")
 		if key1 == key2 {
 			t.Errorf("Expected different keys for different dates, got same: '%s'", key1)
-		}
-	})
-
-	t.Run("大きく異なる位置情報で異なるキーが生成される", func(t *testing.T) {
-		key1 := GenerateDailySuggestionCacheKey("123", "2026-02-15", 35.68, 139.65)
-		key2 := GenerateDailySuggestionCacheKey("123", "2026-02-15", 36.00, 140.00)
-		if key1 == key2 {
-			t.Errorf("Expected different keys for different locations, got same: '%s'", key1)
 		}
 	})
 }
@@ -96,7 +98,7 @@ func TestGetDailySuggestions(t *testing.T) {
 		cleanupDailySuggestionKeys(t)
 		ctx := context.Background()
 
-		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65)
+		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -110,10 +112,10 @@ func TestGetDailySuggestions(t *testing.T) {
 		ctx := context.Background()
 
 		cachedData := `[{"place_id":"p1","name":"テストカフェ"},{"place_id":"p2","name":"テスト公園"},{"place_id":"p3","name":"テストバー"}]`
-		key := GenerateDailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
+		key := GenerateDailySuggestionCacheKey("user1", "2026-02-15")
 		testRedisClient.Set(ctx, key, cachedData, 24*time.Hour)
 
-		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65)
+		result, err := GetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -129,13 +131,13 @@ func TestSetDailySuggestions(t *testing.T) {
 		ctx := context.Background()
 
 		data := `[{"place_id":"p1","name":"テストカフェ"}]`
-		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, data, 24*time.Hour)
+		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", data, 24*time.Hour)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 
 		// 保存されたデータを検証
-		key := GenerateDailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
+		key := GenerateDailySuggestionCacheKey("user1", "2026-02-15")
 		result, err := testRedisClient.Get(ctx, key).Result()
 		if err != nil {
 			t.Fatalf("Failed to get cached data: %v", err)
@@ -151,12 +153,12 @@ func TestSetDailySuggestions(t *testing.T) {
 
 		data := `[{"place_id":"p1"}]`
 		ttl := 24 * time.Hour
-		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", 35.68, 139.65, data, ttl)
+		err := SetDailySuggestions(ctx, testRedisClient, "user1", "2026-02-15", data, ttl)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
 
-		key := GenerateDailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
+		key := GenerateDailySuggestionCacheKey("user1", "2026-02-15")
 		remainingTTL, err := testRedisClient.TTL(ctx, key).Result()
 		if err != nil {
 			t.Fatalf("Failed to get TTL: %v", err)
@@ -175,10 +177,10 @@ func TestClearDailySuggestionsCache(t *testing.T) {
 		ctx := context.Background()
 
 		// user1のキャッシュを2つ作成（日付違い）
-		key1 := GenerateDailySuggestionCacheKey("user1", "2026-02-15", 35.68, 139.65)
-		key2 := GenerateDailySuggestionCacheKey("user1", "2026-02-14", 35.68, 139.65)
+		key1 := GenerateDailySuggestionCacheKey("user1", "2026-02-15")
+		key2 := GenerateDailySuggestionCacheKey("user1", "2026-02-14")
 		// user2のキャッシュを1つ作成
-		key3 := GenerateDailySuggestionCacheKey("user2", "2026-02-15", 35.68, 139.65)
+		key3 := GenerateDailySuggestionCacheKey("user2", "2026-02-15")
 
 		testRedisClient.Set(ctx, key1, `[{"place_id":"p1"}]`, 24*time.Hour)
 		testRedisClient.Set(ctx, key2, `[{"place_id":"p2"}]`, 24*time.Hour)
@@ -303,7 +305,7 @@ func TestClearDailySuggestionsCacheDoesNotClearLimitReached(t *testing.T) {
 		ctx := context.Background()
 
 		// リストキャッシュと上限到達フラグを両方設定する
-		listKey := GenerateDailySuggestionCacheKey("user1", "2026-02-26", 35.68, 139.65)
+		listKey := GenerateDailySuggestionCacheKey("user1", "2026-02-26")
 		testRedisClient.Set(ctx, listKey, `[{"place_id":"p1"}]`, 24*time.Hour)
 
 		err := SetDailyLimitReached(ctx, testRedisClient, "user1", "2026-02-26", 24*time.Hour)
@@ -450,7 +452,7 @@ func TestIncrementDailyReloadCount(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		listKey := GenerateDailySuggestionCacheKey("user1", "2026-02-27", 35.68, 139.65)
+		listKey := GenerateDailySuggestionCacheKey("user1", "2026-02-27")
 		testRedisClient.Set(ctx, listKey, `[{"place_id":"p1"}]`, 24*time.Hour)
 
 		// リストキャッシュを削除

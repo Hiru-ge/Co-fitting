@@ -153,13 +153,14 @@ s
 
 **🔴 RED**
 
-- [ ] `backend/database/redis_test.go` に `TestGenerateDailySuggestionCacheKey_NoLatLng` テスト追加（緯度経度が異なる2回の呼び出しで同一キーが返ることを検証）
+- [x] `backend/database/redis_test.go` に `TestGenerateDailySuggestionCacheKey_NoLatLng` テスト追加（緯度経度が異なる2回の呼び出しで同一キーが返ることを検証）
+- [x] その他テストコード内で `GenerateDailySuggestionCacheKey` / `GetDailySuggestions` / `SetDailySuggestions` を呼び出している箇所の引数から緯度経度を削除
 
 **🟢 GREEN**
 
-- [ ] `backend/database/redis.go` の `GenerateDailySuggestionCacheKey(userID, date string, lat, lng float64) string` から `lat, lng float64` 引数を削除し、`fmt.Sprintf("suggestion:daily:%s:%s", userID, date)` 形式に変更
-- [ ] `GetDailySuggestions` / `SetDailySuggestions` のシグネチャからも `lat, lng float64` を削除
-- [ ] `backend/handlers/suggestion.go` の呼び出し箇所を合わせて修正
+- [x] `backend/database/redis.go` の `GenerateDailySuggestionCacheKey(userID, date string, lat, lng float64) string` から `lat, lng float64` 引数を削除し、`fmt.Sprintf("suggestion:daily:%s:%s", userID, date)` 形式に変更
+- [x] `GetDailySuggestions` / `SetDailySuggestions` のシグネチャからも `lat, lng float64` を削除
+- [x] `backend/handlers/suggestion.go` の呼び出し箇所を合わせて修正
 
 **🔵 REFACTOR**
 

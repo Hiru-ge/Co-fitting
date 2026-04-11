@@ -619,9 +619,9 @@ func TestDeleteMe(t *testing.T) {
 		ctx := context.Background()
 		userIDStr := fmt.Sprintf("%d", user.ID)
 		today := time.Now().Format("2006-01-02")
-		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.0, 135.0, `{"places":[]}`, 24*time.Hour) //nolint:errcheck
-		database.SetDailyLimitReached(ctx, testRedisClient, userIDStr, today, 24*time.Hour)                              //nolint:errcheck
-		database.IncrementDailyReloadCount(ctx, testRedisClient, userIDStr, today, 24*time.Hour)                         //nolint:errcheck
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, `{"places":[]}`, 24*time.Hour) //nolint:errcheck
+		database.SetDailyLimitReached(ctx, testRedisClient, userIDStr, today, 24*time.Hour)                 //nolint:errcheck
+		database.IncrementDailyReloadCount(ctx, testRedisClient, userIDStr, today, 24*time.Hour)            //nolint:errcheck
 
 		token := generateTestToken(user.ID)
 

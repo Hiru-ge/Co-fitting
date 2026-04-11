@@ -352,7 +352,7 @@ func TestUpdateInterestsWithRefreshSuggestions(t *testing.T) {
 		ctx := context.Background()
 		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", user.ID)
-		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.67, 139.65, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
 
 		token := generateTestToken(user.ID)
 		body := map[string]interface{}{
@@ -414,7 +414,7 @@ func TestUpdateInterestsWithRefreshSuggestions(t *testing.T) {
 		}
 
 		// 日次キャッシュを設定
-		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, 35.67, 139.65, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
+		database.SetDailySuggestions(ctx, testRedisClient, userIDStr, today, `[{"place_id":"dummy"}]`, 24*time.Hour) //nolint:errcheck
 
 		token := generateTestToken(user.ID)
 		body := map[string]interface{}{

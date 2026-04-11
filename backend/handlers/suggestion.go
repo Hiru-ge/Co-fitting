@@ -286,7 +286,7 @@ func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID
 		return nil, false
 	}
 
-	cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng)
+	cached, err := database.GetDailySuggestions(ctx, h.RedisClient, userIDStr, today)
 	if err == nil && cached != "" {
 		var dailyPlaces []services.PlaceResult
 		if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
@@ -448,7 +448,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 
 	if h.RedisClient != nil {
 		data, _ := json.Marshal(selected)
-		if err := database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, req.Lat, req.Lng, string(data), 24*time.Hour); err != nil {
+		if err := database.SetDailySuggestions(ctx, h.RedisClient, userIDStr, today, string(data), 24*time.Hour); err != nil {
 			log.Printf("suggestion: failed to set daily suggestions cache: %v", err)
 		}
 	}

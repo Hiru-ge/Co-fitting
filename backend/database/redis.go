@@ -82,12 +82,12 @@ func ScanKeysByPattern(ctx context.Context, client *redis.Client, pattern string
 	return allKeys, nil
 }
 
-func GenerateDailySuggestionCacheKey(userID string, date string, lat, lng float64) string {
-	return fmt.Sprintf("suggestion:daily:%s:%s:%.2f_%.2f", userID, date, lat, lng)
+func GenerateDailySuggestionCacheKey(userID string, date string) string {
+	return fmt.Sprintf("suggestion:daily:%s:%s", userID, date)
 }
 
-func GetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64) (string, error) {
-	key := GenerateDailySuggestionCacheKey(userID, date, lat, lng)
+func GetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string) (string, error) {
+	key := GenerateDailySuggestionCacheKey(userID, date)
 	result, err := client.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return "", nil
@@ -98,8 +98,8 @@ func GetDailySuggestions(ctx context.Context, client *redis.Client, userID strin
 	return result, nil
 }
 
-func SetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, lat, lng float64, data string, ttl time.Duration) error {
-	key := GenerateDailySuggestionCacheKey(userID, date, lat, lng)
+func SetDailySuggestions(ctx context.Context, client *redis.Client, userID string, date string, data string, ttl time.Duration) error {
+	key := GenerateDailySuggestionCacheKey(userID, date)
 	return client.Set(ctx, key, data, ttl).Err()
 }
 
