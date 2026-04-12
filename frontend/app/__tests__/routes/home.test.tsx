@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { StrictMode } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApiError } from "~/utils/error";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -142,6 +143,7 @@ vi.mock("~/api/users", () => ({
 import Home from "~/routes/home";
 
 function renderHome() {
+  const queryClient = new QueryClient();
   const loaderData = {
     user: {
       id: 1,
@@ -154,34 +156,39 @@ function renderHome() {
     token: "test-token",
   };
   return render(
-    <Home
-      loaderData={loaderData as any}
-      params={{} as any}
-      matches={[] as any}
-    />,
-  );
-}
-
-function renderHomeStrict() {
-  const loaderData = {
-    user: {
-      id: 1,
-      email: "test@example.com",
-      display_name: "テストユーザー",
-      avatar_url: null,
-      created_at: "2024-01-01",
-      updated_at: "2024-01-01",
-    },
-    token: "test-token",
-  };
-  return render(
-    <StrictMode>
+    <QueryClientProvider client={queryClient}>
       <Home
         loaderData={loaderData as any}
         params={{} as any}
         matches={[] as any}
       />
-    </StrictMode>,
+    </QueryClientProvider>,
+  );
+}
+
+function renderHomeStrict() {
+  const queryClient = new QueryClient();
+  const loaderData = {
+    user: {
+      id: 1,
+      email: "test@example.com",
+      display_name: "テストユーザー",
+      avatar_url: null,
+      created_at: "2024-01-01",
+      updated_at: "2024-01-01",
+    },
+    token: "test-token",
+  };
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <StrictMode>
+        <Home
+          loaderData={loaderData as any}
+          params={{} as any}
+          matches={[] as any}
+        />
+      </StrictMode>
+    </QueryClientProvider>,
   );
 }
 

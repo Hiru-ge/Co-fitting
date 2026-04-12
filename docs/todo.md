@@ -296,22 +296,22 @@ s
 
 **🔴 RED**
 
-- [ ] `frontend/app/__tests__/hooks/use-location.test.ts` 追加（位置情報取得・ポーリング・デフォルト位置フォールバックの各状態遷移を検証）
-- [ ] `frontend/app/__tests__/hooks/use-check-in.test.ts` 追加（訪問記録・XPキュー・バッジキューの状態遷移を検証）
+- [x] `frontend/app/__tests__/hooks/use-location.test.ts` 追加（位置情報取得・ポーリング・デフォルト位置フォールバックの各状態遷移を検証）
+- [x] `frontend/app/__tests__/hooks/use-check-in.test.ts` 追加（訪問記録・XPキュー・バッジキューの状態遷移を検証）
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/hooks/use-location.ts` を新規作成（位置情報取得・ポーリング・デフォルト位置フォールバック。`LocationStatus = "normal" | "denied" | "using_default"` の1変数で状態管理）
-- [ ] `frontend/app/hooks/use-suggestion-load.ts` を新規作成（提案フェッチ・写真並列取得・リロード）
-- [ ] `frontend/app/hooks/use-check-in.ts` を新規作成（訪問記録・XP/バッジキュー管理。`handleXpModalClose` からバッジ転送処理を独立させる）
-- [ ] `frontend/app/hooks/use-suggestions.ts` を上記3フックを束ねるアグリゲーター層に変更
-- [ ] `frontend/app/routes/home.tsx` の呼び出し側に変更がないことを確認（`useSuggestions` のインターフェース維持）
+- [x] `frontend/app/hooks/use-location.ts` を新規作成（位置情報取得・ポーリング・デフォルト位置フォールバック。`LocationStatus = "normal" | "denied" | "using_default"` の1変数で状態管理）
+- [x] `frontend/app/hooks/use-suggestion-load.ts` を新規作成（提案フェッチ・写真並列取得・リロード）
+- [x] `frontend/app/hooks/use-check-in.ts` を新規作成（訪問記録・XP/バッジキュー管理。`handleXpModalClose` からバッジ転送処理を独立させる）
+- [x] `frontend/app/hooks/use-suggestions.ts` を上記3フックを束ねるアグリゲーター層に変更
+- [x] `frontend/app/routes/home.tsx` の呼び出し側に変更がないことを確認（`useSuggestions` のインターフェース維持）
 
 **🔵 REFACTOR**
 
-- [ ] `badgeQueue` → `badgeModalQueue`、`checkingIn` → `isCheckingIn`、`originalOrder` → `originalCardOrder` にリネーム
-- [ ] `useCallback` の依存配列から `navigate`（`loadSuggestions` 内で未使用）を削除
-- [ ] `initialLoadDoneRef`（Strict Mode 対策の ref ガード）を削除し、React Query の `useQuery` 導入で代替
+- [x] `badgeQueue` → `badgeModalQueue`、`checkingIn` → `isCheckingIn`、`originalOrder` → `originalCardOrder` にリネーム
+- [x] `useCallback` の依存配列から `navigate`（`loadSuggestions` 内で未使用）を削除
+- [x] `initialLoadDoneRef`（Strict Mode 対策の ref ガード）を削除し、React Query の `useQuery` 導入で代替
 
 ---
 

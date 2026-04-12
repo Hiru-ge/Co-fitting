@@ -16,6 +16,7 @@ import {
   useLocation,
 } from "react-router";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "~/components/Toast";
 import { isBetaUnlocked } from "~/lib/beta-access";
 import { GA4_ID, sendPageView } from "~/lib/gtag";
@@ -23,6 +24,7 @@ import { registerSW } from "virtual:pwa-register";
 registerSW({ immediate: true });
 
 const BETA_EXCLUDED_PATHS = ["/beta-gate", "/lp", "/privacy"] as const;
+const queryClient = new QueryClient();
 
 /** パスに応じてベータ版合言葉を要求する */
 export async function clientLoader({ request }: { request: Request }) {
@@ -149,11 +151,13 @@ export default function Root() {
         <GoogleOAuthProvider
           clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}
         >
-          <ToastProvider>
-            <GA4Initializer />
-            <PageViewTracker />
-            <Outlet />
-          </ToastProvider>
+          <QueryClientProvider client={queryClient}>
+            <ToastProvider>
+              <GA4Initializer />
+              <PageViewTracker />
+              <Outlet />
+            </ToastProvider>
+          </QueryClientProvider>
         </GoogleOAuthProvider>
         <ScrollRestoration />
         <Scripts />
