@@ -1,3 +1,10 @@
+import "@fontsource/plus-jakarta-sans";
+import "@fontsource/space-grotesk";
+import "@fontsource/noto-sans-jp";
+import "@fontsource/material-symbols-outlined/400.css";
+
+import "./app.css";
+
 import { useEffect } from "react";
 import {
   Links,
@@ -9,19 +16,21 @@ import {
   useLocation,
 } from "react-router";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import { ToastProvider } from "~/components/toast";
+import { ToastProvider } from "~/components/Toast";
 import { isBetaUnlocked } from "~/lib/beta-access";
 import { GA4_ID, sendPageView } from "~/lib/gtag";
 import { registerSW } from "virtual:pwa-register";
 registerSW({ immediate: true });
 
+const BETA_EXCLUDED_PATHS = ["/beta-gate", "/lp", "/privacy"] as const;
+
 /** パスに応じてベータ版合言葉を要求する */
 export async function clientLoader({ request }: { request: Request }) {
   const { pathname } = new URL(request.url);
   if (
-    pathname !== "/beta-gate" &&
-    pathname !== "/lp" &&
-    pathname !== "/privacy" &&
+    !BETA_EXCLUDED_PATHS.includes(
+      pathname as (typeof BETA_EXCLUDED_PATHS)[number],
+    ) &&
     !isBetaUnlocked()
   ) {
     throw redirect("/beta-gate");
@@ -62,14 +71,6 @@ export function HydrateFallback() {
     </html>
   );
 }
-
-// ── Local font imports (@fontsource) ──
-import "@fontsource/plus-jakarta-sans";
-import "@fontsource/space-grotesk";
-import "@fontsource/noto-sans-jp";
-import "@fontsource/material-symbols-outlined/400.css";
-
-import "./app.css";
 
 function GA4Initializer() {
   useEffect(() => {

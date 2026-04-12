@@ -49,24 +49,19 @@ const mockGenres = vi.hoisted(() => [
 
 vi.mock("~/api/genres", () => ({
   getGenreTags: vi.fn().mockResolvedValue(mockGenres),
+}));
+
+vi.mock("~/api/users", () => ({
   getInterests: vi.fn().mockResolvedValue([]),
   updateInterests: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn().mockReturnValue("test-token"),
-  getUser: vi.fn().mockResolvedValue({
-    id: 1,
-    email: "test@example.com",
-    display_name: "テストユーザー",
-    avatar_url: null,
-    created_at: "2024-01-01",
-    updated_at: "2024-01-01",
-  }),
 }));
 
-import Onboarding from "~/routes/onboarding";
-import { updateInterests } from "~/api/genres";
+import Onboarding from "~/routes/interest-setup";
+import { updateInterests } from "~/api/users";
 
 function renderOnboarding(overrideLoaderData?: object) {
   const loaderData = {
@@ -248,7 +243,7 @@ describe("Onboarding clientLoader", () => {
     vi.mocked(getToken).mockReturnValueOnce(null);
 
     const { redirect } = await import("react-router");
-    const { clientLoader } = await import("~/routes/onboarding");
+    const { clientLoader } = await import("~/routes/interest-setup");
 
     try {
       await clientLoader();
@@ -258,7 +253,7 @@ describe("Onboarding clientLoader", () => {
   });
 
   test("興味タグが3つ以上設定済みなら /home にリダイレクトする", async () => {
-    const { getInterests } = await import("~/api/genres");
+    const { getInterests } = await import("~/api/users");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
       {
@@ -271,7 +266,7 @@ describe("Onboarding clientLoader", () => {
     ]);
 
     const { redirect } = await import("react-router");
-    const { clientLoader } = await import("~/routes/onboarding");
+    const { clientLoader } = await import("~/routes/interest-setup");
 
     try {
       await clientLoader();
@@ -281,13 +276,14 @@ describe("Onboarding clientLoader", () => {
   });
 
   test("興味タグが3つ未満なら正常にloaderDataを返す", async () => {
-    const { getInterests, getGenreTags } = await import("~/api/genres");
+    const { getInterests } = await import("~/api/users");
+    const { getGenreTags } = await import("~/api/genres");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
     ]);
     vi.mocked(getGenreTags).mockResolvedValueOnce(mockGenres);
 
-    const { clientLoader } = await import("~/routes/onboarding");
+    const { clientLoader } = await import("~/routes/interest-setup");
     const result = await clientLoader();
 
     expect(result).toEqual({

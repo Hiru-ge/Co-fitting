@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { getCategoryInfo, getBestCategoryKey } from "~/utils/category-map";
+import { getCategoryInfo, getBestCategoryKey } from "~/lib/category-map";
 
 describe("getCategoryInfo", () => {
   test("cafe → カフェのCategoryInfoが返る", () => {

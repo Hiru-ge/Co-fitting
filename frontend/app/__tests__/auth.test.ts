@@ -29,7 +29,7 @@ describe("認証トークン管理", () => {
   });
 
   test("setToken でアクセストークンが localStorage に保存される", () => {
-    setToken("test-access-token");
+    setToken("test-access-token", "test-refresh-token");
 
     expect(localStorage.getItem("roamble_token")).toBe("test-access-token");
   });
@@ -111,7 +111,7 @@ describe("protectedLoader", () => {
   });
 
   test("トークンなしで Response (redirect) が throw される", async () => {
-    const { protectedLoader } = await import("~/lib/protected-loader");
+    const { protectedLoader } = await import("~/lib/auth");
 
     try {
       await protectedLoader();
@@ -139,7 +139,7 @@ describe("protectedLoader", () => {
       json: () => Promise.resolve(mockUser),
     });
 
-    const { protectedLoader } = await import("~/lib/protected-loader");
+    const { protectedLoader } = await import("~/lib/auth");
     const result = await protectedLoader();
 
     expect(result).toEqual({
@@ -156,7 +156,7 @@ describe("protectedLoader", () => {
       status: 401,
     });
 
-    const { protectedLoader } = await import("~/lib/protected-loader");
+    const { protectedLoader } = await import("~/lib/auth");
 
     try {
       await protectedLoader();

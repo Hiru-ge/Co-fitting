@@ -18,8 +18,8 @@ export async function getNotificationSettings(
 export async function updateNotificationSettings(
   token: string,
   settings: Partial<NotificationSettings>,
-): Promise<void> {
-  await apiCall("/api/notifications/settings", token, {
+): Promise<NotificationSettings> {
+  return await apiCall("/api/notifications/settings", token, {
     method: "PUT",
     body: JSON.stringify(settings),
   });

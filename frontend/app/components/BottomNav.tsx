@@ -7,6 +7,8 @@ const navItems = [
 ] as const;
 
 export default function BottomNav() {
+  // NavLinkのclassName引数から子spanのFILL制御にisActiveを渡しづらいため、
+  // アイコン塗りつぶしだけuseLocationで判定する。
   const location = useLocation();
 
   return (

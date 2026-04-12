@@ -172,7 +172,7 @@ describe("suggestions API", () => {
     expect(result).toEqual([{ place_id: "p1", name: "テストカフェ" }]);
   });
 
-  test("getSuggestions に radius を指定できる", async () => {
+  test("getSuggestions に isReload を指定できる", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -180,12 +180,12 @@ describe("suggestions API", () => {
       json: () => Promise.resolve([]),
     });
 
-    await getSuggestions("my-token", 35.6762, 139.6503, 5000);
+    await getSuggestions("my-token", 35.6762, 139.6503, true);
 
     expect(fetch).toHaveBeenCalledWith(
       "http://localhost:8000/api/suggestions",
       expect.objectContaining({
-        body: JSON.stringify({ lat: 35.6762, lng: 139.6503, radius: 5000 }),
+        body: JSON.stringify({ lat: 35.6762, lng: 139.6503, is_reload: true }),
       }),
     );
   });

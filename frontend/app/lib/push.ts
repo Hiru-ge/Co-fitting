@@ -6,12 +6,6 @@ import {
 
 let cachedVapidPublicKey: string | null = null;
 
-async function getVapidKey(): Promise<string> {
-  if (cachedVapidPublicKey) return cachedVapidPublicKey;
-  cachedVapidPublicKey = await getVapidPublicKey();
-  return cachedVapidPublicKey;
-}
-
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -36,7 +30,10 @@ export async function subscribePush(token: string): Promise<boolean> {
     return false;
   }
 
-  const vapidPublicKey = await getVapidKey();
+  if (!cachedVapidPublicKey) {
+    cachedVapidPublicKey = await getVapidPublicKey();
+  }
+  const vapidPublicKey = cachedVapidPublicKey;
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,

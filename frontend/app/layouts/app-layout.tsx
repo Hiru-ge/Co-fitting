@@ -1,5 +1,5 @@
 import { Outlet } from "react-router";
-import BottomNav from "~/components/bottom-nav";
+import BottomNav from "~/components/BottomNav";
 
 const FEEDBACK_URL = "https://forms.gle/upcMz6uV97hmLn9n9";
 

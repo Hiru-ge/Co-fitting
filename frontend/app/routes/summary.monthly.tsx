@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/summary.monthly";
-import { protectedLoader } from "~/lib/protected-loader";
+import { protectedLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
 import { getUserBadges } from "~/api/users";
 import { getPlacePhoto } from "~/api/places";
@@ -43,7 +43,11 @@ async function loadPhotos(
   return Promise.all(
     visits.map(async (v) => {
       try {
-        const photoUrl = await getPlacePhoto(token, v.place_id);
+        const photoUrl = await getPlacePhoto(
+          token,
+          v.place_id,
+          v.photo_reference as string,
+        );
         return { ...v, photoUrl };
       } catch {
         return { ...v };

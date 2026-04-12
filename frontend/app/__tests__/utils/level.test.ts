@@ -25,8 +25,8 @@ describe("getLevelTitle", () => {
     expect(getLevelTitle(1)).toBe("ビギナーエクスプローラー");
   });
 
-  test("レベル10 は 究極のローマー", () => {
-    expect(getLevelTitle(10)).toBe("究極のローマー");
+  test("レベル10 は アルティメットエクスプローラー", () => {
+    expect(getLevelTitle(10)).toBe("アルティメットエクスプローラー");
   });
 
   test("最大レベルを超えても最後の称号を返す", () => {

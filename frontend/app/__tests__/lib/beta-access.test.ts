@@ -2,7 +2,6 @@ import { describe, test, expect, beforeEach, vi } from "vitest";
 import {
   isBetaUnlocked,
   unlockBeta,
-  lockBeta,
   BETA_STORAGE_KEY,
 } from "~/lib/beta-access";
 
@@ -104,18 +103,6 @@ describe("beta-access", () => {
           }),
         }),
       );
-    });
-  });
-
-  describe("lockBeta", () => {
-    test("localStorageからフラグが削除される", () => {
-      localStorage.setItem(BETA_STORAGE_KEY, "1");
-      lockBeta();
-      expect(localStorage.getItem(BETA_STORAGE_KEY)).toBeNull();
-    });
-
-    test("フラグがなくても呼び出しがエラーにならない", () => {
-      expect(() => lockBeta()).not.toThrow();
     });
   });
 });

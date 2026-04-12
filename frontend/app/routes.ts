@@ -8,21 +8,16 @@ import {
 export default [
   index("routes/index.tsx"),
 
-  // 認証レイアウト
-  layout("layouts/auth-layout.tsx", [route("login", "routes/login.tsx")]),
+  // ランディング・認証
+  route("lp", "routes/lp.tsx"),
+  route("login", "routes/login.tsx"),
 
-  // オンボーディング（ボトムナビなし）
-  route("onboarding", "routes/onboarding.tsx"),
-
-  // PWAインストール促進
+  // ベータ版ゲート・PWAインストール促進
+  route("beta-gate", "routes/beta-gate.tsx"),
   route("pwa-prompt", "routes/pwa-prompt.tsx"),
 
-  // ベータ版ゲート（合言葉入力）
-  route("beta-gate", "routes/beta-gate.tsx"),
-
-  // 公開ページ（認証不要）
-  route("lp", "routes/lp.tsx"),
-  route("privacy", "routes/privacy.tsx"),
+  // 興味タグ選択（ボトムナビなし）
+  route("onboarding", "routes/interest-setup.tsx"),
 
   // アプリレイアウト（認証必須）
   layout("layouts/app-layout.tsx", [
@@ -34,4 +29,7 @@ export default [
     route("summary/weekly", "routes/summary.weekly.tsx"),
     route("summary/monthly", "routes/summary.monthly.tsx"),
   ]),
+
+  // 公開ページ（認証不要）
+  route("privacy", "routes/privacy.tsx"),
 ] satisfies RouteConfig;

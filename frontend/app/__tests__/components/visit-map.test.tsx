@@ -1,13 +1,13 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import VisitMap from "~/components/visit-map";
+import VisitMap from "~/components/VisitMap";
 import type { MapVisit } from "~/types/visit";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 // getPositionWithFallback をモック（テストごとに挙動を制御する）
-vi.mock("~/utils/geolocation", async (importOriginal) => {
-  const original = await importOriginal<typeof import("~/utils/geolocation")>();
+vi.mock("~/lib/geolocation", async (importOriginal) => {
+  const original = await importOriginal<typeof import("~/lib/geolocation")>();
   return {
     ...original,
     getPositionWithFallback: vi.fn(),
@@ -83,7 +83,7 @@ const mockVisits: MapVisit[] = [
   },
 ];
 
-import { getPositionWithFallback } from "~/utils/geolocation";
+import { getPositionWithFallback } from "~/lib/geolocation";
 
 describe("VisitMap", () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
-import XpModal from "~/components/xp-modal";
+import XpModal from "~/components/XpModal";
 
 const defaultProps = {
   xpEarned: 50,
@@ -55,13 +55,6 @@ describe("XpModal", () => {
   test("ダイアログ role で表示される", () => {
     render(<XpModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-
-  test("Escapeキーで onClose が呼ばれる", () => {
-    const onClose = vi.fn();
-    render(<XpModal {...defaultProps} onClose={onClose} />);
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test("背景オーバーレイクリックで onClose が呼ばれる", () => {

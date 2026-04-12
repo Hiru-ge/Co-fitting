@@ -35,11 +35,3 @@ export async function unlockBeta(input: string): Promise<boolean> {
     return false;
   }
 }
-
-export function lockBeta(): void {
-  try {
-    localStorage.removeItem(BETA_STORAGE_KEY);
-  } catch {
-    // localStorage 利用不可環境では無視
-  }
-}

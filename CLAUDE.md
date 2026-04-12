@@ -95,6 +95,12 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 - API呼び出しは `app/api/client.ts` の `apiCall()` ヘルパー経由で行う
 - **ベータ合言葉**管理は `app/lib/beta-access.ts` に集約。`isUnlocked` / `unlockBeta` / `lockBeta`。未解錠ユーザーは `root.tsx` の `clientLoader` で `/beta-gate` にリダイレクトされる。`VITE_BETA_PASSPHRASE` 環境変数で合言葉を設定（ローカルの `.env` では `EARLYROAMER`）。ベータ期間終了後は本変数を削除し beta-gate ルートを廃止する
 - **GA4 イベント送信**は `app/lib/gtag.ts` に集約。`sendVisitRecorded` / `sendBadgeEarned` / `sendSuggestionGenerated` 等のラッパー関数を使い、直接 `window.gtag()` を呼び出さないこと。`VITE_GA4_ID` が未設定のときは noop になる（ローカル開発では送信されない）
+- **レイアウト規約**: BottomNav の高さぶんの余白管理は `app/layouts/app-layout.tsx` 側で一元管理する。各ページコンポーネントで個別に `pb-24` などのボトム余白を重複指定しないこと
+- **命名規約（コンポーネント）**: `app/components/` 配下のファイル名は PascalCase に統一する（例: `VisitMap.tsx`, `BottomNav.tsx`）。
+- **配置規約（utils vs lib）**: ドメインロジック・APIに近い処理は `app/lib/` に置く。`app/utils/` は汎用的な純粋関数や定数に限定し、`utils` から `lib` への薄い中継ファイルは作らないこと。
+- **API責務の分離**: `api/users.ts` はユーザー設定・プロフィール関連（例: interests）を扱い、`api/genres.ts` はジャンルマスタ取得のみを扱うこと。
+- **オンボーディング状態管理**: ツアー進行状態は `ONBOARDING_STAGE_KEY`（localStorage）で一元管理する。`sessionStorage` への同等状態の二重管理はしないこと。
+- **認証ルート保護**: 認証付き `clientLoader` では `protectedLoader` を優先して使用し、同じ認証チェック処理をルートごとに重複実装しないこと。
 - **`components/` への切り出し基準**: 以下のいずれかを満たす場合に切り出す。(1) 「ロジックが壊れてもE2E・手動確認では気づきにくい」 — state遷移・条件付きレンダリング分岐・DOM計算・外部コンテキスト統合などのロジックを持つ場合は `components/` に出してテストを書く。(2) 「現在実際に2箇所以上で使われている」 — 純粋な表示ラッパーであっても、既に複数ファイルで使われているなら切り出してDRYにする。「将来使い回せそう」という予測を理由にした先行切り出しはしない。(3) 「親ファイルが読みにくくなるほど複雑になっている」 — 単一責任を超えて親コンポーネントの認知負荷が上がっている場合は分割する（Kent C. Dodds "When to Break Up a Component"）。JSXの行数が多いこと自体は判断基準にならない。実際の問題（読みにくさ・テストの困難・チームの摩擦）を経験してから分割する。
 
 ## アーキテクチャ方針

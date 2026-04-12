@@ -50,39 +50,44 @@ export default function Login() {
   }
 
   return (
-    <div className="w-full space-y-6 bg-white/5 rounded-lg p-6 shadow-md border border-white/10">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-white">Roambleへようこそ</h2>
-        <p className="text-sm text-white/60">
-          Googleアカウントでログイン / 新規登録
+    <div className="max-w-md mx-auto min-h-dvh flex flex-col items-center justify-center px-6">
+      <h1 className="text-3xl font-bold font-display-alt text-primary mb-8">
+        Roamble
+      </h1>
+      <div className="w-full space-y-6 bg-white/5 rounded-lg p-6 shadow-md border border-white/10">
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-bold text-white">Roambleへようこそ</h2>
+          <p className="text-sm text-white/60">
+            Googleアカウントでログイン / 新規登録
+          </p>
+        </div>
+
+        <div
+          className={`flex justify-center ${isGoogleLoading ? "opacity-50 pointer-events-none" : ""}`}
+        >
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            text="signin_with"
+            shape="rectangular"
+            width="297"
+          />
+        </div>
+
+        {googleError && (
+          <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+            {googleError}
+          </p>
+        )}
+
+        <p className="text-center text-xs text-white/40">
+          ログインすることで、
+          <Link to="/privacy" className="underline hover:text-white/60">
+            プライバシーポリシー
+          </Link>
+          に同意したものとみなされます。
         </p>
       </div>
-
-      <div
-        className={`flex justify-center ${isGoogleLoading ? "opacity-50 pointer-events-none" : ""}`}
-      >
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={handleGoogleError}
-          text="signin_with"
-          shape="rectangular"
-          width="297"
-        />
-      </div>
-
-      {googleError && (
-        <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
-          {googleError}
-        </p>
-      )}
-
-      <p className="text-center text-xs text-white/40">
-        ログインすることで、
-        <Link to="/privacy" className="underline hover:text-white/60">
-          プライバシーポリシー
-        </Link>
-        に同意したものとみなされます。
-      </p>
     </div>
   );
 }

@@ -1,5 +1,10 @@
 import { apiCall } from "./client";
 import type { User, UserStats, EarnedBadge, Proficiency } from "~/types/auth";
+import type { Interest } from "~/types/genre";
+
+export async function getUser(token: string): Promise<User> {
+  return apiCall("/api/users/me", token);
+}
 
 export async function updateDisplayName(
   token: string,
@@ -41,4 +46,22 @@ export async function getUserBadges(token: string): Promise<EarnedBadge[]> {
 
 export async function getProficiency(token: string): Promise<Proficiency[]> {
   return apiCall("/api/users/me/proficiency", token);
+}
+
+export async function getInterests(token: string): Promise<Interest[]> {
+  return apiCall("/api/users/me/interests", token);
+}
+
+export async function updateInterests(
+  token: string,
+  genreTagIds: number[],
+  refreshSuggestions?: boolean,
+): Promise<{ interests: Interest[]; reload_count_remaining: number }> {
+  const url = refreshSuggestions
+    ? "/api/users/me/interests?refresh_suggestions=true"
+    : "/api/users/me/interests";
+  return apiCall(url, token, {
+    method: "PUT",
+    body: JSON.stringify({ genre_tag_ids: genreTagIds }),
+  });
 }

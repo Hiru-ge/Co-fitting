@@ -14,3 +14,10 @@ export interface Place {
   /** 現在の営業状況: true=営業中, false=閉店中, undefined=情報なし（公園など24h施設）*/
   open_now?: boolean;
 }
+
+export interface SuggestionResult {
+  places: Place[];
+  notice?: string;
+  completed?: boolean;
+  reload_count_remaining?: number;
+}

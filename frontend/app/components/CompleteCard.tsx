@@ -1,5 +1,6 @@
 import { Link } from "react-router";
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState } from "react";
+import { useCardDrag } from "~/hooks/use-card-drag";
 
 interface CompleteCardProps {
   /** 渡されても呼ばれない — カードはスワイプアウトせずスピンして戻る */
@@ -34,50 +35,19 @@ const STARS: Array<{ top: string; left: string; size: number }> = [
 // onSwipe は渡されても呼ばれない — カードはスワイプアウトせずスピンして戻る
 export default function CompleteCard({ onSwipe: _ }: CompleteCardProps = {}) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const startPos = useRef({ x: 0, y: 0 });
-  const dragging = useRef(false);
-  const offsetRef = useRef({ x: 0, y: 0 });
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isSpinning, setIsSpinning] = useState(false);
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (isSpinning) return;
-      dragging.current = true;
-      startPos.current = { x: e.clientX, y: e.clientY };
-      offsetRef.current = { x: 0, y: 0 };
-      setOffset({ x: 0, y: 0 });
-      cardRef.current?.setPointerCapture(e.pointerId);
-    },
-    [isSpinning],
-  );
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    const newOffset = {
-      x: e.clientX - startPos.current.x,
-      y: e.clientY - startPos.current.y,
-    };
-    offsetRef.current = newOffset;
-    setOffset(newOffset);
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    if (!dragging.current) return;
-    dragging.current = false;
-
-    const { x, y } = offsetRef.current;
-    const dist = Math.sqrt(x ** 2 + y ** 2);
-    if (dist > SWIPE_THRESHOLD) {
-      offsetRef.current = { x: 0, y: 0 };
-      setOffset({ x: 0, y: 0 });
-      setIsSpinning(true);
-      // isSpinning は onAnimationEnd で解除される（CSS animation 0.9s）
-    } else {
-      offsetRef.current = { x: 0, y: 0 };
-      setOffset({ x: 0, y: 0 });
-    }
-  }, []);
+  const {
+    offset,
+    isDragging,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+  } = useCardDrag({
+    cardRef,
+    enabled: !isSpinning,
+    swipeThreshold: SWIPE_THRESHOLD,
+    onThresholdExceeded: () => setIsSpinning(true),
+  });
 
   // ドラッグ量を傾き角度に変換（移動はせず傾くだけ）
   const clamp = (v: number, min: number, max: number) =>
@@ -93,8 +63,7 @@ export default function CompleteCard({ onSwipe: _ }: CompleteCardProps = {}) {
       ? {}
       : {
           transform: `perspective(800px) rotateY(${tiltY}deg) rotateX(${tiltX}deg)`,
-          // eslint-disable-next-line react-hooks/refs
-          transition: dragging.current ? "none" : "transform 0.3s ease-out",
+          transition: isDragging ? "none" : "transform 0.3s ease-out",
         }),
   };
 

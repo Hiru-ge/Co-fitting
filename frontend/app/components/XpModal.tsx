@@ -1,6 +1,5 @@
 import { getLevelInfo } from "~/utils/level";
-import { useModalClose } from "~/hooks/use-modal-close";
-import ConfettiDecoration from "~/components/confetti-decoration";
+import ConfettiDecoration from "~/components/ConfettiDecoration";
 import type { XPBreakdown } from "~/types/visit";
 
 interface XpModalProps {
@@ -13,6 +12,36 @@ interface XpModalProps {
   onClose: () => void;
 }
 
+interface XpBreakdownRowProps {
+  label: string;
+  xp: number;
+  highlight?: boolean;
+  showPlus?: boolean;
+}
+
+function XpBreakdownRow({
+  label,
+  xp,
+  highlight = false,
+  showPlus = true,
+}: XpBreakdownRowProps) {
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span
+        className={highlight ? "text-red-400 font-semibold" : "text-white/60"}
+      >
+        {label}
+      </span>
+      <span
+        className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}
+      >
+        {showPlus ? "+" : ""}
+        {xp}
+      </span>
+    </div>
+  );
+}
+
 export default function XpModal({
   xpEarned,
   totalXp,
@@ -23,8 +52,6 @@ export default function XpModal({
   onClose,
 }: XpModalProps) {
   const { xpToNextLevel, progressPercent } = getLevelInfo(totalXp);
-  useModalClose(onClose);
-
   return (
     <div
       role="dialog"
@@ -179,35 +206,6 @@ export default function XpModal({
           </span>
         </button>
       </div>
-    </div>
-  );
-}
-
-// XP内訳の1行コンポーネント
-function XpBreakdownRow({
-  label,
-  xp,
-  highlight = false,
-  showPlus = true,
-}: {
-  label: string;
-  xp: number;
-  highlight?: boolean;
-  showPlus?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between text-xs">
-      <span
-        className={highlight ? "text-red-400 font-semibold" : "text-white/60"}
-      >
-        {label}
-      </span>
-      <span
-        className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}
-      >
-        {showPlus ? "+" : ""}
-        {xp}
-      </span>
     </div>
   );
 }

@@ -2,19 +2,21 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import HistoryDetail, { clientLoader } from "~/routes/history-detail";
-import { getToken, getUser } from "~/lib/auth";
+import { protectedLoader } from "~/lib/auth";
 import { getVisit, updateVisit } from "~/api/visits";
 import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
-import { useToast } from "~/components/toast";
+import { useToast } from "~/components/Toast";
 import type { Visit } from "~/types/visit";
 import type { User } from "~/types/auth";
 
-vi.mock("~/lib/auth");
+vi.mock("~/lib/auth", () => ({
+  protectedLoader: vi.fn(),
+}));
 vi.mock("~/api/visits");
 vi.mock("~/api/places");
 vi.mock("~/utils/error");
-vi.mock("~/components/toast");
+vi.mock("~/components/Toast");
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
   return {
@@ -25,8 +27,7 @@ vi.mock("react-router", async () => {
   };
 });
 
-const mockGetToken = vi.mocked(getToken);
-const mockGetUser = vi.mocked(getUser);
+const mockProtectedLoader = vi.mocked(protectedLoader);
 const mockGetPlacePhoto = vi.mocked(getPlacePhoto);
 const mockGetVisit = vi.mocked(getVisit);
 const mockUpdateVisit = vi.mocked(updateVisit);
@@ -66,6 +67,7 @@ describe("HistoryDetail", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockProtectedLoader.mockResolvedValue({ user: mockUser, token: mockToken });
     mockUseToast.mockReturnValue({ showToast: mockShowToast });
     mockToUserMessage.mockImplementation((err) => String(err));
     mockGetPlacePhoto.mockResolvedValue("https://example.com/photo.jpg");
@@ -73,22 +75,26 @@ describe("HistoryDetail", () => {
 
   describe("clientLoader", () => {
     it("トークンがない場合は /login にリダイレクトする", async () => {
-      mockGetToken.mockReturnValue(null);
+      mockProtectedLoader.mockRejectedValueOnce(new Error("unauthorized"));
       await expect(
         clientLoader({ params: { id: "1" } } as any),
       ).rejects.toThrow();
     });
 
     it("認証済みの場合はユーザー・トークン・IDを返す", async () => {
-      mockGetToken.mockReturnValue(mockToken);
-      mockGetUser.mockResolvedValue(mockUser);
+      mockProtectedLoader.mockResolvedValueOnce({
+        user: mockUser,
+        token: mockToken,
+      });
       const result = await clientLoader({ params: { id: "1" } } as any);
       expect(result).toEqual({ user: mockUser, token: mockToken, visitId: 1 });
     });
 
     it("IDが数値でない場合は /history にリダイレクトする", async () => {
-      mockGetToken.mockReturnValue(mockToken);
-      mockGetUser.mockResolvedValue(mockUser);
+      mockProtectedLoader.mockResolvedValueOnce({
+        user: mockUser,
+        token: mockToken,
+      });
       await expect(
         clientLoader({ params: { id: "abc" } } as any),
       ).rejects.toThrow();

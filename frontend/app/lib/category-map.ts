@@ -11,7 +11,6 @@ const DEFAULT_CATEGORY: CategoryInfo = {
 };
 
 export const CATEGORY_MAP: Record<string, CategoryInfo> = {
-  // 飲食
   cafe: {
     label: "カフェ",
     icon: "local_cafe",
@@ -47,7 +46,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     icon: "ramen_dining",
     gradient: "from-red-600 to-orange-800",
   },
-  // アウトドア・自然
   park: {
     label: "公園",
     icon: "park",
@@ -69,7 +67,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     gradient: "from-blue-500 to-cyan-700",
   },
   river: { label: "川", icon: "water", gradient: "from-teal-500 to-cyan-700" },
-  // 文化・芸術
   museum: {
     label: "美術館",
     icon: "museum",
@@ -90,7 +87,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     icon: "menu_book",
     gradient: "from-yellow-600 to-amber-800",
   },
-  // エンタメ
   movie_theater: {
     label: "映画館",
     icon: "movie",
@@ -131,7 +127,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     icon: "pets",
     gradient: "from-lime-500 to-green-700",
   },
-  // スポーツ・アクティブ
   gym: {
     label: "ジム",
     icon: "fitness_center",
@@ -147,7 +142,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     icon: "stadium",
     gradient: "from-emerald-500 to-teal-700",
   },
-  // リラクゼーション
   spa: { label: "スパ", icon: "spa", gradient: "from-teal-400 to-cyan-600" },
   public_bath: {
     label: "銭湯",
@@ -159,7 +153,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     icon: "hot_tub",
     gradient: "from-orange-700 to-red-900",
   },
-  // ショッピング
   clothing_store: {
     label: "ショップ",
     icon: "shopping_bag",
@@ -180,7 +173,6 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     icon: "home",
     gradient: "from-amber-500 to-orange-700",
   },
-  // 観光・文化
   tourist_attraction: {
     label: "観光地",
     icon: "tour",
@@ -227,20 +219,10 @@ export function getCategoryInfo(types: string[]): CategoryInfo {
   return DEFAULT_CATEGORY;
 }
 
-/**
- * カテゴリーキーから直接カテゴリー情報を取得する（訪問履歴フィルター用）
- */
 export function getCategoryInfoByKey(key: string): CategoryInfo {
   return CATEGORY_MAP[key] || DEFAULT_CATEGORY;
 }
 
-/**
- * place.types 配列から CATEGORY_MAP にマッチする最初のキーを返す。
- * 訪問記録保存時に使用し、types[0] ではなく適切なキーを選択することで
- * 「スポット」へのフォールバックを防ぐ。
- * マッチするキーがない場合は types[0] を返す（空配列の場合は "other"）。
- * 開発環境ではフォールバック時に console.warn を出力してマッピング漏れを検出できる。
- */
 export function getBestCategoryKey(types: string[]): string {
   for (const type of types) {
     if (CATEGORY_MAP[type]) {

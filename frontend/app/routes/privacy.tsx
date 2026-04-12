@@ -1,5 +1,39 @@
 import { useNavigate } from "react-router";
 
+function Section({
+  number,
+  title,
+  children,
+}: {
+  number: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h2 className="text-base font-bold text-gray-200 mb-3">
+        第{number}条 {title}
+      </h2>
+      <div className="space-y-2">{children}</div>
+    </section>
+  );
+}
+
+function SubSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="mt-3">
+      <h3 className="text-sm font-semibold text-gray-300 mb-2">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
 export default function Privacy() {
   const navigate = useNavigate();
 
@@ -385,40 +419,6 @@ export default function Privacy() {
           制定日: 2026年2月28日
         </p>
       </main>
-    </div>
-  );
-}
-
-function Section({
-  number,
-  title,
-  children,
-}: {
-  number: number;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section>
-      <h2 className="text-base font-bold text-gray-200 mb-3">
-        第{number}条 {title}
-      </h2>
-      <div className="space-y-2">{children}</div>
-    </section>
-  );
-}
-
-function SubSection({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="mt-3">
-      <h3 className="text-sm font-semibold text-gray-300 mb-2">{title}</h3>
-      {children}
     </div>
   );
 }

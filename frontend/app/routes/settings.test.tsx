@@ -44,7 +44,7 @@ describe("Settings - 通知タブ", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getNotificationSettings).mockResolvedValue(defaultSettings);
-    vi.mocked(updateNotificationSettings).mockResolvedValue(undefined);
+    vi.mocked(updateNotificationSettings).mockResolvedValue(defaultSettings);
     vi.mocked(getPushPermissionState).mockResolvedValue("granted");
     // ServiceWorker API スタブ（NotificationTab の自動再購読ロジックで使用）
     Object.defineProperty(navigator, "serviceWorker", {

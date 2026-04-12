@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import AppHeader from "~/components/app-header";
+import AppHeader from "~/components/AppHeader";
 
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");

@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import BottomNav from "~/components/bottom-nav";
+import BottomNav from "~/components/BottomNav";
 
 // useLocation をモックして現在のパスを制御する
 const mockPathname = vi.fn().mockReturnValue("/home");

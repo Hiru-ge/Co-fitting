@@ -5,12 +5,121 @@ import {
 } from "~/api/notifications";
 import { getPushPermissionState, subscribePush } from "~/lib/push";
 import type { NotificationSettings } from "~/types/notification";
-import NotificationToggle from "~/components/NotificationToggle";
 import {
   sendPushPermissionGranted,
   sendPushPermissionDenied,
   sendNotificationSettingChanged,
 } from "~/lib/gtag";
+
+interface NotificationToggleProps {
+  id: string;
+  label: string;
+  ariaLabel?: string;
+  description?: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (checked: boolean) => void;
+}
+
+function NotificationToggle({
+  id,
+  label,
+  ariaLabel,
+  description,
+  checked,
+  disabled = false,
+  onChange,
+}: NotificationToggleProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-3">
+      <div className="flex-1 min-w-0">
+        <label
+          htmlFor={id}
+          className={`text-sm font-medium cursor-pointer ${disabled ? "text-gray-500" : "text-gray-200"}`}
+        >
+          {label}
+        </label>
+        {description && (
+          <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+        )}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={ariaLabel ?? label}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+          disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
+        } ${checked ? "bg-primary" : "bg-gray-600"}`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+          aria-hidden="true"
+        />
+        <input
+          id={id}
+          type="checkbox"
+          role="switch"
+          checked={checked}
+          disabled={disabled}
+          onChange={(e) => onChange(e.target.checked)}
+          className="sr-only"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      </button>
+    </div>
+  );
+}
+
+function getAcceptSteps(
+  isIOS: boolean,
+  isStandalone: boolean,
+  isIOSChrome: boolean,
+  isAndroid: boolean,
+): string[] {
+  if (isIOS && isStandalone) {
+    return [
+      "iPhoneの「設定」を開く",
+      "「アプリ」→「Roamble」をタップ",
+      "「通知」→「通知を許可」をオン",
+      "Roambleに戻る",
+    ];
+  }
+  if (isIOS && isIOSChrome) {
+    return [
+      "iPhoneの「設定」を開く",
+      "「アプリ」→「Chrome」をタップ",
+      "「通知」をオン",
+      "Chromeに戻り「通知を許可する」を押す",
+    ];
+  }
+  if (isIOS) {
+    return [
+      "iPhoneの「設定」を開く",
+      "「Safari」→「詳細」→「ウェブサイトの設定」",
+      "「roamble.app」→「通知」→「許可」",
+      "Safariに戻り「通知を許可する」を押す",
+    ];
+  }
+  if (isAndroid) {
+    return [
+      "アドレスバー左の🔒をタップ",
+      "「サイトの設定」→「通知」を選択",
+      "「許可」に変更",
+      "ページを再読み込み",
+    ];
+  }
+  return [
+    "アドレスバー左の🔒をクリック",
+    "「通知」→「許可」に変更",
+    "ページを再読み込み",
+  ];
+}
 
 export default function NotificationTab({ token }: { token: string }) {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
@@ -24,6 +133,12 @@ export default function NotificationTab({ token }: { token: string }) {
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as { standalone?: boolean }).standalone === true;
+  const acceptSteps = getAcceptSteps(
+    isIOS,
+    isStandalone,
+    isIOSChrome,
+    isAndroid,
+  );
 
   useEffect(() => {
     getNotificationSettings(token).then(setSettings);
@@ -48,7 +163,8 @@ export default function NotificationTab({ token }: { token: string }) {
   ) {
     if (!settings) return;
     setSettings({ ...settings, [field]: value });
-    await updateNotificationSettings(token, { [field]: value });
+    const updated = await updateNotificationSettings(token, { [field]: value });
+    setSettings(updated);
     sendNotificationSettingChanged(field, value);
   }
 
@@ -108,89 +224,43 @@ export default function NotificationTab({ token }: { token: string }) {
               通知を許可する
             </button>
           ) : (
-            (() => {
-              const deniedSteps: string[] = (() => {
-                if (isIOS && isStandalone) {
-                  return [
-                    "iPhoneの「設定」を開く",
-                    "「アプリ」→「Roamble」をタップ",
-                    "「通知」→「通知を許可」をオン",
-                    "Roambleに戻る",
-                  ];
-                }
-                if (isIOS && isIOSChrome) {
-                  return [
-                    "iPhoneの「設定」を開く",
-                    "「アプリ」→「Chrome」をタップ",
-                    "「通知」をオン",
-                    "Chromeに戻り「通知を許可する」を押す",
-                  ];
-                }
-                if (isIOS) {
-                  // iOS Safari
-                  return [
-                    "iPhoneの「設定」を開く",
-                    "「Safari」→「詳細」→「ウェブサイトの設定」",
-                    "「roamble.app」→「通知」→「許可」",
-                    "Safariに戻り「通知を許可する」を押す",
-                  ];
-                }
-                if (isAndroid) {
-                  return [
-                    "アドレスバー左の🔒をタップ",
-                    "「サイトの設定」→「通知」を選択",
-                    "「許可」に変更",
-                    "ページを再読み込み",
-                  ];
-                }
-                // macOS / Windows desktop
-                return [
-                  "アドレスバー左の🔒をクリック",
-                  "「通知」→「許可」に変更",
-                  "ページを再読み込み",
-                ];
-              })();
-
-              return (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-                    <span className="material-symbols-outlined text-base">
-                      notifications_off
-                    </span>
-                    通知が拒否されています
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    {isIOS
-                      ? "アプリ・ブラウザからは再許可できません。iPhoneの設定から変更してください。"
-                      : "ブラウザからは再許可できません。以下の手順で変更してください。"}
-                  </p>
-                  <div className="bg-white/5 rounded-xl p-4">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                      変更手順
-                    </p>
-                    <ol className="space-y-2">
-                      {deniedSteps.map((step, i) => (
-                        <li
-                          key={i}
-                          className="flex items-start gap-2 text-sm text-gray-300"
-                        >
-                          <span className="shrink-0 w-5 h-5 rounded-full bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
-                            {i + 1}
-                          </span>
-                          {step}
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                  {isMac && (
-                    <p className="text-xs text-gray-500 px-1">
-                      ※ macOSをお使いの場合は「システム設定」→「通知」→「Google
-                      Chrome」もオンになっているか確認してください。
-                    </p>
-                  )}
-                </div>
-              );
-            })()
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
+                <span className="material-symbols-outlined text-base">
+                  notifications_off
+                </span>
+                通知が拒否されています
+              </div>
+              <p className="text-xs text-gray-400">
+                {isIOS
+                  ? "アプリ・ブラウザからは再許可できません。iPhoneの設定から変更してください。"
+                  : "ブラウザからは再許可できません。以下の手順で変更してください。"}
+              </p>
+              <div className="bg-white/5 rounded-xl p-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  変更手順
+                </p>
+                <ol className="space-y-2">
+                  {acceptSteps.map((step, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-sm text-gray-300"
+                    >
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-red-900/30 text-red-500 text-xs flex items-center justify-center font-bold mt-0.5">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+              {isMac && (
+                <p className="text-xs text-gray-500 px-1">
+                  ※ macOSをお使いの場合は「システム設定」→「通知」→「Google
+                  Chrome」もオンになっているか確認してください。
+                </p>
+              )}
+            </div>
           )}
         </div>
 

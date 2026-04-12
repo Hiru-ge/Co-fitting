@@ -21,7 +21,7 @@ vi.mock("@react-oauth/google", () => ({
   ),
 }));
 
-vi.mock("~/components/toast", () => ({
+vi.mock("~/components/Toast", () => ({
   ToastProvider: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),

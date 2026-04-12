@@ -9,20 +9,21 @@ vi.mock("~/api/visits", () => ({
 vi.mock("~/api/users", () => ({
   getUserStats: vi.fn(),
   getUserBadges: vi.fn(),
+  getUser: vi.fn(),
 }));
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn(),
-  getUser: vi.fn(),
+  protectedLoader: vi.fn(),
 }));
 
 vi.mock("~/api/places", () => ({
   getPlacePhoto: vi.fn().mockResolvedValue(""),
 }));
 
-import { getToken, getUser } from "~/lib/auth";
+import { getToken, protectedLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
-import { getUserStats, getUserBadges } from "~/api/users";
+import { getUserStats, getUserBadges, getUser } from "~/api/users";
 
 const mockVisits = [
   {
@@ -100,6 +101,10 @@ describe("SummaryWeekly", () => {
     vi.setSystemTime(FIXED_NOW_WEEKLY);
     vi.clearAllMocks();
     vi.mocked(getToken).mockReturnValue("mock-token");
+    vi.mocked(protectedLoader).mockResolvedValue({
+      user: mockUser,
+      token: "mock-token",
+    });
     vi.mocked(getUser).mockResolvedValue(mockUser);
     vi.mocked(listVisits).mockResolvedValue({ visits: mockVisits, total: 2 });
     vi.mocked(getUserStats).mockResolvedValue(mockStats);
@@ -158,7 +163,7 @@ describe("SummaryWeekly", () => {
   });
 
   test("未認証時は /login にリダイレクトされる", async () => {
-    vi.mocked(getToken).mockReturnValue(null);
+    vi.mocked(protectedLoader).mockRejectedValueOnce(new Error("unauthorized"));
     const { clientLoader } = await import("./summary.weekly");
 
     await expect(clientLoader()).rejects.toThrow();

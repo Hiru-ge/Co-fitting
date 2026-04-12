@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import BadgeModal from "~/components/badge-modal";
+import BadgeModal from "~/components/BadgeModal";
 import type { BadgeInfo } from "~/types/visit";
 
 const badge: BadgeInfo = {
@@ -55,13 +55,6 @@ describe("BadgeModal", () => {
     render(<BadgeModal badge={unknownBadge} onClose={vi.fn()} />);
     expect(screen.getByText("新しいバッジ")).toBeInTheDocument();
     expect(screen.getByText("未知のバッジです")).toBeInTheDocument();
-  });
-
-  test("Escapeキーで onClose が呼ばれる", () => {
-    const onClose = vi.fn();
-    render(<BadgeModal badge={badge} onClose={onClose} />);
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   test("背景オーバーレイクリックで onClose が呼ばれる", () => {

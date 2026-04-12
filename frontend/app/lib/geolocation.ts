@@ -1,21 +1,11 @@
-import { DEFAULT_LOCATION, CHECKIN_DISTANCE_THRESHOLD } from "./constants";
+import {
+  DEFAULT_LOCATION,
+  CHECKIN_DISTANCE_THRESHOLD,
+} from "~/utils/constants";
 
 export interface Position {
   lat: number;
   lng: number;
-}
-
-export function calcMapCenter(
-  visits: { lat: number; lng: number }[],
-  userPosition: Position | null,
-): Position {
-  if (userPosition) return userPosition;
-  if (visits.length > 0) {
-    const lat = visits.reduce((sum, v) => sum + v.lat, 0) / visits.length;
-    const lng = visits.reduce((sum, v) => sum + v.lng, 0) / visits.length;
-    return { lat, lng };
-  }
-  return { lat: DEFAULT_LOCATION.lat, lng: DEFAULT_LOCATION.lng };
 }
 
 export function getCurrentPosition(): Promise<Position> {
@@ -45,10 +35,10 @@ export async function getPositionWithFallback(): Promise<Position> {
  * 起動直後に1回即時取得し、以降30秒間隔でポーリングする。
  * 返り値の interval ID を clearInterval() に渡すと停止できる。
  * Geolocation非対応の環境では null を返す。
+ * エラー時は黙って次回ポーリングで再試行する。
  */
 export function startPositionPolling(
   onPosition: (pos: Position) => void,
-  onError?: (err: GeolocationPositionError) => void,
 ): ReturnType<typeof setInterval> | null {
   if (!navigator.geolocation) return null;
 
@@ -56,7 +46,9 @@ export function startPositionPolling(
     navigator.geolocation.getCurrentPosition(
       (pos) =>
         onPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      onError,
+      () => {
+        // エラーはサイレントに無視して次回ポーリングで再試行する。
+      },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
     );
   };
@@ -76,7 +68,9 @@ export function isWithinCheckInRange(
   targetLng: number,
   thresholdMeters: number = CHECKIN_DISTANCE_THRESHOLD,
 ): boolean {
-  if (userLat === 0 && userLng === 0) return true;
+  const isGpsUnavailable = userLat === 0 && userLng === 0;
+  if (isGpsUnavailable) return true;
+
   return (
     calcDistance(userLat, userLng, targetLat, targetLng) <= thresholdMeters
   );

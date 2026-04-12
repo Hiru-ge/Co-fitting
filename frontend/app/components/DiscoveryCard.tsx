@@ -1,8 +1,9 @@
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState } from "react";
 import type { Place } from "~/types/suggestion";
-import { getCategoryInfo } from "~/utils/category-map";
-import { calcDistance } from "~/utils/geolocation";
+import { getCategoryInfo } from "~/lib/category-map";
+import { calcDistance } from "~/lib/geolocation";
 import { buildGoogleMapsPlaceUrl, formatDistance } from "~/utils/helpers";
+import { useCardDrag } from "~/hooks/use-card-drag";
 
 interface DiscoveryCardProps {
   place: Place;
@@ -16,7 +17,7 @@ interface DiscoveryCardProps {
 }
 
 const SWIPE_THRESHOLD = 120;
-const SWIPE_OUT_DISTANCE = 800;
+const SWIPE_OUT_DURATION_MS = 300;
 const ROTATION_FACTOR = 0.08;
 const STACK_SCALE_STEP = 0.05;
 
@@ -31,62 +32,31 @@ export default function DiscoveryCard({
 }: DiscoveryCardProps) {
   const category = getCategoryInfo(place.types);
   const distance = calcDistance(userLat, userLng, place.lat, place.lng);
-  const [imgError, setImgError] = useState(false);
-  const showPhoto = photoUrl && !imgError;
-
-  useEffect(() => {
-    setImgError(false);
-  }, [photoUrl]);
+  const [failedPhotoUrl, setFailedPhotoUrl] = useState<string | undefined>();
+  const showPhoto = !!photoUrl && failedPhotoUrl !== photoUrl;
 
   const cardRef = useRef<HTMLDivElement>(null);
-  const startPos = useRef({ x: 0, y: 0 });
-  const dragging = useRef(false);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isSwiping, setIsSwiping] = useState(false);
+  const [isSwipingOut, setIsSwipingOut] = useState(false);
 
   const isTopCard = stackIndex === 0;
-
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (!isTopCard || isSwiping) return;
-      dragging.current = true;
-      startPos.current = { x: e.clientX, y: e.clientY };
-      setOffset({ x: 0, y: 0 });
-      cardRef.current?.setPointerCapture(e.pointerId);
-    },
-    [isTopCard, isSwiping],
-  );
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    setOffset({
-      x: e.clientX - startPos.current.x,
-      y: e.clientY - startPos.current.y,
-    });
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    if (!dragging.current) return;
-    dragging.current = false;
-
-    const dist = Math.sqrt(offset.x ** 2 + offset.y ** 2);
-
-    if (dist > SWIPE_THRESHOLD) {
-      const angle = Math.atan2(offset.y, offset.x);
-      setIsSwiping(true);
-      setOffset({
-        x: Math.cos(angle) * SWIPE_OUT_DISTANCE,
-        y: Math.sin(angle) * SWIPE_OUT_DISTANCE,
-      });
-      setTimeout(() => {
+  const {
+    offset,
+    isDragging,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+  } = useCardDrag({
+    cardRef,
+    enabled: isTopCard,
+    swipeThreshold: SWIPE_THRESHOLD,
+    onThresholdExceeded: () => {
+      setIsSwipingOut(true);
+      window.setTimeout(() => {
         onSwipe?.();
-        setOffset({ x: 0, y: 0 });
-        setIsSwiping(false);
-      }, 300);
-    } else {
-      setOffset({ x: 0, y: 0 });
-    }
-  }, [offset, onSwipe]);
+        setIsSwipingOut(false);
+      }, SWIPE_OUT_DURATION_MS);
+    },
+  });
 
   const rotation = offset.x * ROTATION_FACTOR;
 
@@ -97,12 +67,11 @@ export default function DiscoveryCard({
     ? `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg)`
     : `scale(${stackScale})`;
 
-  // eslint-disable-next-line react-hooks/refs
-  const cardTransition = dragging.current
+  const cardTransition = isDragging
     ? "none"
     : "transform 0.3s ease-out, opacity 0.3s ease-out";
 
-  const cardOpacity = isSwiping ? 0 : 1;
+  const cardOpacity = isSwipingOut ? 0 : 1;
   const cardZIndex = 10 - stackIndex;
 
   return (
@@ -127,7 +96,7 @@ export default function DiscoveryCard({
           alt={place.name}
           draggable={false}
           className="absolute inset-0 w-full h-full object-cover"
-          onError={() => setImgError(true)}
+          onError={() => setFailedPhotoUrl(photoUrl)}
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center opacity-10">

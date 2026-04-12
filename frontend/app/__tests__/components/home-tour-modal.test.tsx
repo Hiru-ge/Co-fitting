@@ -17,23 +17,6 @@ const localStorageMock = {
 };
 vi.stubGlobal("localStorage", localStorageMock);
 
-const sessionStorageData: Record<string, string> = {};
-const sessionStorageMock = {
-  getItem: (key: string) => sessionStorageData[key] ?? null,
-  setItem: (key: string, value: string) => {
-    sessionStorageData[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete sessionStorageData[key];
-  },
-  clear: () => {
-    Object.keys(sessionStorageData).forEach(
-      (k) => delete sessionStorageData[k],
-    );
-  },
-};
-vi.stubGlobal("sessionStorage", sessionStorageMock);
-
 const { mockNavigate } = vi.hoisted(() => ({ mockNavigate: vi.fn() }));
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
@@ -48,7 +31,6 @@ import HomeTourModal from "~/components/HomeTourModal";
 describe("HomeTourModal", () => {
   beforeEach(() => {
     localStorageMock.clear();
-    sessionStorageMock.clear();
     vi.clearAllMocks();
   });
 
@@ -79,7 +61,7 @@ describe("HomeTourModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("ステップ2「次へ」押下で profile_tour_active がsessionStorageに書き込まれる", async () => {
+  test("ステップ2「次へ」押下で onboarding_stage がlocalStorageに書き込まれる", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
@@ -87,7 +69,7 @@ describe("HomeTourModal", () => {
     await user.click(screen.getByRole("button", { name: "次へ" })); // step 2
     await user.click(screen.getByRole("button", { name: "次へ" })); // → profile
 
-    expect(sessionStorage.getItem("profile_tour_active")).toBe("true");
+    expect(localStorage.getItem("onboarding_stage")).toBe("profile_tour");
   });
 
   test("ステップ2「次へ」押下で /profile に遷移する", async () => {
@@ -98,7 +80,9 @@ describe("HomeTourModal", () => {
     await user.click(screen.getByRole("button", { name: "次へ" }));
     await user.click(screen.getByRole("button", { name: "次へ" }));
 
-    expect(mockNavigate).toHaveBeenCalledWith("/profile");
+    expect(mockNavigate).toHaveBeenCalledWith("/profile", {
+      state: { fromTour: true },
+    });
   });
 
   test("ステップ2「次へ」押下では home_tour_seen は書き込まれない（プロフィールで完了するため）", async () => {

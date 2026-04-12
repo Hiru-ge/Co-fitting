@@ -1,19 +1,5 @@
 import { apiCall } from "./client";
-import type { Place } from "~/types/suggestion";
-
-/**
- * 提案APIのレスポンス型
- * places に提案施設リスト、notice に通知コードが含まれる場合がある
- * notice === "NO_INTEREST_PLACES" のとき、興味タグに合致する施設が半径内に見つからなかったことを示す
- * completed === true のとき、本日の3件提案を全て訪問済みであることを示す
- * reload_count_remaining は残りリロード回数（1日3回まで）
- */
-export interface SuggestionResult {
-  places: Place[];
-  notice?: string;
-  completed?: boolean;
-  reload_count_remaining?: number;
-}
+import type { SuggestionResult } from "~/types/suggestion";
 
 /**
  * 日次提案を取得する（SuggestionResult: { places, notice?, reload_count_remaining? }）
@@ -24,13 +10,9 @@ export async function getSuggestions(
   token: string,
   lat: number,
   lng: number,
-  radius?: number,
   isReload?: boolean,
 ): Promise<SuggestionResult> {
   const body: Record<string, number | boolean> = { lat, lng };
-  if (radius !== undefined) {
-    body.radius = radius;
-  }
   if (isReload) {
     body.is_reload = true;
   }

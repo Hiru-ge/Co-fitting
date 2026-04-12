@@ -1,35 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { redirect, useNavigate } from "react-router";
-import { protectedLoader } from "~/lib/protected-loader";
+import type { Route } from "./+types/history-detail";
+import { protectedLoader } from "~/lib/auth";
 import { getVisit, updateVisit } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
-import { useToast } from "~/components/toast";
+import { useToast } from "~/components/Toast";
 import { formatDate } from "~/utils/helpers";
-import { getCategoryInfoByKey } from "~/utils/category-map";
+import { getCategoryInfoByKey } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import { sendVisitMemoSaved } from "~/lib/gtag";
 import type { Visit } from "~/types/visit";
-import { getUser } from "~/lib/auth";
 
-// React Router v7 の型は +types/ から自動生成される想定だが、
-// worktreeではまだ生成されていないためinlineで型を定義する
-interface LoaderData {
-  user: Awaited<ReturnType<typeof getUser>>;
-  token: string;
-  visitId: number;
-}
-
-interface ComponentProps {
-  loaderData: LoaderData;
-  params: Record<string, string | undefined>;
-  matches: unknown[];
-}
-
-export async function clientLoader({
-  params,
-}: {
-  params: Record<string, string | undefined>;
-}) {
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const { user, token } = await protectedLoader();
 
   const visitId = Number(params.id);
@@ -40,7 +22,7 @@ export async function clientLoader({
   return { user, token, visitId };
 }
 
-export default function HistoryDetail({ loaderData }: ComponentProps) {
+export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
   const { token, visitId } = loaderData;
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -65,7 +47,7 @@ export default function HistoryDetail({ loaderData }: ComponentProps) {
         const photoUrl = await getPlacePhoto(
           token,
           data.place_id,
-          data.photo_reference,
+          data.photo_reference as string,
         );
         setPhotoUrl(photoUrl);
       } catch {

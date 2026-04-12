@@ -7,16 +7,16 @@ import {
   getCurrentPosition,
   startPositionPolling,
   isWithinCheckInRange,
-} from "~/utils/geolocation";
-import { DEFAULT_LOCATION, DEFAULT_RADIUS } from "~/utils/constants";
-import { getBestCategoryKey } from "~/utils/category-map";
+} from "~/lib/geolocation";
+import { DEFAULT_LOCATION } from "~/utils/constants";
+import { getBestCategoryKey } from "~/lib/category-map";
 import {
   ApiError,
   API_ERROR_CODES,
   SUGGESTION_MESSAGES,
   toUserMessage,
 } from "~/utils/error";
-import { useToast } from "~/components/toast";
+import { useToast } from "~/components/Toast";
 import {
   sendSuggestionGenerated,
   sendSuggestionViewed,
@@ -116,13 +116,7 @@ export function useSuggestions(token: string) {
           notice,
           completed,
           reload_count_remaining,
-        } = await getSuggestions(
-          token,
-          pos.lat,
-          pos.lng,
-          DEFAULT_RADIUS,
-          isReload,
-        );
+        } = await getSuggestions(token, pos.lat, pos.lng, isReload);
 
         if (reload_count_remaining !== undefined) {
           setReloadCountRemaining(reload_count_remaining);
@@ -194,7 +188,7 @@ export function useSuggestions(token: string) {
         setIsReloading(false);
       }
     },
-    [token, showToast, navigate],
+    [token, showToast],
   );
 
   useEffect(() => {

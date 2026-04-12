@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Route } from "./+types/history";
 import { useNavigate, Link } from "react-router";
-import { protectedLoader } from "~/lib/protected-loader";
+import { protectedLoader } from "~/lib/auth";
 import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
-import { useToast } from "~/components/toast";
+import { useToast } from "~/components/Toast";
 import type { Visit, MapVisit } from "~/types/visit";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
-import { getCategoryInfoByKey } from "~/utils/category-map";
+import { getCategoryInfoByKey } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
-import VisitMap from "~/components/visit-map";
+import VisitMap from "~/components/VisitMap";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -116,11 +116,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
               これまでの旅路
             </h1>
           </div>
-          <button className="flex items-center justify-center size-10 rounded-full">
-            <span className="material-symbols-outlined text-xl font-bold">
-              search
-            </span>
-          </button>
+          <div className="size-10" />
         </div>
 
         {/* ── View mode tab ── */}
@@ -324,12 +320,11 @@ async function loadPhotos(
     const batch = visits.slice(i, i + PHOTO_BATCH_SIZE);
     const batchResults = await Promise.all(
       batch.map(async (visit) => {
-        if (!visit.photo_reference) return visit;
         try {
           const photoUrl = await getPlacePhoto(
             token,
             visit.place_id,
-            visit.photo_reference,
+            visit.photo_reference as string,
           );
           return { ...visit, photoUrl };
         } catch {

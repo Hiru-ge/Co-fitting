@@ -2,6 +2,7 @@
 // Issue #300: コンプリートカードのデザイン刷新（宇宙テーマ・スワイプでスピン）
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import CompleteCard from "~/components/CompleteCard";
 
 vi.mock("react-router", async () => {
   const actual = await vi.importActual("react-router");
@@ -21,8 +22,6 @@ vi.mock("react-router", async () => {
     ),
   };
 });
-
-import CompleteCard from "~/components/complete-card";
 
 beforeEach(() => {
   // JSDOM は setPointerCapture を実装していないためモック

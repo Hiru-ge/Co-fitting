@@ -1,7 +1,6 @@
 import type { BadgeInfo } from "~/types/visit";
 import { getBadgeIcon } from "~/utils/badge-icon";
-import { useModalClose } from "~/hooks/use-modal-close";
-import ConfettiDecoration from "~/components/confetti-decoration";
+import ConfettiDecoration from "~/components/ConfettiDecoration";
 
 interface BadgeModalProps {
   badge: BadgeInfo;
@@ -10,7 +9,6 @@ interface BadgeModalProps {
 
 export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
   const { icon } = getBadgeIcon(badge.name);
-  useModalClose(onClose);
 
   return (
     <div

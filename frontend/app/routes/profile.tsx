@@ -1,25 +1,35 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/profile";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useLocation } from "react-router";
 import { logout } from "~/lib/auth";
-import { protectedLoader } from "~/lib/protected-loader";
+import { protectedLoader } from "~/lib/auth";
 import { getUserStats, getUserBadges, getProficiency } from "~/api/users";
 import type { UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 import { toUserMessage } from "~/utils/error";
-import { useToast } from "~/components/toast";
-import { useModalClose } from "~/hooks/use-modal-close";
+import { useToast } from "~/components/Toast";
 import { getLevelInfo, getLevelTitle } from "~/utils/level";
 import { getBadgeIcon } from "~/utils/badge-icon";
-import { HOME_TOUR_SEEN_KEY, PROFILE_TOUR_KEY } from "~/utils/constants";
+import {
+  HOME_TOUR_SEEN_KEY,
+  ONBOARDING_STAGE_KEY,
+  ONBOARDING_STAGE,
+} from "~/utils/constants";
+import ProfileTourStep from "~/components/ProfileTourStep";
 
 export { protectedLoader as clientLoader };
 
 export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user, token } = loaderData;
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromTour =
+    (location.state as { fromTour?: boolean } | null)?.fromTour === true;
   const { showToast } = useToast();
   const [showProfileTour, setShowProfileTour] = useState(
-    () => sessionStorage.getItem(PROFILE_TOUR_KEY) === "true",
+    () =>
+      fromTour ||
+      localStorage.getItem(ONBOARDING_STAGE_KEY) ===
+        ONBOARDING_STAGE.PROFILE_TOUR,
   );
   const [stats, setStats] = useState<UserStats | null>(null);
   const [badges, setBadges] = useState<EarnedBadge[]>([]);
@@ -49,6 +59,11 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  function finishProfileTour() {
+    localStorage.setItem(HOME_TOUR_SEEN_KEY, "true");
+    localStorage.setItem(ONBOARDING_STAGE_KEY, ONBOARDING_STAGE.COMPLETED);
+  }
 
   async function handleLogout() {
     setIsLoggingOut(true);
@@ -379,118 +394,11 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
 
       {/* ── ツアーステップ3：XP・バッジ説明 ── */}
       {showProfileTour && (
-        <ProfileTourStep onClose={() => setShowProfileTour(false)} />
-      )}
-    </div>
-  );
-}
-
-function ProfileTourStep({ onClose }: { onClose: () => void }) {
-  const navigate = useNavigate();
-  const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const SPOTLIGHT_PADDING = 10;
-
-  useEffect(() => {
-    const el = document.querySelector('[data-tour="xp-section"]');
-    const rect = el ? el.getBoundingClientRect() : null;
-    requestAnimationFrame(() => setTargetRect(rect));
-  }, []);
-
-  function handleFinish() {
-    localStorage.setItem(HOME_TOUR_SEEN_KEY, "true");
-    sessionStorage.removeItem(PROFILE_TOUR_KEY);
-    onClose();
-    navigate("/home");
-  }
-
-  const panelAtTop = targetRect
-    ? targetRect.top + targetRect.height / 2 > window.innerHeight * 0.55
-    : false;
-
-  const panelStyle: React.CSSProperties = panelAtTop
-    ? {
-        position: "absolute",
-        top: 16,
-        left: "50%",
-        transform: "translateX(-50%)",
-      }
-    : {
-        position: "absolute",
-        bottom: 16,
-        left: "50%",
-        transform: "translateX(-50%)",
-      };
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="使い方ツアー ステップ3"
-      className="fixed inset-0 z-[60]"
-    >
-      {targetRect ? (
-        <div
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            top: targetRect.top - SPOTLIGHT_PADDING + 24,
-            left: targetRect.left - SPOTLIGHT_PADDING,
-            width: targetRect.width + SPOTLIGHT_PADDING * 2,
-            height: targetRect.height + SPOTLIGHT_PADDING * 2,
-            borderRadius: 16,
-            boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.75)",
-            pointerEvents: "none",
-          }}
+        <ProfileTourStep
+          onClose={() => setShowProfileTour(false)}
+          onFinish={finishProfileTour}
         />
-      ) : (
-        <div className="absolute inset-0 bg-black/75" aria-hidden="true" />
       )}
-
-      <div
-        className="z-10"
-        style={{
-          ...panelStyle,
-          width: "calc(100vw - 32px)",
-          maxWidth: "20rem",
-        }}
-      >
-        <div
-          className="rounded-2xl p-5 text-center"
-          style={{
-            background: "rgba(16, 34, 34, 0.97)",
-            border: "1px solid rgba(82, 91, 187, 0.4)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <p className="text-xs font-bold tracking-widest text-primary/70 mb-3">
-            3 / 3
-          </p>
-          <h2 className="text-white text-base font-bold leading-snug mb-2">
-            XPとバッジを集めよう
-          </h2>
-          <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
-            {
-              "訪問するたびにXPとバッジが貯まります\n興味外ジャンルへの脱却訪問はボーナスXP！"
-            }
-          </p>
-        </div>
-
-        <div className="mt-3 flex gap-2">
-          <button
-            onClick={handleFinish}
-            className="flex-1 py-2.5 rounded-full text-sm text-gray-400 border border-gray-600 bg-white/5 hover:text-gray-300 transition-colors"
-          >
-            スキップ
-          </button>
-          <button
-            onClick={handleFinish}
-            className="flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-95"
-            style={{ background: "#525BBB", color: "#fff" }}
-          >
-            はじめる
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -504,7 +412,6 @@ function LogoutModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  useModalClose(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="absolute inset-0" onClick={onClose} />

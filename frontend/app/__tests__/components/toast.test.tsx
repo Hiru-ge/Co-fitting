@@ -1,6 +1,6 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, fireEvent } from "@testing-library/react";
-import { ToastProvider, useToast } from "~/components/toast";
+import { ToastProvider, useToast } from "~/components/Toast";
 
 // テスト用トースト発火コンポーネント
 function ToastTrigger({

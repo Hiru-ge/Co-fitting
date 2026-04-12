@@ -2,10 +2,10 @@ import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   calcDistance,
   getPositionWithFallback,
-  calcMapCenter,
   isWithinCheckInRange,
   startPositionPolling,
-} from "~/utils/geolocation";
+} from "~/lib/geolocation";
+import { calcMapCenter } from "~/components/VisitMap";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
 describe("calcDistance", () => {
@@ -108,7 +108,7 @@ describe("calcMapCenter", () => {
   test("userPositionがある場合はそれを返す", () => {
     const pos = { lat: 35.7, lng: 139.8 };
     const visits = [{ lat: 35.6, lng: 139.7 }];
-    expect(calcMapCenter(visits, pos)).toEqual(pos);
+    expect(calcMapCenter(visits, pos, DEFAULT_LOCATION)).toEqual(pos);
   });
 
   test("userPositionがなくvisitsがある場合は平均座標を返す", () => {
@@ -116,13 +116,13 @@ describe("calcMapCenter", () => {
       { lat: 35.6762, lng: 139.6503 },
       { lat: 35.68, lng: 139.66 },
     ];
-    const result = calcMapCenter(visits, null);
+    const result = calcMapCenter(visits, null, DEFAULT_LOCATION);
     expect(result.lat).toBeCloseTo((35.6762 + 35.68) / 2);
     expect(result.lng).toBeCloseTo((139.6503 + 139.66) / 2);
   });
 
   test("userPositionもvisitsも空の場合はDEFAULT_LOCATIONを返す", () => {
-    expect(calcMapCenter([], null)).toEqual({
+    expect(calcMapCenter([], null, DEFAULT_LOCATION)).toEqual({
       lat: DEFAULT_LOCATION.lat,
       lng: DEFAULT_LOCATION.lng,
     });
@@ -130,7 +130,7 @@ describe("calcMapCenter", () => {
 
   test("visits1件の場合はその座標を返す", () => {
     const visits = [{ lat: 35.7, lng: 139.9 }];
-    const result = calcMapCenter(visits, null);
+    const result = calcMapCenter(visits, null, DEFAULT_LOCATION);
     expect(result.lat).toBe(35.7);
     expect(result.lng).toBe(139.9);
   });
@@ -168,7 +168,7 @@ describe("startPositionPolling", () => {
 
     expect(getCurrentPositionMock).toHaveBeenCalledWith(
       expect.any(Function),
-      undefined,
+      expect.any(Function),
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 },
     );
     expect(onPosition).toHaveBeenCalledWith({ lat: 35.68, lng: 139.76 });
@@ -196,23 +196,6 @@ describe("startPositionPolling", () => {
 
     vi.advanceTimersByTime(30000);
     expect(getCurrentPositionMock).toHaveBeenCalledTimes(2);
-  });
-
-  test("onError コールバックが渡された場合、getCurrentPosition に転送される", () => {
-    const onPosition = vi.fn();
-    const onError = vi.fn();
-    const getCurrentPositionMock = vi.fn();
-    vi.stubGlobal("navigator", {
-      geolocation: { getCurrentPosition: getCurrentPositionMock },
-    });
-
-    startPositionPolling(onPosition, onError);
-
-    expect(getCurrentPositionMock).toHaveBeenCalledWith(
-      expect.any(Function),
-      onError,
-      expect.any(Object),
-    );
   });
 
   test("Geolocation非対応の場合は null を返す", () => {

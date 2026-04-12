@@ -1,8 +1,8 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import DiscoveryCard from "~/components/discovery-card";
+import DiscoveryCard from "~/components/DiscoveryCard";
 
-vi.mock("~/utils/geolocation", () => ({
+vi.mock("~/lib/geolocation", () => ({
   calcDistance: vi.fn().mockReturnValue(500),
 }));
 
@@ -36,7 +36,7 @@ function renderCard(overrides = {}) {
   );
 }
 
-// === Issue #178: ジャンルバッジの興味タグ一致強調表示テスト ===
+// ジャンルバッジの興味タグ一致強調表示テスト
 describe("DiscoveryCard ジャンルバッジ", () => {
   test("is_interest_match=true の場合、ジャンルバッジにオレンジカラーが適用される", () => {
     const { container } = renderCard({ is_interest_match: true });
@@ -70,7 +70,7 @@ describe("DiscoveryCard ジャンルバッジ", () => {
   });
 });
 
-// === Issue #198: 熟練度ベース脱却モードバッジテスト ===
+// 熟練度ベース脱却モードバッジテスト
 describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () => {
   test("is_breakout=true の場合に脱却モードバッジが表示される", () => {
     renderCard({ is_breakout: true });
@@ -102,7 +102,7 @@ describe("DiscoveryCard 脱却モードバッジ（熟練度ベース）", () =>
   });
 });
 
-// === Issue #200: Google Maps施設詳細連携テスト ===
+//Google Maps施設詳細連携テスト
 describe("DiscoveryCard Google Maps施設詳細", () => {
   test("「地図で開く」リンクが表示される", () => {
     renderCard();

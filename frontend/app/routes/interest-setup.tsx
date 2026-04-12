@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { redirect, useNavigate } from "react-router";
-import type { Route } from "./+types/onboarding";
+import type { Route } from "./+types/interest-setup";
 import { getToken } from "~/lib/auth";
-import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
+import { getGenreTags } from "~/api/genres";
+import { getInterests, updateInterests } from "~/api/users";
 import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";
 import { sendOnboardingCompleted, sendOnboardingSkipped } from "~/lib/gtag";
 import type { GenreTag } from "~/types/genre";

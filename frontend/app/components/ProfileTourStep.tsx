@@ -1,59 +1,32 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  HOME_TOUR_SEEN_KEY,
-  ONBOARDING_STAGE_KEY,
-  ONBOARDING_STAGE,
-} from "~/utils/constants";
 
-interface HomeTourModalProps {
+interface ProfileTourStepProps {
   onClose: () => void;
+  onFinish: () => void;
 }
 
-// ホーム側のステップ（ステップ3はプロフィールページで表示）
-const HOME_TOUR_STEPS = [
-  {
-    selector: '[data-tour="discovery-cards"]',
-    title: "近くの場所が提案されます",
-    description:
-      "カードをスワイプで次の提案へ移動\nリロードで提案カードを引き直せます",
-  },
-  {
-    selector: '[data-tour="action-buttons"]',
-    title: "到着したら訪問を記録しましょう",
-    description: "施設の半径100m以内で\n「行ってきた！」ボタンが押せます",
-  },
-];
-
-const TOTAL_STEPS = 3; // プロフィールのステップ3を含む合計
 const SPOTLIGHT_PADDING = 10;
 
-export default function HomeTourModal({ onClose }: HomeTourModalProps) {
+export default function ProfileTourStep({
+  onClose,
+  onFinish,
+}: ProfileTourStepProps) {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const currentStep = HOME_TOUR_STEPS[step];
-  const isLastHomeStep = step === HOME_TOUR_STEPS.length - 1;
 
   useEffect(() => {
-    const el = document.querySelector(currentStep.selector);
-    const rect = el ? el.getBoundingClientRect() : null;
-    requestAnimationFrame(() => setTargetRect(rect));
-  }, [step, currentStep.selector]);
+    const xpSectionEl = document.querySelector('[data-tour="xp-section"]');
+    const xpSectionRect = xpSectionEl
+      ? xpSectionEl.getBoundingClientRect()
+      : null;
+    requestAnimationFrame(() => setTargetRect(xpSectionRect));
+  }, []);
 
-  function handleSkip() {
-    localStorage.setItem(HOME_TOUR_SEEN_KEY, "true");
+  function handleFinish() {
+    onFinish();
     onClose();
-  }
-
-  function handleNext() {
-    if (isLastHomeStep) {
-      // ステップ3はプロフィールページで表示
-      localStorage.setItem(ONBOARDING_STAGE_KEY, ONBOARDING_STAGE.PROFILE_TOUR);
-      navigate("/profile", { state: { fromTour: true } });
-    } else {
-      setStep((s) => s + 1);
-    }
+    navigate("/home");
   }
 
   const panelAtTop = targetRect
@@ -78,7 +51,7 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="使い方ツアー"
+      aria-label="使い方ツアー ステップ3"
       className="fixed inset-0 z-[60]"
     >
       {targetRect ? (
@@ -86,7 +59,7 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
           aria-hidden="true"
           style={{
             position: "fixed",
-            top: targetRect.top - SPOTLIGHT_PADDING,
+            top: targetRect.top - SPOTLIGHT_PADDING + 24,
             left: targetRect.left - SPOTLIGHT_PADDING,
             width: targetRect.width + SPOTLIGHT_PADDING * 2,
             height: targetRect.height + SPOTLIGHT_PADDING * 2,
@@ -116,29 +89,31 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
           }}
         >
           <p className="text-xs font-bold tracking-widest text-primary/70 mb-3">
-            {step + 1} / {TOTAL_STEPS}
+            3 / 3
           </p>
           <h2 className="text-white text-base font-bold leading-snug mb-2">
-            {currentStep.title}
+            XPとバッジを集めよう
           </h2>
           <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
-            {currentStep.description}
+            {
+              "訪問するたびにXPとバッジが貯まります\n興味外ジャンルへの脱却訪問はボーナスXP！"
+            }
           </p>
         </div>
 
         <div className="mt-3 flex gap-2">
           <button
-            onClick={handleSkip}
+            onClick={handleFinish}
             className="flex-1 py-2.5 rounded-full text-sm text-gray-400 border border-gray-600 bg-white/5 hover:text-gray-300 transition-colors"
           >
             スキップ
           </button>
           <button
-            onClick={handleNext}
+            onClick={handleFinish}
             className="flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-95"
             style={{ background: "#525BBB", color: "#fff" }}
           >
-            次へ
+            はじめる
           </button>
         </div>
       </div>

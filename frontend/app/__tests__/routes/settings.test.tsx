@@ -25,19 +25,32 @@ vi.mock("react-router", async () => {
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn().mockReturnValue("test-token"),
-  getUser: vi.fn().mockResolvedValue({
-    id: 1,
-    email: "test@example.com",
-    display_name: "テストユーザー",
-    avatar_url: null,
-    created_at: "2025-06-15T10:00:00Z",
-    updated_at: "2025-12-01T10:00:00Z",
+  protectedLoader: vi.fn().mockResolvedValue({
+    user: {
+      id: 1,
+      email: "test@example.com",
+      display_name: "テストユーザー",
+      avatar_url: null,
+      search_radius: 10000,
+      created_at: "2025-06-15T10:00:00Z",
+      updated_at: "2025-12-01T10:00:00Z",
+    },
+    token: "test-token",
   }),
   logout: vi.fn().mockResolvedValue(undefined),
   clearToken: vi.fn(),
 }));
 
 vi.mock("~/api/users", () => ({
+  getUser: vi.fn().mockResolvedValue({
+    id: 1,
+    email: "test@example.com",
+    display_name: "テストユーザー",
+    avatar_url: null,
+    search_radius: 10000,
+    created_at: "2025-06-15T10:00:00Z",
+    updated_at: "2025-12-01T10:00:00Z",
+  }),
   updateDisplayName: vi.fn().mockResolvedValue({
     id: 1,
     email: "test@example.com",
@@ -56,16 +69,6 @@ vi.mock("~/api/users", () => ({
     created_at: "2025-06-15T10:00:00Z",
     updated_at: "2025-12-01T10:00:00Z",
   }),
-}));
-
-vi.mock("~/api/genres", () => ({
-  getGenreTags: vi.fn().mockResolvedValue([
-    { id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
-    { id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
-    { id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
-    { id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
-    { id: 5, name: "書店", category: "カルチャー", icon: "📚" },
-  ]),
   getInterests: vi.fn().mockResolvedValue([
     { genre_tag_id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
     { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
@@ -81,13 +84,23 @@ vi.mock("~/api/genres", () => ({
   }),
 }));
 
+vi.mock("~/api/genres", () => ({
+  getGenreTags: vi.fn().mockResolvedValue([
+    { id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
+    { id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
+    { id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
+    { id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
+    { id: 5, name: "書店", category: "カルチャー", icon: "📚" },
+  ]),
+}));
+
 import Settings from "~/routes/settings";
 import {
   updateDisplayName,
   deleteAccount,
   updateSearchRadius,
+  updateInterests,
 } from "~/api/users";
-import { updateInterests } from "~/api/genres";
 
 const mockUser = {
   id: 1,

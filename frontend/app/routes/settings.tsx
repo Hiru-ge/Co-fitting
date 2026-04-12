@@ -1,26 +1,41 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/settings";
 import { useNavigate, Link } from "react-router";
-import { clearToken } from "~/lib/auth";
-import { protectedLoader } from "~/lib/protected-loader";
+import { clearToken, protectedLoader } from "~/lib/auth";
 import {
   updateDisplayName,
   deleteAccount,
   updateSearchRadius,
+  getInterests,
+  updateInterests,
 } from "~/api/users";
-import { getGenreTags, getInterests, updateInterests } from "~/api/genres";
+import { getGenreTags } from "~/api/genres";
 import type { GenreTag, Interest } from "~/types/genre";
-import { useModalClose } from "~/hooks/use-modal-close";
-import { useFormMessage } from "~/hooks/use-form-message";
 import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
 import NotificationTab from "~/components/NotificationTab";
 
+interface FormMessageState {
+  msg: string;
+  error: string;
+  setMsg: (msg: string) => void;
+  setError: (error: string) => void;
+  reset: () => void;
+}
+
+function useFormMessage(): FormMessageState {
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+  const reset = useCallback(() => {
+    setMsg("");
+    setError("");
+  }, []);
+  return { msg, error, setMsg, setError, reset };
+}
+
 type TabId = "user" | "suggestion" | "notification";
 
-const INPUT_CLASS =
-  "w-full px-4 py-3 rounded-xl border border-gray-700 text-sm text-white bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors";
-const SUBMIT_CLASS =
-  "w-full py-3 rounded-full bg-primary text-black font-bold text-sm transition-colors active:scale-95 disabled:opacity-50";
+const INPUT_CLASS = "settings-input";
+const SUBMIT_CLASS = "settings-submit";
 
 function FormMessage({ success, error }: { success?: string; error?: string }) {
   if (success) {
@@ -675,7 +690,6 @@ function RefreshSuggestionsModal({
   onConfirm: () => void;
   isSaving: boolean;
 }) {
-  useModalClose(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="absolute inset-0" onClick={onClose} />
@@ -715,7 +729,6 @@ function DeleteAccountModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
-  useModalClose(onClose);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <div className="absolute inset-0" onClick={onClose} />

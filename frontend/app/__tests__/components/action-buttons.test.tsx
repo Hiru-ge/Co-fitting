@@ -1,6 +1,6 @@
 import { describe, test, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import ActionButtons from "~/components/action-buttons";
+import ActionButtons from "~/components/ActionButtons";
 
 // === Issue #257: 訪問ボタンは施設周辺でのみ押せるようにする ===
 describe("ActionButtons: 訪問ボタンの近接制限", () => {

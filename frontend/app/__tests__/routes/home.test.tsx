@@ -50,7 +50,7 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 const mockShowToast = vi.fn();
-vi.mock("~/components/toast", () => ({
+vi.mock("~/components/Toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
@@ -84,7 +84,7 @@ const mockPlaces = [
   },
 ];
 
-vi.mock("~/utils/geolocation", () => ({
+vi.mock("~/lib/geolocation", () => ({
   getCurrentPosition: vi.fn().mockResolvedValue({ lat: 35.658, lng: 139.7016 }),
   calcDistance: vi.fn().mockReturnValue(500),
   startPositionPolling: vi.fn().mockReturnValue(1),
@@ -129,17 +129,9 @@ vi.mock("react-router", async () => {
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn().mockReturnValue("test-token"),
-  getUser: vi.fn().mockResolvedValue({
-    id: 1,
-    email: "test@example.com",
-    display_name: "テストユーザー",
-    avatar_url: null,
-    created_at: "2024-01-01",
-    updated_at: "2024-01-01",
-  }),
 }));
 
-vi.mock("~/api/genres", () => ({
+vi.mock("~/api/users", () => ({
   getInterests: vi.fn().mockResolvedValue([
     { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
     { genre_tag_id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
@@ -201,7 +193,7 @@ describe("Home clientLoader", () => {
   });
 
   test("トークンがない場合は /login にリダイレクトし、API 呼び出しは行わない", async () => {
-    const { getToken, getUser } = await import("~/lib/auth");
+    const { getToken } = await import("~/lib/auth");
     vi.mocked(getToken).mockReturnValueOnce(null);
     const { redirect } = await import("react-router");
     const { clientLoader } = await import("~/routes/home");
@@ -214,27 +206,10 @@ describe("Home clientLoader", () => {
 
     expect(redirect).toHaveBeenCalledWith("/login");
     expect(redirect).toHaveBeenCalledTimes(1);
-    expect(getUser).not.toHaveBeenCalled();
-  });
-
-  test("getUser が失敗した場合は /login にのみリダイレクトする", async () => {
-    const { getUser } = await import("~/lib/auth");
-    vi.mocked(getUser).mockRejectedValueOnce(new Error("unauthorized"));
-    const { redirect } = await import("react-router");
-    const { clientLoader } = await import("~/routes/home");
-
-    try {
-      await clientLoader();
-    } catch {
-      // throw redirect を使う
-    }
-
-    expect(redirect).toHaveBeenCalledWith("/login");
-    expect(redirect).not.toHaveBeenCalledWith("/onboarding");
   });
 
   test("getInterests が失敗した場合は /login にのみリダイレクトする", async () => {
-    const { getInterests } = await import("~/api/genres");
+    const { getInterests } = await import("~/api/users");
     vi.mocked(getInterests).mockRejectedValueOnce(new Error("network error"));
     const { redirect } = await import("react-router");
     const { clientLoader } = await import("~/routes/home");
@@ -250,7 +225,7 @@ describe("Home clientLoader", () => {
   });
 
   test("interests < 3 で /onboarding にリダイレクトする場合、/login へはリダイレクトしない", async () => {
-    const { getInterests } = await import("~/api/genres");
+    const { getInterests } = await import("~/api/users");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
     ]);
@@ -267,59 +242,8 @@ describe("Home clientLoader", () => {
     expect(redirect).not.toHaveBeenCalledWith("/login");
   });
 
-  test("getUser と getInterests が並列実行される（Promise.all）", async () => {
-    const { getUser } = await import("~/lib/auth");
-    const { getInterests } = await import("~/api/genres");
-
-    let getUserStarted = false;
-    let getInterestsStarted = false;
-    let getUserStartedBeforeInterestsDone = false;
-
-    vi.mocked(getUser).mockImplementationOnce(async () => {
-      getUserStarted = true;
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      return {
-        id: 1,
-        email: "test@example.com",
-        display_name: "テスト",
-        avatar_url: null,
-        created_at: "2024-01-01",
-        updated_at: "2024-01-01",
-        search_radius: 500,
-      };
-    });
-    vi.mocked(getInterests).mockImplementationOnce(async () => {
-      getInterestsStarted = true;
-      // getUser が既に開始している（並列）ことを確認
-      getUserStartedBeforeInterestsDone = getUserStarted;
-      await new Promise((resolve) => setTimeout(resolve, 10));
-      return [
-        {
-          genre_tag_id: 1,
-          name: "カフェ",
-          category: "食べる・飲む",
-          icon: "☕",
-        },
-        {
-          genre_tag_id: 2,
-          name: "ラーメン",
-          category: "食べる・飲む",
-          icon: "🍜",
-        },
-        { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
-      ];
-    });
-
-    const { clientLoader } = await import("~/routes/home");
-    await clientLoader();
-
-    expect(getUserStarted).toBe(true);
-    expect(getInterestsStarted).toBe(true);
-    expect(getUserStartedBeforeInterestsDone).toBe(true);
-  });
-
   test("interests < 3 かつ onboarding_skipped フラグなしなら /onboarding にリダイレクトする", async () => {
-    const { getInterests } = await import("~/api/genres");
+    const { getInterests } = await import("~/api/users");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
     ]);
@@ -337,7 +261,7 @@ describe("Home clientLoader", () => {
 
   test("interests < 3 でも onboarding_skipped フラグがあれば /onboarding にリダイレクトしない", async () => {
     localStorage.setItem("onboarding_skipped", "true");
-    const { getInterests } = await import("~/api/genres");
+    const { getInterests } = await import("~/api/users");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
     ]);
@@ -793,7 +717,7 @@ describe("Home画面", () => {
 
   // === Issue #268: 位置情報未許可時のUX改善 ===
   test("位置情報が拒否された場合、位置情報モーダルが表示される", async () => {
-    const { getCurrentPosition } = await import("~/utils/geolocation");
+    const { getCurrentPosition } = await import("~/lib/geolocation");
     vi.mocked(getCurrentPosition).mockRejectedValueOnce(
       Object.assign(new Error("User denied Geolocation"), { code: 1 }),
     );
@@ -815,7 +739,7 @@ describe("Home画面", () => {
       reload_count_remaining: 3,
     });
 
-    const { getCurrentPosition } = await import("~/utils/geolocation");
+    const { getCurrentPosition } = await import("~/lib/geolocation");
     vi.mocked(getCurrentPosition).mockRejectedValueOnce(
       Object.assign(new Error("User denied Geolocation"), { code: 1 }),
     );
@@ -839,7 +763,7 @@ describe("Home画面", () => {
   });
 
   test("位置情報モーダルで「設定で許可する」を選ぶと設定画面へ遷移する", async () => {
-    const { getCurrentPosition } = await import("~/utils/geolocation");
+    const { getCurrentPosition } = await import("~/lib/geolocation");
     vi.mocked(getCurrentPosition).mockRejectedValueOnce(
       Object.assign(new Error("User denied Geolocation"), { code: 1 }),
     );
@@ -1080,8 +1004,7 @@ describe("提案リロード機能", () => {
         expect.any(String),
         expect.any(Number),
         expect.any(Number),
-        expect.any(Number),
-        true, // isReload
+        true,
       );
     });
   });
@@ -1165,7 +1088,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
 
   // === Issue #262: 施設カード表示中は startPositionPolling が呼ばれる ===
   test("施設カード表示中は startPositionPolling が呼ばれる（距離定期更新）", async () => {
-    const { startPositionPolling } = await import("~/utils/geolocation");
+    const { startPositionPolling } = await import("~/lib/geolocation");
 
     renderHome();
 
@@ -1182,7 +1105,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
 
   test("提案取得後にアンマウント→再マウントすると getSuggestions は再呼び出しされる（位置変化に関係なく）", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
-    const { getCurrentPosition } = await import("~/utils/geolocation");
+    const { getCurrentPosition } = await import("~/lib/geolocation");
 
     // 初回: 位置A
     vi.mocked(getCurrentPosition).mockResolvedValue({
@@ -1253,7 +1176,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
 
     // isReload=true で呼ばれていることを確認
     const lastCall = vi.mocked(getSuggestions).mock.calls.at(-1);
-    expect(lastCall?.[4]).toBe(true); // 第5引数が isReload
+    expect(lastCall?.[3]).toBe(true); // 第4引数が isReload
   });
 });
 

@@ -1,42 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
-import { getToken, getUser } from "~/lib/auth";
-import { getInterests } from "~/api/genres";
+import { getToken } from "~/lib/auth";
+import { getInterests } from "~/api/users";
 import { ONBOARDING_SKIPPED_KEY, HOME_TOUR_SEEN_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
 import { sendSuggestionViewed } from "~/lib/gtag";
-import { getBestCategoryKey } from "~/utils/category-map";
-import AppHeader from "~/components/app-header";
-import DiscoveryCard from "~/components/discovery-card";
-import CardIndicator from "~/components/card-indicator";
-import ActionButtons from "~/components/action-buttons";
-import XpModal from "~/components/xp-modal";
-import BadgeModal from "~/components/badge-modal";
-import CompleteCard from "~/components/complete-card";
+import { getBestCategoryKey } from "~/lib/category-map";
+import AppHeader from "~/components/AppHeader";
+import DiscoveryCard from "~/components/DiscoveryCard";
+import CardIndicator from "~/components/CardIndicator";
+import ActionButtons from "~/components/ActionButtons";
+import XpModal from "~/components/XpModal";
+import BadgeModal from "~/components/BadgeModal";
+import CompleteCard from "~/components/CompleteCard";
 import HomeTourModal from "~/components/HomeTourModal";
-import LocationPermissionModal from "~/components/location-permission-modal";
+import LocationPermissionModal from "~/components/LocationPermissionModal";
 import PushNotificationBanner from "~/components/PushNotificationBanner";
 
 export async function clientLoader() {
   const token = getToken();
   if (!token) throw redirect("/login");
 
-  let apiResult: [
-    Awaited<ReturnType<typeof getUser>>,
-    Awaited<ReturnType<typeof getInterests>>,
-  ];
+  let interests: Awaited<ReturnType<typeof getInterests>>;
   try {
-    apiResult = await Promise.all([getUser(token), getInterests(token)]);
+    interests = await getInterests(token);
   } catch {
     throw redirect("/login");
   }
 
-  const [user, interests] = apiResult;
   const onboardingSkipped =
     localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
   if (interests.length < 3 && !onboardingSkipped) throw redirect("/onboarding");
-  return { user, token };
+  return { token };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {

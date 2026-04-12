@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 const mockShowToast = vi.fn();
-vi.mock("~/components/toast", () => ({
+vi.mock("~/components/Toast", () => ({
   useToast: () => ({ showToast: mockShowToast }),
 }));
 
@@ -13,6 +13,7 @@ vi.mock("react-router", async () => {
     ...actual,
     redirect: vi.fn(),
     useNavigate: vi.fn().mockReturnValue(vi.fn()),
+    useLocation: vi.fn().mockReturnValue({ state: null }),
     Link: ({
       to,
       children,
@@ -30,13 +31,16 @@ vi.mock("react-router", async () => {
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn().mockReturnValue("test-token"),
-  getUser: vi.fn().mockResolvedValue({
-    id: 1,
-    email: "test@example.com",
-    display_name: "テストユーザー",
-    avatar_url: null,
-    created_at: "2025-06-15T10:00:00Z",
-    updated_at: "2025-12-01T10:00:00Z",
+  protectedLoader: vi.fn().mockResolvedValue({
+    user: {
+      id: 1,
+      email: "test@example.com",
+      display_name: "テストユーザー",
+      avatar_url: null,
+      created_at: "2025-06-15T10:00:00Z",
+      updated_at: "2025-12-01T10:00:00Z",
+    },
+    token: "test-token",
   }),
   logout: vi.fn().mockResolvedValue(undefined),
 }));
@@ -57,6 +61,14 @@ vi.mock("~/api/visits", () => ({
 }));
 
 vi.mock("~/api/users", () => ({
+  getUser: vi.fn().mockResolvedValue({
+    id: 1,
+    email: "test@example.com",
+    display_name: "テストユーザー",
+    avatar_url: null,
+    created_at: "2025-06-15T10:00:00Z",
+    updated_at: "2025-12-01T10:00:00Z",
+  }),
   getUserStats: vi.fn().mockResolvedValue({
     level: 5,
     total_xp: 850,
@@ -128,23 +140,6 @@ function renderProfile() {
   );
 }
 
-const sessionStorageData: Record<string, string> = {};
-const sessionStorageMock = {
-  getItem: (key: string) => sessionStorageData[key] ?? null,
-  setItem: (key: string, value: string) => {
-    sessionStorageData[key] = value;
-  },
-  removeItem: (key: string) => {
-    delete sessionStorageData[key];
-  },
-  clear: () => {
-    Object.keys(sessionStorageData).forEach(
-      (k) => delete sessionStorageData[k],
-    );
-  },
-};
-vi.stubGlobal("sessionStorage", sessionStorageMock);
-
 const localStorageData: Record<string, string> = {};
 const localStorageMock = {
   getItem: (key: string) => localStorageData[key] ?? null,
@@ -163,7 +158,6 @@ vi.stubGlobal("localStorage", localStorageMock);
 describe("プロフィール画面", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    sessionStorageMock.clear();
     localStorageMock.clear();
   });
 
@@ -367,8 +361,8 @@ describe("プロフィール画面", () => {
   });
 
   // === Issue #258: プロフィールツアーステップ3 ===
-  test("profile_tour_active が 'true' のとき ProfileTourStep が表示される", async () => {
-    sessionStorage.setItem("profile_tour_active", "true");
+  test("onboarding_stage が profile_tour のとき ProfileTourStep が表示される", async () => {
+    localStorage.setItem("onboarding_stage", "profile_tour");
     renderProfile();
 
     await waitFor(() => {
@@ -380,7 +374,7 @@ describe("プロフィール画面", () => {
     });
   });
 
-  test("profile_tour_active がないとき ProfileTourStep は表示されない", async () => {
+  test("onboarding_stage がないとき ProfileTourStep は表示されない", async () => {
     renderProfile();
 
     await waitFor(() => {
@@ -398,7 +392,7 @@ describe("プロフィール画面", () => {
     const { useNavigate } = await import("react-router");
     vi.mocked(useNavigate).mockReturnValue(mockNavigate as any);
 
-    sessionStorage.setItem("profile_tour_active", "true");
+    localStorage.setItem("onboarding_stage", "profile_tour");
     renderProfile();
 
     await waitFor(() => {
@@ -410,7 +404,7 @@ describe("プロフィール画面", () => {
     await user.click(screen.getByRole("button", { name: "はじめる" }));
 
     expect(localStorage.getItem("home_tour_seen")).toBe("true");
-    expect(sessionStorage.getItem("profile_tour_active")).toBeNull();
+    expect(localStorage.getItem("onboarding_stage")).toBe("completed");
     expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
 
@@ -420,7 +414,7 @@ describe("プロフィール画面", () => {
     const { useNavigate } = await import("react-router");
     vi.mocked(useNavigate).mockReturnValue(mockNavigate as any);
 
-    sessionStorage.setItem("profile_tour_active", "true");
+    localStorage.setItem("onboarding_stage", "profile_tour");
     renderProfile();
 
     await waitFor(() => {
@@ -434,7 +428,7 @@ describe("プロフィール画面", () => {
     await user.click(skipButtons[skipButtons.length - 1]);
 
     expect(localStorage.getItem("home_tour_seen")).toBe("true");
-    expect(sessionStorage.getItem("profile_tour_active")).toBeNull();
+    expect(localStorage.getItem("onboarding_stage")).toBe("completed");
     expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
 

@@ -379,56 +379,56 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/components/badge-toast.tsx` とテスト `__tests__/components/badge-toast.test.tsx` を削除（どこにも import されていないデッドコード）
-- [ ] `frontend/app/lib/beta-access.ts` の `lockBeta` 関数を削除（ベータゲート以外で未使用）
-- [ ] `frontend/app/hooks/use-modal-close.ts` を削除し、`badge-modal.tsx` / `xp-modal.tsx` 等5ファイルから import と呼び出しを除去（Roamble は PWA モバイル前提のため Escape キー対応不要）。合わせて `__tests__/hooks/use-modal-close.test.ts` も削除
-- [ ] `frontend/app/hooks/use-push-banner-visible.ts` を `PushNotificationBanner.tsx` 内に同居させる（利用元が1箇所のみ）
-- [ ] `frontend/app/hooks/use-form-message.ts` を `settings.tsx` 内に同居させる（利用元が `settings.tsx` のみ）
-- [ ] `frontend/app/routes/home.tsx` の `clientLoader` で取得している `user` を実際に使うか削除する（現状 `loaderData.user` は未参照）
-- [ ] `frontend/app/routes/history.tsx` の未実装検索ボタン（`history.tsx:119`）を削除するか `onClick` を実装する
-- [ ] `frontend/app/components/confetti-decoration.tsx` の `POSITIONS` 配列から `rotate` フィールドを削除（アニメーションで上書きされるデッドコード）
+- [x] `frontend/app/components/badge-toast.tsx` とテスト `__tests__/components/badge-toast.test.tsx` を削除（どこにも import されていないデッドコード）
+- [x] `frontend/app/lib/beta-access.ts` の `lockBeta` 関数を削除（ベータゲート以外で未使用）
+- [x] `frontend/app/hooks/use-modal-close.ts` を削除し、`badge-modal.tsx` / `xp-modal.tsx` 等5ファイルから import と呼び出しを除去（Roamble は PWA モバイル前提のため Escape キー対応不要）。合わせて `__tests__/hooks/use-modal-close.test.ts` も削除
+- [x] `frontend/app/hooks/use-push-banner-visible.ts` を `PushNotificationBanner.tsx` 内に同居させる（利用元が1箇所のみ）
+- [x] `frontend/app/hooks/use-form-message.ts` を `settings.tsx` 内に同居させる（利用元が `settings.tsx` のみ）
+- [x] `frontend/app/routes/home.tsx` の `clientLoader` で取得している `user` を実際に使うか削除する（現状 `loaderData.user` は未参照）
+- [x] `frontend/app/routes/history.tsx` の未実装検索ボタン（`history.tsx:119`）を削除するか `onClick` を実装する
+- [x] `frontend/app/components/confetti-decoration.tsx` の `POSITIONS` 配列から `rotate` フィールドを削除（アニメーションで上書きされるデッドコード）
 
 **🔵 REFACTOR**
 
-- [ ] `frontend/app/components/` 内のファイル名を PascalCase に統一（`app-header.tsx` → `AppHeader.tsx`、`bottom-nav.tsx` → `BottomNav.tsx` 等）
-- [ ] `frontend/app/lib/auth.ts` の二重 re-export を `export { getToken, setToken, clearToken } from "~/lib/token-storage"` に整理
-- [ ] `frontend/app/lib/auth.ts` の関数定義順を `googleOAuth` → `getUser` → `logout` の認証フロー順に並べ替え
-- [ ] `frontend/app/lib/auth.ts` の `getUser` を `api/users.ts` に移動（`apiCall` への薄いラッパーであり `api/` 層が適切）
-- [ ] `frontend/app/lib/protected-loader.ts` を `auth.ts` に統合（認証フローの一部）
-- [ ] `frontend/app/lib/token-storage.ts` の `setToken(accessToken, refreshToken?)` の `refreshToken` を必須引数に変更（呼び出し元2箇所は常に両方渡している）。テストコード `auth.test.ts` 側も合わせて修正
-- [ ] `frontend/app/lib/push.ts` の `getVapidKey`（キャッシュつきラッパー）と `getVapidPublicKey`（API呼び出し）の2関数をインライン化して1関数に統合（呼び出し元は1箇所のみ）
-- [ ] `frontend/app/routes.ts` の `auth-layout` ラッパーを削除（`login` 1ルートのためだけに `layout()` でラップするのは YAGNI 違反。`route("login", ...)` で直接定義する）
-- [ ] `frontend/app/routes.ts` の `onboarding.tsx` → `interest-setup.tsx` にリネーム（実態は「興味タグ選択」のみでオンボーディング全体ではない）
-- [ ] `frontend/app/routes.ts` のルート定義順をユーザーフロー順（ランディング→ログイン→ベータゲート→PWAプロンプト→オンボーディング→ホーム→その他）に整理
-- [ ] `frontend/app/routes/root.tsx` の `/beta-gate` / `/lp` / `/privacy` 直書きを `BETA_EXCLUDED_PATHS` 定数配列に切り出す
-- [ ] `frontend/app/routes/root.tsx` の import 文（`@fontsource/...`・`./app.css`）をファイル先頭にまとめる
-- [ ] `frontend/app/routes/history-detail.tsx` の `LoaderData` / `ComponentProps` インライン型定義を RR v7 の自動生成型（`+types/` 配下）に置き換える（コメントに「worktree では生成されていないため暫定」とある）
-- [ ] `frontend/app/routes/privacy.tsx` の `Section` / `SubSection` を `Privacy` より上に定義順を修正（依存するサブコンポーネントは呼び出し元より上）
-- [ ] `frontend/app/routes/profile.tsx` の `ProfileTourStep` を `components/profile-tour-step.tsx` に切り出す（`getBoundingClientRect()` でDOM座標を計算するロジックを持ち、レイアウト変更で黙って壊れる可能性がある）
-- [ ] `frontend/app/routes/profile.tsx` のツアーキー管理を `ONBOARDING_STAGE` 1つの localStorage キーで統一し、sessionStorage を廃止（タブを閉じるとツアーが中断される問題の解消。home→profile 間の通信は `navigate("/profile", { state: { fromTour: true } })` に変更）
-- [ ] `frontend/app/api/genres.ts` の `getInterests` / `updateInterests` を `api/users.ts` に移動（エンドポイントは `/api/users/me/interests` でありユーザー設定の一部）
-- [ ] `frontend/app/api/suggestions.ts` の `SuggestionResult` 型を `~/types/suggestion.ts` に移動（`Place` 型と同じファイルに置くのが適切）
-- [ ] `frontend/app/api/suggestions.ts` の `radius` 引数を削除（バックエンドの `resolveRadius` が `radius == 0` のとき DB の `users.search_radius` を使うため送信不要。`use-suggestions.ts` の呼び出し箇所で実際に何を渡しているか確認してから削除）
-- [ ] `frontend/app/api/places.ts` の `photoReference` をオプショナルから必須引数に変更（呼び出し元でスキップ制御すれば渡せる）
-- [ ] `frontend/app/api/notifications.ts` の `updateNotificationSettings` 戻り値を `Promise<void>` から `Promise<NotificationSettings>` に変更し、呼び出し元 `settings.tsx` で最新の設定値を受け取れるようにする（バックエンドは PUT 後に更新済み設定を返している）
-- [ ] `frontend/app/components/complete-card.tsx` の `offsetRef` を削除し `handlePointerUp` の deps に `offset` を含める（DiscoveryCard と同様のアプローチに統一）
-- [ ] `frontend/app/components/complete-card.tsx` の 71〜79行のブランチ重複（`offsetRef.current = ...` / `setOffset(...)` の繰り返し）を分岐外に括り出す
-- [ ] `frontend/app/components/complete-card.tsx` と `discovery-card.tsx` の共通ポインタ処理（`cardRef` / `startPos` / `dragging` / `handlePointerDown/Move/Up`）を `useCardDrag` カスタムフックに切り出す
-- [ ] `frontend/app/components/toast.tsx` の `ToastItem` と `ToastProvider` の定義順を入れ替え（`ToastProvider` が `ToastItem` に依存しているため `ToastItem` を上に）
-- [ ] `frontend/app/components/toast.tsx` の `showToast` デフォルト型を `"error"` から `"info"` に変更（型省略時に赤いエラースタイルになってしまう）
-- [ ] `frontend/app/utils/` vs `lib/` の配置方針を決定し、ドメインロジックは `lib/` に移動（`category-map.ts`・`geolocation.ts` は `lib/` 相当）
-- [ ] `frontend/app/routes/settings.tsx` の `INPUT_CLASS` / `SUBMIT_CLASS` を `utils/styles.ts` に切り出しプロジェクト全体で共有
-- [ ] `frontend/app/components/NotificationTab.tsx` の `NotificationToggle` を `NotificationTab.tsx` 内に統合（他ファイルから import されておらず、独立ファイルにする理由がない）
-- [ ] `frontend/app/components/NotificationTab.tsx` の `denied` ブランチの二重 IIFE を `getDeniedSteps()` 関数または `DeniedInstructions` コンポーネントに切り出す
-- [ ] `frontend/app/components/xp-modal.tsx` の `XpBreakdownRow` を `XpModal` より上に定義順を修正
-- [ ] `frontend/app/components/xp-modal.tsx` の `XpBreakdownRow` の引数型をインラインから事前定義型（`XpBreakdownRowProps`）に統一
-- [ ] `frontend/app/components/visit-map.tsx` の `PinMarker` / `VisitInfoContent` を `VisitMap` より上に移動（定義順修正）
-- [ ] `frontend/app/components/PushNotificationBanner.tsx` の `if (!visible) return null` を `handleAllow` / `handleDismiss` の定義後・`return (...)` 直前に移動
-- [ ] `frontend/app/utils/geolocation.ts` の `calcMapCenter`（訪問履歴の地図中心算出）を `helpers.ts` または `visit-map.tsx` に移動（位置情報取得とは性格が異なる）
-- [ ] `frontend/app/utils/geolocation.ts` の `startPositionPolling` の `onError` 引数を削除（呼び出し元で一度も渡されていない。エラーをサイレント無視する選択であるとインラインコメントで明示）
-- [ ] `frontend/app/utils/geolocation.ts` の `isWithinCheckInRange` の `if (userLat === 0 && userLng === 0)` を `const isGpsUnavailable = ...` に切り出して意図を明示
-- [ ] `frontend/app/components/bottom-nav.tsx` の `useLocation` 使用箇所に、`NavLink className` 関数引数から `<span>` に `isActive` を渡せないためやむなく使っているという理由コメントを追加
-- [ ] `CLAUDE.md` のフロントエンド注意事項に `app-layout.tsx` のレイアウト規約（BottomNavの高さ分は app-layout が管理・各ページは `pb-24` を追加しないこと）を追記
+- [x] `frontend/app/components/` 内のファイル名を PascalCase に統一（`app-header.tsx` → `AppHeader.tsx`、`bottom-nav.tsx` → `BottomNav.tsx` 等）
+- [x] `frontend/app/lib/auth.ts` の二重 re-export を `export { getToken, setToken, clearToken } from "~/lib/token-storage"` に整理
+- [x] `frontend/app/lib/auth.ts` の関数定義順を `googleOAuth` → `getUser` → `logout` の認証フロー順に並べ替え
+- [x] `frontend/app/lib/auth.ts` の `getUser` を `api/users.ts` に移動（`apiCall` への薄いラッパーであり `api/` 層が適切）
+- [x] `frontend/app/lib/protected-loader.ts` を `auth.ts` に統合（認証フローの一部）
+- [x] `frontend/app/lib/token-storage.ts` の `setToken(accessToken, refreshToken?)` の `refreshToken` を必須引数に変更（呼び出し元2箇所は常に両方渡している）。テストコード `auth.test.ts` 側も合わせて修正
+- [x] `frontend/app/lib/push.ts` の `getVapidKey`（キャッシュつきラッパー）と `getVapidPublicKey`（API呼び出し）の2関数をインライン化して1関数に統合（呼び出し元は1箇所のみ）
+- [x] `frontend/app/routes.ts` の `auth-layout` ラッパーを削除（`login` 1ルートのためだけに `layout()` でラップするのは YAGNI 違反。`route("login", ...)` で直接定義する）
+- [x] `frontend/app/routes.ts` の `onboarding.tsx` → `interest-setup.tsx` にリネーム（実態は「興味タグ選択」のみでオンボーディング全体ではない）
+- [x] `frontend/app/routes.ts` のルート定義順をユーザーフロー順（ランディング→ログイン→ベータゲート→PWAプロンプト→オンボーディング→ホーム→その他）に整理
+- [x] `frontend/app/routes/root.tsx` の `/beta-gate` / `/lp` / `/privacy` 直書きを `BETA_EXCLUDED_PATHS` 定数配列に切り出す
+- [x] `frontend/app/routes/root.tsx` の import 文（`@fontsource/...`・`./app.css`）をファイル先頭にまとめる
+- [x] `frontend/app/routes/history-detail.tsx` の `LoaderData` / `ComponentProps` インライン型定義を RR v7 の自動生成型（`+types/` 配下）に置き換える（コメントに「worktree では生成されていないため暫定」とある）
+- [x] `frontend/app/routes/privacy.tsx` の `Section` / `SubSection` を `Privacy` より上に定義順を修正（依存するサブコンポーネントは呼び出し元より上）
+- [x] `frontend/app/routes/profile.tsx` の `ProfileTourStep` を `components/profile-tour-step.tsx` に切り出す（`getBoundingClientRect()` でDOM座標を計算するロジックを持ち、レイアウト変更で黙って壊れる可能性がある）
+- [x] `frontend/app/routes/profile.tsx` のツアーキー管理を `ONBOARDING_STAGE` 1つの localStorage キーで統一し、sessionStorage を廃止（タブを閉じるとツアーが中断される問題の解消。home→profile 間の通信は `navigate("/profile", { state: { fromTour: true } })` に変更）
+- [x] `frontend/app/api/genres.ts` の `getInterests` / `updateInterests` を `api/users.ts` に移動（エンドポイントは `/api/users/me/interests` でありユーザー設定の一部）
+- [x] `frontend/app/api/suggestions.ts` の `SuggestionResult` 型を `~/types/suggestion.ts` に移動（`Place` 型と同じファイルに置くのが適切）
+- [x] `frontend/app/api/suggestions.ts` の `radius` 引数を削除（バックエンドの `resolveRadius` が `radius == 0` のとき DB の `users.search_radius` を使うため送信不要。`use-suggestions.ts` の呼び出し箇所で実際に何を渡しているか確認してから削除）
+- [x] `frontend/app/api/places.ts` の `photoReference` をオプショナルから必須引数に変更（呼び出し元でスキップ制御すれば渡せる）
+- [x] `frontend/app/api/notifications.ts` の `updateNotificationSettings` 戻り値を `Promise<void>` から `Promise<NotificationSettings>` に変更し、呼び出し元 `settings.tsx` で最新の設定値を受け取れるようにする（バックエンドは PUT 後に更新済み設定を返している）
+- [x] `frontend/app/components/complete-card.tsx` の `offsetRef` を削除し `handlePointerUp` の deps に `offset` を含める（DiscoveryCard と同様のアプローチに統一）
+- [x] `frontend/app/components/complete-card.tsx` の 71〜79行のブランチ重複（`offsetRef.current = ...` / `setOffset(...)` の繰り返し）を分岐外に括り出す
+- [x] `frontend/app/components/complete-card.tsx` と `discovery-card.tsx` の共通ポインタ処理（`cardRef` / `startPos` / `dragging` / `handlePointerDown/Move/Up`）を `useCardDrag` カスタムフックに切り出す
+- [x] `frontend/app/components/toast.tsx` の `ToastItem` と `ToastProvider` の定義順を入れ替え（`ToastProvider` が `ToastItem` に依存しているため `ToastItem` を上に）
+- [x] `frontend/app/components/toast.tsx` の `showToast` デフォルト型を `"error"` から `"info"` に変更（型省略時に赤いエラースタイルになってしまう）
+- [x] `frontend/app/utils/` vs `lib/` の配置方針を決定し、ドメインロジックは `lib/` に移動（`category-map.ts`・`geolocation.ts` は `lib/` 相当）
+- [x] `frontend/app/routes/settings.tsx` の `INPUT_CLASS` / `SUBMIT_CLASS` を `utils/styles.ts` に切り出しプロジェクト全体で共有
+- [x] `frontend/app/components/NotificationTab.tsx` の `NotificationToggle` を `NotificationTab.tsx` 内に統合（他ファイルから import されておらず、独立ファイルにする理由がない）
+- [x] `frontend/app/components/NotificationTab.tsx` の `denied` ブランチの二重 IIFE を `getDeniedSteps()` 関数または `DeniedInstructions` コンポーネントに切り出す
+- [x] `frontend/app/components/xp-modal.tsx` の `XpBreakdownRow` を `XpModal` より上に定義順を修正
+- [x] `frontend/app/components/xp-modal.tsx` の `XpBreakdownRow` の引数型をインラインから事前定義型（`XpBreakdownRowProps`）に統一
+- [x] `frontend/app/components/visit-map.tsx` の `PinMarker` / `VisitInfoContent` を `VisitMap` より上に移動（定義順修正）
+- [x] `frontend/app/components/PushNotificationBanner.tsx` の `if (!visible) return null` を `handleAllow` / `handleDismiss` の定義後・`return (...)` 直前に移動
+- [x] `frontend/app/utils/geolocation.ts` の `calcMapCenter`（訪問履歴の地図中心算出）を `helpers.ts` または `visit-map.tsx` に移動（位置情報取得とは性格が異なる）
+- [x] `frontend/app/utils/geolocation.ts` の `startPositionPolling` の `onError` 引数を削除（呼び出し元で一度も渡されていない。エラーをサイレント無視する選択であるとインラインコメントで明示）
+- [x] `frontend/app/utils/geolocation.ts` の `isWithinCheckInRange` の `if (userLat === 0 && userLng === 0)` を `const isGpsUnavailable = ...` に切り出して意図を明示
+- [x] `frontend/app/components/bottom-nav.tsx` の `useLocation` 使用箇所に、`NavLink className` 関数引数から `<span>` に `isActive` を渡せないためやむなく使っているという理由コメントを追加
+- [x] `CLAUDE.md` のフロントエンド注意事項に `app-layout.tsx` のレイアウト規約（BottomNavの高さ分は app-layout が管理・各ページは `pb-24` を追加しないこと）を追記
 
 ---
 
