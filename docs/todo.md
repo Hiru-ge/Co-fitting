@@ -253,7 +253,7 @@ s
 
 ### プロフィール画面の情報充実（Issue #327）
 
-> **背景**：(1) ジャンル熟練度が上位3件に固定されており、ユーザーが脱却モード対象ジャンルや熟練度の全体像を把握できない。(2) バッジ獲得数が総数に対する割合で表示されておらず達成感が伝わりにくい。(3) XPモーダルで表示されるバッジアイコンが常に `check` 固定であり、獲得したバッジ固有のアイコンが表示されない。
+> **背景**：(1) ジャンル熟練度が上位3件に固定されており、ユーザーが脱却モード対象ジャンルや熟練度の全体像を把握できない。(2) バッジ獲得数が総数に対する割合で表示されておらず達成感が伝わりにくい。
 
 **🔴 RED**
 
@@ -261,9 +261,8 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/routes/profile.tsx` の `proficiency.slice(0, 3)` を削除し、訪問実績のある全ジャンルを表示するよう変更
-- [ ] `frontend/app/routes/profile.tsx` のバッジ表示を `{badges.length} 個` から `{badges.length} / {totalBadgeCount} 個` 形式に変更。`GET /api/badges` レスポンスを利用して `totalBadgeCount` を取得する
-- [ ] `frontend/app/components/xp-modal.tsx` のバッジアイコンを `check` 固定から `BadgeIcon` コンポーネントを使って獲得バッジ固有アイコンに変更
+- [x] `frontend/app/routes/profile.tsx` の `proficiency.slice(0, 3)` を削除し、訪問実績のある全ジャンルを表示するよう変更
+- [x] `frontend/app/routes/profile.tsx` のバッジ表示を `{badges.length} 個` から `{badges.length} / {totalBadgeCount} 個` 形式に変更。`GET /api/badges` レスポンスを利用して `totalBadgeCount` を取得する
 
 **🔵 REFACTOR**
 

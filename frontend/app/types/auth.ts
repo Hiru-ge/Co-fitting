@@ -18,11 +18,14 @@ export interface UserStats {
   challenge_visits: number;
 }
 
-export interface EarnedBadge {
+export interface Badge {
   id: number;
   name: string;
   description: string;
   icon_url: string;
+}
+
+export interface EarnedBadge extends Badge {
   earned_at: string;
 }
 

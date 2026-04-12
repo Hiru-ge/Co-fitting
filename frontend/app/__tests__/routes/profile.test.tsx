@@ -45,6 +45,24 @@ vi.mock("~/lib/auth", () => ({
   logout: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock("~/api/badges", () => ({
+  getAllBadges: vi.fn().mockResolvedValue([
+    {
+      id: 1,
+      name: "最初の一歩",
+      description: "初めての訪問を記録した",
+      icon_url: "",
+    },
+    {
+      id: 2,
+      name: "コンフォートゾーン・ブレイカー",
+      description: "初めてコンフォートゾーンを脱却した",
+      icon_url: "",
+    },
+    { id: 3, name: "探索者", description: "10回訪問した", icon_url: "" },
+  ]),
+}));
+
 vi.mock("~/api/visits", () => ({
   listVisits: vi.fn().mockResolvedValue({
     visits: [

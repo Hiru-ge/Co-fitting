@@ -4,6 +4,7 @@ import { useNavigate, Link, useLocation } from "react-router";
 import { logout } from "~/lib/auth";
 import { authRequiredLoader } from "~/lib/auth";
 import { getUserStats, getUserBadges, getProficiency } from "~/api/users";
+import { getAllBadges } from "~/api/badges";
 import type { UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
@@ -33,6 +34,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   );
   const [stats, setStats] = useState<UserStats | null>(null);
   const [badges, setBadges] = useState<EarnedBadge[]>([]);
+  const [totalBadgeCount, setTotalBadgeCount] = useState<number | null>(null);
   const [proficiency, setProficiency] = useState<Proficiency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -41,14 +43,17 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [statsData, badgesData, proficiencyData] = await Promise.all([
-        getUserStats(token),
-        getUserBadges(token),
-        getProficiency(token),
-      ]);
+      const [statsData, badgesData, proficiencyData, allBadgesData] =
+        await Promise.all([
+          getUserStats(token),
+          getUserBadges(token),
+          getProficiency(token),
+          getAllBadges(token),
+        ]);
       setStats(statsData);
       setBadges(badgesData);
       setProficiency(proficiencyData);
+      setTotalBadgeCount(allBadgesData.length);
     } catch (err) {
       showToast(toUserMessage(err));
     } finally {
@@ -258,7 +263,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             得意ジャンル
           </h3>
           <div className="space-y-2">
-            {proficiency.slice(0, 3).map((p) => (
+            {proficiency.map((p) => (
               <div
                 key={p.genre_tag_id}
                 className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10"
@@ -302,9 +307,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
       <div className="mx-4 px-4 py-4 bg-gray-50/50 mt-2 rounded-xl">
         <div className="flex items-center justify-between mb-4 px-1">
           <h3 className="text-base font-bold tracking-tight">獲得バッジ</h3>
-          {!isLoading && (
+          {!isLoading && totalBadgeCount !== null && (
             <span className="text-xs text-gray-500 font-bold bg-white/10 px-2 py-1 rounded-full">
-              {badges.length} 個
+              {badges.length} / {totalBadgeCount} 個
             </span>
           )}
         </div>
