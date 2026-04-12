@@ -277,18 +277,17 @@ s
 
 **🔴 RED**
 
-- [ ] `frontend/app/__tests__/utils/level.test.ts` に `TestLevelConsistency_WithBackend` テスト追加（バックエンドと同じXP値を渡したときに同一レベルが返ることを検証。バックエンドの計算式を参照してテストケースを設計する）
+- [x] `frontend/app/__tests__/utils/level.test.ts` に `TestLevelConsistency_WithBackend` テスト追加（バックエンドと同じXP値を渡したときに同一レベルが返ることを検証。バックエンドの計算式を参照してテストケースを設計する）
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/utils/level.ts` の `LEVEL_XP_THRESHOLDS` をバックエンド（`gamification.go`）の計算式（67XP増分・Lv.30）に合わせて更新
-- [ ] `LEVEL_TITLES` を Lv.30 まで定義（Lv.11以降の称号を追加）
-- [ ] `nextLevelStartXp ?? currentLevelStartXp + 1000` のフォールバックを `isMaxLevel` の条件分岐で適切に処理
-- [ ] バックエンドが `total_xp`・`current_level`・`xp_to_next_level` を返している場合、`/api/users/me/stats` の値を優先してプロフィール画面・プログレスバーを描画するよう `profile.tsx` を修正
+- [x] `frontend/app/utils/level.ts` の `LEVEL_XP_THRESHOLDS` をバックエンド（`gamification.go`）の計算式（67XP増分・Lv.30）に合わせて更新
+- [x] `LEVEL_TITLES` を Lv.30 まで定義（Lv.11以降の称号を追加）
+- [x] `nextLevelStartXp ?? currentLevelStartXp + 1000` のフォールバックを `isMaxLevel` の条件分岐で適切に処理
 
 **🔵 REFACTOR**
 
-- [ ] `currentLevelStartXp ?? 0` と `getLevelTitle` の `?? LEVEL_TITLES[0]` など到達不能なフォールバックを削除
+- [x] `currentLevelStartXp ?? 0` と `getLevelTitle` の `?? LEVEL_TITLES[0]` など到達不能なフォールバックを削除
 
 ---
 

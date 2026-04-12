@@ -311,7 +311,7 @@ describe("プロフィール画面", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/850/)).toBeInTheDocument();
-      expect(screen.getByText(/1000\s*XP/)).toBeInTheDocument();
+      expect(screen.getByText(/1170\s*XP/)).toBeInTheDocument();
     });
   });
 
@@ -319,7 +319,7 @@ describe("プロフィール画面", () => {
     renderProfile();
 
     await waitFor(() => {
-      // total_xp: 850, level 4 → 次のレベル(1000XP)まで150XP
+      // total_xp: 850, level 5 → 次のレベル(1170XP)まで320XP
       expect(screen.getByText(/次のレベルまであと/)).toBeInTheDocument();
     });
   });

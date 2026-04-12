@@ -85,3 +85,37 @@ describe("getLevelInfo", () => {
     expect(info.xpToNextLevel).toBe(70);
   });
 });
+
+describe("バックエンドとの一貫性", () => {
+  test("閾値がバックエンドと同じ30レベル分ある", () => {
+    expect(LEVEL_XP_THRESHOLDS).toHaveLength(30);
+  });
+
+  test("バックエンドの境界値でレベルが一致する", () => {
+    // backend levelThresholds より: Lv.1=0, Lv.2=100, Lv.3=267, Lv.4=501,
+    // Lv.10=3312, Lv.20=13357, Lv.29=28126, Lv.30=30000
+    expect(getLevelInfo(0).level).toBe(1);
+    expect(getLevelInfo(99).level).toBe(1);
+    expect(getLevelInfo(100).level).toBe(2);
+    expect(getLevelInfo(266).level).toBe(2);
+    expect(getLevelInfo(267).level).toBe(3);
+    expect(getLevelInfo(500).level).toBe(3);
+    expect(getLevelInfo(501).level).toBe(4);
+    expect(getLevelInfo(3311).level).toBe(9);
+    expect(getLevelInfo(3312).level).toBe(10);
+    expect(getLevelInfo(13356).level).toBe(19);
+    expect(getLevelInfo(13357).level).toBe(20);
+    expect(getLevelInfo(28125).level).toBe(28);
+    expect(getLevelInfo(28126).level).toBe(29);
+    expect(getLevelInfo(29999).level).toBe(29);
+    expect(getLevelInfo(30000).level).toBe(30);
+    expect(getLevelInfo(99999).level).toBe(30);
+  });
+
+  test("Lv.30（最大レベル）で isMaxLevel が true、xpToNextLevel が 0", () => {
+    const info = getLevelInfo(30000);
+    expect(info.isMaxLevel).toBe(true);
+    expect(info.xpToNextLevel).toBe(0);
+    expect(info.progressPercent).toBe(100);
+  });
+});
