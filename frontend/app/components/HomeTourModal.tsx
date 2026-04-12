@@ -79,7 +79,7 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
       role="dialog"
       aria-modal="true"
       aria-label="使い方ツアー"
-      className="fixed inset-0 z-[60]"
+      className="fixed inset-0 z-60"
     >
       {targetRect ? (
         <div

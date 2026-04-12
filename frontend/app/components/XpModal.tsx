@@ -128,7 +128,7 @@ export default function XpModal({
             <h2 className="text-white text-3xl font-bold pt-2">
               クエスト完了！
             </h2>
-            <p className="text-white/70 text-sm leading-relaxed max-w-[280px] mx-auto">
+            <p className="text-white/70 text-sm leading-relaxed max-w-70 mx-auto">
               {isLevelUp
                 ? `レベル${newLevel}に上がりました！`
                 : `着実に探索範囲が広がっています。`}

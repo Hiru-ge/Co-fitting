@@ -7,10 +7,13 @@ pre-commit:
       run: npx prettier --write {staged_files} && git add {staged_files}
     frontend-lint:
       root: "frontend/"
-      glob: "*.{ts,tsx}"
+      glob: "*.{ts,tsx,js,jsx}"
       run: npx eslint {staged_files}
     frontend-typecheck:
       run: cd frontend && node_modules/.bin/tsc --noEmit
+    frontend-e2e:
+      root: "frontend/"
+      run: npx playwright test
     backend-format:
       root: "backend/"
       glob: "*.go"

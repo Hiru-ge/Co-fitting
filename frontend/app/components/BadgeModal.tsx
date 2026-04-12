@@ -70,7 +70,7 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
 
           {/* バッジ名・説明 */}
           <h2 className="text-white text-2xl font-bold mt-8">{badge.name}</h2>
-          <p className="text-white/60 text-sm mt-3 leading-relaxed max-w-[280px]">
+          <p className="text-white/60 text-sm mt-3 leading-relaxed max-w-70">
             {badge.description}
           </p>
         </div>

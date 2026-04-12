@@ -85,7 +85,7 @@ export default function DiscoveryCard({
   return (
     <div
       ref={cardRef}
-      className={`absolute inset-0 rounded-3xl overflow-hidden ${hasValidPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradientColor}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`absolute inset-0 rounded-3xl overflow-hidden ${hasValidPhoto ? "bg-gray-900" : `bg-linear-to-br ${category.gradientColor}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
       style={{
         transform: cardTransform,
         opacity: cardOpacity,

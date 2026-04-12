@@ -140,7 +140,7 @@ export default function LP() {
               </a>
             </div>
             {/* スクリーンショット */}
-            <div className="mt-12 lg:mt-0 flex items-end justify-center gap-3 px-2 lg:flex-shrink-0">
+            <div className="mt-12 lg:mt-0 flex items-end justify-center gap-3 px-2 lg:shrink-0">
               <img
                 src="/images/lp/history.png"
                 alt="訪問履歴画面"
@@ -223,7 +223,7 @@ export default function LP() {
                   </div>
                 </div>
               </div>
-              <div className="mt-6 lg:mt-0 flex justify-center lg:flex-shrink-0">
+              <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
                   src="/images/lp/home.png"
                   alt="スポット提案画面"
@@ -256,7 +256,7 @@ export default function LP() {
                   </div>
                 </div>
               </div>
-              <div className="mt-6 lg:mt-0 flex justify-center gap-4 lg:flex-shrink-0">
+              <div className="mt-6 lg:mt-0 flex justify-center gap-4 lg:shrink-0">
                 <img
                   src="/images/lp/xp-modal.png"
                   alt="XP獲得画面"
@@ -293,7 +293,7 @@ export default function LP() {
                   </div>
                 </div>
               </div>
-              <div className="mt-6 lg:mt-0 flex justify-center lg:flex-shrink-0">
+              <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
                   src="/images/lp/profile-batch.png"
                   alt="バッジ一覧画面"

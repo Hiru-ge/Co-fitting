@@ -71,7 +71,7 @@ function VisitInfoContent({ visit }: { visit: MapVisit }) {
   const categoryInfo = getCategoryInfo(visit.category);
 
   return (
-    <div className="min-w-[180px] max-w-[220px] p-1">
+    <div className="min-w-45 max-w-55 p-1">
       <p className="font-bold text-gray-800 text-sm leading-tight mb-1">
         {visit.place_name}
       </p>

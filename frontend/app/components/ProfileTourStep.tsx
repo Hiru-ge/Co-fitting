@@ -52,7 +52,7 @@ export default function ProfileTourStep({
       role="dialog"
       aria-modal="true"
       aria-label="使い方ツアー ステップ3"
-      className="fixed inset-0 z-[60]"
+      className="fixed inset-0 z-60"
     >
       {targetRect ? (
         <div
