@@ -1058,7 +1058,7 @@ describe("提案リロード機能", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("リロードボタン押下でforceReload付きでAPIが呼ばれる", async () => {
+  test("リロードボタン押下でisReload付きでAPIが呼ばれる", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const user = userEvent.setup();
     renderHome();
@@ -1081,7 +1081,7 @@ describe("提案リロード機能", () => {
         expect.any(Number),
         expect.any(Number),
         expect.any(Number),
-        true, // forceReload
+        true, // isReload
       );
     });
   });
@@ -1221,7 +1221,7 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
     );
   });
 
-  test("forceReload（リロードボタン押下）時は再取得する", async () => {
+  test("isReload（リロードボタン押下）時は再取得する", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const user = userEvent.setup();
 
@@ -1251,9 +1251,9 @@ describe("Issue #252: 位置情報変化による自動再提案機能の排除"
       );
     });
 
-    // forceReload=true で呼ばれていることを確認
+    // isReload=true で呼ばれていることを確認
     const lastCall = vi.mocked(getSuggestions).mock.calls.at(-1);
-    expect(lastCall?.[4]).toBe(true); // 第5引数が forceReload
+    expect(lastCall?.[4]).toBe(true); // 第5引数が isReload
   });
 });
 

@@ -129,12 +129,6 @@ export default function XpModal({
                   xp={xpBreakdown.first_area_bonus}
                 />
               )}
-              {xpBreakdown.memo_bonus > 0 && (
-                <XpBreakdownRow
-                  label="メモボーナス"
-                  xp={xpBreakdown.memo_bonus}
-                />
-              )}
               {xpBreakdown.streak_bonus > 0 && (
                 <XpBreakdownRow
                   label="ストリークボーナス"

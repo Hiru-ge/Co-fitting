@@ -212,7 +212,7 @@ type suggestionRequest struct {
 	Lat           float64 `json:"lat" binding:"required"`
 	Lng           float64 `json:"lng" binding:"required"`
 	Radius        uint    `json:"radius"`
-	Reload        bool    `json:"force_reload"`
+	Reload        bool    `json:"is_reload"`
 	FilterOpenNow bool    `json:"filter_open_now"`
 }
 

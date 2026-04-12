@@ -33,8 +33,6 @@ export interface CreateVisitRequest {
   category: string;
   lat: number;
   lng: number;
-  rating?: number;
-  memo?: string;
   photo_reference?: string; // 画像参照（Redis TTL失効後の再解決に使用）
   place_types?: string[]; // バックエンドの is_breakout 自動判定に使用
   visited_at: string;
@@ -46,7 +44,6 @@ export interface CreateVisitRequest {
 export interface XPBreakdown {
   base_xp: number; // ベースXP（通常50 or 脱却100）
   first_area_bonus: number; // 初エリアボーナス（0 or 30）
-  memo_bonus: number; // メモボーナス（0 or 10）
   streak_bonus: number; // ストリークボーナス（0〜100）
 }
 
@@ -65,7 +62,7 @@ export interface MapVisit {
   lat: number;
   lng: number;
   category: string;
-  is_breakout: boolean;
+  genre_tag_id?: number;
   visited_at: string;
 }
 
@@ -74,15 +71,14 @@ export interface MapVisitResponse {
   total: number;
 }
 
-// Issue #128 実装後にバックエンドから返るゲーミフィケーションフィールド
-export interface CreateVisitResponse extends Omit<Visit, "xp_earned"> {
-  xp_earned?: number;
-  total_xp?: number;
-  level_up?: boolean;
-  new_level?: number;
-  new_badges?: BadgeInfo[];
+// バックエンドから返るゲーミフィケーションフィールドも含めた訪問作成レスポンス
+export interface CreateVisitResponse extends Visit {
+  total_xp: number;
+  level_up: boolean;
+  new_level: number;
+  new_badges: BadgeInfo[];
   /** 今回の訪問で本日の3件上限に達したか（バックエンドの訪問履歴に基づく正確な判定） */
-  daily_completed?: boolean;
+  daily_completed: boolean;
   /** XP計算内訳 */
   xp_breakdown?: XPBreakdown;
 }

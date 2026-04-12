@@ -128,22 +128,18 @@ definitions:
       lng:
         type: number
       photo_reference:
-        description: 画像参照（Redis TTL失効後の再解決に使用）
         type: string
       place_id:
         type: string
       place_name:
         type: string
       place_types:
-        description: '任意: is_breakout自動判定に使用'
         items:
           type: string
         type: array
       user_lat:
-        description: ユーザーの現在緯度（距離検証用）
         type: number
       user_lng:
-        description: ユーザーの現在経度（距離検証用）
         type: number
       vicinity:
         type: string
@@ -164,7 +160,6 @@ definitions:
       created_at:
         type: string
       daily_completed:
-        description: 今回の訪問で本日の3件上限に達したか
         type: boolean
       genre_tag_id:
         type: integer
@@ -175,19 +170,16 @@ definitions:
       lat:
         type: number
       level_up:
-        description: 今回の訪問でレベルアップしたか
         type: boolean
       lng:
         type: number
       memo:
         type: string
       new_badges:
-        description: 今回獲得した新バッジ
         items:
           $ref: '#/definitions/models.Badge'
         type: array
       new_level:
-        description: 現在のレベル
         type: integer
       photo_reference:
         type: string
@@ -198,7 +190,6 @@ definitions:
       rating:
         type: number
       total_xp:
-        description: ユーザー累計XP
         type: integer
       user_id:
         type: integer
@@ -207,9 +198,7 @@ definitions:
       visited_at:
         type: string
       xp_breakdown:
-        allOf:
-        - $ref: '#/definitions/services.XPBreakdown'
-        description: XP計算内訳
+        $ref: '#/definitions/services.XPBreakdown'
       xp_earned:
         type: integer
     type: object
@@ -263,7 +252,7 @@ definitions:
   handlers.logoutRequest:
     properties:
       refresh_token:
-        description: オプション（下位互換性のため）
+        description: オプション
         type: string
     type: object
   handlers.mapVisitItem:
@@ -320,7 +309,7 @@ definitions:
     properties:
       filter_open_now:
         type: boolean
-      force_reload:
+      is_reload:
         type: boolean
       lat:
         type: number
@@ -1411,6 +1400,14 @@ paths:
         in: query
         name: offset
         type: integer
+      - description: 訪問日時の開始範囲（RFC3339Nano形式）
+        in: query
+        name: from
+        type: string
+      - description: 訪問日時の終了範囲（RFC3339Nano形式）
+        in: query
+        name: until
+        type: string
       produces:
       - application/json
       responses:

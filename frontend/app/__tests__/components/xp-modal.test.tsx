@@ -87,7 +87,6 @@ describe("XpModal", () => {
         xpBreakdown={{
           base_xp: 50,
           first_area_bonus: 0,
-          memo_bonus: 0,
           streak_bonus: 0,
         }}
       />,
@@ -106,7 +105,6 @@ describe("XpModal", () => {
         xpBreakdown={{
           base_xp: 100,
           first_area_bonus: 0,
-          memo_bonus: 0,
           streak_bonus: 0,
         }}
       />,
@@ -122,14 +120,12 @@ describe("XpModal", () => {
         xpBreakdown={{
           base_xp: 100,
           first_area_bonus: 30,
-          memo_bonus: 10,
           streak_bonus: 0,
         }}
       />,
     );
     expect(screen.getByText(/脱却訪問/)).toBeInTheDocument();
     expect(screen.getByText(/初エリア/)).toBeInTheDocument();
-    expect(screen.getByText(/メモ/)).toBeInTheDocument();
   });
 
   test("ストリークボーナスがある場合に内訳に表示される", () => {
@@ -140,7 +136,6 @@ describe("XpModal", () => {
         xpBreakdown={{
           base_xp: 50,
           first_area_bonus: 0,
-          memo_bonus: 0,
           streak_bonus: 10,
         }}
       />,

@@ -1350,6 +1350,18 @@ const docTemplate = `{
                         "description": "オフセット（デフォルト0）",
                         "name": "offset",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "訪問日時の開始範囲（RFC3339Nano形式）",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "訪問日時の終了範囲（RFC3339Nano形式）",
+                        "name": "until",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1892,7 +1904,6 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "photo_reference": {
-                    "description": "画像参照（Redis TTL失効後の再解決に使用）",
                     "type": "string"
                 },
                 "place_id": {
@@ -1902,18 +1913,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "place_types": {
-                    "description": "任意: is_breakout自動判定に使用",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "user_lat": {
-                    "description": "ユーザーの現在緯度（距離検証用）",
                     "type": "number"
                 },
                 "user_lng": {
-                    "description": "ユーザーの現在経度（距離検証用）",
                     "type": "number"
                 },
                 "vicinity": {
@@ -1934,7 +1942,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "daily_completed": {
-                    "description": "今回の訪問で本日の3件上限に達したか",
                     "type": "boolean"
                 },
                 "genre_tag_id": {
@@ -1950,7 +1957,6 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "level_up": {
-                    "description": "今回の訪問でレベルアップしたか",
                     "type": "boolean"
                 },
                 "lng": {
@@ -1960,14 +1966,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "new_badges": {
-                    "description": "今回獲得した新バッジ",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Badge"
                     }
                 },
                 "new_level": {
-                    "description": "現在のレベル",
                     "type": "integer"
                 },
                 "photo_reference": {
@@ -1983,7 +1987,6 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "total_xp": {
-                    "description": "ユーザー累計XP",
                     "type": "integer"
                 },
                 "user_id": {
@@ -1996,12 +1999,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "xp_breakdown": {
-                    "description": "XP計算内訳",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/services.XPBreakdown"
-                        }
-                    ]
+                    "$ref": "#/definitions/services.XPBreakdown"
                 },
                 "xp_earned": {
                     "type": "integer"
@@ -2085,7 +2083,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "refresh_token": {
-                    "description": "オプション（下位互換性のため）",
+                    "description": "オプション",
                     "type": "string"
                 }
             }
@@ -2177,7 +2175,7 @@ const docTemplate = `{
                 "filter_open_now": {
                     "type": "boolean"
                 },
-                "force_reload": {
+                "is_reload": {
                     "type": "boolean"
                 },
                 "lat": {

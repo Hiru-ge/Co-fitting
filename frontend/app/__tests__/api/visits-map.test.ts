@@ -32,7 +32,6 @@ describe("getMapVisits", () => {
           lat: 35.6762,
           lng: 139.6503,
           category: "cafe",
-          is_breakout: false,
           visited_at: "2024-02-10T12:00:00Z",
         },
       ],

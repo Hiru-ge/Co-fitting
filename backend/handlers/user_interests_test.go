@@ -450,7 +450,7 @@ func TestUpdateInterestsWithRefreshSuggestions(t *testing.T) {
 }
 
 // TestUpdateInterestsDoesNotClearDailyCache は興味タグ更新だけでは日次キャッシュが無効化されないことを確認する
-// リロード（force_reload）を使って初めて新しい興味タグが反映される
+// リロード（is_reload）を使って初めて新しい興味タグが反映される
 func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 	if testRedisClient == nil {
 		t.Skip("Redisクライアントが設定されていません")
@@ -469,7 +469,7 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 	}
 	mixedPlaces := append(cafePlaces, museumPlaces...)
 
-	t.Run("興味タグ変更だけではキャッシュは残り、force_reloadで初めて新タグが反映される", func(t *testing.T) {
+	t.Run("興味タグ変更だけではキャッシュは残り、is_reloadで初めて新タグが反映される", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -570,8 +570,8 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 			}
 		}
 
-		// ステップ5: force_reload で引き直し → 博物館が多い提案が返る
-		reloadBody := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000, "force_reload": true}
+		// ステップ5: is_reload で引き直し → 博物館が多い提案が返る
+		reloadBody := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000, "is_reload": true}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		w4 := httptest.NewRecorder()
 		req4, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(reloadJSON))
@@ -580,12 +580,12 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		suggestionRouter.ServeHTTP(w4, req4)
 
 		if w4.Code != http.StatusOK {
-			t.Fatalf("force_reloadリクエスト失敗: status %d, body: %s", w4.Code, w4.Body.String())
+			t.Fatalf("is_reloadリクエスト失敗: status %d, body: %s", w4.Code, w4.Body.String())
 		}
 
 		thirdResp := parseSuggestions(t, w4.Body.Bytes())
 
-		// 博物館が多いことを確認（タグ変更がforce_reloadで反映されている）
+		// 博物館が多いことを確認（タグ変更がis_reloadで反映されている）
 		thirdMuseumCount := 0
 		for _, p := range thirdResp {
 			for _, typ := range p.Types {
@@ -596,7 +596,7 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 			}
 		}
 		if thirdMuseumCount < 2 {
-			t.Errorf("force_reload後の提案で博物館が2件以上であることを期待しましたが、%d件でした", thirdMuseumCount)
+			t.Errorf("is_reload後の提案で博物館が2件以上であることを期待しましたが、%d件でした", thirdMuseumCount)
 		}
 	})
 

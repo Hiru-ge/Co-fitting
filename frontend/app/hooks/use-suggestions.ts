@@ -82,8 +82,8 @@ export function useSuggestions(token: string) {
   }, [hasCards]);
 
   const loadSuggestions = useCallback(
-    async (forceReload?: boolean) => {
-      if (forceReload) {
+    async (isReload?: boolean) => {
+      if (isReload) {
         setIsReloading(true);
       } else {
         setIsLoading(true);
@@ -121,7 +121,7 @@ export function useSuggestions(token: string) {
           pos.lat,
           pos.lng,
           DEFAULT_RADIUS,
-          forceReload,
+          isReload,
         );
 
         if (reload_count_remaining !== undefined) {
@@ -170,7 +170,7 @@ export function useSuggestions(token: string) {
             categories: placesWithPhotos.map((p) =>
               getBestCategoryKey(p.types ?? []),
             ),
-            isReload: !!forceReload,
+            isReload: !!isReload,
           });
         }
       } catch (err) {
@@ -295,11 +295,11 @@ export function useSuggestions(token: string) {
       if (result.xp_earned !== undefined) {
         setXpModalState({
           xpEarned: result.xp_earned,
-          totalXp: result.total_xp ?? 0,
-          currentLevel: result.new_level ?? 1,
-          levelUp: result.level_up ?? false,
-          newLevel: result.new_level ?? 1,
-          newBadges: result.new_badges ?? [],
+          totalXp: result.total_xp,
+          currentLevel: result.new_level,
+          levelUp: result.level_up,
+          newLevel: result.new_level,
+          newBadges: result.new_badges,
           xpBreakdown: result.xp_breakdown,
         });
 

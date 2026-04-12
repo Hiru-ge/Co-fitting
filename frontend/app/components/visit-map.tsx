@@ -101,10 +101,7 @@ export default function VisitMap({ visits }: Props) {
               )
             }
           >
-            <PinMarker
-              category={visit.category}
-              isBreakout={visit.is_breakout}
-            />
+            <PinMarker category={visit.category} />
           </AdvancedMarker>
         ))}
 
@@ -123,13 +120,7 @@ export default function VisitMap({ visits }: Props) {
 }
 
 // カスタムピンマーカー
-function PinMarker({
-  category,
-  isBreakout,
-}: {
-  category: string;
-  isBreakout: boolean;
-}) {
+function PinMarker({ category }: { category: string }) {
   const color = getPinColor(category);
   const categoryInfo = getCategoryInfoByKey(category);
 
@@ -150,15 +141,6 @@ function PinMarker({
           {categoryInfo.icon}
         </span>
       </div>
-      {/* 脱却バッジ */}
-      {isBreakout && (
-        <div
-          className="absolute -top-1 -right-1 size-3.5 rounded-full bg-yellow-400 border border-white flex items-center justify-center"
-          title="コンフォートゾーン脱却！"
-        >
-          <span className="text-[7px] leading-none">⭐</span>
-        </div>
-      )}
       {/* 下向き三角 */}
       <div
         className="w-0 h-0"
@@ -193,11 +175,6 @@ function VisitInfoContent({ visit }: { visit: MapVisit }) {
         <span className="mx-0.5">·</span>
         <span>{formatShortDate(visit.visited_at)}</span>
       </div>
-      {visit.is_breakout && (
-        <p className="text-[10px] text-yellow-600 font-medium mb-2">
-          ⭐ コンフォートゾーン脱却！
-        </p>
-      )}
       <Link
         to={`/history/${visit.id}`}
         className="block text-center text-xs font-medium text-white bg-primary-purple rounded-full px-3 py-1.5 hover:opacity-90 transition-opacity"

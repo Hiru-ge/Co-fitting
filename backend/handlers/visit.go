@@ -173,6 +173,8 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	gamifResult, err := services.ApplyVisitGamification(h.DB, userID, visit)
 	if err != nil {
+		// TODO: XPBreakdown もゼロ値で返すと設計が一貫する（他フィールドはゼロ値を明示しているのに XPBreakdown だけ省略している）。
+		// 修正すれば frontend の CreateVisitResponse.xp_breakdown を optional にしなくて済む。
 		c.JSON(http.StatusCreated, createVisitResponse{
 			Visit:          visit,
 			TotalXP:        0,

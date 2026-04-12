@@ -1610,7 +1610,7 @@ func TestSuggestForceReload(t *testing.T) {
 		{PlaceID: "place_5", Name: "Bar Epsilon", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.5, Types: []string{"bar"}},
 	}
 
-	t.Run("force_reload=trueで3回を超えるリクエストは429を返す", func(t *testing.T) {
+	t.Run("is_reload=trueで3回を超えるリクエストは429を返す", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -1635,12 +1635,12 @@ func TestSuggestForceReload(t *testing.T) {
 			t.Fatalf("Initial request: Expected 200, got %d. Body: %s", w.Code, w.Body.String())
 		}
 
-		// force_reload=true で3回リロード（すべて成功するはず）
+		// is_reload=true で3回リロード（すべて成功するはず）
 		for i := 1; i <= 3; i++ {
 			reloadBody := map[string]interface{}{
-				"lat":          35.6762,
-				"lng":          139.6503,
-				"force_reload": true,
+				"lat":       35.6762,
+				"lng":       139.6503,
+				"is_reload": true,
 			}
 			reloadJSON, _ := json.Marshal(reloadBody)
 			rw := httptest.NewRecorder()
@@ -1655,9 +1655,9 @@ func TestSuggestForceReload(t *testing.T) {
 
 		// 4回目のリロードは429を返すべき
 		reloadBody := map[string]interface{}{
-			"lat":          35.6762,
-			"lng":          139.6503,
-			"force_reload": true,
+			"lat":       35.6762,
+			"lng":       139.6503,
+			"is_reload": true,
 		}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		rw := httptest.NewRecorder()
@@ -1677,7 +1677,7 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 	})
 
-	t.Run("force_reload=trueでキャッシュがクリアされ新しい提案が生成される", func(t *testing.T) {
+	t.Run("is_reload=trueでキャッシュがクリアされ新しい提案が生成される", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -1711,11 +1711,11 @@ func TestSuggestForceReload(t *testing.T) {
 			t.Errorf("Normal 2nd request should use cache, but API was called")
 		}
 
-		// force_reload=true でリクエスト（キャッシュクリアされるのでAPI呼び出しあり）
+		// is_reload=true でリクエスト（キャッシュクリアされるのでAPI呼び出しあり）
 		reloadBody := map[string]interface{}{
-			"lat":          35.6762,
-			"lng":          139.6503,
-			"force_reload": true,
+			"lat":       35.6762,
+			"lng":       139.6503,
+			"is_reload": true,
 		}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		w3 := httptest.NewRecorder()
@@ -1804,9 +1804,9 @@ func TestSuggestForceReload(t *testing.T) {
 
 		// リロード1回後
 		reloadBody := map[string]interface{}{
-			"lat":          35.6762,
-			"lng":          139.6503,
-			"force_reload": true,
+			"lat":       35.6762,
+			"lng":       139.6503,
+			"is_reload": true,
 		}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		w2 := httptest.NewRecorder()
@@ -1829,7 +1829,7 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 	})
 
-	t.Run("DailyLimitReached状態ではforce_reloadでもcompletedが返る", func(t *testing.T) {
+	t.Run("DailyLimitReached状態ではis_reloadでもcompletedが返る", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -1877,11 +1877,11 @@ func TestSuggestForceReload(t *testing.T) {
 			t.Fatalf("Expected completed=true after all visited")
 		}
 
-		// force_reload=true でも completed が返るべき（日次上限を超えてリロードできない）
+		// is_reload=true でも completed が返るべき（日次上限を超えてリロードできない）
 		reloadBody := map[string]interface{}{
-			"lat":          35.6762,
-			"lng":          139.6503,
-			"force_reload": true,
+			"lat":       35.6762,
+			"lng":       139.6503,
+			"is_reload": true,
 		}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		w3 := httptest.NewRecorder()
@@ -1901,7 +1901,7 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 	})
 
-	t.Run("興味タグ変更後にforce_reloadで新設定が反映される", func(t *testing.T) {
+	t.Run("興味タグ変更後にis_reloadで新設定が反映される", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -1945,13 +1945,13 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		// ステップ3: 興味タグ変更（UpdateInterestsはキャッシュをクリアしない。force_reloadが自身でクリアする）
+		// ステップ3: 興味タグ変更（UpdateInterestsはキャッシュをクリアしない。is_reloadが自身でクリアする）
 
-		// ステップ4: force_reload=true でリクエスト → キャッシュクリア＋カフェが優先される
+		// ステップ4: is_reload=true でリクエスト → キャッシュクリア＋カフェが優先される
 		reloadBody := map[string]interface{}{
-			"lat":          35.6762,
-			"lng":          139.6503,
-			"force_reload": true,
+			"lat":       35.6762,
+			"lng":       139.6503,
+			"is_reload": true,
 		}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		w2 := httptest.NewRecorder()

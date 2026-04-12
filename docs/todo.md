@@ -198,17 +198,35 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/api/visits.ts` の `listVisits` 関数から `from?`, `until?` 引数を削除（サマリー以外の呼び出し元はすべて渡していない）
-- [ ] `frontend/app/api/visits.ts` の `CreateVisitRequest` 型から `rating?: number` / `memo?: string` を削除（Issue #304 でバックエンド削除済み）
-- [ ] `frontend/app/types/visit.ts` の `XPBreakdown` 型から `memo_bonus: number` を削除（Issue #304 でメモボーナスXP廃止済み）
-- [ ] `frontend/app/types/visit.ts` の `CreateVisitResponse` フィールド（`xp_earned` / `total_xp` / `level_up` / `new_level` / `new_badges` / `daily_completed`）から不要な `?` を削除（バックエンドの `createVisitResponse` struct は全フィールド `omitempty` なし）
-- [ ] `frontend/app/types/visit.ts` の `MapVisit` 型をバックエンドの `mapVisitItem`（`genre_tag_id` あり・`is_breakout` なし）に合わせて修正
-- [ ] `frontend/app/api/suggestions.ts` の `forceReload` パラメータを `reload` にリネーム（バックエンドとの統一）
-- [ ] `frontend/app/types/env.d.ts` の `ImportMetaEnv` に `readonly VITE_BETA_PASSPHRASE?: string` を追加（`CLAUDE.md` に記載あるが宣言欠落）
+- [x] `frontend/app/api/visits.ts` の `CreateVisitRequest` 型から `rating?: number` / `memo?: string` を削除（Issue #304 でバックエンド削除済み）
+- [x] `frontend/app/types/visit.ts` の `XPBreakdown` 型から `memo_bonus: number` を削除（Issue #304 でメモボーナスXP廃止済み）
+- [x] `frontend/app/types/visit.ts` の `CreateVisitResponse` フィールド（`xp_earned` / `total_xp` / `level_up` / `new_level` / `new_badges` / `daily_completed`）から不要な `?` を削除（バックエンドの `createVisitResponse` struct は全フィールド `omitempty` なし）
+- [x] `frontend/app/types/visit.ts` の `MapVisit` 型をバックエンドの `mapVisitItem`（`genre_tag_id` あり・`is_breakout` なし）に合わせて修正
+- [x] `frontend/app/api/suggestions.ts` の `forceReload` パラメータを `isReload` にリネーム（バックエンド JSON キーも `is_reload` に統一）
+- [x] `frontend/app/types/env.d.ts` の `ImportMetaEnv` に `readonly VITE_BETA_PASSPHRASE?: string` を追加（`CLAUDE.md` に記載あるが宣言欠落）
 
 **🔵 REFACTOR**
 
-- [ ] `frontend/app/hooks/use-suggestions.ts` の `result.total_xp ?? 0` 等のフォールバックを削除（`?` 削除に伴い不要になる）
+- [x] `frontend/app/hooks/use-suggestions.ts` の `result.total_xp ?? 0` 等のフォールバックを削除（`?` 削除に伴い不要になる）
+
+---
+
+### ゲーミフィケーション失敗時の XPBreakdown ゼロ値返却（Issue #340）
+
+> **背景**：`CreateVisit` ハンドラのゲーミフィケーション失敗パスで、他フィールド（`TotalXP: 0`、`LevelUp: false` 等）はゼロ値を明示しているのに `XPBreakdown` だけ省略している。設計の一貫性がなく、フロントで `xp_breakdown?` を optional にせざるを得ない原因になっている。
+
+**🔴 RED**
+
+- [ ] なし（動作変更なし・型の整合が主目的）
+
+**🟢 GREEN**
+
+- [ ] `backend/handlers/visit.go` のゲーミフィケーション失敗パスに `XPBreakdown: models.XPBreakdown{}` を追加
+- [ ] `frontend/app/types/visit.ts` の `CreateVisitResponse.xp_breakdown` から `?` を削除
+
+**🔵 REFACTOR**
+
+- [ ] なし
 
 ---
 
