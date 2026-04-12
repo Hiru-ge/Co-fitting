@@ -18,9 +18,9 @@ const injectOgpPlugin = {
       return; // dev mode など build/client が存在しない場合はスキップ
     }
     const metaTags = [
-      '<meta name="description" content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。">',
-      '<meta property="og:title" content="Roamble：知らない場所への一歩を、経験値に。">',
-      '<meta property="og:description" content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。">',
+      '<meta name="description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+      '<meta property="og:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
+      '<meta property="og:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
       '<meta property="og:type" content="website">',
       '<meta property="og:url" content="https://roamble.app/lp">',
       '<meta property="og:image" content="https://roamble.app/ogp.png">',
@@ -30,15 +30,15 @@ const injectOgpPlugin = {
       '<meta property="og:locale" content="ja_JP">',
       '<meta name="twitter:card" content="summary_large_image">',
       '<meta name="twitter:site" content="@roamble_app">',
-      '<meta name="twitter:title" content="Roamble：知らない場所への一歩を、経験値に。">',
-      '<meta name="twitter:description" content="知らない場所への一歩を踏み出すたびにXPが積み上がる、コンフォートゾーン脱却Webアプリ。近くの場所を提案し、行くたびにレベルアップ・バッジ獲得。">',
+      '<meta name="twitter:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
+      '<meta name="twitter:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
       '<meta name="twitter:image" content="https://roamble.app/ogp.png">',
     ].join("\n    ");
     const patched = html
       .replace('lang="en"', 'lang="ja"')
       .replace(
         "<title>Loading...</title>",
-        "<title>Roamble：知らない場所への一歩を、経験値に。</title>",
+        "<title>Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ</title>",
       )
       .replace("</head>", `    ${metaTags}\n  </head>`);
     writeFileSync(indexPath, patched, "utf-8");
@@ -64,7 +64,7 @@ export default defineConfig({
       manifest: {
         name: "Roamble",
         short_name: "Roamble",
-        description: "コンフォートゾーンを抜け出して、新しい場所へ。",
+        description: "「いつも同じ店」を抜け出す、新しいお店開拓アプリ",
         theme_color: "#525BBB",
         background_color: "#102222",
         display: "standalone",

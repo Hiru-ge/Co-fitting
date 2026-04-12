@@ -7,7 +7,7 @@ export const meta: MetaFunction = () => [
   {
     name: "description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。iOS版も開発予定。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
   },
   { property: "og:type", content: "website" },
   { property: "og:url", content: "https://roamble.app/lp" },
@@ -18,7 +18,7 @@ export const meta: MetaFunction = () => [
   {
     property: "og:description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。iOS版も開発予定。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
   },
   { property: "og:image", content: "https://roamble.app/ogp.png" },
   { property: "og:site_name", content: "Roamble" },
@@ -32,7 +32,7 @@ export const meta: MetaFunction = () => [
   {
     name: "twitter:description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。iOS版も開発予定。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
   },
   { name: "twitter:image", content: "https://roamble.app/ogp.png" },
   { tagName: "link", rel: "canonical", href: "https://roamble.app/lp" },
@@ -42,7 +42,7 @@ export const meta: MetaFunction = () => [
       "@type": "WebApplication",
       name: "Roamble",
       description:
-        "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得。新規開拓が続くほど面白くなる新しいお店開拓アプリ。",
+        "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
       url: "https://roamble.app/lp",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
@@ -123,10 +123,10 @@ export default function LP() {
                 Roamble
               </h1>
               <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
-                知らない場所への一歩を、経験値に。
+                「いつも同じ店」を、抜け出そう。
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
-                知らない場所に踏み出すたびに、
+                近くの未訪問スポットをランダム提案。行くたびに
                 <span className="font-semibold text-primary">経験値</span>
                 が積み上がる。
                 <br />
@@ -263,7 +263,7 @@ export default function LP() {
                   className="w-40 sm:w-48 lg:w-52 rounded-2xl shadow-lg"
                 />
                 <img
-                  src="/images/lp/batch-modal.png"
+                  src="/images/lp/badge-modal.png"
                   alt="バッジ獲得画面"
                   className="w-40 sm:w-48 lg:w-52 rounded-2xl shadow-lg"
                 />

@@ -85,6 +85,10 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 
 ## フロントエンド注意事項
 
+- **コピーライティング規則**: ユーザーに見える場所（LP・メタタグ・OGP・PWAマニフェスト・アプリ内UI）に書く文言は `docs/marketing/marketing-strategy.md` の規則に従うこと。旧文言（「知らない場所への一歩を、経験値に」「コンフォートゾーン脱却Webアプリ」「コンフォートゾーンを抜け出して」）は使用禁止。正規文言は以下の通り。
+  - タイトル / OGP title: `Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ`
+  - description / OGP description: `「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。`
+  - 管理ファイル: `frontend/app/root.tsx`（デフォルトtitle・description）/ `frontend/vite.config.ts`（ビルド時OGP注入・PWAマニフェスト）/ `frontend/app/routes/lp.tsx`（LPページmeta）
 - **SPAモード**（`react-router.config.ts` で `ssr: false`）で動作。サーバーサイド専用の `loader` / `action` は使用不可。必ず `clientLoader` / `clientAction` を使うこと
 - 認証トークン管理は `app/lib/auth.ts` に集約。`getToken` / `setToken` / `clearToken` / `logout` / `getUser`
 - 認証保護が必要なルートは各ルートファイルに `clientLoader` を定義し、`getToken()` → `redirect("/login")` パターンを使う

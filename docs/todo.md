@@ -222,10 +222,10 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/root.tsx:108` の default title を `lp.tsx` の表現（「いつも同じ店」を抜け出す、新しいお店開拓アプリ）に変更
-- [ ] `frontend/app/root.tsx:111` の `description` メタタグからコンフォートゾーン表現を削除し、マーケティング方針に沿った表現に変更
-- [ ] `frontend/app/routes/pwa-prompt.tsx:60` のサブコピーを title と統一した表現に変更
-- [ ] `frontend/public/images/lp/batch-modal.png` を `badge-modal.png` にリネーム、`lp.tsx:268` の参照も修正（ファイル名 typo）
+- [x] `frontend/app/root.tsx:108` の default title を `lp.tsx` の表現（「いつも同じ店」を抜け出す、新しいお店開拓アプリ）に変更
+- [x] `frontend/app/root.tsx:111` の `description` メタタグからコンフォートゾーン表現を削除し、マーケティング方針に沿った表現に変更
+- [x] `frontend/app/routes/pwa-prompt.tsx:60` のサブコピーを title と統一した表現に変更
+- [x] `frontend/public/images/lp/batch-modal.png` を `badge-modal.png` にリネーム、`lp.tsx:268` の参照も修正（ファイル名 typo）
 
 **🔵 REFACTOR**
 

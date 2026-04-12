@@ -57,7 +57,7 @@ export default function PWAPrompt() {
             Roamble
           </p>
           <p className="text-sm text-white/50">
-            「また同じ店」を、卒業しよう。
+            「いつも同じ店」を抜け出す、新しいお店開拓アプリ
           </p>
         </div>
 
