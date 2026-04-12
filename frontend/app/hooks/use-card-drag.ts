@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
+const SWIPE_OUT_DISTANCE = 800;
+
 interface UseCardDragOptions {
   cardRef: React.RefObject<HTMLDivElement | null>;
   enabled: boolean;
@@ -55,8 +57,14 @@ export function useCardDrag({
     const dist = Math.sqrt(x ** 2 + y ** 2);
 
     if (dist > swipeThreshold) {
+      const angle = Math.atan2(y, x);
+      const flyOut = {
+        x: Math.cos(angle) * SWIPE_OUT_DISTANCE,
+        y: Math.sin(angle) * SWIPE_OUT_DISTANCE,
+      };
+      offsetRef.current = flyOut;
+      setOffset(flyOut);
       onThresholdExceeded({ x, y });
-      resetOffset();
       return;
     }
 
