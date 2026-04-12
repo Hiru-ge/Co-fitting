@@ -11,21 +11,92 @@ import { getCategoryInfoByKey } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import VisitMap from "~/components/VisitMap";
 
-const ITEMS_PER_PAGE = 20;
-
 type ViewMode = "list" | "map";
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
 export { authRequiredLoader as clientLoader };
+const PHOTO_BATCH_SIZE = 5;
+
+async function loadPhotos(
+  visits: Visit[],
+  token: string,
+): Promise<VisitWithPhoto[]> {
+  const results: VisitWithPhoto[] = [];
+
+  for (let i = 0; i < visits.length; i += PHOTO_BATCH_SIZE) {
+    const batch = visits.slice(i, i + PHOTO_BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (visit) => {
+        try {
+          const photoUrl = await getPlacePhoto(
+            token,
+            visit.place_id,
+            visit.photo_reference as string,
+          );
+          return { ...visit, photoUrl };
+        } catch {
+          // 写真取得失敗はスキップ
+        }
+        return visit;
+      }),
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
+function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
+  return (
+    <Link
+      to={`/history/${visit.id}`}
+      className="flex items-center gap-4 bg-white/10 p-3 rounded-lg border border-white/10 shadow-sm transition-transform active:scale-[0.98]"
+    >
+      {/* サムネイル */}
+      <div
+        className="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-20 shrink-0 bg-gray-200"
+        style={
+          visit.photoUrl
+            ? { backgroundImage: `url("${visit.photoUrl}")` }
+            : undefined
+        }
+      >
+        {!visit.photoUrl && (
+          <div className="flex items-center justify-center size-full text-gray-400">
+            <span className="material-symbols-outlined text-3xl">
+              photo_camera
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* テキスト情報 */}
+      <div className="flex flex-1 flex-col min-w-0">
+        <div className="flex justify-between items-start">
+          <p className="text-white text-base font-bold truncate">
+            {visit.place_name}
+          </p>
+        </div>
+        <p className="text-gray-400 text-xs mt-0.5">{visit.vicinity}</p>
+        <div className="flex items-center gap-1 mt-2 text-gray-400">
+          <span className="material-symbols-outlined text-xs">
+            calendar_today
+          </span>
+          <p className="text-xs font-medium">
+            {formatShortDate(visit.visited_at)}
+          </p>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function History({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [visits, setVisits] = useState<VisitWithPhoto[]>([]);
-  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [mapVisits, setMapVisits] = useState<MapVisit[]>([]);
@@ -35,42 +106,41 @@ export default function History({ loaderData }: Route.ComponentProps) {
   const availableCategories = useMemo(() => {
     const categories = new Set<string>();
     visits.forEach((visit) => {
-      if (visit.category) {
-        categories.add(visit.category);
-      }
+      categories.add(visit.category);
     });
     // 配列に変換してソート（表示順序を安定化）
     return Array.from(categories).sort();
   }, [visits]);
 
-  const loadVisits = useCallback(
-    async (offset = 0, append = false) => {
-      if (!append) setIsLoading(true);
-      else setIsLoadingMore(true);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadVisits() {
+      setIsLoading(true);
 
       try {
-        const data = await listVisits(token, ITEMS_PER_PAGE, offset);
+        const data = await listVisits(token, 100, 0);
         const visitsWithPhotos = await loadPhotos(data.visits, token);
-
-        if (append) {
-          setVisits((prev) => [...prev, ...visitsWithPhotos]);
-        } else {
+        if (isMounted) {
           setVisits(visitsWithPhotos);
         }
-        setTotal(data.total);
       } catch (err) {
-        showToast(toUserMessage(err));
+        if (isMounted) {
+          showToast(toUserMessage(err));
+        }
       } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-    },
-    [token, showToast],
-  );
+    }
 
-  useEffect(() => {
     loadVisits();
-  }, [loadVisits]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token, showToast]);
 
   // マップタブ選択時に初回のみマップデータをロード
   const handleSwitchToMap = useCallback(async () => {
@@ -85,11 +155,6 @@ export default function History({ loaderData }: Route.ComponentProps) {
       }
     }
   }, [token, isMapLoaded, showToast]);
-
-  function handleLoadMore() {
-    if (isLoadingMore || visits.length >= total) return;
-    loadVisits(visits.length, true);
-  }
 
   const filteredVisits =
     activeFilter === "all"
@@ -240,18 +305,6 @@ export default function History({ loaderData }: Route.ComponentProps) {
                       ))}
                     </div>
                   ))}
-
-                  {visits.length < total && (
-                    <div className="flex justify-center pb-4">
-                      <button
-                        onClick={handleLoadMore}
-                        disabled={isLoadingMore}
-                        className="px-6 py-2 rounded-full bg-white/10 text-white text-sm font-medium transition-opacity disabled:opacity-50"
-                      >
-                        {isLoadingMore ? "読み込み中..." : "もっと見る"}
-                      </button>
-                    </div>
-                  )}
                 </>
               )}
               <div className="h-10" />
@@ -261,80 +314,4 @@ export default function History({ loaderData }: Route.ComponentProps) {
       )}
     </div>
   );
-}
-
-function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
-  return (
-    <Link
-      to={`/history/${visit.id}`}
-      className="flex items-center gap-4 bg-white/10 p-3 rounded-lg border border-white/10 shadow-sm transition-transform active:scale-[0.98]"
-    >
-      {/* サムネイル */}
-      <div
-        className="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-20 shrink-0 bg-gray-200"
-        style={
-          visit.photoUrl
-            ? { backgroundImage: `url("${visit.photoUrl}")` }
-            : undefined
-        }
-      >
-        {!visit.photoUrl && (
-          <div className="flex items-center justify-center size-full text-gray-400">
-            <span className="material-symbols-outlined text-3xl">
-              photo_camera
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* テキスト情報 */}
-      <div className="flex flex-1 flex-col min-w-0">
-        <div className="flex justify-between items-start">
-          <p className="text-white text-base font-bold truncate">
-            {visit.place_name}
-          </p>
-        </div>
-        <p className="text-gray-400 text-xs mt-0.5">{visit.vicinity}</p>
-        <div className="flex items-center gap-1 mt-2 text-gray-400">
-          <span className="material-symbols-outlined text-xs">
-            calendar_today
-          </span>
-          <p className="text-xs font-medium">
-            {formatShortDate(visit.visited_at)}
-          </p>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-const PHOTO_BATCH_SIZE = 5;
-
-async function loadPhotos(
-  visits: Visit[],
-  token: string,
-): Promise<VisitWithPhoto[]> {
-  const results: VisitWithPhoto[] = [];
-
-  for (let i = 0; i < visits.length; i += PHOTO_BATCH_SIZE) {
-    const batch = visits.slice(i, i + PHOTO_BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batch.map(async (visit) => {
-        try {
-          const photoUrl = await getPlacePhoto(
-            token,
-            visit.place_id,
-            visit.photo_reference as string,
-          );
-          return { ...visit, photoUrl };
-        } catch {
-          // 写真取得失敗はスキップ
-        }
-        return visit;
-      }),
-    );
-    results.push(...batchResults);
-  }
-
-  return results;
 }

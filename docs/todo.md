@@ -572,12 +572,11 @@ s
 
 **🟢 GREEN**
 
-- [ ] `history.tsx` の `ITEMS_PER_PAGE` / `total` / `isLoadingMore` / `handleLoadMore` / もっとみるボタンをすべて削除（`visits.length < total` の判定も合わせて削除）
-- [ ] `handleLoadMore` 削除に伴い `loadVisits` の `useCallback` ラップを外し、`useEffect` 内にインライン化（`[token]` を依存配列に直接追加）
-- [ ] `if (visit.category)` ガード（`category` は `string` 確定）を削除
-- [ ] `loadPhotos` を `loadVisits` より上に移動（依存するサブ関数は呼び出し元より上）
-- [ ] `export default function History` の位置をファイル末尾に移動（コンポーネント本体は下）
-- [ ] `useToast` を `hooks/use-toast.ts` に分離し、`toast.tsx` からの import 先を変更
+- [x] `history.tsx` の `ITEMS_PER_PAGE` / `total` / `isLoadingMore` / `handleLoadMore` / もっとみるボタンをすべて削除（`visits.length < total` の判定も合わせて削除）
+- [x] `handleLoadMore` 削除に伴い `loadVisits` の `useCallback` ラップを外し、`useEffect` 内にインライン化（`[token]` を依存配列に直接追加）
+- [x] `if (visit.category)` ガード（`category` は `string` 確定）を削除
+- [x] `loadPhotos` を `loadVisits` より上に移動（依存するサブ関数は呼び出し元より上）
+- [x] `export default function History` の位置をファイル末尾に移動（コンポーネント本体は下）
 
 **🔵 REFACTOR**
 
