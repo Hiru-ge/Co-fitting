@@ -4,9 +4,8 @@ import {
   formatMonth,
   formatShortDate,
   groupByMonth,
-  formatDistance,
-  buildGoogleMapsPlaceUrl,
-} from "~/utils/helpers";
+} from "~/utils/date";
+import { formatDistance, buildGoogleMapsPlaceUrl } from "~/utils/helpers";
 
 describe("formatDate", () => {
   test("ISO文字列を「YYYY年M月D日」形式に変換する", () => {

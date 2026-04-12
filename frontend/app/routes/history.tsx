@@ -6,7 +6,7 @@ import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
 import type { Visit, MapVisit } from "~/types/visit";
-import { formatShortDate, groupByMonth } from "~/utils/helpers";
+import { formatShortDate, groupByMonth } from "~/utils/date";
 import { getCategoryInfo } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import VisitMap from "~/components/VisitMap";

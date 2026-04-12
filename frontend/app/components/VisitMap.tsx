@@ -7,7 +7,7 @@ import {
   InfoWindow,
 } from "@vis.gl/react-google-maps";
 import { getCategoryInfo } from "~/lib/category-map";
-import { formatShortDate } from "~/utils/helpers";
+import { formatShortDate } from "~/utils/date";
 import {
   getCurrentPositionWithFallback,
   type Position,

@@ -23,7 +23,7 @@ vi.mock("~/api/places", () => ({
 
 import { getToken, authRequiredLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
-import { getUserStats, getUserBadges, getUser } from "~/api/users";
+import { getUserBadges } from "~/api/users";
 
 const mockVisits = [
   {
@@ -71,16 +71,6 @@ const mockBadges = [
   },
 ];
 
-const mockStats = {
-  level: 4,
-  total_xp: 800,
-  streak_count: 3,
-  streak_last: null,
-  total_visits: 15,
-  breakout_visits: 5,
-  challenge_visits: 2,
-};
-
 const mockUser = {
   id: 1,
   email: "test@example.com",
@@ -92,7 +82,6 @@ const mockUser = {
 };
 
 // 2026-03-16 12:00 JST に固定 (UTC: 03:00:00)
-// Date のみフェイクにすることで findByText などの非同期待機はリアルタイマーを使用できる
 const FIXED_NOW_MONTHLY = new Date("2026-03-16T03:00:00Z").getTime();
 
 describe("SummaryMonthly", () => {
@@ -101,33 +90,32 @@ describe("SummaryMonthly", () => {
     vi.setSystemTime(FIXED_NOW_MONTHLY);
     vi.clearAllMocks();
     vi.mocked(getToken).mockReturnValue("mock-token");
-    vi.mocked(authRequiredLoader).mockResolvedValue({
-      user: mockUser,
-      token: "mock-token",
-    });
-    vi.mocked(getUser).mockResolvedValue(mockUser);
-    vi.mocked(listVisits).mockResolvedValue({ visits: mockVisits, total: 2 });
-    vi.mocked(getUserStats).mockResolvedValue(mockStats);
-    vi.mocked(getUserBadges).mockResolvedValue(mockBadges);
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
+  // 2026-03-16固定 → 先月は2026年2月
+  const monthLabel = "2026年2月";
+
   test("訪問件数・獲得XPが表示される", async () => {
     const { default: SummaryMonthly } = await import("./summary.monthly");
     render(
       <MemoryRouter>
         <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: mockVisits,
+            badges: mockBadges,
+            label: monthLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
       </MemoryRouter>,
     );
 
-    // 訪問件数と獲得XPの両方が存在すること
     expect(await screen.findByText("130")).toBeInTheDocument(); // xp_earned合計
     expect(await screen.findByText("か所を冒険!")).toBeInTheDocument();
   });
@@ -137,7 +125,12 @@ describe("SummaryMonthly", () => {
     render(
       <MemoryRouter>
         <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: mockVisits,
+            badges: [],
+            label: monthLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -153,7 +146,12 @@ describe("SummaryMonthly", () => {
     render(
       <MemoryRouter>
         <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: [],
+            badges: mockBadges,
+            label: monthLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -177,7 +175,12 @@ describe("SummaryMonthly", () => {
     render(
       <MemoryRouter>
         <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: [],
+            badges: [],
+            label: monthLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -190,7 +193,7 @@ describe("SummaryMonthly", () => {
 });
 
 // ---- バッジフィルタリングのロジック単体テスト ----
-// getMonthRange() は Date.now() に依存するため、vi.useFakeTimers() で現在時刻を固定する。
+// getYearMonthRange() は new Date() に依存するため、vi.useFakeTimers() で現在時刻を固定する。
 // 固定日時: 2026-03-16 12:00 JST (= 2026-03-16T03:00:00Z)
 // → 先月の範囲: 2026-02-01 00:00 JST (= 2026-01-31T15:00:00Z) 〜 2026-03-01 00:00 JST (= 2026-02-28T15:00:00Z)
 
@@ -205,15 +208,15 @@ describe("SummaryMonthly バッジフィルタリング", () => {
   const MONTH_UNTIL = "2026-02-28T15:00:00.000Z";
 
   beforeEach(() => {
-    // Date のみフェイクにし、setTimeout/setInterval はリアルのまま保持する。
-    // こうすることで findByText などの非同期待機がタイムアウトしない。
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(FIXED_NOW);
     vi.clearAllMocks();
     vi.mocked(getToken).mockReturnValue("mock-token");
-    vi.mocked(getUser).mockResolvedValue(mockUser);
+    vi.mocked(authRequiredLoader).mockResolvedValue({
+      user: mockUser,
+      token: "mock-token",
+    });
     vi.mocked(listVisits).mockResolvedValue({ visits: [], total: 0 });
-    vi.mocked(getUserStats).mockResolvedValue(mockStats);
   });
 
   afterEach(() => {
@@ -221,9 +224,6 @@ describe("SummaryMonthly バッジフィルタリング", () => {
   });
 
   test("earned_at が月の範囲内のバッジのみ表示される", async () => {
-    // 期間内: 2026-02-10 10:00 JST (= 2026-02-10T01:00:00Z)
-    // 期間外（先々月）: 2026-01-28 10:00 JST (= 2026-01-28T01:00:00Z)
-    // 期間外（今月）: 2026-03-01 10:00 JST (= 2026-03-01T01:00:00Z)
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
@@ -248,24 +248,16 @@ describe("SummaryMonthly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryMonthly } = await import("./summary.monthly");
-    render(
-      <MemoryRouter>
-        <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.monthly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    expect(await screen.findByText("月内バッジ")).toBeInTheDocument();
-    expect(screen.queryByText("先月バッジ")).not.toBeInTheDocument();
-    expect(screen.queryByText("翌月バッジ")).not.toBeInTheDocument();
+    expect(badgeNames).toContain("月内バッジ");
+    expect(badgeNames).not.toContain("先月バッジ");
+    expect(badgeNames).not.toContain("翌月バッジ");
   });
 
   test("earned_at が from と一致する（境界値）バッジは表示される", async () => {
-    // from ちょうど: 2026-02-28T15:00:00.000Z (= 2026-03-01 00:00 JST)
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
@@ -276,22 +268,14 @@ describe("SummaryMonthly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryMonthly } = await import("./summary.monthly");
-    render(
-      <MemoryRouter>
-        <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.monthly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    expect(await screen.findByText("月始まりバッジ")).toBeInTheDocument();
+    expect(badgeNames).toContain("月始まりバッジ");
   });
 
   test("earned_at が until と一致する（境界値）バッジは表示されない", async () => {
-    // until ちょうど: 2026-03-31T15:00:00.000Z (= 2026-04-01 00:00 JST、翌月は範囲外)
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
@@ -302,20 +286,11 @@ describe("SummaryMonthly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryMonthly } = await import("./summary.monthly");
-    render(
-      <MemoryRouter>
-        <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.monthly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    // ローディング完了を待ってから、表示されないことを確認する
-    expect(await screen.findByText("か所を冒険!")).toBeInTheDocument();
-    expect(screen.queryByText("月終わりバッジ")).not.toBeInTheDocument();
+    expect(badgeNames).not.toContain("月終わりバッジ");
   });
 
   test("期間内のバッジが複数ある場合は全て表示される", async () => {
@@ -350,21 +325,14 @@ describe("SummaryMonthly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryMonthly } = await import("./summary.monthly");
-    render(
-      <MemoryRouter>
-        <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.monthly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    expect(await screen.findByText("バッジX")).toBeInTheDocument();
-    expect(await screen.findByText("バッジY")).toBeInTheDocument();
-    expect(await screen.findByText("バッジZ")).toBeInTheDocument();
-    expect(screen.queryByText("範囲外バッジ")).not.toBeInTheDocument();
+    expect(badgeNames).toContain("バッジX");
+    expect(badgeNames).toContain("バッジY");
+    expect(badgeNames).toContain("バッジZ");
+    expect(badgeNames).not.toContain("範囲外バッジ");
   });
 
   test("期間内のバッジが1件もない場合はバッジセクションが空になる", async () => {
@@ -385,20 +353,9 @@ describe("SummaryMonthly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryMonthly } = await import("./summary.monthly");
-    render(
-      <MemoryRouter>
-        <SummaryMonthly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.monthly");
+    const result = await clientLoader();
 
-    // ローディング完了を待つ
-    expect(await screen.findByText("か所を冒険!")).toBeInTheDocument();
-    expect(screen.queryByText("先月バッジ")).not.toBeInTheDocument();
-    expect(screen.queryByText("来月バッジ")).not.toBeInTheDocument();
+    expect(result.badges).toHaveLength(0);
   });
 });

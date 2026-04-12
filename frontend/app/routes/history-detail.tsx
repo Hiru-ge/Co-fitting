@@ -5,7 +5,7 @@ import { authRequiredLoader } from "~/lib/auth";
 import { getVisit, updateVisit } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
-import { formatDate } from "~/utils/helpers";
+import { formatDate } from "~/utils/date";
 import { getCategoryInfo } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import { sendVisitMemoSaved } from "~/lib/gtag";

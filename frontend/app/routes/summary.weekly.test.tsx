@@ -23,7 +23,7 @@ vi.mock("~/api/places", () => ({
 
 import { getToken, authRequiredLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
-import { getUserStats, getUserBadges, getUser } from "~/api/users";
+import { getUserBadges } from "~/api/users";
 
 const mockVisits = [
   {
@@ -71,16 +71,6 @@ const mockBadges = [
   },
 ];
 
-const mockStats = {
-  level: 3,
-  total_xp: 500,
-  streak_count: 2,
-  streak_last: null,
-  total_visits: 10,
-  breakout_visits: 3,
-  challenge_visits: 1,
-};
-
 const mockUser = {
   id: 1,
   email: "test@example.com",
@@ -92,7 +82,6 @@ const mockUser = {
 };
 
 // 2026-03-16 月曜日 12:00 JST に固定 (UTC: 03:00:00)
-// Date のみフェイクにすることで findByText などの非同期待機はリアルタイマーを使用できる
 const FIXED_NOW_WEEKLY = new Date("2026-03-16T03:00:00Z").getTime();
 
 describe("SummaryWeekly", () => {
@@ -101,26 +90,26 @@ describe("SummaryWeekly", () => {
     vi.setSystemTime(FIXED_NOW_WEEKLY);
     vi.clearAllMocks();
     vi.mocked(getToken).mockReturnValue("mock-token");
-    vi.mocked(authRequiredLoader).mockResolvedValue({
-      user: mockUser,
-      token: "mock-token",
-    });
-    vi.mocked(getUser).mockResolvedValue(mockUser);
-    vi.mocked(listVisits).mockResolvedValue({ visits: mockVisits, total: 2 });
-    vi.mocked(getUserStats).mockResolvedValue(mockStats);
-    vi.mocked(getUserBadges).mockResolvedValue(mockBadges);
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
+  // 2026-03-16(月)固定 → 先週は 3/9（月）〜 3/15（日）
+  const weekLabel = "3/9（月）〜 3/15（日）";
+
   test("訪問件数・獲得XPが表示される", async () => {
     const { default: SummaryWeekly } = await import("./summary.weekly");
     render(
       <MemoryRouter>
         <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: mockVisits,
+            badges: mockBadges,
+            label: weekLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -136,7 +125,12 @@ describe("SummaryWeekly", () => {
     render(
       <MemoryRouter>
         <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: mockVisits,
+            badges: [],
+            label: weekLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -152,7 +146,12 @@ describe("SummaryWeekly", () => {
     render(
       <MemoryRouter>
         <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: [],
+            badges: mockBadges,
+            label: weekLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -171,22 +170,15 @@ describe("SummaryWeekly", () => {
     await expect(clientLoader()).rejects.toThrow();
   });
 
-  test("APIが失敗した場合にエラーメッセージが表示される", async () => {
+  test("APIが失敗した場合に clientLoader がエラーをスローする", async () => {
+    vi.mocked(authRequiredLoader).mockResolvedValue({
+      user: mockUser,
+      token: "mock-token",
+    });
     vi.mocked(listVisits).mockRejectedValue(new Error("Network error"));
-    const { default: SummaryWeekly } = await import("./summary.weekly");
-    render(
-      <MemoryRouter>
-        <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.weekly");
 
-    expect(
-      await screen.findByText(/データの取得に失敗しました/),
-    ).toBeInTheDocument();
+    await expect(clientLoader()).rejects.toThrow("Network error");
   });
 
   test("periodラベルが画面に表示される", async () => {
@@ -194,7 +186,12 @@ describe("SummaryWeekly", () => {
     render(
       <MemoryRouter>
         <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
+          loaderData={{
+            user: mockUser,
+            visits: [],
+            badges: [],
+            label: weekLabel,
+          }}
           params={{}}
           matches={[] as any}
         />
@@ -209,7 +206,7 @@ describe("SummaryWeekly", () => {
 });
 
 // ---- バッジフィルタリングのロジック単体テスト ----
-// getWeekRange() は Date.now() に依存するため、vi.useFakeTimers() で現在時刻を固定する。
+// getWeekRange() は new Date() に依存するため、vi.useFakeTimers() で現在時刻を固定する。
 // 固定日時: 2026-03-16 月曜日 12:00 JST (= 2026-03-16T03:00:00Z)
 // → 先週の範囲: 2026-03-09 00:00 JST (= 2026-03-08T15:00:00Z) 〜 2026-03-16 00:00 JST (= 2026-03-15T15:00:00Z)
 
@@ -224,15 +221,15 @@ describe("SummaryWeekly バッジフィルタリング", () => {
   const WEEK_UNTIL = "2026-03-15T15:00:00.000Z";
 
   beforeEach(() => {
-    // Date のみフェイクにし、setTimeout/setInterval はリアルのまま保持する。
-    // こうすることで findByText などの非同期待機がタイムアウトしない。
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(FIXED_NOW);
     vi.clearAllMocks();
     vi.mocked(getToken).mockReturnValue("mock-token");
-    vi.mocked(getUser).mockResolvedValue(mockUser);
+    vi.mocked(authRequiredLoader).mockResolvedValue({
+      user: mockUser,
+      token: "mock-token",
+    });
     vi.mocked(listVisits).mockResolvedValue({ visits: [], total: 0 });
-    vi.mocked(getUserStats).mockResolvedValue(mockStats);
   });
 
   afterEach(() => {
@@ -240,12 +237,6 @@ describe("SummaryWeekly バッジフィルタリング", () => {
   });
 
   test("earned_at が週の範囲内のバッジのみ表示される", async () => {
-    // 期間内: 2026-03-17 10:00 JST (= 2026-03-17T01:00:00Z)
-    // 期間外（前週）: 2026-03-14 10:00 JST (= 2026-03-14T01:00:00Z)
-    // 期間外（翌週）: 2026-03-23 10:00 JST (= 2026-03-23T01:00:00Z)
-    // 期間内: 2026-03-10 10:00 JST (= 2026-03-10T01:00:00Z)
-    // 期間外（前週）: 2026-03-07 10:00 JST (= 2026-03-07T01:00:00Z)
-    // 期間外（翌週）: 2026-03-17 10:00 JST (= 2026-03-17T01:00:00Z)
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
@@ -270,24 +261,16 @@ describe("SummaryWeekly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryWeekly } = await import("./summary.weekly");
-    render(
-      <MemoryRouter>
-        <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.weekly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    expect(await screen.findByText("週内バッジ")).toBeInTheDocument();
-    expect(screen.queryByText("前週バッジ")).not.toBeInTheDocument();
-    expect(screen.queryByText("翌週バッジ")).not.toBeInTheDocument();
+    expect(badgeNames).toContain("週内バッジ");
+    expect(badgeNames).not.toContain("前週バッジ");
+    expect(badgeNames).not.toContain("翌週バッジ");
   });
 
   test("earned_at が from と一致する（境界値）バッジは表示される", async () => {
-    // from ちょうど: 2026-03-15T15:00:00.000Z
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
@@ -298,22 +281,14 @@ describe("SummaryWeekly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryWeekly } = await import("./summary.weekly");
-    render(
-      <MemoryRouter>
-        <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.weekly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    expect(await screen.findByText("週始まりバッジ")).toBeInTheDocument();
+    expect(badgeNames).toContain("週始まりバッジ");
   });
 
   test("earned_at が until と一致する（境界値）バッジは表示されない", async () => {
-    // until ちょうど: 2026-03-22T15:00:00.000Z （翌週月曜0時JSTは範囲外）
     vi.mocked(getUserBadges).mockResolvedValue([
       {
         id: 1,
@@ -324,20 +299,11 @@ describe("SummaryWeekly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryWeekly } = await import("./summary.weekly");
-    render(
-      <MemoryRouter>
-        <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.weekly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    // まずローディング完了を待ってから、表示されないことを確認する
-    expect(await screen.findByText("か所を冒険!")).toBeInTheDocument();
-    expect(screen.queryByText("週終わりバッジ")).not.toBeInTheDocument();
+    expect(badgeNames).not.toContain("週終わりバッジ");
   });
 
   test("期間内のバッジが複数ある場合は全て表示される", async () => {
@@ -372,21 +338,14 @@ describe("SummaryWeekly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryWeekly } = await import("./summary.weekly");
-    render(
-      <MemoryRouter>
-        <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.weekly");
+    const result = await clientLoader();
+    const badgeNames = result.badges.map((b) => b.name);
 
-    expect(await screen.findByText("バッジA")).toBeInTheDocument();
-    expect(await screen.findByText("バッジB")).toBeInTheDocument();
-    expect(await screen.findByText("バッジC")).toBeInTheDocument();
-    expect(screen.queryByText("範囲外バッジ")).not.toBeInTheDocument();
+    expect(badgeNames).toContain("バッジA");
+    expect(badgeNames).toContain("バッジB");
+    expect(badgeNames).toContain("バッジC");
+    expect(badgeNames).not.toContain("範囲外バッジ");
   });
 
   test("期間内のバッジが1件もない場合はバッジセクションが空になる", async () => {
@@ -407,20 +366,9 @@ describe("SummaryWeekly バッジフィルタリング", () => {
       },
     ]);
 
-    const { default: SummaryWeekly } = await import("./summary.weekly");
-    render(
-      <MemoryRouter>
-        <SummaryWeekly
-          loaderData={{ user: mockUser, token: "mock-token" }}
-          params={{}}
-          matches={[] as any}
-        />
-      </MemoryRouter>,
-    );
+    const { clientLoader } = await import("./summary.weekly");
+    const result = await clientLoader();
 
-    // ローディング完了を待つ
-    expect(await screen.findByText("か所を冒険!")).toBeInTheDocument();
-    expect(screen.queryByText("先週バッジ")).not.toBeInTheDocument();
-    expect(screen.queryByText("来週バッジ")).not.toBeInTheDocument();
+    expect(result.badges).toHaveLength(0);
   });
 });

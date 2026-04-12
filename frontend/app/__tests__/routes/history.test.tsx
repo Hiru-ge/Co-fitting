@@ -8,7 +8,7 @@ import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
 import { getCategoryInfo } from "~/lib/category-map";
-import { formatShortDate, groupByMonth } from "~/utils/helpers";
+import { formatShortDate, groupByMonth } from "~/utils/date";
 import type { Visit } from "~/types/visit";
 import type { User } from "~/types/auth";
 
@@ -21,7 +21,7 @@ vi.mock("~/api/places");
 vi.mock("~/utils/error");
 vi.mock("~/components/Toast");
 vi.mock("~/lib/category-map");
-vi.mock("~/utils/helpers");
+vi.mock("~/utils/date");
 // VisitMapコンポーネントをモック（Google Maps APIを使うため）
 vi.mock("~/components/VisitMap", () => ({
   default: ({ visits }: { visits: unknown[] }) => (

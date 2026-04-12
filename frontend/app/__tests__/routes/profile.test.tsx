@@ -134,6 +134,7 @@ vi.mock("~/api/users", () => ({
 
 import Profile from "~/routes/profile";
 import { logout } from "~/lib/auth";
+import { getLevelInfo, getLevelTitle } from "~/utils/level";
 
 const mockUser = {
   id: 1,
@@ -144,10 +145,61 @@ const mockUser = {
   updated_at: "2025-12-01T10:00:00Z",
 };
 
+const mockStats = {
+  level: 5,
+  total_xp: 850,
+  streak_count: 3,
+  streak_last: "2025-12-01T10:00:00Z",
+  total_visits: 48,
+  breakout_visits: 10,
+  challenge_visits: 38,
+};
+
+const mockBadges = [
+  {
+    id: 1,
+    name: "最初の一歩",
+    description: "初めての訪問を記録した",
+    icon_url: "",
+    earned_at: "2025-07-01T10:00:00Z",
+  },
+  {
+    id: 2,
+    name: "コンフォートゾーン・ブレイカー",
+    description: "初めてコンフォートゾーンを脱却した",
+    icon_url: "",
+    earned_at: "2025-08-01T10:00:00Z",
+  },
+];
+
+const mockProficiency = [
+  {
+    genre_tag_id: 1,
+    genre_name: "カフェ",
+    category: "飲食",
+    icon: "local_cafe",
+    xp: 300,
+    level: 3,
+  },
+  {
+    genre_tag_id: 2,
+    genre_name: "公園・緑地",
+    category: "アウトドア",
+    icon: "park",
+    xp: 150,
+    level: 2,
+  },
+];
+
 function renderProfile() {
   const loaderData = {
     user: mockUser,
-    token: "test-token",
+    stats: mockStats,
+    badges: mockBadges,
+    proficiency: mockProficiency,
+    totalBadgeCount: 3,
+    levelInfo: getLevelInfo(mockStats.total_xp),
+    levelTitle: getLevelTitle(mockStats.level),
   };
   return render(
     <Profile

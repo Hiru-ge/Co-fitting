@@ -523,15 +523,15 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/utils/date.ts` を新規作成し `getWeekRange(date: Date)` / `getMonthRange(date: Date)` を実装（純粋な日付計算）
-- [ ] `summary.weekly.tsx` と `summary.monthly.tsx` から `loadPhotos` 関数と `VisitWithPhoto` 型の重複実装を削除し、共通化した関数/型を `api/places.ts` 付近に切り出す
-- [ ] `frontend/app/routes/summary.weekly.tsx` のデータ取得（`listVisits` / `getUserBadges` / `loadPhotos`）を `clientLoader` に移動し、`isLoading` ステートと対応する `useEffect` を削除
-- [ ] `frontend/app/routes/summary.monthly.tsx` に同様の変更を適用
-- [ ] `frontend/app/routes/profile.tsx` の `getUserStats` / `getUserBadges` / `getProficiency` の3 API 呼び出しを `clientLoader` に移動し、`isLoading` ステートと対応する `useEffect` を削除。`loadData` の `useCallback` も合わせて削除（`useEffect` 内でのみ使用のため）
+- [x] `frontend/app/utils/date.ts` を新規作成し `getWeekRange(date: Date)` / `getMonthRange(date: Date)` を実装（純粋な日付計算）
+- [x] `summary.weekly.tsx` と `summary.monthly.tsx` から `loadPhotos` 関数と `VisitWithPhoto` 型の重複実装を削除し、共通化した関数/型を `api/places.ts` 付近に切り出す
+- [x] `frontend/app/routes/summary.weekly.tsx` のデータ取得（`listVisits` / `getUserBadges` / `loadPhotos`）を `clientLoader` に移動し、`isLoading` ステートと対応する `useEffect` を削除
+- [x] `frontend/app/routes/summary.monthly.tsx` に同様の変更を適用
+- [x] `frontend/app/routes/profile.tsx` の `getUserStats` / `getUserBadges` / `getProficiency` の3 API 呼び出しを `clientLoader` に移動し、`isLoading` ステートと対応する `useEffect` を削除。`loadData` の `useCallback` も合わせて削除（`useEffect` 内でのみ使用のため）
 
 **🔵 REFACTOR**
 
-- [ ] `getLevelInfo` / `getLevelTitle` の計算も `clientLoader` 末尾に移動
+- [x] `getLevelInfo` / `getLevelTitle` の計算も `clientLoader` 末尾に移動
 
 ---
 
