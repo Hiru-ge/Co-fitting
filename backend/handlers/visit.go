@@ -341,8 +341,10 @@ func (h *VisitHandler) GetVisit(c *gin.Context) {
 // @Description  ユーザーの訪問履歴を一覧取得する（visited_at降順）
 // @Tags         Visits
 // @Produce      json
-// @Param        limit   query  int  false  "取得件数（デフォルト20）"
-// @Param        offset  query  int  false  "オフセット（デフォルト0）"
+// @Param        limit   query  int     false  "取得件数（デフォルト20）"
+// @Param        offset  query  int     false  "オフセット（デフォルト0）"
+// @Param		 from	 query  string  false  "訪問日時の開始範囲（RFC3339Nano形式）"
+// @Param		 until    query  string  false  "訪問日時の終了範囲（RFC3339Nano形式）"
 // @Success      200  {object}  handlers.listVisitsResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
@@ -354,9 +356,12 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
 		return
 	}
+	query := h.DB.Where("user_id = ?", userID)
+	countQuery := h.DB.Model(&models.Visit{}).Where("user_id = ?", userID)
 
 	limit := DefaultListLimit
 	offset := 0
+	var fromTime, untilTime time.Time
 
 	if l := c.Query("limit"); l != "" {
 		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 {
@@ -372,8 +377,38 @@ func (h *VisitHandler) ListVisits(c *gin.Context) {
 		}
 	}
 
-	query := h.DB.Where("user_id = ?", userID)
-	countQuery := h.DB.Model(&models.Visit{}).Where("user_id = ?", userID)
+	if fromStr := c.Query("from"); fromStr != "" {
+		t, err := time.Parse(time.RFC3339Nano, fromStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid 'from' timestamp format, expected RFC3339Nano"})
+			return
+		}
+		fromTime = t
+	}
+
+	if untilStr := c.Query("until"); untilStr != "" {
+		t, err := time.Parse(time.RFC3339Nano, untilStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid 'until' timestamp format, expected RFC3339Nano"})
+			return
+		}
+		untilTime = t
+	}
+
+	if !fromTime.IsZero() && !untilTime.IsZero() && fromTime.After(untilTime) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "'from' timestamp must be before 'until' timestamp"})
+		return
+	}
+
+	// 矛盾した条件をクエリに追加しないよう、上のバリデーションが全て済んでからクエリに条件を追加する
+	if !fromTime.IsZero() {
+		query = query.Where("visited_at >= ?", fromTime)
+		countQuery = countQuery.Where("visited_at >= ?", fromTime)
+	}
+	if !untilTime.IsZero() {
+		query = query.Where("visited_at <= ?", untilTime)
+		countQuery = countQuery.Where("visited_at <= ?", untilTime)
+	}
 
 	visits := make([]models.Visit, 0)
 	if err := query.

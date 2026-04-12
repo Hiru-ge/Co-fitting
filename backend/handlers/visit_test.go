@@ -1245,6 +1245,205 @@ func TestListVisits(t *testing.T) {
 	})
 }
 
+func TestListVisits_DateFilter(t *testing.T) {
+	router := setupVisitRouter()
+
+	t.Run("fromのみ指定した場合、その日以降のレコードのみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		// 2024-02-10, 2024-02-09, 2024-02-08, 2024-02-07, 2024-02-06 の5件
+		createVisitsForUser(t, user.ID, 5)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2024-02-09T00:00:00Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		// 2024-02-09, 2024-02-10 の2件のみ
+		if resp.Total != 2 {
+			t.Errorf("Expected total 2, got %d", resp.Total)
+		}
+		for _, v := range resp.Visits {
+			if v.VisitedAt.Before(time.Date(2024, 2, 9, 0, 0, 0, 0, time.UTC)) {
+				t.Errorf("Visit %d has VisitedAt %v, which is before from date", v.ID, v.VisitedAt)
+			}
+		}
+	})
+
+	t.Run("untilのみ指定した場合、その日以前のレコードのみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		// 2024-02-10, 2024-02-09, 2024-02-08, 2024-02-07, 2024-02-06 の5件
+		createVisitsForUser(t, user.ID, 5)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?until=2024-02-08T23:59:59Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		// 2024-02-06, 2024-02-07, 2024-02-08 の3件のみ
+		if resp.Total != 3 {
+			t.Errorf("Expected total 3, got %d", resp.Total)
+		}
+		untilEnd := time.Date(2024, 2, 8, 23, 59, 59, 0, time.UTC)
+		for _, v := range resp.Visits {
+			if v.VisitedAt.After(untilEnd) {
+				t.Errorf("Visit %d has VisitedAt %v, which is after until date", v.ID, v.VisitedAt)
+			}
+		}
+	})
+
+	t.Run("fromとuntilを両方指定した場合、期間内のレコードのみ返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		// 2024-02-10, 2024-02-09, 2024-02-08, 2024-02-07, 2024-02-06 の5件
+		createVisitsForUser(t, user.ID, 5)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2024-02-08T00:00:00Z&until=2024-02-09T23:59:59Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		// 2024-02-08, 2024-02-09 の2件のみ
+		if resp.Total != 2 {
+			t.Errorf("Expected total 2, got %d", resp.Total)
+		}
+		fromStart := time.Date(2024, 2, 8, 0, 0, 0, 0, time.UTC)
+		untilEnd := time.Date(2024, 2, 9, 23, 59, 59, 0, time.UTC)
+		for _, v := range resp.Visits {
+			if v.VisitedAt.Before(fromStart) || v.VisitedAt.After(untilEnd) {
+				t.Errorf("Visit %d has VisitedAt %v, which is outside [from, until] range", v.ID, v.VisitedAt)
+			}
+		}
+	})
+
+	t.Run("期間内に0件の場合は200 + 空配列で返される", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+		// 2024-02-10〜2024-02-06 の5件
+		createVisitsForUser(t, user.ID, 5)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2024-01-01T00:00:00Z&until=2024-01-31T23:59:59Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp struct {
+			Visits []models.Visit `json:"visits"`
+			Total  int64          `json:"total"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("Failed to parse response: %v", err)
+		}
+
+		if resp.Visits == nil {
+			t.Error("Expected empty array, got nil")
+		}
+		if len(resp.Visits) != 0 {
+			t.Errorf("Expected 0 visits, got %d", len(resp.Visits))
+		}
+		if resp.Total != 0 {
+			t.Errorf("Expected total 0, got %d", resp.Total)
+		}
+	})
+
+	t.Run("fromに不正なフォーマットを渡した場合は400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=not-a-date", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("untilに不正なフォーマットを渡した場合は400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?until=20240101", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("fromがuntilより後の場合は400 Bad Request", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := createTestUserForVisit(t)
+		token := generateTestToken(user.ID)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/api/visits?from=2024-02-09T00:00:00Z&until=2024-02-08T23:59:59Z", nil)
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d, got %d. Body: %s", http.StatusBadRequest, w.Code, w.Body.String())
+		}
+	})
+}
+
 func TestGetVisit(t *testing.T) {
 	router := setupVisitRouter()
 

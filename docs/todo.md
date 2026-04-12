@@ -168,18 +168,19 @@ s
 
 ---
 
-### 週間/月次サマリーの日付フィルタ実装（Issue #324）
+### 消すべきではなかった訪問履歴のfrom,untilフィルタを復活（Issue #324）
 
 > **背景**：`summary.weekly.tsx:73` / `summary.monthly.tsx` は `listVisits(token, 100, 0, from, until)` で `from`/`until` を渡しているが、バックエンドの `handlers/visit.go` の `ListVisits` は `limit`/`offset` しか受け付けておらず日付パラメータを無視している。「先週/先月の訪問だけを表示する」機能が動いておらず、直近100件が全件返ってくる。Issue #309 で削除した方向とは逆に、バックエンド側で `from`/`until` クエリパラメータを読んで `WHERE visited_at BETWEEN ? AND ?` を適用する変更が必要。
 
 **🔴 RED**
 
-- [ ] `backend/handlers/visit_test.go` に `TestListVisits_DateFilter` テスト追加（`from`/`until` を渡したときに期間外のレコードが含まれないことを検証）
+- [x] `backend/handlers/visit_test.go` に `TestListVisits_DateFilter` テスト追加（`from`/`until` を渡したときに期間外のレコードが含まれないことを検証）
 
 **🟢 GREEN**
 
-- [ ] `backend/handlers/visit.go` の `ListVisits` に `c.Query("from")` / `c.Query("until")` を読み取り `WHERE visited_at BETWEEN ? AND ?` を追加。`countQuery` にも同条件を適用
-- [ ] `api/visits.ts` の `listVisits` 関数の `from?`/`until?` 引数を正式対応として残す（削除不要）
+- [x] `backend/handlers/visit.go` の `ListVisits` に `c.Query("from")` / `c.Query("until")` を読み取り `WHERE visited_at >= ?` / `WHERE visited_at <= ?` 条件を追加
+- [x] クエリパラメータのバリデーション追加（RFC3339Nano形式であることを確認し、パースエラー時は400を返す）, `from` と `until` の矛盾チェック（`from > until` の場合も400を返す）
+- [x] `api/visits.ts` の `listVisits` 関数の `from?`/`until?` 引数を正式対応として残す（削除不要）
 
 **🔵 REFACTOR**
 
