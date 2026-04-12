@@ -21,6 +21,18 @@ export function useCardDrag({
 
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+
+  // top card に戻ってきた瞬間（enabled: false → true）に fly-out オフセットをリセットする。
+  // これをやらないと、前回の swipe で飛び出したままのオフセットが残ってしまい、カードが変な位置に表示される。
+  const [prevEnabled, setPrevEnabled] = useState(enabled);
+  if (prevEnabled !== enabled) {
+    setPrevEnabled(enabled);
+    if (!prevEnabled && enabled) {
+      setOffset({ x: 0, y: 0 });
+      setIsDragging(false);
+    }
+  }
+
   const resetOffset = useCallback(() => {
     offsetRef.current = { x: 0, y: 0 };
     setOffset({ x: 0, y: 0 });
