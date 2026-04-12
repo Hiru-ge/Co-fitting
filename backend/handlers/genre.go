@@ -27,6 +27,7 @@ type genreTagResponse struct {
 // @Success      200  {array}   genreTagResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/genres [get]
 func (h *GenreHandler) GetAllGenreTags(c *gin.Context) {
 	var genres []models.GenreTag

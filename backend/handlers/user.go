@@ -33,6 +33,7 @@ type UserHandler struct {
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me [get]
 func (h *UserHandler) GetMe(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -73,6 +74,7 @@ type userStatsResponse struct {
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me/stats [get]
 func (h *UserHandler) GetStats(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -125,6 +127,7 @@ type badgeResponse struct {
 // @Success      200  {array}   badgeResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me/badges [get]
 func (h *UserHandler) GetBadges(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -170,6 +173,7 @@ type proficiencyResponse struct {
 // @Success      200  {array}   proficiencyResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me/proficiency [get]
 func (h *UserHandler) GetProficiency(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -213,6 +217,7 @@ type interestResponse struct {
 // @Success      200  {array}   interestResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me/interests [get]
 func (h *UserHandler) GetInterests(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -269,11 +274,12 @@ func consumeReloadForSuggestions(ctx context.Context, rc *redis.Client, userIDSt
 // @Accept       json
 // @Produce      json
 // @Param        refresh_suggestions  query  bool  false  "true の場合、提案キャッシュをクリアしリロードカウントを消費する"
-// @Param        body  body  updateInterestsRequest  true  "興味タグIDリスト"
+// @Param        body  body  updateInterestsRequest  true  "興味タグIDリスト（3件以上必須）"
 // @Success      200  {object}  updateInterestsResponse
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me/interests [put]
 func (h *UserHandler) UpdateInterests(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -373,6 +379,7 @@ type updateMeResponse struct {
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/users/me [patch]
 func (h *UserHandler) UpdateMe(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)

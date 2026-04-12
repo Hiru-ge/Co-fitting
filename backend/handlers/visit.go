@@ -91,7 +91,7 @@ type createVisitResponse struct {
 
 // CreateVisit godoc
 // @Summary      訪問記録作成
-// @Description  ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）
+// @Description  ユーザーの訪問記録を作成する（place_id、place_name、category、lat、lng、visited_at が必須）
 // @Tags         Visits
 // @Accept       json
 // @Produce      json
@@ -101,6 +101,7 @@ type createVisitResponse struct {
 // @Failure      401  {object}  map[string]string
 // @Failure      429  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/visits [post]
 func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -309,6 +310,7 @@ func (h *VisitHandler) GetMapData(c *gin.Context) {
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/visits/{id} [get]
 func (h *VisitHandler) GetVisit(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)
@@ -347,6 +349,7 @@ func (h *VisitHandler) GetVisit(c *gin.Context) {
 // @Param		 from	 query  string  false  "訪問日時の開始範囲（RFC3339Nano形式）"
 // @Param		 until    query  string  false  "訪問日時の終了範囲（RFC3339Nano形式）"
 // @Success      200  {object}  handlers.listVisitsResponse
+// @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
@@ -452,6 +455,7 @@ type updateVisitRequest struct {
 // @Failure      403  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/visits/{id} [patch]
 func (h *VisitHandler) UpdateVisit(c *gin.Context) {
 	userID, ok := middleware.GetUserIDFromContext(c)

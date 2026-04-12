@@ -1,7 +1,21 @@
 # Roamble 通知機能 実装ロードマップ
 
-**フェーズ**: Phase 2（iOS対応より先に実装）
+**ステータス**: 実装済み（バックエンドAPI・スケジューラー・PWA通知基盤は導入済み）
+**フェーズ**: Phase 1 運用改善
 **技術スタック**: Go（robfig/cron + webpush-go）、Resend（メール）、PWA Service Worker
+
+## 2026-04 時点の実装反映
+
+- `backend/handlers/notification.go` に通知APIを実装済み
+- `backend/services/push.go` / `backend/services/email.go` / `backend/services/scheduler.go` を実装済み
+- `backend/routes/routes.go` に通知ルートを実装済み（`/api/notifications/push/vapid-key` のみJWT不要）
+- `frontend/public/sw.js` で `push` と `notificationclick` を処理済み
+- `frontend/app/api/notifications.ts` と `frontend/app/lib/push.ts` を実装済み
+
+この文書の Step 記述は実装時の計画ログとして残している。現行仕様の参照元は以下。
+
+- API仕様: `backend/docs/swagger.yaml`
+- 動作確認手順: `docs/notification-testing.md`
 
 ---
 
@@ -10,7 +24,7 @@
 | 通知 | Web Push | Email | タイミング | 送信条件 |
 |------|:--------:|:-----:|-----------|---------|
 | 毎日提案リフレッシュ | ✅ | ❌ | 毎日 7:00 JST | Push購読済み・ON |
-| ストリークリマインダー | ✅ | ✅ | 毎日 7:00 JST | ストリーク > 0 かつ前回訪問から6日目（今日中に訪問しないと切れる） |
+| ストリークリマインダー | ✅ | ✅ | 毎週日曜 7:00 JST | ストリーク > 0 かつ今週未訪問（今日中に訪問しないと切れる） |
 | 週次サマリー | ✅ | ✅ | 毎週月曜 10:00 JST | 週次サマリー設定ON（訪問なしでも必ず送る） |
 | 月次サマリー | ✅ | ✅ | 毎月1日 10:00 JST | 月次サマリー設定ON（訪問なしでも必ず送る） |
 
@@ -192,7 +206,11 @@ self.addEventListener('push', (event) => {
 // 通知クリックでアプリを開く
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  event.waitUntil(clients.openWindow(event.notification.data.url))
+  const rawUrl = event.notification.data?.url || '/'
+  const url = new URL(rawUrl, self.registration.scope)
+  url.searchParams.set('utm_source', 'push_notification')
+  url.searchParams.set('utm_medium', 'push')
+  event.waitUntil(clients.openWindow(url.toString()))
 })
 ```
 

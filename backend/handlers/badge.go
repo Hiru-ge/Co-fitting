@@ -27,6 +27,7 @@ type allBadgeResponse struct {
 // @Success      200  {array}   allBadgeResponse
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
+// @Security     BearerAuth
 // @Router       /api/badges [get]
 func (h *BadgeHandler) GetAllBadges(c *gin.Context) {
 	var badges []models.Badge

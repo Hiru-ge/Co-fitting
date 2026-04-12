@@ -22,7 +22,7 @@
 | ベータ合言葉解錠フラグ | `beta_access` | `lib/beta-access.ts` |
 | オンボーディングスキップ済み | `onboarding_skipped` | `routes/onboarding.tsx` |
 | ホームツアー表示済み | `home_tour_seen` | `routes/profile.tsx` 他 |
-| プッシュ通知バナー非表示 | `push-banner-dismissed` | `hooks/use-push-banner-visible.ts` |
+| プッシュ通知バナー非表示 | `push-banner-dismissed` | `components/PushNotificationBanner.tsx` |
 | PWAインストールバナー非表示 | PWA_DISMISSED_KEY | `lib/pwa.ts` |
 
 ## 対応状況

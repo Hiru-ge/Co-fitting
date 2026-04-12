@@ -34,7 +34,7 @@ type logoutRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        body  body  refreshRequest  true  "リフレッシュトークン"
-// @Success      200  {object}  map[string]string
+// @Success      200  {object}  map[string]string  "access_token を返す"
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /api/auth/refresh [post]

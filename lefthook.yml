@@ -11,14 +11,19 @@ pre-commit:
       run: npx eslint {staged_files}
     frontend-typecheck:
       run: cd frontend && node_modules/.bin/tsc --noEmit
-    frontend-e2e:
-      root: "frontend/"
-      run: npx playwright test
     backend-format:
       root: "backend/"
       glob: "*.go"
       run: gofmt -w {staged_files} && git add {staged_files}
+    backend-swag:
+      run: cd backend && swag init -g main.go -o docs && git add docs/docs.go docs/swagger.json docs/swagger.yaml
     backend-lint:
       root: "backend/"
       glob: "*.go"
       run: golangci-lint run ./...
+
+pre-push:
+  parallel: false
+  commands:
+    frontend-e2e:
+      run: cd frontend && npx playwright test

@@ -161,7 +161,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "access_token を返す",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -192,6 +192,11 @@ const docTemplate = `{
         },
         "/api/badges": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "バッジマスタの全一覧を返す",
                 "produces": [
                     "application/json"
@@ -467,6 +472,11 @@ const docTemplate = `{
         },
         "/api/genres": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "ジャンルタグマスタの全一覧をカテゴリ順で返す",
                 "produces": [
                     "application/json"
@@ -537,7 +547,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "既存購読更新",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -546,7 +556,7 @@ const docTemplate = `{
                         }
                     },
                     "201": {
-                        "description": "Created",
+                        "description": "新規購読登録",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -824,6 +834,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Not Found",
                         "schema": {
@@ -922,6 +941,11 @@ const docTemplate = `{
         },
         "/api/users/me": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーの情報を返す",
                 "produces": [
                     "application/json"
@@ -1014,6 +1038,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius 変更時はリロード1回分を消費して提案キャッシュをクリアする。",
                 "consumes": [
                     "application/json"
@@ -1090,6 +1119,11 @@ const docTemplate = `{
         },
         "/api/users/me/badges": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーの獲得バッジ一覧を返す（獲得日時の降順）",
                 "produces": [
                     "application/json"
@@ -1131,6 +1165,11 @@ const docTemplate = `{
         },
         "/api/users/me/interests": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーの興味タグ一覧を返す（ジャンル名昇順）",
                 "produces": [
                     "application/json"
@@ -1170,6 +1209,11 @@ const docTemplate = `{
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーの興味タグを一括更新する（3つ以上必須）。refresh_suggestions=true を指定するとリロード1回分を消費して提案キャッシュをクリアする。",
                 "consumes": [
                     "application/json"
@@ -1189,7 +1233,7 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "description": "興味タグIDリスト",
+                        "description": "興味タグIDリスト（3件以上必須）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1237,6 +1281,11 @@ const docTemplate = `{
         },
         "/api/users/me/proficiency": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーのジャンル別熟練度一覧を返す（XP降順）",
                 "produces": [
                     "application/json"
@@ -1278,6 +1327,11 @@ const docTemplate = `{
         },
         "/api/users/me/stats": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "JWT認証済みユーザーのレベル・XP・ストリーク・訪問統計を返す",
                 "produces": [
                     "application/json"
@@ -1371,6 +1425,15 @@ const docTemplate = `{
                             "$ref": "#/definitions/handlers.listVisitsResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
@@ -1392,7 +1455,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ユーザーの訪問記録を作成する（place_id、place_name、category、lat、lng、visited_at が必須）",
                 "consumes": [
                     "application/json"
                 ],
@@ -1519,6 +1587,11 @@ const docTemplate = `{
         },
         "/api/visits/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "指定IDの訪問記録詳細を取得する（自分の記録のみ）",
                 "produces": [
                     "application/json"
@@ -1582,6 +1655,11 @@ const docTemplate = `{
                 }
             },
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "ユーザーの訪問記録の感想メモ・評価を部分更新する",
                 "consumes": [
                     "application/json"
@@ -1941,9 +2019,6 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "is_daily_completed": {
-                    "type": "boolean"
-                },
                 "genre_tag_id": {
                     "type": "integer"
                 },
@@ -1953,11 +2028,14 @@ const docTemplate = `{
                 "is_breakout": {
                     "type": "boolean"
                 },
-                "lat": {
-                    "type": "number"
+                "is_daily_completed": {
+                    "type": "boolean"
                 },
                 "is_level_up": {
                     "type": "boolean"
+                },
+                "lat": {
+                    "type": "number"
                 },
                 "lng": {
                     "type": "number"
@@ -2172,9 +2250,6 @@ const docTemplate = `{
                 "lng"
             ],
             "properties": {
-                "should_filter_open_now": {
-                    "type": "boolean"
-                },
                 "is_reload": {
                     "type": "boolean"
                 },
@@ -2186,6 +2261,9 @@ const docTemplate = `{
                 },
                 "radius": {
                     "type": "integer"
+                },
+                "should_filter_open_now": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2458,6 +2536,9 @@ const docTemplate = `{
                 "is_interest_match": {
                     "type": "boolean"
                 },
+                "is_open_now": {
+                    "type": "boolean"
+                },
                 "lat": {
                     "type": "number"
                 },
@@ -2466,9 +2547,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                },
-                "is_open_now": {
-                    "type": "boolean"
                 },
                 "photo_reference": {
                     "type": "string"

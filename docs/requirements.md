@@ -211,7 +211,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | 脱却モード | **興味タグ外 × 熟練度ベース判定**: 「興味タグ外 かつ ジャンル熟練度Lv.5以下」のジャンルへの訪問を脱却扱い（+100XP）。興味タグ内のジャンルへの訪問は脱却扱いしない。ジャンル熟練度の最大はLv.30なので、興味タグ外でもLv.6以上になれば通常扱い |
 | 検索半径設定 | 3km〜30km のスライダーで選択（デフォルト10km）|
 | ~~脱却頻度設定~~ | ~~低・中・高 で調整~~ → **廃止**（強制挿入ロジックを削除。3件全てをランダム/パーソナライズで提案し、興味タグ外のジャンルで自然に脱却が発生する設計に変更）|
-| 提案リロード | ホーム画面のリロードボタンで当日の提案を再取得できる。**Web β版: 3回（制限なし）**。iOS版: Free=1回/日、Premium=3回/日。残り回数をUIに表示 |
+| 提案リロード | ホーム画面のリロードボタンで当日の提案を再取得できる。**Web β版: 1日3回まで**。iOS版: Free=1回/日、Premium=3回/日。残り回数をUIに表示 |
 | 設定変更の即時反映 | 興味タグ・提案半径の変更時にリロード1回分を消費してキャッシュをクリアし、新設定で提案を即時更新できる。リロード残0の場合はキャッシュクリアなしで設定のみ保存し、翌日リセット時に反映（確認モーダルでユーザーに通知。クエリパラメータ `refresh_suggestions=true` でバックエンドがキャッシュクリア + リロードカウントをインクリメント） |
 | 訪問ボタンの有効条件 | 現在地と施設の距離が **200m以内** の場合のみ「行ってきた！」ボタンを有効化。距離が遠い場合はボタンをグレーアウトし「この場所に到着してから記録できます」と表示。`ENVIRONMENT=development` の場合は距離制限なしで常に有効（開発・テスト用）。**バックエンドでも二重検証**: `POST /api/visits` のリクエストボディに `user_lat`, `user_lng` を含め、バックエンドでHaversine距離計算を行う。200m超でかつGPS取得済み（0,0でない）の場合は `400 Bad Request {"code": "TOO_FAR_FROM_PLACE"}` を返す。`ENVIRONMENT=development` の場合はバックエンド検証もスキップ。 |
 
@@ -261,7 +261,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | 通知 | Web Push | Email | タイミング | 送信条件 |
 |------|:--------:|:-----:|-----------|---------|
 | 毎日提案リフレッシュ | ✅ | ❌ | 毎日 7:00 JST | Push購読済み・ON |
-| ストリークリマインダー | ✅ | ✅ | 毎日 7:00 JST | ストリーク > 0 かつ前回訪問から6日経過 |
+| ストリークリマインダー | ✅ | ✅ | 毎週日曜 7:00 JST | ストリーク > 0 かつ今週未訪問 |
 | 週次サマリー | ✅ | ✅ | 毎週月曜 10:00 JST | 設定ON（訪問なしでも必ず送る） |
 | 月次サマリー | ✅ | ✅ | 毎月1日 10:00 JST | 設定ON（訪問なしでも必ず送る） |
 
@@ -506,8 +506,8 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | `genre_proficiency` | ジャンルごとの経験値・レベル | Phase 1 |
 | `badges` | バッジのマスタ定義（条件をJSONで保持） | Phase 1 |
 | `user_badges` | ユーザーが獲得したバッジ | Phase 1 |
-| `notification_settings` | ユーザーごとの通知設定（Push/メール全体ON/OFF・種別ON/OFF） | Phase 2 |
-| `push_subscriptions` | Web Push購読情報（endpoint・p256dh・auth）。1ユーザー複数デバイス対応 | Phase 2 |
+| `notification_settings` | ユーザーごとの通知設定（Push/メール全体ON/OFF・種別ON/OFF） | Phase 1 |
+| `push_subscriptions` | Web Push購読情報（endpoint・p256dh・auth）。1ユーザー複数デバイス対応 | Phase 1 |
 
 ---
 
@@ -546,7 +546,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 | Method | Path | Phase | 備考 |
 |--------|------|-------|------|
-| POST | `/api/suggestions` | Phase 0 | 1日3件の提案を生成して返却。同日中の再リクエストはキャッシュから同じ㌉3件を返す。`force_reload: true` を送るとキャッシュをクリアし新たに提案を生成（日次リロード回数を消費）。レスポンスに `reload_count_remaining` を含む |
+| POST | `/api/suggestions` | Phase 0 | 1日3件の提案を生成して返却。同日中の再リクエストはキャッシュから同じ3件を返す。`is_reload: true` を送るとキャッシュをクリアし新たに提案を生成（日次リロード回数を消費）。レスポンスに `reload_count_remaining` を含む |
 
 ### 5.5 訪問記録
 
@@ -574,11 +574,11 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 
 | Method | Path | Phase | 備考 |
 |--------|------|-------|------|
-| GET | `/api/notifications/push/vapid-key` | Phase 2 | VAPID公開鍵返却（認証不要）|
-| POST | `/api/notifications/push/subscribe` | Phase 2 | Push購読登録（endpoint キーでUpsert）|
-| DELETE | `/api/notifications/push/subscribe` | Phase 2 | Push購読解除 |
-| GET | `/api/notifications/settings` | Phase 2 | 通知設定取得（未設定時はデフォルト値を返却）|
-| PUT | `/api/notifications/settings` | Phase 2 | 通知設定更新 |
+| GET | `/api/notifications/push/vapid-key` | Phase 1 | VAPID公開鍵返却（認証不要）|
+| POST | `/api/notifications/push/subscribe` | Phase 1 | Push購読登録（endpoint キーでUpsert）|
+| DELETE | `/api/notifications/push/subscribe` | Phase 1 | Push購読解除 |
+| GET | `/api/notifications/settings` | Phase 1 | 通知設定取得（OAuth登録時に初期レコード作成済み）|
+| PUT | `/api/notifications/settings` | Phase 1 | 通知設定更新 |
 
 ---
 

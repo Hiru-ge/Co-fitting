@@ -55,6 +55,7 @@ func (h *PlacePhotoHandler) resolvePhotoURL(photoRef string, maxWidth int) (stri
 // @Param        photo_reference  query  string  false  "Google Places Photo Reference（キャッシュ未ヒット時に必須）"
 // @Param        maxWidth         query  int     false  "画像最大幅ピクセル（デフォルト2000）"
 // @Success      200  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /api/places/{placeId}/photo [get]

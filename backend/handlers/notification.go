@@ -88,8 +88,8 @@ func upsertPushSubscription(db *gorm.DB, userID uint64, endpoint, p256dh, auth, 
 // @Produce      json
 // @Security     BearerAuth
 // @Param        body  body  SubscribePushRequest  true  "購読情報"
-// @Success      201  {object}  map[string]string
-// @Success      200  {object}  map[string]string
+// @Success      201  {object}  map[string]string  "新規購読登録"
+// @Success      200  {object}  map[string]string  "既存購読更新"
 // @Failure      400  {object}  map[string]string
 // @Failure      401  {object}  map[string]string
 // @Failure      500  {object}  map[string]string

@@ -2,17 +2,17 @@ basePath: /
 definitions:
   handlers.NotificationSettingsResponse:
     properties:
-      daily_suggestion:
+      is_daily_suggestion_enabled:
         type: boolean
-      email_enabled:
+      is_email_enabled:
         type: boolean
-      monthly_summary:
+      is_monthly_summary_enabled:
         type: boolean
-      push_enabled:
+      is_push_enabled:
         type: boolean
-      streak_reminder:
+      is_streak_reminder_enabled:
         type: boolean
-      weekly_summary:
+      is_weekly_summary_enabled:
         type: boolean
     type: object
   handlers.SubscribePushRequest:
@@ -32,7 +32,7 @@ definitions:
     type: object
   handlers.SuggestionResult:
     properties:
-      completed:
+      is_completed:
         type: boolean
       notice:
         type: string
@@ -52,17 +52,17 @@ definitions:
     type: object
   handlers.UpdateNotificationSettingsRequest:
     properties:
-      daily_suggestion:
+      is_daily_suggestion_enabled:
         type: boolean
-      email_enabled:
+      is_email_enabled:
         type: boolean
-      monthly_summary:
+      is_monthly_summary_enabled:
         type: boolean
-      push_enabled:
+      is_push_enabled:
         type: boolean
-      streak_reminder:
+      is_streak_reminder_enabled:
         type: boolean
-      weekly_summary:
+      is_weekly_summary_enabled:
         type: boolean
     type: object
   handlers.VAPIDKeyResponse:
@@ -159,18 +159,18 @@ definitions:
         type: string
       created_at:
         type: string
-      is_daily_completed:
-        type: boolean
       genre_tag_id:
         type: integer
       id:
         type: integer
       is_breakout:
         type: boolean
-      lat:
-        type: number
+      is_daily_completed:
+        type: boolean
       is_level_up:
         type: boolean
+      lat:
+        type: number
       lng:
         type: number
       memo:
@@ -307,8 +307,6 @@ definitions:
     type: object
   handlers.suggestionRequest:
     properties:
-      should_filter_open_now:
-        type: boolean
       is_reload:
         type: boolean
       lat:
@@ -317,6 +315,8 @@ definitions:
         type: number
       radius:
         type: integer
+      should_filter_open_now:
+        type: boolean
     required:
     - lat
     - lng
@@ -497,14 +497,14 @@ definitions:
         type: boolean
       is_interest_match:
         type: boolean
+      is_open_now:
+        type: boolean
       lat:
         type: number
       lng:
         type: number
       name:
         type: string
-      open_now:
-        type: boolean
       photo_reference:
         type: string
       place_id:
@@ -630,7 +630,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: access_token を返す
           schema:
             additionalProperties:
               type: string
@@ -674,6 +674,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: 全バッジ一覧取得
       tags:
       - Badges
@@ -851,6 +853,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: 全ジャンルタグ一覧取得
       tags:
       - Genres
@@ -907,13 +911,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: 既存購読更新
           schema:
             additionalProperties:
               type: string
             type: object
         "201":
-          description: Created
+          description: 新規購読登録
           schema:
             additionalProperties:
               type: string
@@ -1054,6 +1058,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
@@ -1180,6 +1190,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: ユーザー情報取得
       tags:
       - Users
@@ -1230,6 +1242,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: ユーザー情報更新
       tags:
       - Users
@@ -1257,6 +1271,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: 獲得バッジ一覧取得
       tags:
       - Users
@@ -1284,6 +1300,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: ユーザー興味タグ取得
       tags:
       - Users
@@ -1296,7 +1314,7 @@ paths:
         in: query
         name: refresh_suggestions
         type: boolean
-      - description: 興味タグIDリスト
+      - description: 興味タグIDリスト（3件以上必須）
         in: body
         name: body
         required: true
@@ -1327,6 +1345,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: ユーザー興味タグ更新
       tags:
       - Users
@@ -1354,6 +1374,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: ジャンル別熟練度取得
       tags:
       - Users
@@ -1385,6 +1407,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: ユーザー統計情報取得
       tags:
       - Users
@@ -1415,6 +1439,12 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/handlers.listVisitsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "401":
           description: Unauthorized
           schema:
@@ -1435,7 +1465,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: ユーザーの訪問記録を作成する（category、place_name を必須で受け付け）
+      description: ユーザーの訪問記録を作成する（place_id、place_name、category、lat、lng、visited_at
+        が必須）
       parameters:
       - description: 訪問記録データ
         in: body
@@ -1474,6 +1505,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: 訪問記録作成
       tags:
       - Visits
@@ -1517,6 +1550,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: 訪問記録詳細取得
       tags:
       - Visits
@@ -1573,6 +1608,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: 訪問記録更新
       tags:
       - Visits
