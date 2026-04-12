@@ -11,6 +11,14 @@
   /* Colors — Background */
   --color-bg-dark: #102222;
   --color-bg-dark-purple: #191022;
+  --color-surface: #1a3333;
+
+  /* Colors — Text */
+  --color-secondary: #b0cccc;
+  --color-dim: #6b8a8a;
+
+  /* Colors — Accent */
+  --color-accent-visit: #ff9600;
 
   /* Font families */
   --font-sans:

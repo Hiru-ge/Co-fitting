@@ -6,7 +6,7 @@ import { getUserBadges } from "~/api/users";
 import { getPlacePhoto } from "~/api/places";
 import type { Visit } from "~/types/visit";
 import type { EarnedBadge } from "~/types/auth";
-import SummaryLayout from "~/components/SummaryLayout";
+import SummaryReport from "~/components/SummaryReport";
 
 export { authRequiredLoader as clientLoader };
 
@@ -91,7 +91,7 @@ export default function SummaryMonthly({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
 
   return (
-    <SummaryLayout
+    <SummaryReport
       title={`${label}の冒険まとめ`}
       greeting={`${user.display_name}さん、先月もいろんな場所を冒険したね!`}
       period={label}

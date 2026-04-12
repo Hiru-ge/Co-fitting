@@ -6,7 +6,7 @@ import { getUserBadges } from "~/api/users";
 import { getPlacePhoto } from "~/api/places";
 import type { Visit } from "~/types/visit";
 import type { EarnedBadge } from "~/types/auth";
-import SummaryLayout from "~/components/SummaryLayout";
+import SummaryReport from "~/components/SummaryReport";
 
 export { authRequiredLoader as clientLoader };
 
@@ -96,7 +96,7 @@ export default function SummaryWeekly({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
 
   return (
-    <SummaryLayout
+    <SummaryReport
       title="先週の冒険、どうだった?"
       greeting={`${user.display_name}さん、先週もお疲れ!`}
       period={label}

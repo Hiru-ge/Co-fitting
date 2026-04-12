@@ -322,18 +322,18 @@ s
 
 **🔴 RED**
 
-- [ ] なし（表示変化なしのリファクタのため）
+- [x] なし（表示変化なしのリファクタのため）
 
 **🟢 GREEN**
 
-- [ ] `SummaryLayout` → `SummaryReport` にリネーム（`weekly.tsx` / `monthly.tsx` の import も更新）
-- [ ] 全インラインスタイルを Tailwind CSS に書き直す（カスタムカラーは `tailwind.config.ts` に追加）
-- [ ] 訪問数カードとXPカードを `StatCard` コンポーネントとして切り出し、重複JSXを削除
-- [ ] `isLoading` / `errorMessage` の条件分岐をアーリーリターンに変換してネスト解消
+- [x] `SummaryLayout` → `SummaryReport` にリネーム（`weekly.tsx` / `monthly.tsx` の import も更新）
+- [x] 全インラインスタイルを Tailwind CSS に書き直す（カスタムカラーは `app.css` の `@theme` に追加）
+- [x] 訪問数カードとXPカードを `StatCard` コンポーネントとして切り出し、重複JSXを削除
+- [x] `isLoading` / `errorMessage` の条件分岐をアーリーリターンに変換してネスト解消
 
 **🔵 REFACTOR**
 
-- [ ] `VisitRow` / `BadgeRow` として `map` の本体を切り出し可読性向上
+- [x] `VisitRow` / `BadgeRow` として `map` の本体を切り出し可読性向上
 
 ---
 
