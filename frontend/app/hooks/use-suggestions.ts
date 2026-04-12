@@ -9,7 +9,7 @@ import {
   isWithinCheckInRange,
 } from "~/lib/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
-import { getBestCategoryKey } from "~/lib/category-map";
+import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import {
   ApiError,
   API_ERROR_CODES,
@@ -162,7 +162,7 @@ export function useSuggestions(authToken: string) {
             ).length,
             breakoutCount: placesWithPhotos.filter((p) => p.is_breakout).length,
             categories: placesWithPhotos.map((p) =>
-              getBestCategoryKey(p.types ?? []),
+              pickCategoryFromAPIPlaceTypes(p.types ?? []),
             ),
             isReload: !!isReload,
           });
@@ -220,7 +220,7 @@ export function useSuggestions(authToken: string) {
     if (skippedPlace) {
       sendSuggestionSkipped({
         placeName: skippedPlace.name,
-        category: getBestCategoryKey(skippedPlace.types ?? []),
+        category: pickCategoryFromAPIPlaceTypes(skippedPlace.types ?? []),
         isInterestMatch: !!skippedPlace.is_interest_match,
         isBreakout: !!skippedPlace.is_breakout,
       });
@@ -231,7 +231,7 @@ export function useSuggestions(authToken: string) {
       if (nextPlace) {
         sendSuggestionViewed({
           placeName: nextPlace.name,
-          category: getBestCategoryKey(nextPlace.types ?? []),
+          category: pickCategoryFromAPIPlaceTypes(nextPlace.types ?? []),
           isInterestMatch: !!nextPlace.is_interest_match,
           isBreakout: !!nextPlace.is_breakout,
           cardIndex: originalOrder.indexOf(nextPlace.place_id),
@@ -247,7 +247,7 @@ export function useSuggestions(authToken: string) {
 
     setCheckingIn(true);
     try {
-      const category = getBestCategoryKey(place.types ?? []);
+      const category = pickCategoryFromAPIPlaceTypes(place.types ?? []);
 
       const result: CreateVisitResponse = await createVisit(authToken, {
         place_id: place.place_id,

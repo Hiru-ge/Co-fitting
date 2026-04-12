@@ -6,7 +6,7 @@ import { getVisit, updateVisit } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
 import { formatDate } from "~/utils/helpers";
-import { getCategoryInfoByKey } from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import { sendVisitMemoSaved } from "~/lib/gtag";
 import type { Visit } from "~/types/visit";
@@ -106,7 +106,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
     );
   }
 
-  const categoryInfo = getCategoryInfoByKey(visit.category);
+  const categoryInfo = getCategoryInfo(visit.category);
 
   return (
     <div className="flex flex-col min-h-screen">

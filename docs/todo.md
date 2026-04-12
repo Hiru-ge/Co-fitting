@@ -548,12 +548,12 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/utils/category-map.ts` の `getCategoryInfo(types: string[])` を削除し、呼び出し元 `discovery-card.tsx` を `getCategoryInfo(getBestCategoryKey(place.types))` に置き換え
-- [ ] `getBestCategoryKey` → `pickCategoryFromAPIPlaceTypes(placeTypes: string[]): string` にリネーム
-- [ ] `getCategoryInfoByKey` → `getCategoryInfo(category: string): CategoryInfo` にリネーム（`ByKey` サフィックス削除）
-- [ ] `CategoryInfo` インターフェースに `color: string`（hex 値）フィールドを追加し、`CATEGORY_MAP` の全エントリに hex 値を持たせる
-- [ ] `frontend/app/components/visit-map.tsx` の `CATEGORY_PIN_COLORS` / `DEFAULT_PIN_COLOR` / `getPinColor` を削除し、`getCategoryInfo(category).color` を直接参照する形に変更
-- [ ] `frontend/app/components/visit-map.tsx` の `PinMarker` の `isBreakout` prop と `{isBreakout && (...)}` ブロック（ピン上の星バッジ）を削除（`VisitInfoContent` の脱却テキストは残す）
+- [x] `frontend/app/lib/category-map.ts` の `getCategoryInfo(types: string[])` を削除し、呼び出し元 `DiscoveryCard.tsx` を `getCategoryInfo(pickCategoryFromAPIPlaceTypes(place.types))` に置き換え
+- [x] `getBestCategoryKey` → `pickCategoryFromAPIPlaceTypes(placeTypes: string[]): string` にリネーム
+- [x] `getCategoryInfoByKey` → `getCategoryInfo(category: string): CategoryInfo` にリネーム（`ByKey` サフィックス削除）
+- [x] `CategoryInfo` インターフェースに `color: string`（hex 値）フィールドを追加し、`CATEGORY_MAP` の全エントリに hex 値を持たせる
+- [x] `frontend/app/components/VisitMap.tsx` の `CATEGORY_PIN_COLORS` / `DEFAULT_PIN_COLOR` / `getPinColor` を削除し、`getCategoryInfo(category).color` を直接参照する形に変更
+- [x] `frontend/app/components/VisitMap.tsx` の `PinMarker` の `isBreakout` prop と `{isBreakout && (...)}` ブロック（ピン上の星バッジ）を削除（`VisitInfoContent` の脱却テキストは残す）
 
 **🔵 REFACTOR**
 

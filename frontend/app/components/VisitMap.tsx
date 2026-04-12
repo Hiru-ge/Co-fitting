@@ -6,7 +6,7 @@ import {
   AdvancedMarker,
   InfoWindow,
 } from "@vis.gl/react-google-maps";
-import { getCategoryInfoByKey } from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 import { formatShortDate } from "~/utils/helpers";
 import {
   getCurrentPositionWithFallback,
@@ -36,14 +36,17 @@ export function calcMapCenter(
 }
 
 function PinMarker({ category }: { category: string }) {
-  const categoryInfo = getCategoryInfoByKey(category);
+  const categoryInfo = getCategoryInfo(category);
 
   return (
     <div
       className="relative flex flex-col items-center"
       style={{ filter: `drop-shadow(0 2px 4px rgba(0,0,0,0.4))` }}
     >
-      <div className="flex items-center justify-center size-9 rounded-full border-2 border-white bg-primary-purple">
+      <div
+        className="flex items-center justify-center size-9 rounded-full border-2 border-white"
+        style={{ backgroundColor: categoryInfo.hexColor }}
+      >
         <span
           className="material-symbols-outlined text-white text-sm"
           style={{ fontVariationSettings: "'FILL' 1" }}
@@ -56,7 +59,7 @@ function PinMarker({ category }: { category: string }) {
         style={{
           borderLeft: "5px solid transparent",
           borderRight: "5px solid transparent",
-          borderTop: "7px solid #525BBB",
+          borderTop: `7px solid ${categoryInfo.hexColor}`,
           marginTop: "-1px",
         }}
       />
@@ -65,7 +68,7 @@ function PinMarker({ category }: { category: string }) {
 }
 
 function VisitInfoContent({ visit }: { visit: MapVisit }) {
-  const categoryInfo = getCategoryInfoByKey(visit.category);
+  const categoryInfo = getCategoryInfo(visit.category);
 
   return (
     <div className="min-w-[180px] max-w-[220px] p-1">

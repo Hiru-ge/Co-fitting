@@ -1,6 +1,9 @@
 import { useRef, useState } from "react";
 import type { Place } from "~/types/suggestion";
-import { getCategoryInfo } from "~/lib/category-map";
+import {
+  getCategoryInfo,
+  pickCategoryFromAPIPlaceTypes,
+} from "~/lib/category-map";
 import { calcHaversineDistance } from "~/lib/geolocation";
 import { buildGoogleMapsPlaceUrl, formatDistance } from "~/utils/helpers";
 import { useCardDrag } from "~/hooks/use-card-drag";
@@ -30,7 +33,7 @@ export default function DiscoveryCard({
   depthFromTop,
   onSwipe,
 }: DiscoveryCardProps) {
-  const category = getCategoryInfo(place.types);
+  const category = getCategoryInfo(pickCategoryFromAPIPlaceTypes(place.types));
   const distance = calcHaversineDistance(
     userLat,
     userLng,
@@ -82,7 +85,7 @@ export default function DiscoveryCard({
   return (
     <div
       ref={cardRef}
-      className={`absolute inset-0 rounded-3xl overflow-hidden ${hasValidPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`absolute inset-0 rounded-3xl overflow-hidden ${hasValidPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradientColor}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
       style={{
         transform: cardTransform,
         opacity: cardOpacity,
@@ -133,7 +136,7 @@ export default function DiscoveryCard({
       </div>
 
       {/* 施設情報 */}
-      <div className="absolute bottom-0 left-0 right-0 px-6 pt-20 pb-20 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 px-6 pt-20 pb-20 bg-gradientColor-to-t from-black/70 via-black/40 to-transparent">
         <h2
           className="text-2xl font-extrabold text-white leading-tight mb-2"
           style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}

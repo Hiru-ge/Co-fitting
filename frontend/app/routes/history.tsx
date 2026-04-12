@@ -7,7 +7,7 @@ import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
 import type { Visit, MapVisit } from "~/types/visit";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
-import { getCategoryInfoByKey } from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import VisitMap from "~/components/VisitMap";
 
@@ -229,7 +229,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
 
             {/* 動的カテゴリーボタン */}
             {availableCategories.map((categoryKey) => {
-              const categoryInfo = getCategoryInfoByKey(categoryKey);
+              const categoryInfo = getCategoryInfo(categoryKey);
               const isActive = activeFilter === categoryKey;
               return (
                 <button

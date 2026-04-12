@@ -6,7 +6,7 @@ import { getInterests } from "~/api/users";
 import { ONBOARDING_SKIPPED_KEY, HOME_TOUR_SEEN_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
 import { sendSuggestionViewed } from "~/lib/gtag";
-import { getBestCategoryKey } from "~/lib/category-map";
+import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import AppHeader from "~/components/AppHeader";
 import DiscoveryCard from "~/components/DiscoveryCard";
 import CardIndicator from "~/components/CardIndicator";
@@ -74,7 +74,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     firstViewSentRef.current = true;
     sendSuggestionViewed({
       placeName: currentPlace.name,
-      category: getBestCategoryKey(currentPlace.types ?? []),
+      category: pickCategoryFromAPIPlaceTypes(currentPlace.types ?? []),
       isInterestMatch: !!currentPlace.is_interest_match,
       isBreakout: !!currentPlace.is_breakout,
       cardIndex: 0,

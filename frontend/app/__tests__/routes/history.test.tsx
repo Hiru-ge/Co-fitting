@@ -7,7 +7,7 @@ import { listVisits, getMapVisits } from "~/api/visits";
 import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
-import { getCategoryInfoByKey } from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 import { formatShortDate, groupByMonth } from "~/utils/helpers";
 import type { Visit } from "~/types/visit";
 import type { User } from "~/types/auth";
@@ -44,7 +44,7 @@ const mockProtectedLoader = vi.mocked(authRequiredLoader);
 const mockListVisits = vi.mocked(listVisits);
 const mockToUserMessage = vi.mocked(toUserMessage);
 const mockUseToast = vi.mocked(useToast);
-const mockGetCategoryInfoByKey = vi.mocked(getCategoryInfoByKey);
+const mockGetCategoryInfo = vi.mocked(getCategoryInfo);
 const mockFormatShortDate = vi.mocked(formatShortDate);
 const mockGroupByMonth = vi.mocked(groupByMonth);
 
@@ -138,7 +138,7 @@ describe("History", () => {
     // デフォルトのモック設定
     mockProtectedLoader.mockResolvedValue({ user: mockUser, token: mockToken });
     mockUseToast.mockReturnValue({ showToast: mockShowToast });
-    mockGetCategoryInfoByKey.mockImplementation((key) => ({
+    mockGetCategoryInfo.mockImplementation((key) => ({
       label:
         key === "カフェ"
           ? "カフェ"
@@ -147,12 +147,14 @@ describe("History", () => {
             : "美術館・博物館",
       icon:
         key === "カフェ" ? "local_cafe" : key === "公園" ? "park" : "museum",
-      gradient:
+      gradientColor:
         key === "カフェ"
           ? "from-amber-600 to-orange-800"
           : key === "公園"
             ? "from-green-500 to-green-700"
             : "from-purple-500 to-purple-700",
+      hexColor:
+        key === "カフェ" ? "#d97706" : key === "公園" ? "#22c55e" : "#8b5cf6",
     }));
     mockFormatShortDate.mockImplementation(() => "2月15日");
     mockGroupByMonth.mockImplementation(
