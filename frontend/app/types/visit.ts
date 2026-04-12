@@ -80,5 +80,5 @@ export interface CreateVisitResponse extends Visit {
   /** 今回の訪問で本日の3件上限に達したか（バックエンドの訪問履歴に基づく正確な判定） */
   is_daily_completed: boolean;
   /** XP計算内訳 */
-  xp_breakdown?: XPBreakdown;
+  xp_breakdown: XPBreakdown;
 }

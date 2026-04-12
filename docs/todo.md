@@ -221,8 +221,8 @@ s
 
 **🟢 GREEN**
 
-- [ ] `backend/handlers/visit.go` のゲーミフィケーション失敗パスに `XPBreakdown: models.XPBreakdown{}` を追加
-- [ ] `frontend/app/types/visit.ts` の `CreateVisitResponse.xp_breakdown` から `?` を削除
+- [x] `backend/handlers/visit.go` のゲーミフィケーション失敗パスに `XPBreakdown: models.XPBreakdown{}` を追加
+- [x] `frontend/app/types/visit.ts` の `CreateVisitResponse.xp_breakdown` から `?` を削除
 
 **🔵 REFACTOR**
 
