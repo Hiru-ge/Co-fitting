@@ -494,17 +494,17 @@ s
 
 **🔴 RED**
 
-- [ ] `frontend/app/__tests__/components/LocationPermissionSection.test.tsx` を新規作成（`navigator.permissions` の各状態・UA判定ロジックを検証）
+- [x] `frontend/app/__tests__/components/LocationPermissionSection.test.tsx` を新規作成（`navigator.permissions` の各状態・UA判定ロジックを検証）
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/components/UserInfoTab.tsx` を新規作成し `settings.tsx` から切り出す
-- [ ] `frontend/app/components/SuggestionTab.tsx` を新規作成し `settings.tsx` から切り出す
-- [ ] `frontend/app/components/LocationPermissionSection.tsx` を新規作成し `settings.tsx` から切り出す（`navigator.permissions` の `.then().catch()` チェーンを `async/await` 内部関数パターンに書き直す。`Promise.resolve().then(...)` の不要な非同期化も削除）
-- [ ] `DeleteAccountModal` を `UserInfoTab` の直下に移動（`showDeleteModal` ステートを管理している `UserInfoTab` と近い位置に置く）
-- [ ] `settings.tsx` 内の定義順をサブコンポーネントが上・`Settings` 本体が下になるよう整理
-- [ ] `useFormMessage` の2回呼び出しを `const interestForm = useFormMessage(); const radiusForm = useFormMessage();` 形式に変更（デストラクチャリングのリネームが長くなりすぎる問題を解消）
-- [ ] `FormMessage` → `FormMessageDisplay` にリネーム（`useFormMessage` フックとの役割区別を明確に）
+- [x] `frontend/app/components/UserInfoTab.tsx` を新規作成し `settings.tsx` から切り出す
+- [x] `frontend/app/components/SuggestionTab.tsx` を新規作成し `settings.tsx` から切り出す
+- [x] `frontend/app/components/LocationPermissionSection.tsx` を新規作成し `settings.tsx` から切り出す（`navigator.permissions` の `.then().catch()` チェーンを `async/await` 内部関数パターンに書き直す。`Promise.resolve().then(...)` の不要な非同期化も削除）
+- [x] `DeleteAccountModal` を `UserInfoTab` の直下に移動（`showDeleteModal` ステートを管理している `UserInfoTab` と近い位置に置く）
+- [x] `settings.tsx` 内の定義順をサブコンポーネントが上・`Settings` 本体が下になるよう整理
+- [x] `useFormMessage` の2回呼び出しを `const interestForm = useFormMessage(); const radiusForm = useFormMessage();` 形式に変更（デストラクチャリングのリネームが長くなりすぎる問題を解消）
+- [x] `FormMessage` → `FormMessageDisplay` にリネーム（`useFormMessage` フックとの役割区別を明確に）
 
 **🔵 REFACTOR**
 
