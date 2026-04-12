@@ -12,14 +12,14 @@ import { tryRefreshToken } from "~/lib/token-refresh";
  */
 export async function apiCall(
   endpoint: string,
-  token: string,
+  authToken: string,
   options: RequestInit = {},
 ) {
   const res = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${authToken}`,
       ...options.headers,
     },
   });

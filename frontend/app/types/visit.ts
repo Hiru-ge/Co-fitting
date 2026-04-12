@@ -74,11 +74,11 @@ export interface MapVisitResponse {
 // バックエンドから返るゲーミフィケーションフィールドも含めた訪問作成レスポンス
 export interface CreateVisitResponse extends Visit {
   total_xp: number;
-  level_up: boolean;
+  is_level_up: boolean;
   new_level: number;
   new_badges: BadgeInfo[];
   /** 今回の訪問で本日の3件上限に達したか（バックエンドの訪問履歴に基づく正確な判定） */
-  daily_completed: boolean;
+  is_daily_completed: boolean;
   /** XP計算内訳 */
   xp_breakdown?: XPBreakdown;
 }

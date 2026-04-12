@@ -18,11 +18,11 @@ import (
 )
 
 type GoogleUserInfo struct {
-	Sub           string `json:"sub"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Name          string `json:"name"`
-	Picture       string `json:"picture"`
+	Sub             string `json:"sub"`
+	Email           string `json:"email"`
+	IsEmailVerified bool   `json:"email_verified"`
+	Name            string `json:"name"`
+	Picture         string `json:"picture"`
 }
 
 type GoogleTokenVerifier interface {
@@ -58,12 +58,12 @@ func (v *GoogleHTTPVerifier) VerifyIDToken(ctx context.Context, idToken string) 
 	}
 
 	var tokenInfo struct {
-		Sub           string `json:"sub"`
-		Email         string `json:"email"`
-		EmailVerified string `json:"email_verified"`
-		Name          string `json:"name"`
-		Picture       string `json:"picture"`
-		Aud           string `json:"aud"`
+		Sub             string `json:"sub"`
+		Email           string `json:"email"`
+		IsEmailVerified string `json:"email_verified"`
+		Name            string `json:"name"`
+		Picture         string `json:"picture"`
+		Aud             string `json:"aud"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
@@ -75,11 +75,11 @@ func (v *GoogleHTTPVerifier) VerifyIDToken(ctx context.Context, idToken string) 
 	}
 
 	return &GoogleUserInfo{
-		Sub:           tokenInfo.Sub,
-		Email:         tokenInfo.Email,
-		EmailVerified: tokenInfo.EmailVerified == "true",
-		Name:          tokenInfo.Name,
-		Picture:       tokenInfo.Picture,
+		Sub:             tokenInfo.Sub,
+		Email:           tokenInfo.Email,
+		IsEmailVerified: tokenInfo.IsEmailVerified == "true",
+		Name:            tokenInfo.Name,
+		Picture:         tokenInfo.Picture,
 	}, nil
 }
 
@@ -127,7 +127,7 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 		return
 	}
 
-	if !userInfo.EmailVerified {
+	if !userInfo.IsEmailVerified {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "email not verified"})
 		return
 	}

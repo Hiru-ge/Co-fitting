@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/profile";
 import { useNavigate, Link, useLocation } from "react-router";
 import { logout } from "~/lib/auth";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { getUserStats, getUserBadges, getProficiency } from "~/api/users";
 import type { UserStats, EarnedBadge, Proficiency } from "~/types/auth";
 import { toUserMessage } from "~/utils/error";
@@ -16,7 +16,7 @@ import {
 } from "~/utils/constants";
 import ProfileTourStep from "~/components/ProfileTourStep";
 
-export { protectedLoader as clientLoader };
+export { authRequiredLoader as clientLoader };
 
 export default function Profile({ loaderData }: Route.ComponentProps) {
   const { user, token } = loaderData;

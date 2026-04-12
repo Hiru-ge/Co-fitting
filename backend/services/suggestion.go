@@ -20,7 +20,7 @@ type PlaceResult struct {
 	PhotoReference  string   `json:"photo_reference,omitempty"`
 	IsInterestMatch *bool    `json:"is_interest_match"`
 	IsBreakout      *bool    `json:"is_breakout"`
-	OpenNow         *bool    `json:"open_now,omitempty"`
+	IsOpenNow       *bool    `json:"is_open_now,omitempty"`
 }
 
 // VisitableTypes は提案対象とする施設タイプの許可リスト
@@ -207,12 +207,12 @@ func FilterOutVisited(db *gorm.DB, userID uint64, places []PlaceResult) []PlaceR
 	return result
 }
 
-// FilterOpenNowPlaces は OpenNow=false の施設を除外する。
-// OpenNow が nil（営業時間情報なし）の施設は深夜時間帯ユーザーへの配慮として除外しない。
+// FilterOpenNowPlaces は IsOpenNow=false の施設を除外する。
+// IsOpenNow が nil（営業時間情報なし）の施設は深夜時間帯ユーザーへの配慮として除外しない。
 func FilterOpenNowPlaces(places []PlaceResult) []PlaceResult {
 	filtered := make([]PlaceResult, 0, len(places))
 	for _, p := range places {
-		if p.OpenNow != nil && !*p.OpenNow {
+		if p.IsOpenNow != nil && !*p.IsOpenNow {
 			continue
 		}
 		filtered = append(filtered, p)

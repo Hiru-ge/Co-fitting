@@ -19,10 +19,10 @@ type DatabaseConfig struct {
 }
 
 type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-	UseTLS   bool
+	Host       string
+	Port       string
+	Password   string
+	IsUsingTLS bool
 }
 
 type CORSConfig struct {
@@ -169,10 +169,10 @@ func LoadRedisConfig() (*RedisConfig, error) {
 	}
 
 	return &RedisConfig{
-		Host:     host,
-		Port:     port,
-		Password: os.Getenv("REDIS_PASSWORD"),
-		UseTLS:   useTLS,
+		Host:       host,
+		Port:       port,
+		Password:   os.Getenv("REDIS_PASSWORD"),
+		IsUsingTLS: useTLS,
 	}, nil
 }
 

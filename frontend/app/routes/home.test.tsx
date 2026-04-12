@@ -63,7 +63,7 @@ describe("PushNotificationBanner", () => {
   test("isStandalone=true + permission=default + 未dismissed → バナーが表示される", () => {
     vi.mocked(isStandalone).mockReturnValue(true);
 
-    render(<PushNotificationBanner token="test-token" />);
+    render(<PushNotificationBanner authToken="test-token" />);
 
     expect(
       screen.getByRole("button", { name: "許可する" }),
@@ -75,7 +75,7 @@ describe("PushNotificationBanner", () => {
     vi.mocked(isStandalone).mockReturnValue(true);
     setNotificationPermission("granted");
 
-    render(<PushNotificationBanner token="test-token" />);
+    render(<PushNotificationBanner authToken="test-token" />);
 
     expect(
       screen.queryByRole("button", { name: "許可する" }),
@@ -86,7 +86,7 @@ describe("PushNotificationBanner", () => {
     vi.mocked(isStandalone).mockReturnValue(true);
     localStorage.setItem("push-banner-dismissed", "1");
 
-    render(<PushNotificationBanner token="test-token" />);
+    render(<PushNotificationBanner authToken="test-token" />);
 
     expect(
       screen.queryByRole("button", { name: "許可する" }),
@@ -96,7 +96,7 @@ describe("PushNotificationBanner", () => {
   test("「許可する」ボタン → subscribePush が呼ばれる", async () => {
     vi.mocked(isStandalone).mockReturnValue(true);
 
-    render(<PushNotificationBanner token="test-token" />);
+    render(<PushNotificationBanner authToken="test-token" />);
     fireEvent.click(screen.getByRole("button", { name: "許可する" }));
 
     await waitFor(() => {
@@ -107,7 +107,7 @@ describe("PushNotificationBanner", () => {
   test("「後で」ボタン → localStorage に dismissed フラグが保存され非表示になる", () => {
     vi.mocked(isStandalone).mockReturnValue(true);
 
-    render(<PushNotificationBanner token="test-token" />);
+    render(<PushNotificationBanner authToken="test-token" />);
     fireEvent.click(screen.getByRole("button", { name: "後で" }));
 
     expect(localStorage.getItem("push-banner-dismissed")).toBe("1");

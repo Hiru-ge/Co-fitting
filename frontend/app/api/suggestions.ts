@@ -7,7 +7,7 @@ import type { SuggestionResult } from "~/types/suggestion";
  * isReload=true の場合、日次キャッシュをクリアして新しい提案を生成する（1日3回まで）
  */
 export async function getSuggestions(
-  token: string,
+  authToken: string,
   lat: number,
   lng: number,
   isReload?: boolean,
@@ -16,7 +16,7 @@ export async function getSuggestions(
   if (isReload) {
     body.is_reload = true;
   }
-  return apiCall("/api/suggestions", token, {
+  return apiCall("/api/suggestions", authToken, {
     method: "POST",
     body: JSON.stringify(body),
   });

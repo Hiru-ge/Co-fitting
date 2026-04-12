@@ -56,11 +56,11 @@ func TestGoogleOAuth(t *testing.T) {
 
 		verifier := &mockGoogleVerifier{
 			userInfo: &GoogleUserInfo{
-				Sub:           "google-sub-123",
-				Email:         "newuser@gmail.com",
-				EmailVerified: true,
-				Name:          "Test User",
-				Picture:       "https://example.com/photo.jpg",
+				Sub:             "google-sub-123",
+				Email:           "newuser@gmail.com",
+				IsEmailVerified: true,
+				Name:            "Test User",
+				Picture:         "https://example.com/photo.jpg",
 			},
 		}
 
@@ -105,11 +105,11 @@ func TestGoogleOAuth(t *testing.T) {
 
 		verifier := &mockGoogleVerifier{
 			userInfo: &GoogleUserInfo{
-				Sub:           "google-sub-456",
-				Email:         "existing@gmail.com",
-				EmailVerified: true,
-				Name:          "Existing User",
-				Picture:       "https://example.com/photo.jpg",
+				Sub:             "google-sub-456",
+				Email:           "existing@gmail.com",
+				IsEmailVerified: true,
+				Name:            "Existing User",
+				Picture:         "https://example.com/photo.jpg",
 			},
 		}
 
@@ -179,10 +179,10 @@ func TestGoogleOAuth(t *testing.T) {
 	t.Run("メール未認証で401 Unauthorized", func(t *testing.T) {
 		verifier := &mockGoogleVerifier{
 			userInfo: &GoogleUserInfo{
-				Sub:           "google-sub-789",
-				Email:         "unverified@gmail.com",
-				EmailVerified: false,
-				Name:          "Unverified User",
+				Sub:             "google-sub-789",
+				Email:           "unverified@gmail.com",
+				IsEmailVerified: false,
+				Name:            "Unverified User",
 			},
 		}
 
@@ -210,11 +210,11 @@ func TestGoogleOAuth(t *testing.T) {
 
 		verifier := &mockGoogleVerifier{
 			userInfo: &GoogleUserInfo{
-				Sub:           "google-sub-noname",
-				Email:         "noname@gmail.com",
-				EmailVerified: true,
-				Name:          "",
-				Picture:       "",
+				Sub:             "google-sub-noname",
+				Email:           "noname@gmail.com",
+				IsEmailVerified: true,
+				Name:            "",
+				Picture:         "",
 			},
 		}
 
@@ -249,11 +249,11 @@ func TestGoogleOAuth(t *testing.T) {
 
 		verifier := &mockGoogleVerifier{
 			userInfo: &GoogleUserInfo{
-				Sub:           "google-sub-notif",
-				Email:         "notifuser@gmail.com",
-				EmailVerified: true,
-				Name:          "Notif User",
-				Picture:       "",
+				Sub:             "google-sub-notif",
+				Email:           "notifuser@gmail.com",
+				IsEmailVerified: true,
+				Name:            "Notif User",
+				Picture:         "",
 			},
 		}
 
@@ -285,11 +285,11 @@ func TestGoogleOAuth(t *testing.T) {
 
 		verifier := &mockGoogleVerifier{
 			userInfo: &GoogleUserInfo{
-				Sub:           "google-sub-nopic",
-				Email:         "nopic@gmail.com",
-				EmailVerified: true,
-				Name:          "No Pic User",
-				Picture:       "",
+				Sub:             "google-sub-nopic",
+				Email:           "nopic@gmail.com",
+				IsEmailVerified: true,
+				Name:            "No Pic User",
+				Picture:         "",
 			},
 		}
 

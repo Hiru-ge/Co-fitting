@@ -3,7 +3,7 @@ import { redirect, useNavigate } from "react-router";
 import {
   isStandalone,
   isPWAPromptDismissed,
-  dismissPWAPrompt,
+  reviewPWAPrompt,
   detectPlatform,
   getInstallPrompt,
   triggerInstallPrompt,
@@ -36,7 +36,7 @@ export default function PWAPrompt() {
     setIsInstalling(true);
     const accepted = await triggerInstallPrompt();
     if (accepted) {
-      dismissPWAPrompt();
+      reviewPWAPrompt();
       navigate("/");
     } else {
       setIsInstalling(false);
@@ -44,7 +44,7 @@ export default function PWAPrompt() {
   }
 
   function handleSkip() {
-    dismissPWAPrompt();
+    reviewPWAPrompt();
     navigate("/");
   }
 

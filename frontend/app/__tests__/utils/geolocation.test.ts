@@ -1,26 +1,26 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  calcDistance,
-  getPositionWithFallback,
+  calcHaversineDistance,
+  getCurrentPositionWithFallback,
   isWithinCheckInRange,
   startPositionPolling,
 } from "~/lib/geolocation";
 import { calcMapCenter } from "~/components/VisitMap";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
-describe("calcDistance", () => {
+describe("calcHaversineDistance", () => {
   test("同一地点の距離は0", () => {
-    expect(calcDistance(35.658, 139.7016, 35.658, 139.7016)).toBe(0);
+    expect(calcHaversineDistance(35.658, 139.7016, 35.658, 139.7016)).toBe(0);
   });
 
   test("渋谷→東京駅（約5km）の距離計算が妥当", () => {
-    const dist = calcDistance(35.658, 139.7016, 35.6812, 139.7671);
+    const dist = calcHaversineDistance(35.658, 139.7016, 35.6812, 139.7671);
     expect(dist).toBeGreaterThan(5000);
     expect(dist).toBeLessThan(7000);
   });
 
   test("渋谷→新宿（約3km）の距離計算が妥当", () => {
-    const dist = calcDistance(35.658, 139.7016, 35.6896, 139.6999);
+    const dist = calcHaversineDistance(35.658, 139.7016, 35.6896, 139.6999);
     expect(dist).toBeGreaterThan(2500);
     expect(dist).toBeLessThan(4500);
   });
@@ -61,7 +61,7 @@ describe("isWithinCheckInRange", () => {
   });
 });
 
-describe("getPositionWithFallback", () => {
+describe("getCurrentPositionWithFallback", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -77,7 +77,7 @@ describe("getPositionWithFallback", () => {
       },
     });
 
-    const pos = await getPositionWithFallback();
+    const pos = await getCurrentPositionWithFallback();
     expect(pos.lat).toBe(35.68);
     expect(pos.lng).toBe(139.76);
   });
@@ -90,7 +90,7 @@ describe("getPositionWithFallback", () => {
       },
     });
 
-    const pos = await getPositionWithFallback();
+    const pos = await getCurrentPositionWithFallback();
     expect(pos.lat).toBe(DEFAULT_LOCATION.lat);
     expect(pos.lng).toBe(DEFAULT_LOCATION.lng);
   });
@@ -98,7 +98,7 @@ describe("getPositionWithFallback", () => {
   test("Geolocation非対応 → デフォルト位置にフォールバック", async () => {
     vi.stubGlobal("navigator", { geolocation: undefined });
 
-    const pos = await getPositionWithFallback();
+    const pos = await getCurrentPositionWithFallback();
     expect(pos.lat).toBe(DEFAULT_LOCATION.lat);
     expect(pos.lng).toBe(DEFAULT_LOCATION.lng);
   });

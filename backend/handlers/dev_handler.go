@@ -179,7 +179,7 @@ type triggerNotificationRequest struct {
 }
 
 // TriggerNotification は開発環境専用の通知即時発火エンドポイント。
-// type に "daily_suggestion" / "streak_reminder" / "weekly_summary" / "monthly_summary" を指定する。
+// type に "is_daily_suggestion_enabled" / "is_streak_reminder_enabled" / "is_weekly_summary_enabled" / "is_monthly_summary_enabled" を指定する。
 // @Summary      通知即時発火（開発用）
 // @Description  指定した通知タイプを即時実行する（development環境のみ有効）
 // @Tags         Dev
@@ -204,22 +204,22 @@ func (h *DevHandler) TriggerNotification(c *gin.Context) {
 	}
 
 	switch req.Type {
-	case "daily_suggestion":
+	case "is_daily_suggestion_enabled":
 		h.Scheduler.SendDailySuggestionNotifications()
-	case "streak_reminder":
+	case "is_streak_reminder_enabled":
 		h.Scheduler.SendStreakReminderNotifications()
-	case "weekly_summary":
+	case "is_weekly_summary_enabled":
 		h.Scheduler.SendWeeklySummaryNotifications()
-	case "monthly_summary":
+	case "is_monthly_summary_enabled":
 		h.Scheduler.SendMonthlySummaryNotifications()
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid type",
 			"valid_types": []string{
-				"daily_suggestion",
-				"streak_reminder",
-				"weekly_summary",
-				"monthly_summary",
+				"is_daily_suggestion_enabled",
+				"is_streak_reminder_enabled",
+				"is_weekly_summary_enabled",
+				"is_monthly_summary_enabled",
 			},
 		})
 		return

@@ -9,32 +9,32 @@ import type {
 } from "~/types/visit";
 
 export async function createVisit(
-  token: string,
+  authToken: string,
   visitData: CreateVisitRequest,
 ): Promise<CreateVisitResponse> {
-  return apiCall("/api/visits", token, {
+  return apiCall("/api/visits", authToken, {
     method: "POST",
     body: JSON.stringify(visitData),
   });
 }
 
-export async function getVisit(token: string, id: number): Promise<Visit> {
-  return apiCall(`/api/visits/${id}`, token);
+export async function getVisit(authToken: string, id: number): Promise<Visit> {
+  return apiCall(`/api/visits/${id}`, authToken);
 }
 
 export async function updateVisit(
-  token: string,
+  authToken: string,
   id: number,
   data: UpdateVisitRequest,
 ): Promise<Visit> {
-  return apiCall(`/api/visits/${id}`, token, {
+  return apiCall(`/api/visits/${id}`, authToken, {
     method: "PATCH",
     body: JSON.stringify(data),
   });
 }
 
 export async function listVisits(
-  token: string,
+  authToken: string,
   limit: number = 20,
   offset: number = 0,
   from?: string,
@@ -46,9 +46,11 @@ export async function listVisits(
   });
   if (from) params.set("from", from);
   if (until) params.set("until", until);
-  return apiCall(`/api/visits?${params.toString()}`, token);
+  return apiCall(`/api/visits?${params.toString()}`, authToken);
 }
 
-export async function getMapVisits(token: string): Promise<MapVisitResponse> {
-  return apiCall("/api/visits/map", token);
+export async function getMapVisits(
+  authToken: string,
+): Promise<MapVisitResponse> {
+  return apiCall("/api/visits/map", authToken);
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Route } from "./+types/settings";
 import { useNavigate, Link } from "react-router";
-import { clearToken, protectedLoader } from "~/lib/auth";
+import { clearToken, authRequiredLoader } from "~/lib/auth";
 import {
   updateDisplayName,
   deleteAccount,
@@ -66,16 +66,16 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 ];
 
 export async function clientLoader() {
-  const { user, token } = await protectedLoader();
+  const { user, token: authToken } = await authRequiredLoader();
   const [genres, interests] = await Promise.all([
-    getGenreTags(token),
-    getInterests(token),
+    getGenreTags(authToken),
+    getInterests(authToken),
   ]);
-  return { user, token, genres, interests };
+  return { user, token: authToken, genres, interests };
 }
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
-  const { user, token, genres, interests } = loaderData;
+  const { user, token: authToken, genres, interests } = loaderData;
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>("user");
 
@@ -127,16 +127,20 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
 
       {/* Tab Content */}
       <div className="px-4 py-6" role="tabpanel">
-        {activeTab === "user" && <UserInfoTab token={token} user={user} />}
+        {activeTab === "user" && (
+          <UserInfoTab authToken={authToken} user={user} />
+        )}
         {activeTab === "suggestion" && (
           <SuggestionTab
-            token={token}
+            authToken={authToken}
             genres={genres}
             initialInterests={interests}
             initialRadius={user.search_radius ?? 10000}
           />
         )}
-        {activeTab === "notification" && <NotificationTab token={token} />}
+        {activeTab === "notification" && (
+          <NotificationTab authToken={authToken} />
+        )}
       </div>
     </div>
   );
@@ -149,10 +153,10 @@ const RADIUS_STEP = 1000;
 
 // === ユーザー情報タブ ===
 function UserInfoTab({
-  token,
+  authToken,
   user,
 }: {
-  token: string;
+  authToken: string;
   user: { display_name: string };
 }) {
   const navigate = useNavigate();
@@ -179,7 +183,7 @@ function UserInfoTab({
 
     setIsUpdatingName(true);
     try {
-      await updateDisplayName(token, displayName.trim());
+      await updateDisplayName(authToken, displayName.trim());
       setDisplayNameMsg("表示名を変更しました");
     } catch {
       setDisplayNameError("表示名の変更に失敗しました");
@@ -191,7 +195,7 @@ function UserInfoTab({
   async function handleDeleteAccount() {
     setIsDeleting(true);
     try {
-      await deleteAccount(token);
+      await deleteAccount(authToken);
       clearToken();
       navigate("/login", { replace: true });
     } catch {
@@ -312,7 +316,7 @@ function UserInfoTab({
 
 // === 位置情報許可セクション ===
 function LocationPermissionSection() {
-  const [permState, setPermState] = useState<
+  const [permissionState, setPermissionState] = useState<
     PermissionState | "unsupported" | null
   >(null);
 
@@ -324,16 +328,16 @@ function LocationPermissionSection() {
 
   useEffect(() => {
     if (!navigator.permissions) {
-      Promise.resolve().then(() => setPermState("unsupported"));
+      Promise.resolve().then(() => setPermissionState("unsupported"));
       return;
     }
     navigator.permissions
       .query({ name: "geolocation" })
       .then((result) => {
-        setPermState(result.state);
-        result.onchange = () => setPermState(result.state);
+        setPermissionState(result.state);
+        result.onchange = () => setPermissionState(result.state);
       })
-      .catch(() => setPermState("unsupported"));
+      .catch(() => setPermissionState("unsupported"));
   }, []);
 
   const deniedSteps: string[] = (() => {
@@ -377,9 +381,9 @@ function LocationPermissionSection() {
   })();
 
   const statusDisplay = () => {
-    if (permState === null) return null;
+    if (permissionState === null) return null;
 
-    if (permState === "granted") {
+    if (permissionState === "granted") {
       return (
         <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
           <span className="material-symbols-outlined text-base">
@@ -390,7 +394,7 @@ function LocationPermissionSection() {
       );
     }
 
-    if (permState === "denied") {
+    if (permissionState === "denied") {
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
@@ -426,7 +430,7 @@ function LocationPermissionSection() {
       );
     }
 
-    if (permState === "unsupported") {
+    if (permissionState === "unsupported") {
       return (
         <p className="text-sm text-gray-400">
           このブラウザは位置情報に対応していません。
@@ -471,12 +475,12 @@ function LocationPermissionSection() {
 
 // === 提案設定タブ ===
 function SuggestionTab({
-  token,
+  authToken,
   genres,
   initialInterests,
   initialRadius,
 }: {
-  token: string;
+  authToken: string;
   genres: GenreTag[];
   initialInterests: Interest[];
   initialRadius: number;
@@ -509,16 +513,16 @@ function SuggestionTab({
     null,
   );
 
-  function toggleGenre(id: number) {
+  function updateSelectedGenre(id: number) {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
 
-  async function doSaveInterests(withRefresh: boolean) {
+  async function saveInterests(withRefresh: boolean) {
     setIsSaving(true);
     try {
-      await updateInterests(token, selectedIds, withRefresh);
+      await updateInterests(authToken, selectedIds, withRefresh);
       sendInterestsUpdated(selectedIds.length);
       setInterestMsg(
         withRefresh
@@ -532,10 +536,10 @@ function SuggestionTab({
     }
   }
 
-  async function doSaveRadius(withRefresh: boolean) {
+  async function saveRadius(withRefresh: boolean) {
     setIsSavingRadius(true);
     try {
-      await updateSearchRadius(token, selectedRadius, withRefresh);
+      await updateSearchRadius(authToken, selectedRadius, withRefresh);
       sendSearchRadiusUpdated(selectedRadius / 1000);
       setRadiusMsg(
         withRefresh
@@ -566,9 +570,9 @@ function SuggestionTab({
   async function handleConfirmRefresh() {
     setShowRefreshModal(false);
     if (pendingSave === "interests") {
-      await doSaveInterests(true);
+      await saveInterests(true);
     } else if (pendingSave === "radius") {
-      await doSaveRadius(true);
+      await saveRadius(true);
     }
     setPendingSave(null);
   }
@@ -643,7 +647,7 @@ function SuggestionTab({
                   key={genre.id}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => toggleGenre(genre.id)}
+                  onClick={() => updateSelectedGenre(genre.id)}
                   className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                     selected
                       ? "bg-primary text-bg-dark border-primary"

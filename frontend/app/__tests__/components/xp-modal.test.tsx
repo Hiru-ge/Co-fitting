@@ -6,7 +6,7 @@ const defaultProps = {
   xpEarned: 50,
   totalXp: 150,
   currentLevel: 2,
-  levelUp: false,
+  isLevelUp: false,
   newLevel: 2,
   onClose: vi.fn(),
 };
@@ -38,7 +38,7 @@ describe("XpModal", () => {
     render(
       <XpModal
         {...defaultProps}
-        levelUp={true}
+        isLevelUp={true}
         newLevel={3}
         currentLevel={3}
       />,

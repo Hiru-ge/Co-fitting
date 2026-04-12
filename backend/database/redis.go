@@ -22,7 +22,7 @@ func InitRedis() (*redis.Client, error) {
 		Addr:     fmt.Sprintf("%s:%s", redisCfg.Host, redisCfg.Port),
 		Password: redisCfg.Password,
 	}
-	if redisCfg.UseTLS {
+	if redisCfg.IsUsingTLS {
 		opts.TLSConfig = &tls.Config{}
 	}
 	client := redis.NewClient(opts)

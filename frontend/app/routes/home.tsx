@@ -19,12 +19,12 @@ import LocationPermissionModal from "~/components/LocationPermissionModal";
 import PushNotificationBanner from "~/components/PushNotificationBanner";
 
 export async function clientLoader() {
-  const token = getToken();
-  if (!token) throw redirect("/login");
+  const authToken = getToken();
+  if (!authToken) throw redirect("/login");
 
   let interests: Awaited<ReturnType<typeof getInterests>>;
   try {
-    interests = await getInterests(token);
+    interests = await getInterests(authToken);
   } catch {
     throw redirect("/login");
   }
@@ -32,12 +32,12 @@ export async function clientLoader() {
   const onboardingSkipped =
     localStorage.getItem(ONBOARDING_SKIPPED_KEY) === "true";
   if (interests.length < 3 && !onboardingSkipped) throw redirect("/onboarding");
-  return { token };
+  return { token: authToken };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { token } = loaderData;
-  const [showTour, setShowTour] = useState(
+  const { token: authToken } = loaderData;
+  const [isShowTour, setShowTour] = useState(
     () => localStorage.getItem(HOME_TOUR_SEEN_KEY) === null,
   );
   const {
@@ -55,7 +55,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     showLocationDeniedModal,
     isUsingDefaultLocation,
     currentPlace,
-    isCurrentVisited,
+    isVisited,
     currentIndex,
     isNearCurrentPlace,
     loadSuggestions,
@@ -66,7 +66,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     handleCheckIn,
     handleXpModalClose,
     handleBadgeModalClose,
-  } = useSuggestions(token);
+  } = useSuggestions(authToken);
 
   const firstViewSentRef = useRef(false);
   useEffect(() => {
@@ -144,7 +144,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     userLat={userPos.lat}
                     userLng={userPos.lng}
                     photoUrl={place.photoUrl}
-                    stackIndex={i}
+                    depthFromTop={i}
                     onSwipe={i === 0 ? handleSwipe : undefined}
                   />
                 ))}
@@ -157,7 +157,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                   <ActionButtons
                     onCheckIn={handleCheckIn}
                     onReload={handleReload}
-                    isVisited={isCurrentVisited}
+                    isVisited={isVisited}
                     isCheckingIn={checkingIn}
                     reloadCountRemaining={reloadCountRemaining}
                     isReloading={isReloading}
@@ -186,7 +186,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           xpEarned={xpModalState.xpEarned}
           totalXp={xpModalState.totalXp}
           currentLevel={xpModalState.currentLevel}
-          levelUp={xpModalState.levelUp}
+          isLevelUp={xpModalState.isLevelUp}
           newLevel={xpModalState.newLevel}
           xpBreakdown={xpModalState.xpBreakdown}
           onClose={handleXpModalClose}
@@ -199,7 +199,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       )}
 
       {/* チュートリアルツアーモーダル: 初回のみ表示 */}
-      {showTour && <HomeTourModal onClose={() => setShowTour(false)} />}
+      {isShowTour && <HomeTourModal onClose={() => setShowTour(false)} />}
 
       {/* 位置情報拒否時モーダル */}
       {showLocationDeniedModal && (
@@ -210,7 +210,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       )}
 
       {/* Push通知許可バナー */}
-      <PushNotificationBanner token={token} />
+      <PushNotificationBanner authToken={authToken} />
     </div>
   );
 }

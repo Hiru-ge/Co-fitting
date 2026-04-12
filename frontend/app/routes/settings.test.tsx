@@ -32,12 +32,12 @@ import {
 import { getPushPermissionState } from "~/lib/push";
 
 const defaultSettings = {
-  push_enabled: true,
-  email_enabled: true,
-  daily_suggestion: true,
-  weekly_summary: true,
-  monthly_summary: true,
-  streak_reminder: true,
+  is_push_enabled: true,
+  is_email_enabled: true,
+  is_daily_suggestion_enabled: true,
+  is_weekly_summary_enabled: true,
+  is_monthly_summary_enabled: true,
+  is_streak_reminder_enabled: true,
 };
 
 describe("Settings - 通知タブ", () => {
@@ -62,7 +62,7 @@ describe("Settings - 通知タブ", () => {
   });
 
   test("通知タブが表示される（Push通知とメール通知セクション）", async () => {
-    render(<NotificationTab token="test-token" />);
+    render(<NotificationTab authToken="test-token" />);
 
     expect(
       await screen.findByRole("heading", { name: /Push通知/ }),
@@ -75,7 +75,7 @@ describe("Settings - 通知タブ", () => {
   test("Push許可済み時: 許可ステータスが表示される", async () => {
     vi.mocked(getPushPermissionState).mockResolvedValue("granted");
 
-    render(<NotificationTab token="test-token" />);
+    render(<NotificationTab authToken="test-token" />);
 
     expect(
       await screen.findByText("通知が許可されています"),
@@ -88,7 +88,7 @@ describe("Settings - 通知タブ", () => {
   test("Push未許可(default)時: 「通知を許可する」ボタンが表示される", async () => {
     vi.mocked(getPushPermissionState).mockResolvedValue("default");
 
-    render(<NotificationTab token="test-token" />);
+    render(<NotificationTab authToken="test-token" />);
 
     expect(
       await screen.findByRole("button", { name: "通知を許可する" }),
@@ -98,7 +98,7 @@ describe("Settings - 通知タブ", () => {
   test("Push拒否(denied)時: 拒否メッセージが表示される", async () => {
     vi.mocked(getPushPermissionState).mockResolvedValue("denied");
 
-    render(<NotificationTab token="test-token" />);
+    render(<NotificationTab authToken="test-token" />);
 
     expect(
       await screen.findByText("通知が拒否されています"),
@@ -109,7 +109,7 @@ describe("Settings - 通知タブ", () => {
   });
 
   test("Push全体ONトグルをOFFにすると個別トグルがdisabledになる", async () => {
-    render(<NotificationTab token="test-token" />);
+    render(<NotificationTab authToken="test-token" />);
 
     // 設定ロード完了まで待機
     const masterToggle = await screen.findByRole("switch", {
@@ -132,7 +132,7 @@ describe("Settings - 通知タブ", () => {
   });
 
   test("トグル変更で PUT /api/notifications/settings が呼ばれる", async () => {
-    render(<NotificationTab token="test-token" />);
+    render(<NotificationTab authToken="test-token" />);
 
     const streakToggle = await screen.findByRole("switch", {
       name: "ストリークリマインダー",
@@ -142,7 +142,7 @@ describe("Settings - 通知タブ", () => {
     await waitFor(() => {
       expect(updateNotificationSettings).toHaveBeenCalledWith(
         "test-token",
-        expect.objectContaining({ streak_reminder: false }),
+        expect.objectContaining({ is_streak_reminder_enabled: false }),
       );
     });
   });

@@ -443,23 +443,23 @@ s
 
 **🟢 GREEN**
 
-- [ ] **全体**: 認証トークンを受け取る変数・引数を `authToken` に統一（`index.tsx` clientLoader 内・`api/*.ts` 引数名・各ルートの clientLoader 内変数名）
-- [ ] **`xp-modal.tsx`**: `levelUp` → `isLevelUp`、`highlight` → `isHighlight`、`showPlus` → `isShowPlus`（boolean prop は `is` プレフィックス規則）。変更箇所は `home.tsx`・`use-suggestions.ts`（型定義と代入）・テストファイルを含む
-- [ ] **`xp-modal.tsx`**: `xpBreakdown.base_xp >= 100` を `const isBreakout = xpBreakdown.base_xp >= 100` に切り出す（`label` と `highlight` の両方で同じ条件を参照）
-- [ ] **`visit-map.tsx`**: `positionReady` → `isPositionAvailable`（setter も `setIsPositionAvailable` に）
-- [ ] **`discovery-card.tsx`**: `stackIndex` → `depthFromTop`（JSDocコメントを削除できる）、`showPhoto` → `hasValidPhoto`
-- [ ] **`NotificationToggle.tsx`**: `checked` → `isChecked`（boolean prop）
-- [ ] **`NotificationTab.tsx`**: `ariaLabel` → `screenReaderLabel`（用途が伝わる命名に）
-- [ ] **`home.tsx`**: `showTour` → `isShowTour`、`isCurrentVisited` と `isVisited` のブレを `isVisited` に統一
-- [ ] **`onboarding.tsx`**: `toggleTag` → `updateSelectedTags`（実態は配列への追加・除外で boolean トグルではない）
-- [ ] **`settings.tsx`**: `toggleGenre` → `updateSelectedGenre`（同上）、`doSaveRadius` / `doSaveInterests` → `saveRadius` / `saveInterests`（`do` プレフィックスは慣習外）、`permState` → `permissionState`（略語を展開）
-- [ ] **`pwa-prompt.tsx`**: `dismissPWAPrompt` → `reviewPWAPrompt`（インストール完了後にも呼ぶため「拒否」の意味合いになっている）
-- [ ] **`protected-loader.ts`**: `protectedLoader` → `authRequiredLoader`（何を protect しているかが名前から伝わる）
-- [ ] **`profile.tsx`**: `el` / `rect` → `xpSectionEl` / `xpSectionRect`（何の要素・矩形か伝わる）
-- [ ] **`use-suggestions.ts`**: `skipped`（handleSwipe 内・225行目）→ `skippedPlace`
-- [ ] **`PushNotificationBanner.tsx`**: `visible` → `isBannerVisible`（boolean 変数に `is` プレフィックス）
-- [ ] **`geolocation.ts`**: `calcDistance` → `calcHaversineDistance`（バックエンドの `HaversineDistance` と統一）、引数名 `lat1/lng1/lat2/lng2` → `fromLat/fromLng/toLat/toLng`、`getPositionWithFallback` → `getCurrentPositionWithFallback`
-- [ ] **バックエンド + フロント**: `createVisitResponse` / 型定義の `daily_completed` / `level_up` を `is_daily_completed` / `is_level_up` に変更（boolean フィールドは `is_` プレフィックスに統一。Go側の struct タグ・JSON キー・フロントの型定義・使用箇所を両方修正）
+- [x] **全体**: 認証トークンを受け取る変数・引数を `authToken` に統一（`index.tsx` clientLoader 内・`api/*.ts` 引数名・各ルートの clientLoader 内変数名）
+- [x] **`xp-modal.tsx`**: `levelUp` → `isLevelUp`、`highlight` → `isHighlight`、`showPlus` → `isShowPlus`（boolean prop は `is` プレフィックス規則）。変更箇所は `home.tsx`・`use-suggestions.ts`（型定義と代入）・テストファイルを含む
+- [x] **`xp-modal.tsx`**: `xpBreakdown.base_xp >= 100` を `const isBreakout = xpBreakdown.base_xp >= 100` に切り出す（`label` と `highlight` の両方で同じ条件を参照）
+- [x] **`visit-map.tsx`**: `positionReady` → `isPositionAvailable`（setter も `setIsPositionAvailable` に）
+- [x] **`discovery-card.tsx`**: `stackIndex` → `depthFromTop`（JSDocコメントを削除できる）、`showPhoto` → `hasValidPhoto`
+- [x] **`NotificationToggle.tsx`**: `checked` → `isChecked`（boolean prop）
+- [x] **`NotificationTab.tsx`**: `ariaLabel` → `screenReaderLabel`（用途が伝わる命名に）
+- [x] **`home.tsx`**: `showTour` → `isShowTour`、`isCurrentVisited` と `isVisited` のブレを `isVisited` に統一
+- [x] **`onboarding.tsx`**: `toggleTag` → `updateSelectedTags`（実態は配列への追加・除外で boolean トグルではない）
+- [x] **`settings.tsx`**: `toggleGenre` → `updateSelectedGenre`（同上）、`doSaveRadius` / `doSaveInterests` → `saveRadius` / `saveInterests`（`do` プレフィックスは慣習外）、`permState` → `permissionState`（略語を展開）
+- [x] **`pwa-prompt.tsx`**: `dismissPWAPrompt` → `reviewPWAPrompt`（インストール完了後にも呼ぶため「拒否」の意味合いになっている）
+- [x] **`protected-loader.ts`**: `protectedLoader` → `authRequiredLoader`（何を protect しているかが名前から伝わる）
+- [x] **`profile.tsx`**: `el` / `rect` → `xpSectionEl` / `xpSectionRect`（何の要素・矩形か伝わる）
+- [x] **`use-suggestions.ts`**: `skipped`（handleSwipe 内・225行目）→ `skippedPlace`
+- [x] **`PushNotificationBanner.tsx`**: `visible` → `isBannerVisible`（boolean 変数に `is` プレフィックス）
+- [x] **`geolocation.ts`**: `calcDistance` → `calcHaversineDistance`（バックエンドの `HaversineDistance` と統一）、引数名 `lat1/lng1/lat2/lng2` → `fromLat/fromLng/toLat/toLng`、`getPositionWithFallback` → `getCurrentPositionWithFallback`
+- [x] **バックエンド + フロント**: `createVisitResponse` / 型定義の `daily_completed` / `level_up` を `is_daily_completed` / `is_level_up` に変更（boolean フィールドは `is_` プレフィックスに統一。Go側の struct タグ・JSON キー・フロントの型定義・使用箇所を両方修正）
 
 **🔵 REFACTOR**
 

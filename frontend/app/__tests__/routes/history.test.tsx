@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import History, { clientLoader } from "~/routes/history";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { listVisits, getMapVisits } from "~/api/visits";
 import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
@@ -14,7 +14,7 @@ import type { User } from "~/types/auth";
 
 // モック設定
 vi.mock("~/lib/auth", () => ({
-  protectedLoader: vi.fn(),
+  authRequiredLoader: vi.fn(),
 }));
 vi.mock("~/api/visits");
 vi.mock("~/api/places");
@@ -40,7 +40,7 @@ vi.mock("react-router", async () => {
 // モックされた関数の型安全性のため
 const mockGetPlacePhoto = vi.mocked(getPlacePhoto);
 const mockGetMapVisits = vi.mocked(getMapVisits);
-const mockProtectedLoader = vi.mocked(protectedLoader);
+const mockProtectedLoader = vi.mocked(authRequiredLoader);
 const mockListVisits = vi.mocked(listVisits);
 const mockToUserMessage = vi.mocked(toUserMessage);
 const mockUseToast = vi.mocked(useToast);

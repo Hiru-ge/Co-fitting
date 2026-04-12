@@ -59,7 +59,7 @@ var levelThresholds = []int{
 type GamificationResult struct {
 	XPEarned    int
 	TotalXP     int
-	LevelUp     bool
+	IsLevelUp   bool
 	NewLevel    int
 	NewBadges   []models.Badge
 	XPBreakdown *XPBreakdown
@@ -439,7 +439,7 @@ func ApplyVisitGamification(db *gorm.DB, userID uint64, visit models.Visit) (*Ga
 		result.XPEarned = finalXP
 		result.TotalXP = newTotalXP
 		result.NewLevel = newLevel
-		result.LevelUp = levelUp
+		result.IsLevelUp = levelUp
 		result.XPBreakdown = buildXPComponents(visit.IsBreakout, isFirstArea, streakBonus)
 
 		var visitCount int64

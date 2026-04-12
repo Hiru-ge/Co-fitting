@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Route } from "./+types/history";
 import { useNavigate, Link } from "react-router";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
@@ -16,7 +16,7 @@ const ITEMS_PER_PAGE = 20;
 type ViewMode = "list" | "map";
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
-export { protectedLoader as clientLoader };
+export { authRequiredLoader as clientLoader };
 
 export default function History({ loaderData }: Route.ComponentProps) {
   const { token } = loaderData;

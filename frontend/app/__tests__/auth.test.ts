@@ -104,17 +104,17 @@ describe("getUser", () => {
   });
 });
 
-describe("protectedLoader", () => {
+describe("authRequiredLoader", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", createStorageMock());
     vi.restoreAllMocks();
   });
 
   test("トークンなしで Response (redirect) が throw される", async () => {
-    const { protectedLoader } = await import("~/lib/auth");
+    const { authRequiredLoader } = await import("~/lib/auth");
 
     try {
-      await protectedLoader();
+      await authRequiredLoader();
       expect.unreachable("redirect が throw されるべき");
     } catch (e) {
       // React Router の redirect は Response を throw する
@@ -139,8 +139,8 @@ describe("protectedLoader", () => {
       json: () => Promise.resolve(mockUser),
     });
 
-    const { protectedLoader } = await import("~/lib/auth");
-    const result = await protectedLoader();
+    const { authRequiredLoader } = await import("~/lib/auth");
+    const result = await authRequiredLoader();
 
     expect(result).toEqual({
       user: mockUser,
@@ -156,10 +156,10 @@ describe("protectedLoader", () => {
       status: 401,
     });
 
-    const { protectedLoader } = await import("~/lib/auth");
+    const { authRequiredLoader } = await import("~/lib/auth");
 
     try {
-      await protectedLoader();
+      await authRequiredLoader();
       expect.unreachable("redirect が throw されるべき");
     } catch (e) {
       expect(e).toBeInstanceOf(Response);

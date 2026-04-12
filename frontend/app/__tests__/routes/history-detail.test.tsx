@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import HistoryDetail, { clientLoader } from "~/routes/history-detail";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { getVisit, updateVisit } from "~/api/visits";
 import { getPlacePhoto } from "~/api/places";
 import { toUserMessage } from "~/utils/error";
@@ -11,7 +11,7 @@ import type { Visit } from "~/types/visit";
 import type { User } from "~/types/auth";
 
 vi.mock("~/lib/auth", () => ({
-  protectedLoader: vi.fn(),
+  authRequiredLoader: vi.fn(),
 }));
 vi.mock("~/api/visits");
 vi.mock("~/api/places");
@@ -27,7 +27,7 @@ vi.mock("react-router", async () => {
   };
 });
 
-const mockProtectedLoader = vi.mocked(protectedLoader);
+const mockProtectedLoader = vi.mocked(authRequiredLoader);
 const mockGetPlacePhoto = vi.mocked(getPlacePhoto);
 const mockGetVisit = vi.mocked(getVisit);
 const mockUpdateVisit = vi.mocked(updateVisit);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/summary.weekly";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
 import { getUserBadges } from "~/api/users";
 import { getPlacePhoto } from "~/api/places";
@@ -8,7 +8,7 @@ import type { Visit } from "~/types/visit";
 import type { EarnedBadge } from "~/types/auth";
 import SummaryLayout from "~/components/SummaryLayout";
 
-export { protectedLoader as clientLoader };
+export { authRequiredLoader as clientLoader };
 
 /** 直近月曜0時 JST の ISO 文字列を返す */
 function getWeekRange(): { from: string; until: string; label: string } {

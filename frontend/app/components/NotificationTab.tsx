@@ -14,19 +14,19 @@ import {
 interface NotificationToggleProps {
   id: string;
   label: string;
-  ariaLabel?: string;
+  screenReaderLabel?: string;
   description?: string;
-  checked: boolean;
+  isChecked: boolean;
   disabled?: boolean;
-  onChange: (checked: boolean) => void;
+  onChange: (isChecked: boolean) => void;
 }
 
 function NotificationToggle({
   id,
   label,
-  ariaLabel,
+  screenReaderLabel,
   description,
-  checked,
+  isChecked,
   disabled = false,
   onChange,
 }: NotificationToggleProps) {
@@ -46,17 +46,17 @@ function NotificationToggle({
       <button
         type="button"
         role="switch"
-        aria-checked={checked}
-        aria-label={ariaLabel ?? label}
+        aria-checked={isChecked}
+        aria-label={screenReaderLabel ?? label}
         disabled={disabled}
-        onClick={() => onChange(!checked)}
+        onClick={() => onChange(!isChecked)}
         className={`relative w-11 h-6 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
           disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
-        } ${checked ? "bg-primary" : "bg-gray-600"}`}
+        } ${isChecked ? "bg-primary" : "bg-gray-600"}`}
       >
         <span
           className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0"
+            isChecked ? "translate-x-5" : "translate-x-0"
           }`}
           aria-hidden="true"
         />
@@ -64,7 +64,7 @@ function NotificationToggle({
           id={id}
           type="checkbox"
           role="switch"
-          checked={checked}
+          checked={isChecked}
           disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
           className="sr-only"
@@ -121,7 +121,7 @@ function getAcceptSteps(
   ];
 }
 
-export default function NotificationTab({ token }: { token: string }) {
+export default function NotificationTab({ authToken }: { authToken: string }) {
   const [settings, setSettings] = useState<NotificationSettings | null>(null);
   const [pushPermission, setPushPermission] =
     useState<NotificationPermission>("default");
@@ -141,7 +141,7 @@ export default function NotificationTab({ token }: { token: string }) {
   );
 
   useEffect(() => {
-    getNotificationSettings(token).then(setSettings);
+    getNotificationSettings(authToken).then(setSettings);
     getPushPermissionState().then(async (permission) => {
       setPushPermission(permission);
       if (permission === "granted") {
@@ -150,12 +150,12 @@ export default function NotificationTab({ token }: { token: string }) {
         if (reg) {
           const sub = await reg.pushManager.getSubscription();
           if (!sub) {
-            await subscribePush(token);
+            await subscribePush(authToken);
           }
         }
       }
     });
-  }, [token]);
+  }, [authToken]);
 
   async function handleToggle(
     field: keyof NotificationSettings,
@@ -163,13 +163,15 @@ export default function NotificationTab({ token }: { token: string }) {
   ) {
     if (!settings) return;
     setSettings({ ...settings, [field]: value });
-    const updated = await updateNotificationSettings(token, { [field]: value });
+    const updated = await updateNotificationSettings(authToken, {
+      [field]: value,
+    });
     setSettings(updated);
     sendNotificationSettingChanged(field, value);
   }
 
   async function handleSubscribePush() {
-    const success = await subscribePush(token);
+    const success = await subscribePush(authToken);
     if (success) {
       setPushPermission("granted");
       sendPushPermissionGranted("settings");
@@ -269,8 +271,8 @@ export default function NotificationTab({ token }: { token: string }) {
           id="push-enabled"
           label="Push通知"
           description="すべてのPush通知の有効/無効を切り替えます"
-          checked={settings.push_enabled}
-          onChange={(val) => handleToggle("push_enabled", val)}
+          isChecked={settings.is_push_enabled}
+          onChange={(val) => handleToggle("is_push_enabled", val)}
         />
 
         {/* Push個別トグル */}
@@ -282,33 +284,33 @@ export default function NotificationTab({ token }: { token: string }) {
             id="daily-suggestion"
             label="デイリーリフレッシュ"
             description="毎朝7時に提案カードリフレッシュを通知"
-            checked={settings.daily_suggestion}
-            disabled={!settings.push_enabled}
-            onChange={(val) => handleToggle("daily_suggestion", val)}
+            isChecked={settings.is_daily_suggestion_enabled}
+            disabled={!settings.is_push_enabled}
+            onChange={(val) => handleToggle("is_daily_suggestion_enabled", val)}
           />
           <NotificationToggle
             id="push-streak-reminder"
             label="ストリークリマインダー"
             description="ストリークが切れそうなとき（週1回）にお知らせ"
-            checked={settings.streak_reminder}
-            disabled={!settings.push_enabled}
-            onChange={(val) => handleToggle("streak_reminder", val)}
+            isChecked={settings.is_streak_reminder_enabled}
+            disabled={!settings.is_push_enabled}
+            onChange={(val) => handleToggle("is_streak_reminder_enabled", val)}
           />
           <NotificationToggle
             id="push-weekly-summary"
             label="週次サマリー"
             description="毎週月曜に先週の訪問まとめをお届け"
-            checked={settings.weekly_summary}
-            disabled={!settings.push_enabled}
-            onChange={(val) => handleToggle("weekly_summary", val)}
+            isChecked={settings.is_weekly_summary_enabled}
+            disabled={!settings.is_push_enabled}
+            onChange={(val) => handleToggle("is_weekly_summary_enabled", val)}
           />
           <NotificationToggle
             id="push-monthly-summary"
             label="月次サマリー"
             description="毎月1日に先月の活動まとめをお届け"
-            checked={settings.monthly_summary}
-            disabled={!settings.push_enabled}
-            onChange={(val) => handleToggle("monthly_summary", val)}
+            isChecked={settings.is_monthly_summary_enabled}
+            disabled={!settings.is_push_enabled}
+            onChange={(val) => handleToggle("is_monthly_summary_enabled", val)}
           />
         </div>
       </section>
@@ -327,8 +329,8 @@ export default function NotificationTab({ token }: { token: string }) {
           id="email-enabled"
           label="メール通知"
           description="すべてのメール通知の有効/無効を切り替えます"
-          checked={settings.email_enabled}
-          onChange={(val) => handleToggle("email_enabled", val)}
+          isChecked={settings.is_email_enabled}
+          onChange={(val) => handleToggle("is_email_enabled", val)}
         />
 
         {/* メール個別トグル */}
@@ -339,29 +341,29 @@ export default function NotificationTab({ token }: { token: string }) {
           <NotificationToggle
             id="email-streak-reminder"
             label="ストリークリマインダー"
-            ariaLabel="ストリークリマインダー（メール）"
+            screenReaderLabel="ストリークリマインダー（メール）"
             description="ストリークが切れそうなとき（週1回）にお知らせ"
-            checked={settings.streak_reminder}
-            disabled={!settings.email_enabled}
-            onChange={(val) => handleToggle("streak_reminder", val)}
+            isChecked={settings.is_streak_reminder_enabled}
+            disabled={!settings.is_email_enabled}
+            onChange={(val) => handleToggle("is_streak_reminder_enabled", val)}
           />
           <NotificationToggle
             id="email-weekly-summary"
             label="週次サマリー"
-            ariaLabel="週次サマリー（メール）"
+            screenReaderLabel="週次サマリー（メール）"
             description="毎週月曜に先週の訪問まとめをお届け"
-            checked={settings.weekly_summary}
-            disabled={!settings.email_enabled}
-            onChange={(val) => handleToggle("weekly_summary", val)}
+            isChecked={settings.is_weekly_summary_enabled}
+            disabled={!settings.is_email_enabled}
+            onChange={(val) => handleToggle("is_weekly_summary_enabled", val)}
           />
           <NotificationToggle
             id="email-monthly-summary"
             label="月次サマリー"
-            ariaLabel="月次サマリー（メール）"
+            screenReaderLabel="月次サマリー（メール）"
             description="毎月1日に先月の活動まとめをお届け"
-            checked={settings.monthly_summary}
-            disabled={!settings.email_enabled}
-            onChange={(val) => handleToggle("monthly_summary", val)}
+            isChecked={settings.is_monthly_summary_enabled}
+            disabled={!settings.is_email_enabled}
+            onChange={(val) => handleToggle("is_monthly_summary_enabled", val)}
           />
         </div>
       </section>

@@ -99,7 +99,7 @@ type nearbySearchPlace struct {
 }
 
 type nearbySearchOpeningHours struct {
-	OpenNow bool `json:"openNow"`
+	IsOpenNow bool `json:"openNow"`
 }
 
 type nearbySearchDisplayName struct {
@@ -177,7 +177,7 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 		}
 		var openNow *bool
 		if p.CurrentOpeningHours != nil {
-			v := p.CurrentOpeningHours.OpenNow
+			v := p.CurrentOpeningHours.IsOpenNow
 			openNow = &v
 		}
 		results = append(results, services.PlaceResult{
@@ -189,7 +189,7 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 			Rating:         p.Rating,
 			Types:          p.Types,
 			PhotoReference: photoRef,
-			OpenNow:        openNow,
+			IsOpenNow:      openNow,
 		})
 	}
 	return results, nil
@@ -204,16 +204,16 @@ type SuggestionHandler struct {
 type SuggestionResult struct {
 	Places               []services.PlaceResult `json:"places"`
 	Notice               string                 `json:"notice,omitempty"`
-	Completed            bool                   `json:"completed,omitempty"`
+	IsCompleted          bool                   `json:"is_completed,omitempty"`
 	ReloadCountRemaining *int                   `json:"reload_count_remaining,omitempty"`
 }
 
 type suggestionRequest struct {
-	Lat           float64 `json:"lat" binding:"required"`
-	Lng           float64 `json:"lng" binding:"required"`
-	Radius        uint    `json:"radius"`
-	Reload        bool    `json:"is_reload"`
-	FilterOpenNow bool    `json:"filter_open_now"`
+	Lat                 float64 `json:"lat" binding:"required"`
+	Lng                 float64 `json:"lng" binding:"required"`
+	Radius              uint    `json:"radius"`
+	IsReload            bool    `json:"is_reload"`
+	ShouldFilterOpenNow bool    `json:"should_filter_open_now"`
 }
 
 const defaultSearchRadius uint = 3000
@@ -254,7 +254,7 @@ func (h *SuggestionHandler) reload(ctx context.Context, userIDStr, today string,
 
 	reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
 	if err == nil && reached {
-		return reloadCount, true, http.StatusOK, SuggestionResult{Completed: true}
+		return reloadCount, true, http.StatusOK, SuggestionResult{IsCompleted: true}
 	}
 
 	if reloadCount >= database.MaxDailyReloads {
@@ -310,14 +310,14 @@ func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID
 			if err := database.SetDailyLimitReached(ctx, h.RedisClient, userIDStr, today, 24*time.Hour); err != nil {
 				log.Printf("suggestion: failed to set daily limit reached: %v", err)
 			}
-			return &SuggestionResult{Completed: true}, true
+			return &SuggestionResult{IsCompleted: true}, true
 		}
 	}
 
 	// リストキャッシュがなくても上限到達フラグが立っている場合は完了として返す
 	reached, err := database.IsDailyLimitReached(ctx, h.RedisClient, userIDStr, today)
 	if err == nil && reached {
-		return &SuggestionResult{Completed: true}, true
+		return &SuggestionResult{IsCompleted: true}, true
 	}
 
 	return nil, false
@@ -365,7 +365,7 @@ func (h *SuggestionHandler) fetchPlacesFromCacheOrAPI(ctx context.Context, req s
 // @Summary      場所の提案
 // @Description  指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
 // @Description  notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
-// @Description  filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
+// @Description  should_filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
 // @Tags         Suggestion
 // @Accept       json
 // @Produce      json
@@ -398,7 +398,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 
 	reloadCount, _ := h.getReloadCount(ctx, userIDStr, today)
 
-	if req.Reload {
+	if req.IsReload {
 		newCount, done, status, body := h.reload(ctx, userIDStr, today, req, reloadCount)
 		if done {
 			c.JSON(status, body)
@@ -430,7 +430,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	if req.FilterOpenNow {
+	if req.ShouldFilterOpenNow {
 		places = services.FilterOpenNowPlaces(places)
 		if len(places) == 0 {
 			c.JSON(http.StatusNotFound, gin.H{"error": "no open places found", "code": "NO_OPEN_PLACES"})
@@ -440,7 +440,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 
 	unvisited := services.FilterOutVisited(h.DB, userID, places)
 	if len(unvisited) == 0 {
-		c.JSON(http.StatusOK, SuggestionResult{Completed: true, Notice: "ALL_VISITED_NEARBY"})
+		c.JSON(http.StatusOK, SuggestionResult{IsCompleted: true, Notice: "ALL_VISITED_NEARBY"})
 		return
 	}
 

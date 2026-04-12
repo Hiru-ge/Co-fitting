@@ -3,8 +3,8 @@ import { getToken } from "~/lib/auth";
 import { isStandalone, isPWAPromptDismissed } from "~/lib/pwa";
 
 export async function clientLoader() {
-  const token = getToken();
-  if (token) {
+  const authToken = getToken();
+  if (authToken) {
     throw redirect("/home");
   }
   if (!isStandalone() && !isPWAPromptDismissed()) {

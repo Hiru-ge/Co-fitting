@@ -339,7 +339,7 @@ func TestSuggest(t *testing.T) {
 		}
 	})
 
-	t.Run("全施設訪問済みで200+completedフラグが返る", func(t *testing.T) {
+	t.Run("全施設訪問済みで200+is_completedフラグが返る", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUser(t)
@@ -377,17 +377,17 @@ func TestSuggest(t *testing.T) {
 		}
 
 		var result struct {
-			Completed bool                   `json:"completed"`
-			Places    []services.PlaceResult `json:"places"`
+			IsCompleted bool                   `json:"is_completed"`
+			Places      []services.PlaceResult `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
 		}
-		if !result.Completed {
-			t.Errorf("Expected completed=true, got false. Body: %s", w.Body.String())
+		if !result.IsCompleted {
+			t.Errorf("Expected is_completed=true, got false. Body: %s", w.Body.String())
 		}
 		if len(result.Places) != 0 {
-			t.Errorf("Expected empty places when completed, got %d places", len(result.Places))
+			t.Errorf("Expected empty places when is_completed, got %d places", len(result.Places))
 		}
 	})
 
@@ -796,7 +796,7 @@ func TestSuggestDailyCache(t *testing.T) {
 			})
 		}
 
-		// 2回目: 日次提案が全て訪問済みなので completed:true が返るべき
+		// 2回目: 日次提案が全て訪問済みなので is_completed:true が返るべき
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req2.Header.Set("Content-Type", "application/json")
@@ -809,12 +809,12 @@ func TestSuggestDailyCache(t *testing.T) {
 		}
 
 		var completedResp struct {
-			Completed bool                   `json:"completed"`
-			Places    []services.PlaceResult `json:"places"`
+			IsCompleted bool                   `json:"is_completed"`
+			Places      []services.PlaceResult `json:"places"`
 		}
 		json.Unmarshal(w2.Body.Bytes(), &completedResp) //nolint:errcheck
-		if !completedResp.Completed {
-			t.Errorf("Expected completed=true after all suggestions visited. Body: %s", w2.Body.String())
+		if !completedResp.IsCompleted {
+			t.Errorf("Expected is_completed=true after all suggestions visited. Body: %s", w2.Body.String())
 		}
 	})
 }
@@ -878,7 +878,7 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 			})
 		}
 
-		// ステップ3: 全訪問済みで再リクエスト → completed:true + exhaustedフラグが立つ
+		// ステップ3: 全訪問済みで再リクエスト → is_completed:true + exhaustedフラグが立つ
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req2.Header.Set("Content-Type", "application/json")
@@ -886,23 +886,23 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 		router.ServeHTTP(w2, req2)
 
 		if w2.Code != http.StatusOK {
-			t.Fatalf("全訪問後はcompleted:trueが返るはず: Expected status %d, got %d. Body: %s",
+			t.Fatalf("全訪問後はis_completed:trueが返るはず: Expected status %d, got %d. Body: %s",
 				http.StatusOK, w2.Code, w2.Body.String())
 		}
 
 		var w2Resp struct {
-			Completed bool                   `json:"completed"`
-			Places    []services.PlaceResult `json:"places"`
+			IsCompleted bool                   `json:"is_completed"`
+			Places      []services.PlaceResult `json:"places"`
 		}
 		json.Unmarshal(w2.Body.Bytes(), &w2Resp) //nolint:errcheck
-		if !w2Resp.Completed {
-			t.Fatalf("全訪問後はcompleted=trueが返るはず. Body: %s", w2.Body.String())
+		if !w2Resp.IsCompleted {
+			t.Fatalf("全訪問後はis_completed=trueが返るはず. Body: %s", w2.Body.String())
 		}
 
 		// ステップ4: 興味タグ変更を模倣（UpdateInterestsはキャッシュをクリアしない）
 		// 興味タグの変更はDBレベルのみ。キャッシュは残るが、exhaustedフラグで日次上限が管理される
 
-		// ステップ5: タグ変更後に再リクエスト → completed:true が引き続き返るべき（日次上限は復活しない）
+		// ステップ5: タグ変更後に再リクエスト → is_completed:true が引き続き返るべき（日次上限は復活しない）
 		w3 := httptest.NewRecorder()
 		req3, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req3.Header.Set("Content-Type", "application/json")
@@ -915,12 +915,12 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 		}
 
 		var w3Resp struct {
-			Completed bool                   `json:"completed"`
-			Places    []services.PlaceResult `json:"places"`
+			IsCompleted bool                   `json:"is_completed"`
+			Places      []services.PlaceResult `json:"places"`
 		}
 		json.Unmarshal(w3.Body.Bytes(), &w3Resp) //nolint:errcheck
-		if !w3Resp.Completed {
-			t.Errorf("興味タグ変更後も completed=true が返るはず（日次上限は復活しない）. Body: %s", w3.Body.String())
+		if !w3Resp.IsCompleted {
+			t.Errorf("興味タグ変更後も is_completed=true が返るはず（日次上限は復活しない）. Body: %s", w3.Body.String())
 		}
 	})
 }
@@ -1649,7 +1649,7 @@ func TestSuggestForceReload(t *testing.T) {
 			rr.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 			router.ServeHTTP(rw, rr)
 			if rw.Code != http.StatusOK {
-				t.Fatalf("Reload %d: Expected 200, got %d. Body: %s", i, rw.Code, rw.Body.String())
+				t.Fatalf("IsReload %d: Expected 200, got %d. Body: %s", i, rw.Code, rw.Body.String())
 			}
 		}
 
@@ -1725,7 +1725,7 @@ func TestSuggestForceReload(t *testing.T) {
 		router.ServeHTTP(w3, req3)
 
 		if w3.Code != http.StatusOK {
-			t.Fatalf("Reload request: Expected 200, got %d. Body: %s", w3.Code, w3.Body.String())
+			t.Fatalf("IsReload request: Expected 200, got %d. Body: %s", w3.Code, w3.Body.String())
 		}
 		// Places APIが再度呼び出されたことを確認（キャッシュクリアによる）
 		if mock.CallCount <= callsAfterFirst {
@@ -1829,7 +1829,7 @@ func TestSuggestForceReload(t *testing.T) {
 		}
 	})
 
-	t.Run("DailyLimitReached状態ではis_reloadでもcompletedが返る", func(t *testing.T) {
+	t.Run("DailyLimitReached状態ではis_reloadでもis_completedが返る", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -1864,20 +1864,22 @@ func TestSuggestForceReload(t *testing.T) {
 			})
 		}
 
-		// 全訪問後に通常リクエスト → completed
+		// 全訪問後に通常リクエスト → is_completed
 		w2 := httptest.NewRecorder()
 		req2, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
 		req2.Header.Set("Content-Type", "application/json")
 		req2.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 		router.ServeHTTP(w2, req2)
 
-		var compResp struct{ Completed bool }
+		var compResp struct {
+			IsCompleted bool `json:"is_completed"`
+		}
 		json.Unmarshal(w2.Body.Bytes(), &compResp) //nolint:errcheck
-		if !compResp.Completed {
-			t.Fatalf("Expected completed=true after all visited")
+		if !compResp.IsCompleted {
+			t.Fatalf("Expected is_completed=true after all visited")
 		}
 
-		// is_reload=true でも completed が返るべき（日次上限を超えてリロードできない）
+		// is_reload=true でも is_completed が返るべき（日次上限を超えてリロードできない）
 		reloadBody := map[string]interface{}{
 			"lat":       35.6762,
 			"lng":       139.6503,
@@ -1894,10 +1896,12 @@ func TestSuggestForceReload(t *testing.T) {
 			t.Fatalf("Expected 200, got %d. Body: %s", w3.Code, w3.Body.String())
 		}
 
-		var compResp2 struct{ Completed bool }
+		var compResp2 struct {
+			IsCompleted bool `json:"is_completed"`
+		}
 		json.Unmarshal(w3.Body.Bytes(), &compResp2) //nolint:errcheck
-		if !compResp2.Completed {
-			t.Errorf("Expected completed=true even with force_reload after daily limit reached. Body: %s", w3.Body.String())
+		if !compResp2.IsCompleted {
+			t.Errorf("Expected is_completed=true even with force_reload after daily limit reached. Body: %s", w3.Body.String())
 		}
 	})
 
@@ -1961,7 +1965,7 @@ func TestSuggestForceReload(t *testing.T) {
 		router.ServeHTTP(w2, req2)
 
 		if w2.Code != http.StatusOK {
-			t.Fatalf("Reload: Expected 200, got %d. Body: %s", w2.Code, w2.Body.String())
+			t.Fatalf("IsReload: Expected 200, got %d. Body: %s", w2.Code, w2.Body.String())
 		}
 
 		resp2 := parseSuggestions(t, w2.Body.Bytes())
@@ -2718,7 +2722,7 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 		}
 	})
 
-	t.Run("全施設が30日以内に訪問済みの場合、completed=trueかつnotice=ALL_VISITED_NEARBYが返る", func(t *testing.T) {
+	t.Run("全施設が30日以内に訪問済みの場合、is_completed=trueかつnotice=ALL_VISITED_NEARBYが返る", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2758,15 +2762,15 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 		}
 
 		var result struct {
-			Completed bool                   `json:"completed"`
-			Notice    string                 `json:"notice"`
-			Places    []services.PlaceResult `json:"places"`
+			IsCompleted bool                   `json:"is_completed"`
+			Notice      string                 `json:"notice"`
+			Places      []services.PlaceResult `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
 		}
-		if !result.Completed {
-			t.Errorf("Expected completed=true, got false. Body: %s", w.Body.String())
+		if !result.IsCompleted {
+			t.Errorf("Expected is_completed=true, got false. Body: %s", w.Body.String())
 		}
 		if result.Notice != "ALL_VISITED_NEARBY" {
 			t.Errorf("Expected notice='ALL_VISITED_NEARBY', got '%s'. Body: %s", result.Notice, w.Body.String())
@@ -2816,15 +2820,15 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 		}
 
 		var result struct {
-			Completed bool                   `json:"completed"`
-			Notice    string                 `json:"notice"`
-			Places    []services.PlaceResult `json:"places"`
+			IsCompleted bool                   `json:"is_completed"`
+			Notice      string                 `json:"notice"`
+			Places      []services.PlaceResult `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 			t.Fatalf("Failed to parse response body: %v", err)
 		}
-		if result.Completed {
-			t.Errorf("全施設が閾値超えのため completed=false であるべき. Body: %s", w.Body.String())
+		if result.IsCompleted {
+			t.Errorf("全施設が閾値超えのため is_completed=false であるべき. Body: %s", w.Body.String())
 		}
 		if len(result.Places) == 0 {
 			t.Errorf("全施設が閾値超えのため再提案候補として Places が返るべき. Body: %s", w.Body.String())
@@ -2832,12 +2836,12 @@ func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 	})
 }
 
-// TestSuggestFilterOpenNow は営業時間フィルタ（filter_open_now）の動作を検証する
+// TestSuggestFilterOpenNow は営業時間フィルタ（should_filter_open_now）の動作を検証する
 func TestSuggestFilterOpenNow(t *testing.T) {
 	openNow := true
 	closedNow := false
 
-	t.Run("filter_open_now=trueの場合、閉店中の施設は除外される", func(t *testing.T) {
+	t.Run("should_filter_open_now=trueの場合、閉店中の施設は除外される", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2845,17 +2849,17 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "open_1", Name: "Open Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}, OpenNow: &openNow},
-			{PlaceID: "closed_1", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"restaurant"}, OpenNow: &closedNow},
-			{PlaceID: "open_2", Name: "Open Park", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"park"}, OpenNow: &openNow},
+			{PlaceID: "open_1", Name: "Open Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}, IsOpenNow: &openNow},
+			{PlaceID: "closed_1", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"restaurant"}, IsOpenNow: &closedNow},
+			{PlaceID: "open_2", Name: "Open Park", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"park"}, IsOpenNow: &openNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
 
 		body := map[string]interface{}{
-			"lat":             35.6762,
-			"lng":             139.6503,
-			"filter_open_now": true,
+			"lat":                    35.6762,
+			"lng":                    139.6503,
+			"should_filter_open_now": true,
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -2880,7 +2884,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		}
 	})
 
-	t.Run("filter_open_now=falseの場合、閉店中の施設も提案に含まれうる", func(t *testing.T) {
+	t.Run("should_filter_open_now=falseの場合、閉店中の施設も提案に含まれうる", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2888,15 +2892,15 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "closed_only", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, OpenNow: &closedNow},
+			{PlaceID: "closed_only", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, IsOpenNow: &closedNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
 
 		body := map[string]interface{}{
-			"lat":             35.6762,
-			"lng":             139.6503,
-			"filter_open_now": false,
+			"lat":                    35.6762,
+			"lng":                    139.6503,
+			"should_filter_open_now": false,
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -2919,11 +2923,11 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Error("filter_open_now=falseなのに閉店中の施設が除外されている")
+			t.Error("should_filter_open_now=falseなのに閉店中の施設が除外されている")
 		}
 	})
 
-	t.Run("filter_open_now=trueで全施設閉店中の場合は404", func(t *testing.T) {
+	t.Run("should_filter_open_now=trueで全施設閉店中の場合は404", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2931,16 +2935,16 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "closed_1", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, OpenNow: &closedNow},
-			{PlaceID: "closed_2", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.5, Types: []string{"restaurant"}, OpenNow: &closedNow},
+			{PlaceID: "closed_1", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, IsOpenNow: &closedNow},
+			{PlaceID: "closed_2", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.5, Types: []string{"restaurant"}, IsOpenNow: &closedNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
 
 		body := map[string]interface{}{
-			"lat":             35.6762,
-			"lng":             139.6503,
-			"filter_open_now": true,
+			"lat":                    35.6762,
+			"lng":                    139.6503,
+			"should_filter_open_now": true,
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -2955,7 +2959,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		}
 	})
 
-	t.Run("open_now情報がない施設はfilter_open_now=trueでも提案に含まれる", func(t *testing.T) {
+	t.Run("is_open_now情報がない施設はshould_filter_open_now=trueでも提案に含まれる", func(t *testing.T) {
 		cleanupUsers(t)
 		cleanupAllSuggestionCache(t)
 
@@ -2963,15 +2967,15 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "unknown_hours", Name: "Unknown Hours Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}, OpenNow: nil},
+			{PlaceID: "unknown_hours", Name: "Unknown Hours Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}, IsOpenNow: nil},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
 
 		body := map[string]interface{}{
-			"lat":             35.6762,
-			"lng":             139.6503,
-			"filter_open_now": true,
+			"lat":                    35.6762,
+			"lng":                    139.6503,
+			"should_filter_open_now": true,
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -2994,7 +2998,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 			}
 		}
 		if !found {
-			t.Error("営業時間不明の施設がfilter_open_now=trueで除外されている（除外されるべきではない）")
+			t.Error("営業時間不明の施設がshould_filter_open_now=trueで除外されている（除外されるべきではない）")
 		}
 	})
 }

@@ -40,13 +40,13 @@ export interface XpModalState {
   xpEarned: number;
   totalXp: number;
   currentLevel: number;
-  levelUp: boolean;
+  isLevelUp: boolean;
   newLevel: number;
   newBadges: BadgeInfo[];
   xpBreakdown?: XPBreakdown;
 }
 
-export function useSuggestions(token: string) {
+export function useSuggestions(authToken: string) {
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [places, setPlaces] = useState<PlaceWithPhoto[]>([]);
@@ -114,15 +114,15 @@ export function useSuggestions(token: string) {
         const {
           places: collected,
           notice,
-          completed,
+          is_completed,
           reload_count_remaining,
-        } = await getSuggestions(token, pos.lat, pos.lng, isReload);
+        } = await getSuggestions(authToken, pos.lat, pos.lng, isReload);
 
         if (reload_count_remaining !== undefined) {
           setReloadCountRemaining(reload_count_remaining);
         }
 
-        if (completed) {
+        if (is_completed) {
           if (notice === API_ERROR_CODES.ALL_VISITED_NEARBY) {
             setError(SUGGESTION_MESSAGES.ALL_VISITED_NEARBY);
           } else {
@@ -143,7 +143,7 @@ export function useSuggestions(token: string) {
               if (!place.photo_reference) return place;
               try {
                 const photoUrl = await getPlacePhoto(
-                  token,
+                  authToken,
                   place.place_id,
                   place.photo_reference,
                 );
@@ -188,7 +188,7 @@ export function useSuggestions(token: string) {
         setIsReloading(false);
       }
     },
-    [token, showToast],
+    [authToken, showToast],
   );
 
   useEffect(() => {
@@ -216,13 +216,13 @@ export function useSuggestions(token: string) {
 
   function handleSwipe() {
     if (places.length <= 1) return;
-    const skipped = places[0];
-    if (skipped) {
+    const skippedPlace = places[0];
+    if (skippedPlace) {
       sendSuggestionSkipped({
-        placeName: skipped.name,
-        category: getBestCategoryKey(skipped.types ?? []),
-        isInterestMatch: !!skipped.is_interest_match,
-        isBreakout: !!skipped.is_breakout,
+        placeName: skippedPlace.name,
+        category: getBestCategoryKey(skippedPlace.types ?? []),
+        isInterestMatch: !!skippedPlace.is_interest_match,
+        isBreakout: !!skippedPlace.is_breakout,
       });
     }
     setPlaces((prev) => {
@@ -249,7 +249,7 @@ export function useSuggestions(token: string) {
     try {
       const category = getBestCategoryKey(place.types ?? []);
 
-      const result: CreateVisitResponse = await createVisit(token, {
+      const result: CreateVisitResponse = await createVisit(authToken, {
         place_id: place.place_id,
         place_name: place.name,
         vicinity: place.vicinity,
@@ -271,7 +271,7 @@ export function useSuggestions(token: string) {
 
       // バックエンドの訪問履歴件数に基づくコンプリート判定（フロントのカード枚数ではなくサーバー側の事実を信頼）
       // これによりリロードを挟んだ場合でも正確にコンプリートを検出できる
-      if (result.daily_completed) {
+      if (result.is_daily_completed) {
         setIsCompleted(true);
         sendDailyCompleted();
       }
@@ -291,13 +291,13 @@ export function useSuggestions(token: string) {
           xpEarned: result.xp_earned,
           totalXp: result.total_xp,
           currentLevel: result.new_level,
-          levelUp: result.level_up,
+          isLevelUp: result.is_level_up,
           newLevel: result.new_level,
           newBadges: result.new_badges,
           xpBreakdown: result.xp_breakdown,
         });
 
-        if (result.level_up && result.new_level) {
+        if (result.is_level_up && result.new_level) {
           sendLevelUp(result.new_level);
         }
 
@@ -331,7 +331,7 @@ export function useSuggestions(token: string) {
   }
 
   const currentPlace = places[0];
-  const isCurrentVisited = currentPlace
+  const isVisited = currentPlace
     ? visitedIds.has(currentPlace.place_id)
     : false;
   const currentIndex = currentPlace
@@ -363,7 +363,7 @@ export function useSuggestions(token: string) {
     showLocationDeniedModal,
     isUsingDefaultLocation,
     currentPlace,
-    isCurrentVisited,
+    isVisited,
     currentIndex,
     isNearCurrentPlace,
     loadSuggestions,

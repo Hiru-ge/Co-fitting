@@ -21,14 +21,14 @@ func (PushSubscription) TableName() string {
 
 // NotificationSettings はユーザーごとの通知設定を表す。
 type NotificationSettings struct {
-	UserID          uint64    `gorm:"primaryKey" json:"user_id"`
-	PushEnabled     bool      `gorm:"default:true" json:"push_enabled"`
-	EmailEnabled    bool      `gorm:"default:true" json:"email_enabled"`
-	DailySuggestion bool      `gorm:"default:true" json:"daily_suggestion"`
-	WeeklySummary   bool      `gorm:"default:true" json:"weekly_summary"`
-	MonthlySummary  bool      `gorm:"default:true" json:"monthly_summary"`
-	StreakReminder  bool      `gorm:"default:true" json:"streak_reminder"`
-	UpdatedAt       time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+	UserID                   uint64    `gorm:"primaryKey" json:"user_id"`
+	IsPushEnabled            bool      `gorm:"column:push_enabled;default:true" json:"is_push_enabled"`
+	IsEmailEnabled           bool      `gorm:"column:email_enabled;default:true" json:"is_email_enabled"`
+	IsDailySuggestionEnabled bool      `gorm:"column:daily_suggestion;default:true" json:"is_daily_suggestion_enabled"`
+	IsWeeklySummaryEnabled   bool      `gorm:"column:weekly_summary;default:true" json:"is_weekly_summary_enabled"`
+	IsMonthlySummaryEnabled  bool      `gorm:"column:monthly_summary;default:true" json:"is_monthly_summary_enabled"`
+	IsStreakReminderEnabled  bool      `gorm:"column:streak_reminder;default:true" json:"is_streak_reminder_enabled"`
+	UpdatedAt                time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
 	User *User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }

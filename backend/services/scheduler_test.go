@@ -65,7 +65,7 @@ func TestRunDailySuggestionNotification_SendsToSubscribers(t *testing.T) {
 	user1 := createUser(t, "sched-daily-1@example.com")
 	user2 := createUser(t, "sched-daily-2@example.com")
 
-	// user1: Push購読あり、通知設定でDailySuggestion=true
+	// user1: Push購読あり、通知設定でIsDailySuggestionEnabled=true
 	sub1 := models.PushSubscription{
 		UserID:   user1.ID,
 		Endpoint: "https://push.example.com/sched-sub1",
@@ -75,17 +75,17 @@ func TestRunDailySuggestionNotification_SendsToSubscribers(t *testing.T) {
 	require.NoError(t, testDB.Create(&sub1).Error)
 
 	settings1 := models.NotificationSettings{
-		UserID:          user1.ID,
-		PushEnabled:     true,
-		DailySuggestion: true,
+		UserID:                   user1.ID,
+		IsPushEnabled:            true,
+		IsDailySuggestionEnabled: true,
 	}
 	require.NoError(t, testDB.Create(&settings1).Error)
 
 	// user2: Push購読なし（通知設定のみ）
 	settings2 := models.NotificationSettings{
-		UserID:          user2.ID,
-		PushEnabled:     true,
-		DailySuggestion: true,
+		UserID:                   user2.ID,
+		IsPushEnabled:            true,
+		IsDailySuggestionEnabled: true,
 	}
 	require.NoError(t, testDB.Create(&settings2).Error)
 
@@ -121,7 +121,7 @@ func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
 	})
 	subA := models.PushSubscription{UserID: userA.ID, Endpoint: "https://push.example.com/remind-a", P256DH: "keyA", Auth: "authA"}
 	require.NoError(t, testDB.Create(&subA).Error)
-	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userA.ID, PushEnabled: true, StreakReminder: true}).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userA.ID, IsPushEnabled: true, IsStreakReminderEnabled: true}).Error)
 
 	// userB: 先週訪問・今週未訪問 → 対象
 	userB := createUser(t, "streak-remind-b@example.com")
@@ -131,7 +131,7 @@ func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
 	})
 	subB := models.PushSubscription{UserID: userB.ID, Endpoint: "https://push.example.com/remind-b", P256DH: "keyB", Auth: "authB"}
 	require.NoError(t, testDB.Create(&subB).Error)
-	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userB.ID, PushEnabled: true, StreakReminder: true}).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userB.ID, IsPushEnabled: true, IsStreakReminderEnabled: true}).Error)
 
 	// userC: streak_count=0 → 対象外
 	userC := createUser(t, "streak-remind-c@example.com")
@@ -141,7 +141,7 @@ func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
 	})
 	subC := models.PushSubscription{UserID: userC.ID, Endpoint: "https://push.example.com/remind-c", P256DH: "keyC", Auth: "authC"}
 	require.NoError(t, testDB.Create(&subC).Error)
-	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userC.ID, PushEnabled: true, StreakReminder: true}).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{UserID: userC.ID, IsPushEnabled: true, IsStreakReminderEnabled: true}).Error)
 
 	mockPush := &mockPushSender{}
 	sched := services.NewNotificationScheduler(mockPush, nil, testDB)

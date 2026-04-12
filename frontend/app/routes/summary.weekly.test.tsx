@@ -14,14 +14,14 @@ vi.mock("~/api/users", () => ({
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn(),
-  protectedLoader: vi.fn(),
+  authRequiredLoader: vi.fn(),
 }));
 
 vi.mock("~/api/places", () => ({
   getPlacePhoto: vi.fn().mockResolvedValue(""),
 }));
 
-import { getToken, protectedLoader } from "~/lib/auth";
+import { getToken, authRequiredLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
 import { getUserStats, getUserBadges, getUser } from "~/api/users";
 
@@ -101,7 +101,7 @@ describe("SummaryWeekly", () => {
     vi.setSystemTime(FIXED_NOW_WEEKLY);
     vi.clearAllMocks();
     vi.mocked(getToken).mockReturnValue("mock-token");
-    vi.mocked(protectedLoader).mockResolvedValue({
+    vi.mocked(authRequiredLoader).mockResolvedValue({
       user: mockUser,
       token: "mock-token",
     });
@@ -163,7 +163,9 @@ describe("SummaryWeekly", () => {
   });
 
   test("未認証時は /login にリダイレクトされる", async () => {
-    vi.mocked(protectedLoader).mockRejectedValueOnce(new Error("unauthorized"));
+    vi.mocked(authRequiredLoader).mockRejectedValueOnce(
+      new Error("unauthorized"),
+    );
     const { clientLoader } = await import("./summary.weekly");
 
     await expect(clientLoader()).rejects.toThrow();

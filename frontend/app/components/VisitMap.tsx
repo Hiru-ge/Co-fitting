@@ -8,7 +8,10 @@ import {
 } from "@vis.gl/react-google-maps";
 import { getCategoryInfoByKey } from "~/lib/category-map";
 import { formatShortDate } from "~/utils/helpers";
-import { getPositionWithFallback, type Position } from "~/lib/geolocation";
+import {
+  getCurrentPositionWithFallback,
+  type Position,
+} from "~/lib/geolocation";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 import type { MapVisit } from "~/types/visit";
 
@@ -93,16 +96,16 @@ function VisitInfoContent({ visit }: { visit: MapVisit }) {
 export default function VisitMap({ visits }: Props) {
   const [selectedVisit, setSelectedVisit] = useState<MapVisit | null>(null);
   const [userPosition, setUserPosition] = useState<Position | null>(null);
-  const [positionReady, setPositionReady] = useState(false);
+  const [isPositionAvailable, setIsPositionAvailable] = useState(false);
 
   useEffect(() => {
-    getPositionWithFallback().then((pos) => {
+    getCurrentPositionWithFallback().then((pos) => {
       setUserPosition(pos);
-      setPositionReady(true);
+      setIsPositionAvailable(true);
     });
   }, []);
 
-  if (!positionReady) {
+  if (!isPositionAvailable) {
     return (
       <div
         data-testid="map-loading"

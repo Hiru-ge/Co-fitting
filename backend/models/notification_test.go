@@ -55,12 +55,12 @@ func TestNotificationSettingsDefaults(t *testing.T) {
 		description string
 	}{
 		{"UserID", "primaryKey", "UserID は primaryKey"},
-		{"PushEnabled", "default:true", "PushEnabled のデフォルトは true"},
-		{"EmailEnabled", "default:true", "EmailEnabled のデフォルトは true"},
-		{"DailySuggestion", "default:true", "DailySuggestion のデフォルトは true"},
-		{"WeeklySummary", "default:true", "WeeklySummary のデフォルトは true"},
-		{"MonthlySummary", "default:true", "MonthlySummary のデフォルトは true"},
-		{"StreakReminder", "default:true", "StreakReminder のデフォルトは true"},
+		{"IsPushEnabled", "default:true", "IsPushEnabled のデフォルトは true"},
+		{"IsEmailEnabled", "default:true", "IsEmailEnabled のデフォルトは true"},
+		{"IsDailySuggestionEnabled", "default:true", "IsDailySuggestionEnabled のデフォルトは true"},
+		{"IsWeeklySummaryEnabled", "default:true", "IsWeeklySummaryEnabled のデフォルトは true"},
+		{"IsMonthlySummaryEnabled", "default:true", "IsMonthlySummaryEnabled のデフォルトは true"},
+		{"IsStreakReminderEnabled", "default:true", "IsStreakReminderEnabled のデフォルトは true"},
 		{"UpdatedAt", "autoUpdateTime", "UpdatedAt は autoUpdateTime"},
 	}
 

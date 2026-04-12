@@ -159,7 +159,7 @@ definitions:
         type: string
       created_at:
         type: string
-      daily_completed:
+      is_daily_completed:
         type: boolean
       genre_tag_id:
         type: integer
@@ -169,7 +169,7 @@ definitions:
         type: boolean
       lat:
         type: number
-      level_up:
+      is_level_up:
         type: boolean
       lng:
         type: number
@@ -307,7 +307,7 @@ definitions:
     type: object
   handlers.suggestionRequest:
     properties:
-      filter_open_now:
+      should_filter_open_now:
         type: boolean
       is_reload:
         type: boolean
@@ -1078,7 +1078,7 @@ paths:
       description: |-
         指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）
         notice が "NO_INTEREST_PLACES" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）
-        filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
+        should_filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない
       parameters:
       - description: 位置情報と半径
         in: body

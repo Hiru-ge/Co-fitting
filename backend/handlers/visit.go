@@ -81,12 +81,12 @@ type createVisitRequest struct {
 // createVisitResponse はゲーミフィケーション情報付きの訪問作成レスポンス。
 type createVisitResponse struct {
 	models.Visit
-	TotalXP        int                   `json:"total_xp"`
-	LevelUp        bool                  `json:"level_up"`
-	NewLevel       int                   `json:"new_level"`
-	NewBadges      []models.Badge        `json:"new_badges"`
-	DailyCompleted bool                  `json:"daily_completed"`
-	XPBreakdown    *services.XPBreakdown `json:"xp_breakdown,omitempty"`
+	TotalXP          int                   `json:"total_xp"`
+	IsLevelUp        bool                  `json:"is_level_up"`
+	NewLevel         int                   `json:"new_level"`
+	NewBadges        []models.Badge        `json:"new_badges"`
+	IsDailyCompleted bool                  `json:"is_daily_completed"`
+	XPBreakdown      *services.XPBreakdown `json:"xp_breakdown,omitempty"`
 }
 
 // CreateVisit godoc
@@ -176,12 +176,12 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		// TODO: XPBreakdown もゼロ値で返すと設計が一貫する（他フィールドはゼロ値を明示しているのに XPBreakdown だけ省略している）。
 		// 修正すれば frontend の CreateVisitResponse.xp_breakdown を optional にしなくて済む。
 		c.JSON(http.StatusCreated, createVisitResponse{
-			Visit:          visit,
-			TotalXP:        0,
-			LevelUp:        false,
-			NewLevel:       1,
-			NewBadges:      []models.Badge{},
-			DailyCompleted: dailyCompleted,
+			Visit:            visit,
+			TotalXP:          0,
+			IsLevelUp:        false,
+			NewLevel:         1,
+			NewBadges:        []models.Badge{},
+			IsDailyCompleted: dailyCompleted,
 		})
 		return
 	}
@@ -194,13 +194,13 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, createVisitResponse{
-		Visit:          visit,
-		TotalXP:        gamifResult.TotalXP,
-		LevelUp:        gamifResult.LevelUp,
-		NewLevel:       gamifResult.NewLevel,
-		NewBadges:      newBadges,
-		DailyCompleted: dailyCompleted,
-		XPBreakdown:    gamifResult.XPBreakdown,
+		Visit:            visit,
+		TotalXP:          gamifResult.TotalXP,
+		IsLevelUp:        gamifResult.IsLevelUp,
+		NewLevel:         gamifResult.NewLevel,
+		NewBadges:        newBadges,
+		IsDailyCompleted: dailyCompleted,
+		XPBreakdown:      gamifResult.XPBreakdown,
 	})
 }
 

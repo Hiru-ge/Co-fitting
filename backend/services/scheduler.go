@@ -25,15 +25,15 @@ type EmailSender interface {
 
 // notificationTarget はストリーク/サマリー通知のターゲットユーザー情報を表す
 type notificationTarget struct {
-	UserID         uint64
-	Email          string
-	DisplayName    string
-	StreakCount    int
-	PushEnabled    bool
-	EmailEnabled   bool
-	StreakReminder bool
-	WeeklySummary  bool
-	MonthlySummary bool
+	UserID                  uint64
+	Email                   string
+	DisplayName             string
+	StreakCount             int
+	IsPushEnabled           bool
+	IsEmailEnabled          bool
+	IsStreakReminderEnabled bool
+	IsWeeklySummaryEnabled  bool
+	IsMonthlySummaryEnabled bool
 }
 
 // NotificationScheduler は通知スケジューラーを表す
@@ -65,19 +65,22 @@ func fetchDailySuggestionTargetUserIDs(db *gorm.DB) ([]uint64, error) {
 // fetchSummaryTargets はサマリー通知対象ユーザーを返す汎用関数
 func fetchSummaryTargets(db *gorm.DB, settingColumn string) ([]notificationTarget, error) {
 	type row struct {
-		UserID         uint64
-		Email          string
-		DisplayName    string
-		PushEnabled    bool
-		EmailEnabled   bool
-		WeeklySummary  bool
-		MonthlySummary bool
+		UserID                  uint64
+		Email                   string
+		DisplayName             string
+		IsPushEnabled           bool
+		IsEmailEnabled          bool
+		IsWeeklySummaryEnabled  bool
+		IsMonthlySummaryEnabled bool
 	}
 	var rows []row
 
 	err := db.Table("users u").
 		Select("u.id AS user_id, u.email, u.display_name, "+
-			"ns.push_enabled, ns.email_enabled, ns.weekly_summary, ns.monthly_summary").
+			"ns.push_enabled AS is_push_enabled, "+
+			"ns.email_enabled AS is_email_enabled, "+
+			"ns.weekly_summary AS is_weekly_summary_enabled, "+
+			"ns.monthly_summary AS is_monthly_summary_enabled").
 		Joins("JOIN notification_settings ns ON ns.user_id = u.id").
 		Where(fmt.Sprintf("ns.%s = ?", settingColumn), true).
 		Where("(ns.push_enabled = ? OR ns.email_enabled = ?)", true, true).
@@ -89,13 +92,13 @@ func fetchSummaryTargets(db *gorm.DB, settingColumn string) ([]notificationTarge
 	targets := make([]notificationTarget, len(rows))
 	for i, r := range rows {
 		targets[i] = notificationTarget{
-			UserID:         r.UserID,
-			Email:          r.Email,
-			DisplayName:    r.DisplayName,
-			PushEnabled:    r.PushEnabled,
-			EmailEnabled:   r.EmailEnabled,
-			WeeklySummary:  r.WeeklySummary,
-			MonthlySummary: r.MonthlySummary,
+			UserID:                  r.UserID,
+			Email:                   r.Email,
+			DisplayName:             r.DisplayName,
+			IsPushEnabled:           r.IsPushEnabled,
+			IsEmailEnabled:          r.IsEmailEnabled,
+			IsWeeklySummaryEnabled:  r.IsWeeklySummaryEnabled,
+			IsMonthlySummaryEnabled: r.IsMonthlySummaryEnabled,
 		}
 	}
 	return targets, nil
@@ -118,19 +121,21 @@ func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
 	thisWeekMonday := weekStart(time.Now())
 
 	type row struct {
-		UserID         uint64
-		Email          string
-		DisplayName    string
-		StreakCount    int
-		PushEnabled    bool
-		EmailEnabled   bool
-		StreakReminder bool
+		UserID                  uint64
+		Email                   string
+		DisplayName             string
+		StreakCount             int
+		IsPushEnabled           bool
+		IsEmailEnabled          bool
+		IsStreakReminderEnabled bool
 	}
 	var rows []row
 
 	err := db.Table("users u").
 		Select("u.id AS user_id, u.email, u.display_name, u.streak_count, "+
-			"ns.push_enabled, ns.email_enabled, ns.streak_reminder").
+			"ns.push_enabled AS is_push_enabled, "+
+			"ns.email_enabled AS is_email_enabled, "+
+			"ns.streak_reminder AS is_streak_reminder_enabled").
 		Joins("JOIN notification_settings ns ON ns.user_id = u.id").
 		Where("u.streak_count > 0 AND ns.streak_reminder = ?", true).
 		Where("u.streak_last < ?", thisWeekMonday).
@@ -142,13 +147,13 @@ func fetchStreakReminderTargets(db *gorm.DB) ([]notificationTarget, error) {
 	targets := make([]notificationTarget, len(rows))
 	for i, r := range rows {
 		targets[i] = notificationTarget{
-			UserID:         r.UserID,
-			Email:          r.Email,
-			DisplayName:    r.DisplayName,
-			StreakCount:    r.StreakCount,
-			PushEnabled:    r.PushEnabled,
-			EmailEnabled:   r.EmailEnabled,
-			StreakReminder: r.StreakReminder,
+			UserID:                  r.UserID,
+			Email:                   r.Email,
+			DisplayName:             r.DisplayName,
+			StreakCount:             r.StreakCount,
+			IsPushEnabled:           r.IsPushEnabled,
+			IsEmailEnabled:          r.IsEmailEnabled,
+			IsStreakReminderEnabled: r.IsStreakReminderEnabled,
 		}
 	}
 	return targets, nil
@@ -241,12 +246,12 @@ func (s *NotificationScheduler) dispatchSummaryNotifications(
 	sendEmailFn func(t notificationTarget) error,
 ) {
 	for _, target := range targets {
-		if s.push != nil && target.PushEnabled && isEnabled(target) {
+		if s.push != nil && target.IsPushEnabled && isEnabled(target) {
 			if err := s.push.SendToUser(target.UserID, pushPayload); err != nil {
 				log.Printf("scheduler: %s: push to user %d: %v", logName, target.UserID, err)
 			}
 		}
-		if s.email != nil && target.EmailEnabled && isEnabled(target) && target.Email != "" {
+		if s.email != nil && target.IsEmailEnabled && isEnabled(target) && target.Email != "" {
 			if err := sendEmailFn(target); err != nil {
 				log.Printf("scheduler: %s: email to user %d: %v", logName, target.UserID, err)
 			}
@@ -290,12 +295,12 @@ func (s *NotificationScheduler) SendStreakReminderNotifications() {
 	}
 
 	for _, target := range targets {
-		if target.PushEnabled && target.StreakReminder {
+		if target.IsPushEnabled && target.IsStreakReminderEnabled {
 			if err := s.push.SendToUser(target.UserID, pushPayload); err != nil {
 				log.Printf("scheduler: streak reminder: push to user %d: %v", target.UserID, err)
 			}
 		}
-		if s.email != nil && target.EmailEnabled && target.StreakReminder && target.Email != "" {
+		if s.email != nil && target.IsEmailEnabled && target.IsStreakReminderEnabled && target.Email != "" {
 			if err := s.email.SendStreakReminder(target.Email, target.DisplayName, target.StreakCount); err != nil {
 				log.Printf("scheduler: streak reminder: email to user %d: %v", target.UserID, err)
 			}
@@ -318,7 +323,7 @@ func (s *NotificationScheduler) SendWeeklySummaryNotifications() {
 	s.dispatchSummaryNotifications(
 		"weekly summary",
 		targets,
-		func(t notificationTarget) bool { return t.WeeklySummary },
+		func(t notificationTarget) bool { return t.IsWeeklySummaryEnabled },
 		PushPayload{Title: "先週のサマリーが届いてるよ！", Body: "あなたの冒険を振り返ってみよう", URL: "/summary/weekly"},
 		func(t notificationTarget) error {
 			data, err := collectWeeklySummaryData(s.db, t, weekStart, weekEnd)
@@ -348,7 +353,7 @@ func (s *NotificationScheduler) SendMonthlySummaryNotifications() {
 	s.dispatchSummaryNotifications(
 		"monthly summary",
 		targets,
-		func(t notificationTarget) bool { return t.MonthlySummary },
+		func(t notificationTarget) bool { return t.IsMonthlySummaryEnabled },
 		PushPayload{Title: fmt.Sprintf("%sのサマリーが届いてるよ！", monthLabel), Body: "あなたの冒険を振り返ってみよう", URL: "/summary/monthly"},
 		func(t notificationTarget) error {
 			data, err := collectMonthlySummaryData(s.db, t, monthStart, monthEnd, monthLabel)

@@ -10,27 +10,27 @@ export async function getVapidPublicKey(): Promise<string> {
 }
 
 export async function getNotificationSettings(
-  token: string,
+  authToken: string,
 ): Promise<NotificationSettings> {
-  return apiCall("/api/notifications/settings", token);
+  return apiCall("/api/notifications/settings", authToken);
 }
 
 export async function updateNotificationSettings(
-  token: string,
+  authToken: string,
   settings: Partial<NotificationSettings>,
 ): Promise<NotificationSettings> {
-  return await apiCall("/api/notifications/settings", token, {
+  return await apiCall("/api/notifications/settings", authToken, {
     method: "PUT",
     body: JSON.stringify(settings),
   });
 }
 
 export async function subscribePushToBackend(
-  token: string,
+  authToken: string,
   subscription: PushSubscriptionJSON,
 ): Promise<void> {
   const keys = subscription.keys as { p256dh?: string; auth?: string } | null;
-  await apiCall("/api/notifications/push/subscribe", token, {
+  await apiCall("/api/notifications/push/subscribe", authToken, {
     method: "POST",
     body: JSON.stringify({
       endpoint: subscription.endpoint,
@@ -42,10 +42,10 @@ export async function subscribePushToBackend(
 }
 
 export async function unsubscribePushFromBackend(
-  token: string,
+  authToken: string,
   endpoint: string,
 ): Promise<void> {
-  await apiCall("/api/notifications/push/subscribe", token, {
+  await apiCall("/api/notifications/push/subscribe", authToken, {
     method: "DELETE",
     body: JSON.stringify({ endpoint }),
   });

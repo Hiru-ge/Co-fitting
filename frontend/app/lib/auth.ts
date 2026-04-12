@@ -33,10 +33,10 @@ export async function googleOAuth(idToken: string): Promise<{
 }
 
 export async function logout(): Promise<void> {
-  const token = getStoredToken();
+  const authToken = getStoredToken();
   const refresh = getRefreshToken();
 
-  if (token) {
+  if (authToken) {
     try {
       const requestBody: { refresh_token?: string } = {};
       if (refresh) {
@@ -47,7 +47,7 @@ export async function logout(): Promise<void> {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify(requestBody),
       });
@@ -58,14 +58,14 @@ export async function logout(): Promise<void> {
   clearStoredToken();
 }
 
-export async function protectedLoader() {
-  const token = getStoredToken();
-  if (!token) {
+export async function authRequiredLoader() {
+  const authToken = getStoredToken();
+  if (!authToken) {
     throw redirect("/login");
   }
   try {
-    const user = await getUserFromApi(token);
-    return { user, token };
+    const user = await getUserFromApi(authToken);
+    return { user, token: authToken };
   } catch {
     throw redirect("/login");
   }

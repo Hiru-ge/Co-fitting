@@ -1804,7 +1804,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		if _, ok := resp["total_xp"]; !ok {
 			t.Error("Expected 'total_xp' field in response")
 		}
-		if _, ok := resp["level_up"]; !ok {
+		if _, ok := resp["is_level_up"]; !ok {
 			t.Error("Expected 'level_up' field in response")
 		}
 		if _, ok := resp["new_level"]; !ok {
@@ -1947,7 +1947,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
-		levelUp, _ := resp["level_up"].(bool)
+		levelUp, _ := resp["is_level_up"].(bool)
 		newLevel, _ := resp["new_level"].(float64)
 
 		if !levelUp {
@@ -2438,8 +2438,8 @@ func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
-		if resp["daily_completed"] != false {
-			t.Errorf("Expected daily_completed=false on 1st visit, got %v", resp["daily_completed"])
+		if resp["is_daily_completed"] != false {
+			t.Errorf("Expected daily_completed=false on 1st visit, got %v", resp["is_daily_completed"])
 		}
 	})
 
@@ -2475,8 +2475,8 @@ func TestCreateVisitDailyCompletedFlag(t *testing.T) {
 
 		var resp map[string]interface{}
 		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
-		if resp["daily_completed"] != true {
-			t.Errorf("Expected daily_completed=true on 3rd visit, got %v", resp["daily_completed"])
+		if resp["is_daily_completed"] != true {
+			t.Errorf("Expected daily_completed=true on 3rd visit, got %v", resp["is_daily_completed"])
 		}
 	})
 }

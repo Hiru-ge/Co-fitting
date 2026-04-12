@@ -852,7 +852,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）\nnotice が \"NO_INTEREST_PLACES\" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）\nfilter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない",
+                "description": "指定した位置情報の周辺から、訪れたことのない場所を最大3件提案する。同一ユーザー・同一日・同一エリアでは同じ結果を返す（日次キャッシュ）\nnotice が \"NO_INTEREST_PLACES\" の場合、興味タグに合う施設が半径内になかったことを示す（施設自体は興味外から提案される）\nshould_filter_open_now=true を指定すると現在営業中の施設のみを提案する（デフォルトOFF）。営業時間情報がない施設（公園など）は除外しない",
                 "consumes": [
                     "application/json"
                 ],
@@ -1703,22 +1703,22 @@ const docTemplate = `{
         "handlers.NotificationSettingsResponse": {
             "type": "object",
             "properties": {
-                "daily_suggestion": {
+                "is_daily_suggestion_enabled": {
                     "type": "boolean"
                 },
-                "email_enabled": {
+                "is_email_enabled": {
                     "type": "boolean"
                 },
-                "monthly_summary": {
+                "is_monthly_summary_enabled": {
                     "type": "boolean"
                 },
-                "push_enabled": {
+                "is_push_enabled": {
                     "type": "boolean"
                 },
-                "streak_reminder": {
+                "is_streak_reminder_enabled": {
                     "type": "boolean"
                 },
-                "weekly_summary": {
+                "is_weekly_summary_enabled": {
                     "type": "boolean"
                 }
             }
@@ -1748,7 +1748,7 @@ const docTemplate = `{
         "handlers.SuggestionResult": {
             "type": "object",
             "properties": {
-                "completed": {
+                "is_completed": {
                     "type": "boolean"
                 },
                 "notice": {
@@ -1779,22 +1779,22 @@ const docTemplate = `{
         "handlers.UpdateNotificationSettingsRequest": {
             "type": "object",
             "properties": {
-                "daily_suggestion": {
+                "is_daily_suggestion_enabled": {
                     "type": "boolean"
                 },
-                "email_enabled": {
+                "is_email_enabled": {
                     "type": "boolean"
                 },
-                "monthly_summary": {
+                "is_monthly_summary_enabled": {
                     "type": "boolean"
                 },
-                "push_enabled": {
+                "is_push_enabled": {
                     "type": "boolean"
                 },
-                "streak_reminder": {
+                "is_streak_reminder_enabled": {
                     "type": "boolean"
                 },
-                "weekly_summary": {
+                "is_weekly_summary_enabled": {
                     "type": "boolean"
                 }
             }
@@ -1941,7 +1941,7 @@ const docTemplate = `{
                 "created_at": {
                     "type": "string"
                 },
-                "daily_completed": {
+                "is_daily_completed": {
                     "type": "boolean"
                 },
                 "genre_tag_id": {
@@ -1956,7 +1956,7 @@ const docTemplate = `{
                 "lat": {
                     "type": "number"
                 },
-                "level_up": {
+                "is_level_up": {
                     "type": "boolean"
                 },
                 "lng": {
@@ -2172,7 +2172,7 @@ const docTemplate = `{
                 "lng"
             ],
             "properties": {
-                "filter_open_now": {
+                "should_filter_open_now": {
                     "type": "boolean"
                 },
                 "is_reload": {
@@ -2467,7 +2467,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "open_now": {
+                "is_open_now": {
                     "type": "boolean"
                 },
                 "photo_reference": {

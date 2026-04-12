@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Route } from "./+types/summary.monthly";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { listVisits } from "~/api/visits";
 import { getUserBadges } from "~/api/users";
 import { getPlacePhoto } from "~/api/places";
@@ -8,7 +8,7 @@ import type { Visit } from "~/types/visit";
 import type { EarnedBadge } from "~/types/auth";
 import SummaryLayout from "~/components/SummaryLayout";
 
-export { protectedLoader as clientLoader };
+export { authRequiredLoader as clientLoader };
 
 /** 先月1日0時 JST〜今月1日0時 JST の ISO 文字列と月ラベルを返す */
 function getMonthRange(): { from: string; until: string; label: string } {

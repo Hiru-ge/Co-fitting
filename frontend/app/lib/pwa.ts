@@ -16,7 +16,7 @@ export function isPWAPromptDismissed(): boolean {
   return localStorage.getItem(PWA_DISMISSED_KEY) === "true";
 }
 
-export function dismissPWAPrompt(): void {
+export function reviewPWAPrompt(): void {
   localStorage.setItem(PWA_DISMISSED_KEY, "true");
 }
 

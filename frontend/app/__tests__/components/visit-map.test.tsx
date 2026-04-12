@@ -5,12 +5,12 @@ import VisitMap from "~/components/VisitMap";
 import type { MapVisit } from "~/types/visit";
 import { DEFAULT_LOCATION } from "~/utils/constants";
 
-// getPositionWithFallback をモック（テストごとに挙動を制御する）
+// getCurrentPositionWithFallback をモック（テストごとに挙動を制御する）
 vi.mock("~/lib/geolocation", async (importOriginal) => {
   const original = await importOriginal<typeof import("~/lib/geolocation")>();
   return {
     ...original,
-    getPositionWithFallback: vi.fn(),
+    getCurrentPositionWithFallback: vi.fn(),
   };
 });
 
@@ -83,13 +83,13 @@ const mockVisits: MapVisit[] = [
   },
 ];
 
-import { getPositionWithFallback } from "~/lib/geolocation";
+import { getCurrentPositionWithFallback } from "~/lib/geolocation";
 
 describe("VisitMap", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // デフォルト: geolocation は失敗してフォールバック
-    vi.mocked(getPositionWithFallback).mockResolvedValue({
+    vi.mocked(getCurrentPositionWithFallback).mockResolvedValue({
       lat: DEFAULT_LOCATION.lat,
       lng: DEFAULT_LOCATION.lng,
     });
@@ -204,7 +204,7 @@ describe("VisitMap", () => {
   // ── マップ中心座標のテスト ──
 
   test("geolocation成功時、マップ中心はユーザーの現在地になる", async () => {
-    vi.mocked(getPositionWithFallback).mockResolvedValue({
+    vi.mocked(getCurrentPositionWithFallback).mockResolvedValue({
       lat: 35.7,
       lng: 139.8,
     });
@@ -221,7 +221,7 @@ describe("VisitMap", () => {
   });
 
   test("geolocation失敗時・visitsあり、マップ中心はvisitsの平均座標になる", async () => {
-    vi.mocked(getPositionWithFallback).mockResolvedValue({
+    vi.mocked(getCurrentPositionWithFallback).mockResolvedValue({
       lat: DEFAULT_LOCATION.lat,
       lng: DEFAULT_LOCATION.lng,
     });
@@ -234,12 +234,12 @@ describe("VisitMap", () => {
     // geolocation がデフォルト位置を返すが visits がある場合のテストは
     // calcMapCenter のユニットテストで担保する
     // ここでは geolocation 成功時に visits 平均より現在地が優先されることを確認
-    vi.mocked(getPositionWithFallback).mockResolvedValue(null as never);
+    vi.mocked(getCurrentPositionWithFallback).mockResolvedValue(null as never);
 
-    // getPositionWithFallback が null を返すことはないが、
+    // getCurrentPositionWithFallback が null を返すことはないが、
     // calcMapCenter(visits, null) の動作は geolocation.test.ts で担保済み
     // ここでは visits 平均座標が使われるケースを間接的に確認する
-    vi.mocked(getPositionWithFallback).mockResolvedValue({
+    vi.mocked(getCurrentPositionWithFallback).mockResolvedValue({
       lat: avgLat,
       lng: avgLng,
     });
@@ -256,7 +256,7 @@ describe("VisitMap", () => {
   });
 
   test("visits空・geolocation失敗時、マップ中心はDEFAULT_LOCATIONになる", async () => {
-    vi.mocked(getPositionWithFallback).mockResolvedValue({
+    vi.mocked(getCurrentPositionWithFallback).mockResolvedValue({
       lat: DEFAULT_LOCATION.lat,
       lng: DEFAULT_LOCATION.lng,
     });

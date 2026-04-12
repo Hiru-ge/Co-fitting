@@ -1137,7 +1137,7 @@ func TestProcessGamification(t *testing.T) {
 			t.Fatalf("ApplyVisitGamification failed: %v", err)
 		}
 
-		if !result.LevelUp {
+		if !result.IsLevelUp {
 			t.Errorf("expected level_up=true, got false (total_xp=%d)", result.TotalXP)
 		}
 		if result.NewLevel != 2 {

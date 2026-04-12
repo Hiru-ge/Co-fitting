@@ -6,7 +6,7 @@ interface XpModalProps {
   xpEarned: number;
   totalXp: number;
   currentLevel: number;
-  levelUp: boolean;
+  isLevelUp: boolean;
   newLevel: number;
   xpBreakdown?: XPBreakdown;
   onClose: () => void;
@@ -15,27 +15,27 @@ interface XpModalProps {
 interface XpBreakdownRowProps {
   label: string;
   xp: number;
-  highlight?: boolean;
-  showPlus?: boolean;
+  isHighlight?: boolean;
+  isShowPlus?: boolean;
 }
 
 function XpBreakdownRow({
   label,
   xp,
-  highlight = false,
-  showPlus = true,
+  isHighlight = false,
+  isShowPlus = true,
 }: XpBreakdownRowProps) {
   return (
     <div className="flex items-center justify-between text-xs">
       <span
-        className={highlight ? "text-red-400 font-semibold" : "text-white/60"}
+        className={isHighlight ? "text-red-400 font-semibold" : "text-white/60"}
       >
         {label}
       </span>
       <span
-        className={`font-bold tabular-nums ${highlight ? "text-red-400" : "text-white/80"}`}
+        className={`font-bold tabular-nums ${isHighlight ? "text-red-400" : "text-white/80"}`}
       >
-        {showPlus ? "+" : ""}
+        {isShowPlus ? "+" : ""}
         {xp}
       </span>
     </div>
@@ -46,12 +46,13 @@ export default function XpModal({
   xpEarned,
   totalXp,
   currentLevel,
-  levelUp,
+  isLevelUp,
   newLevel,
   xpBreakdown,
   onClose,
 }: XpModalProps) {
   const { xpToNextLevel, progressPercent } = getLevelInfo(totalXp);
+  const isBreakout = (xpBreakdown?.base_xp ?? 0) >= 100;
   return (
     <div
       role="dialog"
@@ -107,7 +108,7 @@ export default function XpModal({
 
           {/* XP・テキスト */}
           <div className="mt-10 space-y-2">
-            {levelUp && (
+            {isLevelUp && (
               <div className="flex items-center justify-center gap-1.5 mb-1">
                 <span
                   className="material-symbols-outlined text-yellow-400 text-base"
@@ -128,7 +129,7 @@ export default function XpModal({
               クエスト完了！
             </h2>
             <p className="text-white/70 text-sm leading-relaxed max-w-[280px] mx-auto">
-              {levelUp
+              {isLevelUp
                 ? `レベル${newLevel}に上がりました！`
                 : `着実に探索範囲が広がっています。`}
             </p>
@@ -145,10 +146,10 @@ export default function XpModal({
               }}
             >
               <XpBreakdownRow
-                label={xpBreakdown.base_xp >= 100 ? "脱却訪問" : "通常訪問"}
+                label={isBreakout ? "脱却訪問" : "通常訪問"}
                 xp={xpBreakdown.base_xp}
-                highlight={xpBreakdown.base_xp >= 100}
-                showPlus={false}
+                isHighlight={isBreakout}
+                isShowPlus={false}
               />
               {xpBreakdown.first_area_bonus > 0 && (
                 <XpBreakdownRow

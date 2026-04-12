@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import type { Place } from "~/types/suggestion";
 import { getCategoryInfo } from "~/lib/category-map";
-import { calcDistance } from "~/lib/geolocation";
+import { calcHaversineDistance } from "~/lib/geolocation";
 import { buildGoogleMapsPlaceUrl, formatDistance } from "~/utils/helpers";
 import { useCardDrag } from "~/hooks/use-card-drag";
 
@@ -12,7 +12,7 @@ interface DiscoveryCardProps {
   userLng: number;
   photoUrl?: string;
   /** スタック内の位置 (0 = 最前面) */
-  stackIndex: number;
+  depthFromTop: number;
   onSwipe?: () => void;
 }
 
@@ -27,18 +27,23 @@ export default function DiscoveryCard({
   userLat,
   userLng,
   photoUrl,
-  stackIndex,
+  depthFromTop,
   onSwipe,
 }: DiscoveryCardProps) {
   const category = getCategoryInfo(place.types);
-  const distance = calcDistance(userLat, userLng, place.lat, place.lng);
+  const distance = calcHaversineDistance(
+    userLat,
+    userLng,
+    place.lat,
+    place.lng,
+  );
   const [failedPhotoUrl, setFailedPhotoUrl] = useState<string | undefined>();
-  const showPhoto = !!photoUrl && failedPhotoUrl !== photoUrl;
+  const hasValidPhoto = !!photoUrl && failedPhotoUrl !== photoUrl;
 
   const cardRef = useRef<HTMLDivElement>(null);
   const [isSwipingOut, setIsSwipingOut] = useState(false);
 
-  const isTopCard = stackIndex === 0;
+  const isTopCard = depthFromTop === 0;
   const {
     offset,
     isDragging,
@@ -61,7 +66,7 @@ export default function DiscoveryCard({
   const rotation = offset.x * ROTATION_FACTOR;
 
   // スタック位置による変形
-  const stackScale = 1 - stackIndex * STACK_SCALE_STEP;
+  const stackScale = 1 - depthFromTop * STACK_SCALE_STEP;
 
   const cardTransform = isTopCard
     ? `translate(${offset.x}px, ${offset.y}px) rotate(${rotation}deg)`
@@ -72,12 +77,12 @@ export default function DiscoveryCard({
     : "transform 0.3s ease-out, opacity 0.3s ease-out";
 
   const cardOpacity = isSwipingOut ? 0 : 1;
-  const cardZIndex = 10 - stackIndex;
+  const cardZIndex = 10 - depthFromTop;
 
   return (
     <div
       ref={cardRef}
-      className={`absolute inset-0 rounded-3xl overflow-hidden ${showPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`absolute inset-0 rounded-3xl overflow-hidden ${hasValidPhoto ? "bg-gray-900" : `bg-gradient-to-br ${category.gradient}`} shadow-xl select-none touch-none ${isTopCard ? "cursor-grab active:cursor-grabbing" : ""}`}
       style={{
         transform: cardTransform,
         opacity: cardOpacity,
@@ -90,7 +95,7 @@ export default function DiscoveryCard({
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
-      {showPhoto ? (
+      {hasValidPhoto ? (
         <img
           src={photoUrl}
           alt={place.name}

@@ -35,12 +35,12 @@ type UnsubscribePushRequest struct {
 
 // NotificationSettingsResponse は通知設定取得エンドポイントのレスポンス型。
 type NotificationSettingsResponse struct {
-	PushEnabled     bool `json:"push_enabled"`
-	EmailEnabled    bool `json:"email_enabled"`
-	DailySuggestion bool `json:"daily_suggestion"`
-	WeeklySummary   bool `json:"weekly_summary"`
-	MonthlySummary  bool `json:"monthly_summary"`
-	StreakReminder  bool `json:"streak_reminder"`
+	IsPushEnabled            bool `json:"is_push_enabled"`
+	IsEmailEnabled           bool `json:"is_email_enabled"`
+	IsDailySuggestionEnabled bool `json:"is_daily_suggestion_enabled"`
+	IsWeeklySummaryEnabled   bool `json:"is_weekly_summary_enabled"`
+	IsMonthlySummaryEnabled  bool `json:"is_monthly_summary_enabled"`
+	IsStreakReminderEnabled  bool `json:"is_streak_reminder_enabled"`
 }
 
 // GetVAPIDPublicKey godoc
@@ -156,12 +156,12 @@ func (h *NotificationHandler) UnsubscribePush(c *gin.Context) {
 // UpdateNotificationSettingsRequest は通知設定更新リクエストの型。
 // 各フィールドはポインタで、nil の場合は更新対象外。
 type UpdateNotificationSettingsRequest struct {
-	PushEnabled     *bool `json:"push_enabled"`
-	EmailEnabled    *bool `json:"email_enabled"`
-	DailySuggestion *bool `json:"daily_suggestion"`
-	WeeklySummary   *bool `json:"weekly_summary"`
-	MonthlySummary  *bool `json:"monthly_summary"`
-	StreakReminder  *bool `json:"streak_reminder"`
+	IsPushEnabled            *bool `json:"is_push_enabled"`
+	IsEmailEnabled           *bool `json:"is_email_enabled"`
+	IsDailySuggestionEnabled *bool `json:"is_daily_suggestion_enabled"`
+	IsWeeklySummaryEnabled   *bool `json:"is_weekly_summary_enabled"`
+	IsMonthlySummaryEnabled  *bool `json:"is_monthly_summary_enabled"`
+	IsStreakReminderEnabled  *bool `json:"is_streak_reminder_enabled"`
 }
 
 // UpdateNotificationSettings godoc
@@ -197,23 +197,23 @@ func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{}
-	if req.PushEnabled != nil {
-		updates["push_enabled"] = *req.PushEnabled
+	if req.IsPushEnabled != nil {
+		updates["push_enabled"] = *req.IsPushEnabled
 	}
-	if req.EmailEnabled != nil {
-		updates["email_enabled"] = *req.EmailEnabled
+	if req.IsEmailEnabled != nil {
+		updates["email_enabled"] = *req.IsEmailEnabled
 	}
-	if req.DailySuggestion != nil {
-		updates["daily_suggestion"] = *req.DailySuggestion
+	if req.IsDailySuggestionEnabled != nil {
+		updates["daily_suggestion"] = *req.IsDailySuggestionEnabled
 	}
-	if req.WeeklySummary != nil {
-		updates["weekly_summary"] = *req.WeeklySummary
+	if req.IsWeeklySummaryEnabled != nil {
+		updates["weekly_summary"] = *req.IsWeeklySummaryEnabled
 	}
-	if req.MonthlySummary != nil {
-		updates["monthly_summary"] = *req.MonthlySummary
+	if req.IsMonthlySummaryEnabled != nil {
+		updates["monthly_summary"] = *req.IsMonthlySummaryEnabled
 	}
-	if req.StreakReminder != nil {
-		updates["streak_reminder"] = *req.StreakReminder
+	if req.IsStreakReminderEnabled != nil {
+		updates["streak_reminder"] = *req.IsStreakReminderEnabled
 	}
 
 	if len(updates) > 0 {
@@ -228,12 +228,12 @@ func (h *NotificationHandler) UpdateNotificationSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, NotificationSettingsResponse{
-		PushEnabled:     settings.PushEnabled,
-		EmailEnabled:    settings.EmailEnabled,
-		DailySuggestion: settings.DailySuggestion,
-		WeeklySummary:   settings.WeeklySummary,
-		MonthlySummary:  settings.MonthlySummary,
-		StreakReminder:  settings.StreakReminder,
+		IsPushEnabled:            settings.IsPushEnabled,
+		IsEmailEnabled:           settings.IsEmailEnabled,
+		IsDailySuggestionEnabled: settings.IsDailySuggestionEnabled,
+		IsWeeklySummaryEnabled:   settings.IsWeeklySummaryEnabled,
+		IsMonthlySummaryEnabled:  settings.IsMonthlySummaryEnabled,
+		IsStreakReminderEnabled:  settings.IsStreakReminderEnabled,
 	})
 }
 
@@ -261,11 +261,11 @@ func (h *NotificationHandler) GetNotificationSettings(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, NotificationSettingsResponse{
-		PushEnabled:     settings.PushEnabled,
-		EmailEnabled:    settings.EmailEnabled,
-		DailySuggestion: settings.DailySuggestion,
-		WeeklySummary:   settings.WeeklySummary,
-		MonthlySummary:  settings.MonthlySummary,
-		StreakReminder:  settings.StreakReminder,
+		IsPushEnabled:            settings.IsPushEnabled,
+		IsEmailEnabled:           settings.IsEmailEnabled,
+		IsDailySuggestionEnabled: settings.IsDailySuggestionEnabled,
+		IsWeeklySummaryEnabled:   settings.IsWeeklySummaryEnabled,
+		IsMonthlySummaryEnabled:  settings.IsMonthlySummaryEnabled,
+		IsStreakReminderEnabled:  settings.IsStreakReminderEnabled,
 	})
 }

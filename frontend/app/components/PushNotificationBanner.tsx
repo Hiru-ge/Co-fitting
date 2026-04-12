@@ -10,12 +10,16 @@ import {
 
 const PUSH_BANNER_DISMISSED_KEY = "push-banner-dismissed";
 
-export default function PushNotificationBanner({ token }: { token: string }) {
+export default function PushNotificationBanner({
+  authToken,
+}: {
+  authToken: string;
+}) {
   const [dismissed, setDismissed] = useState(
     () => !!localStorage.getItem(PUSH_BANNER_DISMISSED_KEY),
   );
 
-  const visible =
+  const isBannerVisible =
     isStandalone() &&
     !!globalThis.Notification &&
     Notification.permission === "default" &&
@@ -27,11 +31,11 @@ export default function PushNotificationBanner({ token }: { token: string }) {
   }
 
   useEffect(() => {
-    if (visible) sendPushBannerShown();
-  }, [visible]);
+    if (isBannerVisible) sendPushBannerShown();
+  }, [isBannerVisible]);
 
   async function handleAllow() {
-    const success = await subscribePush(token);
+    const success = await subscribePush(authToken);
     if (success) {
       sendPushPermissionGranted("banner");
     } else {
@@ -45,7 +49,7 @@ export default function PushNotificationBanner({ token }: { token: string }) {
     dismiss();
   }
 
-  if (!visible) return null;
+  if (!isBannerVisible) return null;
 
   return (
     <div className="fixed bottom-36 left-4 right-4 z-30 rounded-2xl bg-gray-900 border border-white/10 shadow-lg p-4 flex items-start gap-3">

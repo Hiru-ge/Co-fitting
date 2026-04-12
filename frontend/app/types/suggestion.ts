@@ -12,12 +12,12 @@ export interface Place {
   /** 熟練度ベース脱却判定: true=脱却モード（熟練度Lv.1）, false=通常, undefined=判定不可 */
   is_breakout?: boolean;
   /** 現在の営業状況: true=営業中, false=閉店中, undefined=情報なし（公園など24h施設）*/
-  open_now?: boolean;
+  is_open_now?: boolean;
 }
 
 export interface SuggestionResult {
   places: Place[];
   notice?: string;
-  completed?: boolean;
+  is_completed?: boolean;
   reload_count_remaining?: number;
 }

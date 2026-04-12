@@ -266,7 +266,7 @@ func TestGetNotificationSettings_WithRecord(t *testing.T) {
 	user := createTestUserByEmail(t, "ns-withrecord@example.com", "NS WithRecord User")
 	token := generateTestToken(user.ID)
 
-	// 事前にレコードを作成（PushEnabled=false に設定）
+	// 事前にレコードを作成（IsPushEnabled=false に設定）
 	testDB.Exec(
 		"INSERT INTO notification_settings (user_id, push_enabled, email_enabled, daily_suggestion, weekly_summary, monthly_summary, streak_reminder) VALUES (?, ?, ?, ?, ?, ?, ?)",
 		user.ID, false, true, false, true, true, false,
@@ -289,11 +289,11 @@ func TestGetNotificationSettings_WithRecord(t *testing.T) {
 		t.Fatalf("レスポンスのパースに失敗: %v", err)
 	}
 
-	if resp.PushEnabled != false {
-		t.Errorf("Expected PushEnabled=false, got %v", resp.PushEnabled)
+	if resp.IsPushEnabled != false {
+		t.Errorf("Expected IsPushEnabled=false, got %v", resp.IsPushEnabled)
 	}
-	if resp.EmailEnabled != true {
-		t.Errorf("Expected EmailEnabled=true, got %v", resp.EmailEnabled)
+	if resp.IsEmailEnabled != true {
+		t.Errorf("Expected IsEmailEnabled=true, got %v", resp.IsEmailEnabled)
 	}
 }
 
@@ -333,8 +333,8 @@ func TestUpdateNotificationSettings_Success(t *testing.T) {
 	pushEnabled := false
 	streakReminder := true
 	body := map[string]interface{}{
-		"push_enabled":    pushEnabled,
-		"streak_reminder": streakReminder,
+		"is_push_enabled":            pushEnabled,
+		"is_streak_reminder_enabled": streakReminder,
 	}
 	jsonBody, _ := json.Marshal(body)
 
@@ -353,11 +353,11 @@ func TestUpdateNotificationSettings_Success(t *testing.T) {
 		t.Fatalf("レスポンスのパースに失敗: %v", err)
 	}
 
-	if resp.PushEnabled != false {
-		t.Errorf("Expected PushEnabled=false, got %v", resp.PushEnabled)
+	if resp.IsPushEnabled != false {
+		t.Errorf("Expected IsPushEnabled=false, got %v", resp.IsPushEnabled)
 	}
-	if resp.StreakReminder != true {
-		t.Errorf("Expected StreakReminder=true, got %v", resp.StreakReminder)
+	if resp.IsStreakReminderEnabled != true {
+		t.Errorf("Expected IsStreakReminderEnabled=true, got %v", resp.IsStreakReminderEnabled)
 	}
 }
 
@@ -366,7 +366,7 @@ func TestUpdateNotificationSettings_Unauthorized(t *testing.T) {
 	router := setupUpdateNotificationSettingsRouter(h)
 
 	body := map[string]interface{}{
-		"push_enabled": true,
+		"is_push_enabled": true,
 	}
 	jsonBody, _ := json.Marshal(body)
 

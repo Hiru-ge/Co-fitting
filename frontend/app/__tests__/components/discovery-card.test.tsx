@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import DiscoveryCard from "~/components/DiscoveryCard";
 
 vi.mock("~/lib/geolocation", () => ({
-  calcDistance: vi.fn().mockReturnValue(500),
+  calcHaversineDistance: vi.fn().mockReturnValue(500),
 }));
 
 vi.mock("~/utils/helpers", async (importOriginal) => {
@@ -31,7 +31,7 @@ function renderCard(overrides = {}) {
       isVisited={false}
       userLat={35.658}
       userLng={139.7016}
-      stackIndex={0}
+      depthFromTop={0}
     />,
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/history-detail";
-import { protectedLoader } from "~/lib/auth";
+import { authRequiredLoader } from "~/lib/auth";
 import { getVisit, updateVisit } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
@@ -12,18 +12,18 @@ import { sendVisitMemoSaved } from "~/lib/gtag";
 import type { Visit } from "~/types/visit";
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const { user, token } = await protectedLoader();
+  const { user, token: authToken } = await authRequiredLoader();
 
   const visitId = Number(params.id);
   if (!params.id || isNaN(visitId) || visitId <= 0) {
     throw redirect("/history");
   }
 
-  return { user, token, visitId };
+  return { user, token: authToken, visitId };
 }
 
 export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
-  const { token, visitId } = loaderData;
+  const { token: authToken, visitId } = loaderData;
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -37,7 +37,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
   const loadVisit = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getVisit(token, visitId);
+      const data = await getVisit(authToken, visitId);
       setVisit(data);
       setMemo(data.memo ?? "");
       setRating(data.rating ?? null);
@@ -45,7 +45,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
       // 写真を取得（photo_referenceを渡してRedis TTL失効後も再解決できるようにする）
       try {
         const photoUrl = await getPlacePhoto(
-          token,
+          authToken,
           data.place_id,
           data.photo_reference as string,
         );
@@ -58,7 +58,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [token, visitId, showToast]);
+  }, [authToken, visitId, showToast]);
 
   useEffect(() => {
     loadVisit();
@@ -68,7 +68,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
     if (!visit) return;
     setIsSaving(true);
     try {
-      const updated = await updateVisit(token, visitId, {
+      const updated = await updateVisit(authToken, visitId, {
         memo: memo || null,
         rating: rating ?? null,
       });

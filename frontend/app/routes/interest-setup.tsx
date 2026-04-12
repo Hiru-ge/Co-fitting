@@ -9,12 +9,12 @@ import { sendOnboardingCompleted, sendOnboardingSkipped } from "~/lib/gtag";
 import type { GenreTag } from "~/types/genre";
 
 export async function clientLoader() {
-  const token = getToken();
-  if (!token) throw redirect("/login");
+  const authToken = getToken();
+  if (!authToken) throw redirect("/login");
 
   const [genres, interests] = await Promise.all([
-    getGenreTags(token),
-    getInterests(token),
+    getGenreTags(authToken),
+    getInterests(authToken),
   ]);
 
   if (
@@ -25,20 +25,24 @@ export async function clientLoader() {
   }
 
   return {
-    token,
+    token: authToken,
     genres,
     selectedIds: interests.map((i) => i.genre_tag_id),
   };
 }
 
 export default function Onboarding({ loaderData }: Route.ComponentProps) {
-  const { token, genres, selectedIds: initialSelectedIds } = loaderData;
+  const {
+    token: authToken,
+    genres,
+    selectedIds: initialSelectedIds,
+  } = loaderData;
   const navigate = useNavigate();
   const [selectedIds, setSelectedIds] = useState<number[]>(initialSelectedIds);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function toggleTag(id: number) {
+  function updateSelectedTags(id: number) {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
@@ -49,7 +53,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
     setIsSubmitting(true);
     setError(null);
     try {
-      await updateInterests(token, selectedIds);
+      await updateInterests(authToken, selectedIds);
       const selectedNames = genres
         .filter((g) => selectedIds.includes(g.id))
         .map((g) => g.name);
@@ -106,7 +110,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
                 return (
                   <button
                     key={tag.id}
-                    onClick={() => toggleTag(tag.id)}
+                    onClick={() => updateSelectedTags(tag.id)}
                     aria-pressed={isSelected}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                       isSelected

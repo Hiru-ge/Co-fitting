@@ -31,7 +31,7 @@ vi.mock("react-router", async () => {
 
 vi.mock("~/lib/auth", () => ({
   getToken: vi.fn().mockReturnValue("test-token"),
-  protectedLoader: vi.fn().mockResolvedValue({
+  authRequiredLoader: vi.fn().mockResolvedValue({
     user: {
       id: 1,
       email: "test@example.com",

@@ -86,7 +86,7 @@ const mockPlaces = [
 
 vi.mock("~/lib/geolocation", () => ({
   getCurrentPosition: vi.fn().mockResolvedValue({ lat: 35.658, lng: 139.7016 }),
-  calcDistance: vi.fn().mockReturnValue(500),
+  calcHaversineDistance: vi.fn().mockReturnValue(500),
   startPositionPolling: vi.fn().mockReturnValue(1),
   isWithinCheckInRange: vi.fn().mockReturnValue(true),
 }));
@@ -356,7 +356,7 @@ describe("Home画面", () => {
       id: 1,
       xp_earned: 50,
       total_xp: 150,
-      level_up: false,
+      is_level_up: false,
       new_level: 2,
       new_badges: [
         {
@@ -403,7 +403,7 @@ describe("Home画面", () => {
       id: 1,
       xp_earned: 50,
       total_xp: 150,
-      level_up: false,
+      is_level_up: false,
       new_level: 2,
       new_badges: [],
     } as any);
@@ -439,34 +439,34 @@ describe("Home画面", () => {
   // === Issue #164: 3件目完了時にXP獲得モーダルが表示されない問題 ===
   test("3件目チェックイン完了時にXPモーダルが表示される", async () => {
     const { createVisit } = await import("~/api/visits");
-    // 1・2件目は未コンプリート、3件目でdaily_completed=trueを返す
+    // 1・2件目は未コンプリート、3件目でis_daily_completed=trueを返す
     vi.mocked(createVisit)
       .mockResolvedValueOnce({
         id: 1,
         xp_earned: 50,
         total_xp: 100,
-        level_up: false,
+        is_level_up: false,
         new_level: 2,
         new_badges: [],
-        daily_completed: false,
+        is_daily_completed: false,
       } as any)
       .mockResolvedValueOnce({
         id: 1,
         xp_earned: 50,
         total_xp: 100,
-        level_up: false,
+        is_level_up: false,
         new_level: 2,
         new_badges: [],
-        daily_completed: false,
+        is_daily_completed: false,
       } as any)
       .mockResolvedValueOnce({
         id: 1,
         xp_earned: 50,
         total_xp: 150,
-        level_up: false,
+        is_level_up: false,
         new_level: 2,
         new_badges: [],
-        daily_completed: true,
+        is_daily_completed: true,
       } as any);
 
     const user = userEvent.setup();
@@ -517,11 +517,11 @@ describe("Home画面", () => {
   // === Issue #165: 3件完了時にコンプリートカードを表示する ===
   test("全カードを訪問するとコンプリートカードが表示される", async () => {
     const { createVisit } = await import("~/api/visits");
-    // バックエンドの訪問件数に基づくコンプリート判定: 3件目でdaily_completed=trueを返す
+    // バックエンドの訪問件数に基づくコンプリート判定: 3件目でis_daily_completed=trueを返す
     vi.mocked(createVisit)
-      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
-      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
-      .mockResolvedValueOnce({ id: 1, daily_completed: true } as any);
+      .mockResolvedValueOnce({ id: 1, is_daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, is_daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, is_daily_completed: true } as any);
     const user = userEvent.setup();
     renderHome();
 
@@ -554,7 +554,7 @@ describe("Home画面", () => {
       id: 1,
       xp_earned: 100,
       total_xp: 200,
-      level_up: false,
+      is_level_up: false,
       new_level: 2,
       new_badges: [
         {
@@ -613,11 +613,11 @@ describe("Home画面", () => {
   });
 
   // === Issue #177: ページ再読み込み後もコンプリート画面を表示し、提案済みトーストを非表示にする ===
-  test("getSuggestionsがcompletedフラグ付きで返した場合、コンプリートカードが表示される", async () => {
+  test("getSuggestionsがis_completedフラグ付きで返した場合、コンプリートカードが表示される", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
-      completed: true,
+      is_completed: true,
     });
 
     renderHome();
@@ -629,11 +629,11 @@ describe("Home画面", () => {
     });
   });
 
-  test("getSuggestionsがcompletedフラグ付きで返した場合、トーストは表示されない", async () => {
+  test("getSuggestionsがis_completedフラグ付きで返した場合、トーストは表示されない", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
-      completed: true,
+      is_completed: true,
     });
 
     renderHome();
@@ -800,11 +800,11 @@ describe("Issue #223: コンプリート状態の永続化", () => {
   test("3件全て訪問後に再マウントしてもコンプリート画面が表示される（APIで状態復元）", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     const { createVisit } = await import("~/api/visits");
-    // バックエンドの訪問件数に基づくコンプリート判定: 3件目でdaily_completed=trueを返す
+    // バックエンドの訪問件数に基づくコンプリート判定: 3件目でis_daily_completed=trueを返す
     vi.mocked(createVisit)
-      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
-      .mockResolvedValueOnce({ id: 1, daily_completed: false } as any)
-      .mockResolvedValueOnce({ id: 1, daily_completed: true } as any);
+      .mockResolvedValueOnce({ id: 1, is_daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, is_daily_completed: false } as any)
+      .mockResolvedValueOnce({ id: 1, is_daily_completed: true } as any);
 
     const user = userEvent.setup();
 
@@ -840,10 +840,10 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     // コンポーネントをアンマウント（BottomNavで他の画面に遷移した想定）
     unmount();
 
-    // 再マウント時はサーバーが completed=true を返す想定
+    // 再マウント時はサーバーが is_completed=true を返す想定
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
-      completed: true,
+      is_completed: true,
     });
 
     // 再マウント（BottomNavで/homeに戻った想定）
@@ -866,10 +866,10 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
-      completed: true,
+      is_completed: true,
     });
 
-    // 初回レンダリング: サーバーからcompleted=trueが返る
+    // 初回レンダリング: サーバーからis_completed=trueが返る
     const { unmount } = renderHome();
 
     await waitFor(() => {
@@ -881,10 +881,10 @@ describe("Issue #223: コンプリート状態の永続化", () => {
     // アンマウント
     unmount();
 
-    // 再マウント: APIが再び completed=true を返す
+    // 再マウント: APIが再び is_completed=true を返す
     vi.mocked(getSuggestions).mockResolvedValueOnce({
       places: [],
-      completed: true,
+      is_completed: true,
     });
     renderHome();
 
