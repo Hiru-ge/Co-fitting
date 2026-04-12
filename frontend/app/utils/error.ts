@@ -40,7 +40,7 @@ export function getErrorMessageByCode(code: string): string | undefined {
 export const SUGGESTION_MESSAGES = {
   NO_NEARBY_PLACES: "近くのスポットが見つかりませんでした",
   NO_INTEREST_PLACES:
-    "興味タグに合う施設が近くにありませんでした。半径を広げるか、興味タグを見直してみてください",
+    "興味ジャンルに合う施設が近くにありませんでした。半径を広げるか、興味ジャンルを見直してみてください",
   ALL_VISITED_NEARBY:
     "この近くのスポットは最近すべて訪問済みです。しばらく時間を置くか、別のエリアを探してみてください",
   FETCH_ERROR: "スポットの取得に失敗しました",

@@ -67,7 +67,7 @@ function renderOnboarding(overrideLoaderData?: object) {
   const loaderData = {
     token: "test-token",
     genres: mockGenres,
-    selectedIds: [],
+    selectedGenreIds: [],
     ...overrideLoaderData,
   };
   return render(
@@ -86,7 +86,7 @@ describe("Onboarding画面", () => {
     localStorageMock.clear();
   });
 
-  test("興味タグ一覧が表示される", async () => {
+  test("興味ジャンル一覧が表示される", async () => {
     renderOnboarding();
     await waitFor(() => {
       expect(
@@ -219,8 +219,8 @@ describe("Onboarding画面", () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  test("初期選択済みタグがある場合、選択状態で表示される", () => {
-    renderOnboarding({ selectedIds: [1, 3] });
+  test("初期選択済みジャンルがある場合、選択状態で表示される", () => {
+    renderOnboarding({ selectedGenreIds: [1, 3] });
 
     expect(screen.getByRole("button", { name: /カフェ/ })).toHaveAttribute(
       "aria-pressed",
@@ -252,7 +252,7 @@ describe("Onboarding clientLoader", () => {
     }
   });
 
-  test("興味タグが3つ以上設定済みなら /home にリダイレクトする", async () => {
+  test("興味ジャンルが3つ以上設定済みなら /home にリダイレクトする", async () => {
     const { getInterests } = await import("~/api/users");
     vi.mocked(getInterests).mockResolvedValueOnce([
       { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
@@ -275,7 +275,7 @@ describe("Onboarding clientLoader", () => {
     }
   });
 
-  test("興味タグが3つ未満なら正常にloaderDataを返す", async () => {
+  test("興味ジャンルが3つ未満なら正常にloaderDataを返す", async () => {
     const { getInterests } = await import("~/api/users");
     const { getGenreTags } = await import("~/api/genres");
     vi.mocked(getInterests).mockResolvedValueOnce([
@@ -289,7 +289,7 @@ describe("Onboarding clientLoader", () => {
     expect(result).toEqual({
       token: "test-token",
       genres: mockGenres,
-      selectedIds: [1],
+      selectedGenreIds: [1],
     });
   });
 });

@@ -200,7 +200,7 @@ describe("設定画面", () => {
         "aria-selected",
         "true",
       );
-      expect(screen.getByText("興味タグ")).toBeInTheDocument();
+      expect(screen.getByText("興味ジャンル")).toBeInTheDocument();
     });
 
     test("戻るボタンが表示される", () => {
@@ -324,9 +324,9 @@ describe("設定画面", () => {
       return user;
     }
 
-    test("興味タグが表示される", async () => {
+    test("興味ジャンルが表示される", async () => {
       await switchToSuggestionTab();
-      expect(screen.getByText("興味タグ")).toBeInTheDocument();
+      expect(screen.getByText("興味ジャンル")).toBeInTheDocument();
     });
 
     test("全ジャンルタグが選択可能に表示される", async () => {
@@ -344,7 +344,7 @@ describe("設定画面", () => {
       expect(screen.getByRole("button", { name: /書店/ })).toBeInTheDocument();
     });
 
-    test("現在の興味タグが選択状態で表示される", async () => {
+    test("現在の興味ジャンルが選択状態で表示される", async () => {
       await switchToSuggestionTab();
 
       // カフェ、公園、美術館が選択済み
@@ -362,11 +362,13 @@ describe("設定画面", () => {
       expect(bookstoreChip).toHaveAttribute("aria-pressed", "false");
     });
 
-    test("興味タグの保存で提案更新確認モーダルが表示される（リロード残あり）", async () => {
+    test("興味ジャンルの保存で提案更新確認モーダルが表示される（リロード残あり）", async () => {
       const user = await switchToSuggestionTab();
 
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+      await user.click(
+        screen.getByRole("button", { name: "興味ジャンルを保存" }),
+      );
 
       // 確認モーダルが表示される
       await waitFor(() => {
@@ -380,12 +382,14 @@ describe("設定画面", () => {
       ).toBeInTheDocument();
     });
 
-    test("興味タグの保存でAPIが呼ばれる（モーダル確認後）", async () => {
+    test("興味ジャンルの保存でAPIが呼ばれる（モーダル確認後）", async () => {
       const user = await switchToSuggestionTab();
 
       // レストランを追加選択
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+      await user.click(
+        screen.getByRole("button", { name: "興味ジャンルを保存" }),
+      );
 
       // モーダル確認
       await waitFor(() =>
@@ -402,11 +406,13 @@ describe("設定画面", () => {
       });
     });
 
-    test("興味タグ保存成功でメッセージが表示される（モーダル確認後）", async () => {
+    test("興味ジャンル保存成功でメッセージが表示される（モーダル確認後）", async () => {
       const user = await switchToSuggestionTab();
 
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+      await user.click(
+        screen.getByRole("button", { name: "興味ジャンルを保存" }),
+      );
 
       // モーダル確認
       await waitFor(() =>
@@ -415,7 +421,9 @@ describe("設定画面", () => {
       await user.click(screen.getByRole("button", { name: "保存する" }));
 
       await waitFor(() => {
-        expect(screen.getByText(/興味タグを保存しました/)).toBeInTheDocument();
+        expect(
+          screen.getByText(/興味ジャンルを保存しました/),
+        ).toBeInTheDocument();
       });
     });
 
@@ -423,7 +431,9 @@ describe("設定画面", () => {
       const user = await switchToSuggestionTab();
 
       await user.click(screen.getByRole("button", { name: /レストラン/ }));
-      await user.click(screen.getByRole("button", { name: "興味タグを保存" }));
+      await user.click(
+        screen.getByRole("button", { name: "興味ジャンルを保存" }),
+      );
 
       await waitFor(() =>
         expect(screen.getByText("提案が更新されます")).toBeInTheDocument(),
@@ -434,14 +444,16 @@ describe("設定画面", () => {
       expect(screen.queryByText("提案が更新されます")).not.toBeInTheDocument();
     });
 
-    test("興味タグが3つ未満だと保存ボタンが無効", async () => {
+    test("興味ジャンルが3つ未満だと保存ボタンが無効", async () => {
       const user = await switchToSuggestionTab();
 
       // 美術館と公園を解除（残り1つ）
       await user.click(screen.getByRole("button", { name: /美術館/ }));
       await user.click(screen.getByRole("button", { name: /公園/ }));
 
-      const saveButton = screen.getByRole("button", { name: "興味タグを保存" });
+      const saveButton = screen.getByRole("button", {
+        name: "興味ジャンルを保存",
+      });
       expect(saveButton).toBeDisabled();
     });
 

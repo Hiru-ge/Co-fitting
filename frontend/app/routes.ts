@@ -16,7 +16,7 @@ export default [
   route("beta-gate", "routes/beta-gate.tsx"),
   route("pwa-prompt", "routes/pwa-prompt.tsx"),
 
-  // 興味タグ選択（ボトムナビなし）
+  // 興味ジャンル選択（ボトムナビなし）
   route("onboarding", "routes/interest-setup.tsx"),
 
   // アプリレイアウト（認証必須）

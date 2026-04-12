@@ -27,7 +27,7 @@ export async function clientLoader() {
   return {
     token: authToken,
     genres,
-    selectedIds: interests.map((i) => i.genre_tag_id),
+    selectedGenreIds: interests.map((i) => i.genre_tag_id),
   };
 }
 
@@ -35,29 +35,31 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
   const {
     token: authToken,
     genres,
-    selectedIds: initialSelectedIds,
+    selectedGenreIds: initialSelectedGenreIds,
   } = loaderData;
   const navigate = useNavigate();
-  const [selectedIds, setSelectedIds] = useState<number[]>(initialSelectedIds);
+  const [selectedGenreIds, setSelectedGenreIds] = useState<number[]>(
+    initialSelectedGenreIds,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function updateSelectedTags(id: number) {
-    setSelectedIds((prev) =>
+  function updateSelectedGenres(id: number) {
+    setSelectedGenreIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   }
 
   async function handleSave() {
-    if (selectedIds.length < 3 || isSubmitting) return;
+    if (selectedGenreIds.length < 3 || isSubmitting) return;
     setIsSubmitting(true);
     setError(null);
     try {
-      await updateInterests(authToken, selectedIds);
+      await updateInterests(authToken, selectedGenreIds);
       const selectedNames = genres
-        .filter((g) => selectedIds.includes(g.id))
+        .filter((g) => selectedGenreIds.includes(g.id))
         .map((g) => g.name);
-      sendOnboardingCompleted(selectedIds.length, selectedNames);
+      sendOnboardingCompleted(selectedGenreIds.length, selectedNames);
       navigate("/home");
     } catch {
       setError("保存に失敗しました。もう一度お試しください。");
@@ -99,18 +101,18 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto bg-gray-900 rounded-2xl shadow-sm border border-gray-700 p-5 space-y-5 mb-4">
-        {Object.entries(grouped).map(([category, tags]) => (
+        {Object.entries(grouped).map(([category, categoryGenres]) => (
           <div key={category}>
             <h2 className="text-sm font-semibold text-gray-400 mb-2">
               {category}
             </h2>
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => {
-                const isSelected = selectedIds.includes(tag.id);
+              {categoryGenres.map((genre) => {
+                const isSelected = selectedGenreIds.includes(genre.id);
                 return (
                   <button
-                    key={tag.id}
-                    onClick={() => updateSelectedTags(tag.id)}
+                    key={genre.id}
+                    onClick={() => updateSelectedGenres(genre.id)}
                     aria-pressed={isSelected}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                       isSelected
@@ -118,7 +120,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
                         : "bg-white/10 text-gray-200 border-gray-600 hover:border-primary/60"
                     }`}
                   >
-                    {tag.name}
+                    {genre.name}
                   </button>
                 );
               })}
@@ -136,12 +138,12 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
       <div className="space-y-3">
         <button
           onClick={handleSave}
-          disabled={selectedIds.length < 3 || isSubmitting}
+          disabled={selectedGenreIds.length < 3 || isSubmitting}
           className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-bg-dark transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {isSubmitting
             ? "保存中..."
-            : `選択して始める (${selectedIds.length})`}
+            : `選択して始める (${selectedGenreIds.length})`}
         </button>
         <button
           onClick={handleSkip}

@@ -485,7 +485,7 @@ function SuggestionTab({
   initialInterests: Interest[];
   initialRadius: number;
 }) {
-  const [selectedIds, setSelectedIds] = useState<number[]>(
+  const [selectedGenreIds, setSelectedGenreIds] = useState<number[]>(
     initialInterests.map((i) => i.genre_tag_id),
   );
   const {
@@ -513,8 +513,8 @@ function SuggestionTab({
     null,
   );
 
-  function updateSelectedGenre(id: number) {
-    setSelectedIds((prev) =>
+  function updateSelectedGenres(id: number) {
+    setSelectedGenreIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
@@ -522,15 +522,15 @@ function SuggestionTab({
   async function saveInterests(withRefresh: boolean) {
     setIsSaving(true);
     try {
-      await updateInterests(authToken, selectedIds, withRefresh);
-      sendInterestsUpdated(selectedIds.length);
+      await updateInterests(authToken, selectedGenreIds, withRefresh);
+      sendInterestsUpdated(selectedGenreIds.length);
       setInterestMsg(
         withRefresh
-          ? "興味タグを保存しました"
+          ? "興味ジャンルを保存しました"
           : "設定は保存されました。提案は明日リセット時に反映されます",
       );
     } catch {
-      setInterestError("興味タグの保存に失敗しました");
+      setInterestError("興味ジャンルの保存に失敗しました");
     } finally {
       setIsSaving(false);
     }
@@ -633,7 +633,7 @@ function SuggestionTab({
           <span className="material-symbols-outlined text-primary text-xl">
             interests
           </span>
-          興味タグ
+          興味ジャンル
         </h2>
         <p className="text-sm text-gray-500 mb-4">
           3つ以上選択してください。提案に反映されます。
@@ -641,13 +641,13 @@ function SuggestionTab({
         <form onSubmit={handleSaveInterests} className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {genres.map((genre) => {
-              const selected = selectedIds.includes(genre.id);
+              const selected = selectedGenreIds.includes(genre.id);
               return (
                 <button
                   key={genre.id}
                   type="button"
                   aria-pressed={selected}
-                  onClick={() => updateSelectedGenre(genre.id)}
+                  onClick={() => updateSelectedGenres(genre.id)}
                   className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                     selected
                       ? "bg-primary text-bg-dark border-primary"
@@ -662,10 +662,10 @@ function SuggestionTab({
           <FormMessage success={interestMsg} error={interestError} />
           <button
             type="submit"
-            disabled={selectedIds.length < 3 || isSaving}
+            disabled={selectedGenreIds.length < 3 || isSaving}
             className={SUBMIT_CLASS}
           >
-            {isSaving ? "保存中..." : "興味タグを保存"}
+            {isSaving ? "保存中..." : "興味ジャンルを保存"}
           </button>
         </form>
       </section>

@@ -36,11 +36,11 @@ function renderCard(overrides = {}) {
   );
 }
 
-// ジャンルバッジの興味タグ一致強調表示テスト
+// ジャンルバッジの興味ジャンル一致強調表示テスト
 describe("DiscoveryCard ジャンルバッジ", () => {
   test("is_interest_match=true の場合、ジャンルバッジにオレンジカラーが適用される", () => {
     const { container } = renderCard({ is_interest_match: true });
-    // オレンジカラーのクラスが適用されていることを確認（Issue #222: 興味タグ一致バッジ視認性改善）
+    // オレンジカラーのクラスが適用されていることを確認（Issue #222: 興味ジャンル一致バッジ視認性改善）
     const badge = container.querySelector("[data-testid='genre-badge']");
     expect(badge).not.toBeNull();
     expect(badge?.className).toMatch(/orange/);

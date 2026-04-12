@@ -646,7 +646,7 @@ describe("Home画面", () => {
     expect(mockShowToast).not.toHaveBeenCalled();
   });
 
-  // === Issue #167: 興味タグ施設が半径内に見つからない場合のトースト通知 ===
+  // === Issue #167: 興味ジャンル施設が半径内に見つからない場合のトースト通知 ===
   test("NO_INTEREST_PLACESのnoticeがある場合、infoトーストが表示される", async () => {
     const { getSuggestions } = await import("~/api/suggestions");
     vi.mocked(getSuggestions).mockResolvedValueOnce({
@@ -660,19 +660,19 @@ describe("Home画面", () => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
     expect(mockShowToast).toHaveBeenCalledWith(
-      expect.stringContaining("興味タグ"),
+      expect.stringContaining("興味ジャンル"),
       "info",
     );
   });
 
-  test("noticeがない場合、興味タグ関連のinfoトーストは表示されない", async () => {
+  test("noticeがない場合、興味ジャンル関連のinfoトーストは表示されない", async () => {
     renderHome();
 
     await waitFor(() => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
     expect(mockShowToast).not.toHaveBeenCalledWith(
-      expect.stringContaining("興味タグ"),
+      expect.stringContaining("興味ジャンル"),
       "info",
     );
   });
@@ -693,7 +693,7 @@ describe("Home画面", () => {
 
     expect(mockShowToast).toHaveBeenCalledTimes(1);
     expect(mockShowToast).toHaveBeenCalledWith(
-      expect.stringContaining("興味タグ"),
+      expect.stringContaining("興味ジャンル"),
       "info",
     );
   });

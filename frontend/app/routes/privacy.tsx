@@ -112,7 +112,7 @@ export default function Privacy() {
 
           <SubSection title="(4) サービス利用に関する情報">
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>興味タグ（ユーザーが選択した施設ジャンル）</li>
+              <li>興味ジャンル（ユーザーが選択した施設ジャンル）</li>
               <li>
                 ゲーミフィケーションデータ（XP、レベル、獲得バッジ、ジャンル習熟度）
               </li>
@@ -155,7 +155,7 @@ export default function Privacy() {
           <ul className="list-disc list-inside space-y-1 ml-2 mt-2">
             <li>ユーザー認証・アカウント管理</li>
             <li>ユーザーの現在地に基づく周辺施設の提案</li>
-            <li>興味タグに基づくパーソナライズされた施設提案</li>
+            <li>興味ジャンルに基づくパーソナライズされた施設提案</li>
             <li>訪問履歴の記録・表示（地図表示を含む）</li>
             <li>
               ゲーミフィケーション機能の提供（XP付与・レベル管理・バッジ付与）
@@ -346,7 +346,7 @@ export default function Privacy() {
             <li>
               ゲーミフィケーションデータ（XP・レベル・バッジ・ジャンル習熟度）
             </li>
-            <li>興味タグの設定</li>
+            <li>興味ジャンルの設定</li>
           </ul>
         </Section>
 

@@ -596,9 +596,9 @@ s
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/routes/onboarding.tsx` の `tag` 系変数名・関数名を `genre` 系に統一（`selectedTags` → `selectedGenres`、`toggleTags` → `updateSelectedGenres` 等）
-- [ ] UIコピー「興味タグ」を「興味ジャンル」に変更（`onboarding.tsx`・`settings.tsx`・その他表示文字列）
-- [ ] `frontend/app/types/genre.ts` に `Tag` 系の残存エイリアスがあれば `Genre` に統一
+- [x] `frontend/app/routes/onboarding.tsx` の `tag` 系変数名・関数名を `genre` 系に統一（`selectedTags` → `selectedGenres`、`toggleTags` → `updateSelectedGenres` 等）
+- [x] UIコピー「興味タグ」を「興味ジャンル」に変更（`onboarding.tsx`・`settings.tsx`・その他表示文字列）
+- [x] `frontend/app/types/genre.ts` に `Tag` 系の残存エイリアスがあれば `Genre` に統一
 
 **🔵 REFACTOR**
 
