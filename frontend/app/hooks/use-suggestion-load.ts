@@ -131,7 +131,7 @@ export function useSuggestionLoad({
       return true;
     },
     staleTime: 30000,
-    gcTime: 300000,
+    gcTime: 0,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
