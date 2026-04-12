@@ -23,6 +23,50 @@ type mockPushCall struct {
 	Payload services.PushPayload
 }
 
+type mockEmailSender struct {
+	mu                sync.Mutex
+	weeklyCalls       []weeklyEmailCall
+	monthlyCalls      []monthlyEmailCall
+	streakReminderLog []streakReminderCall
+}
+
+type weeklyEmailCall struct {
+	toEmail string
+	data    services.WeeklySummaryData
+}
+
+type monthlyEmailCall struct {
+	toEmail string
+	data    services.MonthlySummaryData
+}
+
+type streakReminderCall struct {
+	toEmail     string
+	userName    string
+	streakWeeks int
+}
+
+func (m *mockEmailSender) SendStreakReminder(toEmail, userName string, streakWeeks int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.streakReminderLog = append(m.streakReminderLog, streakReminderCall{toEmail: toEmail, userName: userName, streakWeeks: streakWeeks})
+	return nil
+}
+
+func (m *mockEmailSender) SendWeeklySummary(toEmail string, data services.WeeklySummaryData) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.weeklyCalls = append(m.weeklyCalls, weeklyEmailCall{toEmail: toEmail, data: data})
+	return nil
+}
+
+func (m *mockEmailSender) SendMonthlySummary(toEmail string, data services.MonthlySummaryData) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.monthlyCalls = append(m.monthlyCalls, monthlyEmailCall{toEmail: toEmail, data: data})
+	return nil
+}
+
 func (m *mockPushSender) SendToUser(userID uint64, payload services.PushPayload) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -151,4 +195,107 @@ func TestRunStreakReminderNotification_NotVisitedThisWeek(t *testing.T) {
 	assert.NotContains(t, calledIDs, userA.ID, "今週訪問済みユーザーには送らない")
 	assert.Contains(t, calledIDs, userB.ID, "先週訪問・今週未訪問ユーザーには送る")
 	assert.NotContains(t, calledIDs, userC.ID, "streak_count=0のユーザーには送らない")
+}
+
+func TestSendWeeklySummaryNotifications_PushAndEmail(t *testing.T) {
+	cleanupNotificationSettings(t)
+	cleanupPushSubscriptions(t)
+	cleanupUsers(t)
+
+	user := createUser(t, "weekly-summary@example.com")
+
+	now := time.Now().In(utils.JST)
+	weekday := int(now.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	currentWeekMonday := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, utils.JST)
+	lastWeekMonday := currentWeekMonday.AddDate(0, 0, -7)
+	visitAt := lastWeekMonday.Add(10 * time.Hour)
+
+	// 先週の訪問データ（集計対象）
+	require.NoError(t, testDB.Create(&models.Visit{
+		UserID:    user.ID,
+		PlaceID:   "weekly-place",
+		PlaceName: "Weekly Place",
+		VisitedAt: visitAt,
+		XpEarned:  120,
+	}).Error)
+
+	// Push購読 + 通知設定
+	require.NoError(t, testDB.Create(&models.PushSubscription{
+		UserID:   user.ID,
+		Endpoint: "https://push.example.com/weekly",
+		P256DH:   "key-weekly",
+		Auth:     "auth-weekly",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{
+		UserID:                  user.ID,
+		IsPushEnabled:           true,
+		IsEmailEnabled:          true,
+		IsWeeklySummaryEnabled:  true,
+		IsMonthlySummaryEnabled: false,
+	}).Error)
+
+	mockPush := &mockPushSender{}
+	mockEmail := &mockEmailSender{}
+	sched := services.NewNotificationScheduler(mockPush, mockEmail, testDB)
+	sched.SendWeeklySummaryNotifications()
+
+	calledIDs := mockPush.CalledUserIDs()
+	assert.Contains(t, calledIDs, user.ID, "週次サマリーPushが送信されるべき")
+
+	require.Len(t, mockEmail.weeklyCalls, 1, "週次サマリーメールが1件送信されるべき")
+	assert.Equal(t, user.Email, mockEmail.weeklyCalls[0].toEmail)
+	assert.Equal(t, 1, mockEmail.weeklyCalls[0].data.VisitCount)
+	assert.Equal(t, 120, mockEmail.weeklyCalls[0].data.TotalXP)
+}
+
+func TestSendMonthlySummaryNotifications_PushAndEmail(t *testing.T) {
+	cleanupNotificationSettings(t)
+	cleanupPushSubscriptions(t)
+	cleanupUsers(t)
+
+	user := createUser(t, "monthly-summary@example.com")
+
+	now := time.Now().In(utils.JST)
+	lastMonth := now.AddDate(0, -1, 0)
+	monthStart := time.Date(lastMonth.Year(), lastMonth.Month(), 1, 0, 0, 0, 0, utils.JST)
+	visitAt := monthStart.Add(12 * time.Hour)
+
+	require.NoError(t, testDB.Create(&models.Visit{
+		UserID:    user.ID,
+		PlaceID:   "monthly-place",
+		PlaceName: "Monthly Place",
+		VisitedAt: visitAt,
+		XpEarned:  200,
+	}).Error)
+
+	require.NoError(t, testDB.Create(&models.PushSubscription{
+		UserID:   user.ID,
+		Endpoint: "https://push.example.com/monthly",
+		P256DH:   "key-monthly",
+		Auth:     "auth-monthly",
+	}).Error)
+	require.NoError(t, testDB.Create(&models.NotificationSettings{
+		UserID:                  user.ID,
+		IsPushEnabled:           true,
+		IsEmailEnabled:          true,
+		IsWeeklySummaryEnabled:  false,
+		IsMonthlySummaryEnabled: true,
+	}).Error)
+
+	mockPush := &mockPushSender{}
+	mockEmail := &mockEmailSender{}
+	sched := services.NewNotificationScheduler(mockPush, mockEmail, testDB)
+	sched.SendMonthlySummaryNotifications()
+
+	calledIDs := mockPush.CalledUserIDs()
+	assert.Contains(t, calledIDs, user.ID, "月次サマリーPushが送信されるべき")
+
+	require.Len(t, mockEmail.monthlyCalls, 1, "月次サマリーメールが1件送信されるべき")
+	assert.Equal(t, user.Email, mockEmail.monthlyCalls[0].toEmail)
+	assert.Equal(t, 1, mockEmail.monthlyCalls[0].data.VisitCount)
+	assert.Equal(t, 200, mockEmail.monthlyCalls[0].data.TotalXP)
+	assert.Contains(t, mockEmail.monthlyCalls[0].data.YearMonth, "年")
 }

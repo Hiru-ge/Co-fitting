@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Hiru-ge/roamble/middleware"
+	"github.com/Hiru-ge/roamble/services"
 	"github.com/Hiru-ge/roamble/utils"
 	"github.com/gin-gonic/gin"
 )
@@ -336,6 +338,137 @@ func TestDevEndpointsAuthenticationRequired(t *testing.T) {
 
 		if resp["error"] != "invalid or expired token" {
 			t.Errorf("Expected invalid token error, got %v", resp["error"])
+		}
+	})
+}
+
+func setupDevRouterForLoginAndTrigger(handler *DevHandler) *gin.Engine {
+	r := gin.New()
+	r.POST("/api/dev/auth/test-login", handler.TestLogin)
+	r.POST("/api/dev/notifications/trigger", handler.TriggerNotification)
+	return r
+}
+
+func TestDevTestLogin(t *testing.T) {
+	handler := &DevHandler{
+		DB:     testDB,
+		JWTCfg: testAuthHandler.JWTCfg,
+	}
+	router := setupDevRouterForLoginAndTrigger(handler)
+
+	t.Run("必須パラメータ不足で400", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/dev/auth/test-login", bytes.NewBufferString(`{"email":""}`))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d body=%s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("新規ユーザー作成でトークン返却", func(t *testing.T) {
+		cleanupUsers(t)
+		email := "dev-login-new@example.com"
+		payload := map[string]string{
+			"email":        email,
+			"display_name": "Dev New",
+		}
+		body, _ := json.Marshal(payload)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/dev/auth/test-login", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+			t.Fatalf("failed to parse response: %v", err)
+		}
+
+		if resp["access_token"] == "" || resp["refresh_token"] == "" {
+			t.Fatalf("expected token pair, got %+v", resp)
+		}
+		isNew, ok := resp["is_new_user"].(bool)
+		if !ok || !isNew {
+			t.Fatalf("expected is_new_user=true, got %+v", resp["is_new_user"])
+		}
+	})
+
+	t.Run("既存ユーザーで is_new_user=false", func(t *testing.T) {
+		cleanupUsers(t)
+		createTestUserByEmail(t, "dev-login-existing@example.com", "Existing")
+
+		payload := map[string]string{
+			"email":        "dev-login-existing@example.com",
+			"display_name": "Existing",
+		}
+		body, _ := json.Marshal(payload)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/dev/auth/test-login", bytes.NewBuffer(body))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
+		isNew, ok := resp["is_new_user"].(bool)
+		if !ok || isNew {
+			t.Fatalf("expected is_new_user=false, got %+v", resp["is_new_user"])
+		}
+	})
+}
+
+type noopPushSender struct{}
+
+func (noopPushSender) SendToUser(_ uint64, _ services.PushPayload) error { return nil }
+
+func TestDevTriggerNotification(t *testing.T) {
+	handler := &DevHandler{DB: testDB}
+	router := setupDevRouterForLoginAndTrigger(handler)
+
+	t.Run("scheduler未初期化で503", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/dev/notifications/trigger", bytes.NewBufferString(`{"type":"is_daily_suggestion_enabled"}`))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusServiceUnavailable {
+			t.Fatalf("expected 503, got %d body=%s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("不正typeで400", func(t *testing.T) {
+		handler.Scheduler = services.NewNotificationScheduler(noopPushSender{}, nil, testDB)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/dev/notifications/trigger", bytes.NewBufferString(`{"type":"invalid"}`))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d body=%s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("有効typeで200", func(t *testing.T) {
+		handler.Scheduler = services.NewNotificationScheduler(noopPushSender{}, nil, testDB)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/dev/notifications/trigger", bytes.NewBufferString(`{"type":"is_daily_suggestion_enabled"}`))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d body=%s", w.Code, w.Body.String())
 		}
 	})
 }
