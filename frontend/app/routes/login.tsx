@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { GoogleLogin } from "@react-oauth/google";
 import { setToken, googleOAuth } from "~/lib/auth";
-import { isNetworkError } from "~/utils/error";
+import { toUserMessage } from "~/utils/error";
 import { sendLogin } from "~/lib/gtag";
 
 export default function Login() {
@@ -29,14 +29,12 @@ export default function Login() {
       sendLogin("google_oauth", is_new_user);
       navigate(is_new_user ? "/onboarding" : "/home");
     } catch (err) {
-      if (isNetworkError(err)) {
-        setGoogleError(
-          "ネットワークに接続できません。通信環境をご確認ください",
-        );
-      } else if (err instanceof Error && err.message === "server_error") {
-        setGoogleError(
-          "サーバーエラーが発生しました。時間をおいて再度お試しください",
-        );
+      const userMessage = toUserMessage(err);
+      if (
+        userMessage.includes("ネットワーク") ||
+        userMessage.includes("サーバーエラー")
+      ) {
+        setGoogleError(userMessage);
       } else {
         setGoogleError("Googleログインに失敗しました。もう一度お試しください");
       }

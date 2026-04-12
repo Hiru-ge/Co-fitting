@@ -478,14 +478,14 @@ s
 
 **🟢 GREEN**
 
-- [ ] `getErrorMessageByCode` の `switch` case 順を `API_ERROR_CODES` の定義順（`NO_NEARBY_PLACES` → `NO_INTEREST_PLACES` → `ALL_VISITED_NEARBY` → `INTERNAL_ERROR` → `DAILY_LIMIT_REACHED` → `RELOAD_LIMIT_REACHED`）と一致させる
-- [ ] `getErrorMessageByCode` を `ApiError` クラス定義の上（`getErrorMessage` のすぐ上）に移動
-- [ ] `getErrorMessageByCode` → `getErrorMessageByCustomCode` にリネーム（HTTP ステータスベースの `getErrorMessage` との区別を明確に）
-- [ ] `toUserMessage` に `server_error` コードの対応を追加し、`login.tsx` で `isNetworkError` を直接参照しているコードを `toUserMessage` 経由に統一
+- [x] `getErrorMessageByCode` の `switch` case 順を `API_ERROR_CODES` の定義順（`NO_NEARBY_PLACES` → `NO_INTEREST_PLACES` → `ALL_VISITED_NEARBY` → `INTERNAL_ERROR` → `DAILY_LIMIT_REACHED` → `RELOAD_LIMIT_REACHED`）と一致させる
+- [x] `getErrorMessageByCode` を `ApiError` クラス定義の上（`getErrorMessage` のすぐ上）に移動
+- [x] `getErrorMessageByCode` → `getErrorMessageByCustomCode` にリネーム（HTTP ステータスベースの `getErrorMessage` との区別を明確に）
+- [x] `toUserMessage` に `server_error` コードの対応を追加し、`login.tsx` で `isNetworkError` を直接参照しているコードを `toUserMessage` 経由に統一
 
 **🔵 REFACTOR**
 
-- [ ] `toUserMessage` の `instanceof ApiError` ブランチと `instanceof Error` ブランチのメッセージ返却処理を統合（`ApiError extends Error` のため統合可能）
+- [x] `toUserMessage` の `instanceof ApiError` ブランチと `instanceof Error` ブランチのメッセージ返却処理を統合（`ApiError extends Error` のため統合可能）
 
 ---
 

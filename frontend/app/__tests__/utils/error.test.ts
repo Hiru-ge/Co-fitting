@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 import {
   ApiError,
   getErrorMessage,
-  getErrorMessageByCode,
+  getErrorMessageByCustomCode,
   parseApiError,
   isNetworkError,
   toUserMessage,
@@ -78,34 +78,56 @@ describe("isNetworkError", () => {
   });
 });
 
-describe("getErrorMessageByCode", () => {
+describe("getErrorMessageByCustomCode", () => {
   test("DAILY_LIMIT_REACHED に対応する日本語メッセージを返す", () => {
-    expect(getErrorMessageByCode("DAILY_LIMIT_REACHED")).toContain("訪問上限");
+    expect(getErrorMessageByCustomCode("DAILY_LIMIT_REACHED")).toContain(
+      "訪問上限",
+    );
   });
 
   test("RELOAD_LIMIT_REACHED に対応する日本語メッセージを返す", () => {
-    expect(getErrorMessageByCode("RELOAD_LIMIT_REACHED")).toContain("リロード");
+    expect(getErrorMessageByCustomCode("RELOAD_LIMIT_REACHED")).toContain(
+      "リロード",
+    );
   });
 
   test("INVALID_REQUEST に対応する日本語メッセージを返す", () => {
-    expect(getErrorMessageByCode("INVALID_REQUEST")).toContain("形式が正しく");
+    expect(getErrorMessageByCustomCode("INVALID_REQUEST")).toContain(
+      "形式が正しく",
+    );
   });
 
   test("INVALID_COORDINATES に対応する日本語メッセージを返す", () => {
-    expect(getErrorMessageByCode("INVALID_COORDINATES")).toContain("座標");
+    expect(getErrorMessageByCustomCode("INVALID_COORDINATES")).toContain(
+      "座標",
+    );
   });
 
   test("NO_NEARBY_PLACES に対応する日本語メッセージを返す", () => {
-    expect(getErrorMessageByCode("NO_NEARBY_PLACES")).toContain("スポット");
+    expect(getErrorMessageByCustomCode("NO_NEARBY_PLACES")).toContain(
+      "スポット",
+    );
+  });
+
+  test("NO_INTEREST_PLACES に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCustomCode("NO_INTEREST_PLACES")).toContain(
+      "興味ジャンル",
+    );
+  });
+
+  test("ALL_VISITED_NEARBY に対応する日本語メッセージを返す", () => {
+    expect(getErrorMessageByCustomCode("ALL_VISITED_NEARBY")).toContain(
+      "訪問済み",
+    );
   });
 
   test("未知の code には undefined を返す", () => {
-    expect(getErrorMessageByCode("UNKNOWN_CODE")).toBeUndefined();
+    expect(getErrorMessageByCustomCode("UNKNOWN_CODE")).toBeUndefined();
   });
 });
 
 describe("parseApiError", () => {
-  test("code がある場合は getErrorMessageByCode の日本語メッセージを使う", async () => {
+  test("code がある場合は getErrorMessageByCustomCode の日本語メッセージを使う", async () => {
     const mockRes = {
       status: 429,
       json: async () => ({
@@ -152,6 +174,11 @@ describe("toUserMessage", () => {
   test("ネットワークエラーの場合は接続エラーメッセージ", () => {
     const err = new TypeError("Failed to fetch");
     expect(toUserMessage(err)).toContain("ネットワーク");
+  });
+
+  test("server_error の Error はサーバーエラーメッセージに変換する", () => {
+    const err = new Error("server_error");
+    expect(toUserMessage(err)).toContain("サーバーエラー");
   });
 
   test("通常の Error からメッセージを取得する", () => {
