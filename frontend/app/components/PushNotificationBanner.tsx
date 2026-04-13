@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Icon } from "~/components/Icon";
 import { isStandalone } from "~/lib/pwa";
 import { subscribePush } from "~/lib/push";
 import {
@@ -53,9 +54,10 @@ export default function PushNotificationBanner({
 
   return (
     <div className="fixed bottom-36 left-4 right-4 z-30 rounded-2xl bg-gray-900 border border-white/10 shadow-lg p-4 flex items-start gap-3">
-      <span className="material-symbols-outlined text-primary text-xl shrink-0 mt-0.5">
-        notifications
-      </span>
+      <Icon
+        name="notifications"
+        className="text-primary text-xl shrink-0 mt-0.5"
+      />
       <div className="flex-1">
         <p className="text-sm font-bold text-gray-100 mb-0.5">通知を受け取る</p>
         <p className="text-xs text-gray-400">

@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Icon } from "~/components/Icon";
 import type { Visit } from "~/types/visit";
 import type { EarnedBadge } from "~/types/auth";
 import { getBadgeIcon } from "~/utils/badge-icon";
@@ -31,11 +32,7 @@ function StatCard({
 }: StatCardProps) {
   return (
     <div className="bg-surface rounded-2xl px-4 py-6 text-center">
-      <span
-        className={`material-symbols-outlined text-[28px] block mb-1 ${accentClass}`}
-      >
-        {icon}
-      </span>
+      <Icon name={icon} className={`text-[28px] block mb-1 ${accentClass}`} />
       <div
         className={`text-[52px] font-black leading-none tracking-[-2px] ${accentClass}`}
       >
@@ -57,9 +54,7 @@ function VisitRow({ visit }: { visit: Visit & { photoUrl?: string } }) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="material-symbols-outlined text-[20px] text-dim">
-            location_on
-          </span>
+          <Icon name="location_on" className="text-[20px] text-dim" />
         )}
       </div>
       <div className="flex-1 bg-surface rounded-r-lg px-4 py-2.5 flex items-center justify-between">
@@ -77,12 +72,7 @@ function BadgeRow({ badge }: { badge: EarnedBadge }) {
   return (
     <div className="flex items-center">
       <div className="w-11 h-11 bg-surface rounded-l-lg shrink-0 flex items-center justify-center">
-        <span
-          className="material-symbols-outlined text-[20px] text-brand"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          {icon}
-        </span>
+        <Icon name={icon} fill className="text-[20px] text-brand" />
       </div>
       <div className="flex-1 bg-surface rounded-r-lg px-4 py-2.5">
         <span className="text-secondary text-[15px]">{badge.name}</span>
@@ -111,18 +101,17 @@ export default function SummaryReport({
           to="/history"
           className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/8 text-white/70"
         >
-          <span className="material-symbols-outlined text-[22px]">
-            arrow_back
-          </span>
+          <Icon name="arrow_back" className="text-[22px]" />
         </Link>
       </div>
 
       <div className="max-w-150 mx-auto px-6 py-8">
         {isLoading && (
           <div className="text-center py-12">
-            <span className="material-symbols-outlined animate-spin text-[40px] text-primary">
-              progress_activity
-            </span>
+            <Icon
+              name="progress_activity"
+              className="animate-spin text-[40px] text-primary"
+            />
           </div>
         )}
 
@@ -135,9 +124,7 @@ export default function SummaryReport({
 
             {errorMessage && (
               <div className="text-center py-8 text-[#ff6b6b]">
-                <span className="material-symbols-outlined text-[48px] block mb-3">
-                  error_outline
-                </span>
+                <Icon name="error_outline" className="text-[48px] block mb-3" />
                 <p className="text-[15px] m-0">{errorMessage}</p>
               </div>
             )}
@@ -193,9 +180,10 @@ export default function SummaryReport({
 
                 {visits.length === 0 && (
                   <div className="text-center py-8 text-dim">
-                    <span className="material-symbols-outlined text-[48px] block mb-3">
-                      explore_off
-                    </span>
+                    <Icon
+                      name="explore_off"
+                      className="text-[48px] block mb-3"
+                    />
                     <p className="text-base mb-1 text-secondary">
                       この期間の冒険記録がありません
                     </p>

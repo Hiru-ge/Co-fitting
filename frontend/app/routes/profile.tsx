@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/profile";
 import { useNavigate, Link, useLocation } from "react-router";
 import { logout, authRequiredLoader } from "~/lib/auth";
@@ -83,9 +84,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             className="flex size-10 items-center justify-center rounded-full bg-white/10"
             aria-label="設定"
           >
-            <span className="material-symbols-outlined text-xl text-gray-600">
-              settings
-            </span>
+            <Icon name="settings" className="text-xl text-gray-600" />
           </button>
           <h1 className="text-lg font-bold text-center">マイページ</h1>
           <button
@@ -96,9 +95,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             aria-label="共有"
             disabled
           >
-            <span className="material-symbols-outlined text-xl text-gray-600">
-              share
-            </span>
+            <Icon name="share" className="text-xl text-gray-600" />
           </button>
         </div>
       </header>
@@ -116,9 +113,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
               />
             ) : (
               <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center">
-                <span className="material-symbols-outlined text-5xl text-gray-400">
-                  person
-                </span>
+                <Icon name="person" className="text-5xl text-gray-400" />
               </div>
             )}
           </div>
@@ -168,9 +163,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           className="flex items-center gap-3 p-4 bg-white/10 rounded-2xl border border-white/10 shadow-sm active:scale-95 transition-transform border-l-4 border-l-primary"
         >
           <div className="size-10 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary text-xl">
-              history
-            </span>
+            <Icon name="history" className="text-primary text-xl" />
           </div>
           <div className="text-left">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -187,9 +180,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           disabled
         >
           <div className="size-10 rounded-full bg-amber-400/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-amber-500 text-xl">
-              trophy
-            </span>
+            <Icon name="trophy" className="text-amber-500 text-xl" />
           </div>
           <div className="text-left">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -242,12 +233,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                 className="flex items-center gap-3 bg-white/5 rounded-xl p-3 border border-white/10"
               >
                 <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0 overflow-hidden">
-                  <span
-                    className="material-symbols-outlined text-primary text-base"
-                    style={{ fontVariationSettings: "'FILL' 1" }}
-                  >
-                    {p.icon}
-                  </span>
+                  <Icon name={p.icon} fill className="text-primary text-base" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center mb-1">
@@ -286,9 +272,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         </div>
         {badges.length === 0 ? (
           <div className="text-center py-6">
-            <span className="material-symbols-outlined text-4xl text-gray-300">
-              military_tech
-            </span>
+            <Icon name="military_tech" className="text-4xl text-gray-300" />
             <p className="text-sm text-gray-400 mt-2">まだバッジがありません</p>
             <p className="text-xs text-gray-400">
               探索してバッジを獲得しましょう！
@@ -306,12 +290,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                   <div
                     className={`size-20 rounded-full bg-white flex items-center justify-center shadow-md border-b-4 ${border}`}
                   >
-                    <span
-                      className={`material-symbols-outlined text-4xl ${color}`}
-                      style={{ fontVariationSettings: "'FILL' 1" }}
-                    >
-                      {icon}
-                    </span>
+                    <Icon name={icon} fill className={`text-4xl ${color}`} />
                   </div>
                   <span className="text-[10px] font-bold text-center leading-tight">
                     {badge.name}
@@ -329,12 +308,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           to="/home"
           className="w-full bg-primary text-black font-extrabold h-14 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-95 transition-transform"
         >
-          <span
-            className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            explore
-          </span>
+          <Icon name="explore" fill />
           探索を開始
         </Link>
       </div>
@@ -345,7 +319,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           onClick={() => setShowLogoutModal(true)}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-full border border-red-200 text-red-500 font-bold text-sm transition-colors active:bg-red-50"
         >
-          <span className="material-symbols-outlined text-xl">logout</span>
+          <Icon name="logout" className="text-xl" />
           ログアウト
         </button>
       </div>

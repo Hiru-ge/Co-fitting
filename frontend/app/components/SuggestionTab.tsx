@@ -5,6 +5,7 @@ import type { GenreTag, Interest } from "~/types/genre";
 import FormMessageDisplay from "~/components/FormMessageDisplay";
 import LocationPermissionSection from "~/components/LocationPermissionSection";
 import { useFormMessage } from "~/hooks/use-form-message";
+import { Icon } from "~/components/Icon";
 
 const SUBMIT_CLASS = "settings-submit";
 
@@ -150,9 +151,7 @@ export default function SuggestionTab({
 
       <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            radar
-          </span>
+          <Icon name="radar" className="text-primary text-xl" />
           提案半径
         </h2>
         <p className="text-sm text-gray-500 mb-4">
@@ -198,9 +197,7 @@ export default function SuggestionTab({
 
       <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            interests
-          </span>
+          <Icon name="interests" className="text-primary text-xl" />
           興味ジャンル
         </h2>
         <p className="text-sm text-gray-500 mb-4">

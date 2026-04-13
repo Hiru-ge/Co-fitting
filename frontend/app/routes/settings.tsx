@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/settings";
 import { useNavigate } from "react-router";
 import { authRequiredLoader } from "~/lib/auth";
@@ -40,9 +41,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             className="flex size-10 items-center justify-center rounded-full bg-white/10"
             aria-label="戻る"
           >
-            <span className="material-symbols-outlined text-xl text-gray-600">
-              arrow_back
-            </span>
+            <Icon name="arrow_back" className="text-xl text-gray-600" />
           </button>
           <h1 className="text-lg font-bold text-center">設定</h1>
           <div className="size-10" />
@@ -64,12 +63,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              <span
-                className="material-symbols-outlined text-base"
-                aria-hidden="true"
-              >
-                {tab.icon}
-              </span>
+              <Icon name={tab.icon} className="text-base" aria-hidden="true" />
               {tab.label}
             </button>
           ))}

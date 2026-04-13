@@ -516,21 +516,19 @@ describe("プロフィール画面", () => {
     expect(genreNameEl.tagName.toLowerCase()).toBe("span");
     expect(genreNameEl).toHaveClass("truncate");
 
-    // アイコンがmaterial-symbols-outlinedクラスを持つspan要素として別途存在すること
-    const iconSpans = document.querySelectorAll(
-      "span.material-symbols-outlined",
+    // アイコンがSVG要素として別途存在すること（Iconコンポーネントによるインラインsvg）
+    const iconContainers = document.querySelectorAll(".overflow-hidden");
+    const genreIconContainer = Array.from(iconContainers).find((el) =>
+      el.querySelector("svg"),
     );
-    const localCafeIconSpan = Array.from(iconSpans).find(
-      (el) => el.textContent?.trim() === "local_cafe",
-    );
-    expect(localCafeIconSpan).toBeTruthy();
+    expect(genreIconContainer).toBeTruthy();
+    const iconSvg = genreIconContainer?.querySelector("svg");
+    expect(iconSvg).toBeTruthy();
 
-    // アイコンspanとジャンル名spanが異なる要素であること
-    expect(localCafeIconSpan).not.toBe(genreNameEl);
-    expect(localCafeIconSpan?.textContent?.trim()).not.toContain("カフェ");
+    // アイコンSVGとジャンル名spanが異なる要素であること
+    expect(iconSvg).not.toBe(genreNameEl);
 
     // アイコンコンテナがoverflow-hiddenを持ち、はみ出しによる重なりを防止していること
-    const iconContainer = localCafeIconSpan?.parentElement;
-    expect(iconContainer).toHaveClass("overflow-hidden");
+    expect(genreIconContainer).toHaveClass("overflow-hidden");
   });
 });

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { getToken } from "~/lib/auth";
@@ -109,9 +110,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <>
           <AppHeader />
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-            <span className="material-symbols-outlined text-6xl text-gray-400">
-              explore_off
-            </span>
+            <Icon name="explore_off" className="text-6xl text-gray-400" />
             <p className="text-gray-500 text-center">
               {error || "近くのスポットが見つかりませんでした"}
             </p>

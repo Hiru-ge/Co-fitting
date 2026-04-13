@@ -1,3 +1,5 @@
+import { Icon } from "~/components/Icon";
+
 interface ActionButtonsProps {
   onCheckIn: () => void;
   onReload: () => void;
@@ -29,11 +31,10 @@ export default function ActionButtons({
           aria-label="リロード"
           className="size-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
-          <span
-            className={`material-symbols-outlined text-xl text-gray-300 ${isReloading ? "animate-spin" : ""}`}
-          >
-            {isReloading ? "progress_activity" : "refresh"}
-          </span>
+          <Icon
+            name={isReloading ? "progress_activity" : "refresh"}
+            className={`text-xl text-gray-300 ${isReloading ? "animate-spin" : ""}`}
+          />
         </button>
         <span className="text-xs text-white/70">
           あと{reloadCountRemaining}回
@@ -47,28 +48,22 @@ export default function ActionButtons({
       >
         {isCheckingIn ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined animate-spin text-xl">
-              progress_activity
-            </span>
+            <Icon name="progress_activity" className="animate-spin text-xl" />
             記録中...
           </span>
         ) : isVisited ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-xl">
-              check_circle
-            </span>
+            <Icon name="check_circle" className="text-xl" />
             記録済み
           </span>
         ) : !isNearPlace ? (
           <span className="flex items-center justify-center gap-2 text-sm">
-            <span className="material-symbols-outlined text-xl">
-              location_off
-            </span>
+            <Icon name="location_off" className="text-xl" />
             到着してから記録できます
           </span>
         ) : (
           <span className="flex items-center justify-center gap-2">
-            <span className="material-symbols-outlined text-xl">explore</span>
+            <Icon name="explore" className="text-xl" />
             行ってきた！
           </span>
         )}

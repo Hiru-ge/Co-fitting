@@ -1,3 +1,4 @@
+import { Icon } from "~/components/Icon";
 import type { BadgeInfo } from "~/types/visit";
 import { getBadgeIcon } from "~/utils/badge-icon";
 import ConfettiDecoration from "~/components/ConfettiDecoration";
@@ -58,13 +59,13 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
                 boxShadow: "0 0 40px rgba(140, 37, 244, 0.4)",
               }}
             >
-              <span
-                className="material-symbols-outlined text-white"
-                style={{ fontVariationSettings: "'FILL' 1", fontSize: "5rem" }}
+              <Icon
+                name={icon}
+                fill
+                className="text-white"
+                style={{ fontSize: "5rem" }}
                 aria-hidden="true"
-              >
-                {icon}
-              </span>
+              />
             </div>
           </div>
 
@@ -86,9 +87,7 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
           }}
         >
           <span>バッジを獲得</span>
-          <span className="material-symbols-outlined" aria-hidden="true">
-            military_tech
-          </span>
+          <Icon name="military_tech" aria-hidden="true" />
         </button>
       </div>
     </div>

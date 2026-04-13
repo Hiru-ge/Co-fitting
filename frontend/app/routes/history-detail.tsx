@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { Icon } from "~/components/Icon";
 import { redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/history-detail";
 import { authRequiredLoader } from "~/lib/auth";
@@ -91,9 +92,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
   if (!visit) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <span className="material-symbols-outlined text-6xl text-gray-300">
-          error_outline
-        </span>
+        <Icon name="error_outline" className="text-6xl text-gray-300" />
         <p className="text-gray-400 text-sm">訪問記録が見つかりません</p>
         <button
           onClick={() => navigate(-1)}
@@ -119,9 +118,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
               aria-label="戻る"
               className="flex items-center justify-center -ml-2 p-2 rounded-full active:bg-gray-100"
             >
-              <span className="material-symbols-outlined text-2xl">
-                arrow_back_ios_new
-              </span>
+              <Icon name="arrow_back_ios_new" className="text-2xl" />
             </button>
             <h1 className="text-xl font-bold tracking-tight truncate max-w-48">
               訪問詳細
@@ -142,9 +139,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
           >
             {!photoUrl && (
               <div className="flex items-center justify-center h-full text-gray-400">
-                <span className="material-symbols-outlined text-5xl">
-                  photo_camera
-                </span>
+                <Icon name="photo_camera" className="text-5xl" />
               </div>
             )}
           </div>
@@ -167,22 +162,16 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
 
             <div className="flex flex-wrap gap-3 text-xs text-gray-400">
               <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">
-                  calendar_today
-                </span>
+                <Icon name="calendar_today" className="text-sm" />
                 <span>{formatDate(visit.visited_at)}</span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">
-                  {categoryInfo.icon}
-                </span>
+                <Icon name={categoryInfo.icon} className="text-sm" />
                 <span>{categoryInfo.label}</span>
               </div>
               {visit.is_breakout && (
                 <div className="flex items-center gap-1 text-primary">
-                  <span className="material-symbols-outlined text-sm">
-                    emoji_events
-                  </span>
+                  <Icon name="emoji_events" className="text-sm" />
                   <span>コンフォートゾーン脱却</span>
                 </div>
               )}

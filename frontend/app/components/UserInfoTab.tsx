@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Icon } from "~/components/Icon";
 import { Link, useNavigate } from "react-router";
 import { clearToken } from "~/lib/auth";
 import { deleteAccount, updateDisplayName } from "~/api/users";
@@ -96,9 +97,7 @@ export default function UserInfoTab({ authToken, user }: UserInfoTabProps) {
     <div className="space-y-6">
       <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-200 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            badge
-          </span>
+          <Icon name="badge" className="text-primary text-xl" />
           表示名の変更
         </h2>
         <form onSubmit={handleUpdateDisplayName} className="space-y-4">
@@ -134,9 +133,7 @@ export default function UserInfoTab({ authToken, user }: UserInfoTabProps) {
 
       <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-200 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            policy
-          </span>
+          <Icon name="policy" className="text-primary text-xl" />
           法的情報・サポート
         </h2>
         <Link
@@ -144,14 +141,10 @@ export default function UserInfoTab({ authToken, user }: UserInfoTabProps) {
           className="flex items-center justify-between py-3 text-sm text-gray-300 hover:text-primary transition-colors"
         >
           <span className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg text-gray-400">
-              description
-            </span>
+            <Icon name="description" className="text-lg text-gray-400" />
             プライバシーポリシー
           </span>
-          <span className="material-symbols-outlined text-lg text-gray-400">
-            chevron_right
-          </span>
+          <Icon name="chevron_right" className="text-lg text-gray-400" />
         </Link>
         <div className="border-t border-white/10" />
         <a
@@ -161,22 +154,16 @@ export default function UserInfoTab({ authToken, user }: UserInfoTabProps) {
           className="flex items-center justify-between py-3 text-sm text-gray-300 hover:text-primary transition-colors"
         >
           <span className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-lg text-gray-400">
-              feedback
-            </span>
+            <Icon name="feedback" className="text-lg text-gray-400" />
             お問い合わせ・フィードバック
           </span>
-          <span className="material-symbols-outlined text-lg text-gray-400">
-            open_in_new
-          </span>
+          <Icon name="open_in_new" className="text-lg text-gray-400" />
         </a>
       </section>
 
       <section className="bg-white/5 rounded-2xl border border-red-900/30 shadow-sm p-5">
         <h2 className="text-base font-bold text-red-400 mb-2 flex items-center gap-2">
-          <span className="material-symbols-outlined text-red-500 text-xl">
-            warning
-          </span>
+          <Icon name="warning" className="text-red-500 text-xl" />
           アカウントの削除
         </h2>
         <p className="text-sm text-gray-400 mb-4">

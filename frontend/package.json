@@ -13,7 +13,6 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@fontsource/material-symbols-outlined": "^5.2.35",
     "@fontsource/noto-sans-jp": "^5.2.9",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@fontsource/space-grotesk": "^5.2.10",
@@ -30,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@iconify-json/material-symbols": "^1.2.66",
     "@playwright/test": "^1.58.2",
     "@react-router/dev": "7.12.0",
     "@tailwindcss/vite": "^4.1.13",

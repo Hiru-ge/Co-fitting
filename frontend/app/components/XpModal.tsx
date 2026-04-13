@@ -1,3 +1,4 @@
+import { Icon } from "~/components/Icon";
 import { getLevelInfo } from "~/utils/level";
 import ConfettiDecoration from "~/components/ConfettiDecoration";
 import type { XPBreakdown } from "~/types/visit";
@@ -93,16 +94,13 @@ export default function XpModal({
                 boxShadow: "0 0 40px rgba(19, 236, 236, 0.4)",
               }}
             >
-              <span
-                className="material-symbols-outlined text-white"
-                style={{
-                  fontVariationSettings: "'FILL' 1",
-                  fontSize: "6.5rem",
-                }}
+              <Icon
+                name="check"
+                fill
+                className="text-white"
+                style={{ fontSize: "6.5rem" }}
                 aria-hidden="true"
-              >
-                check
-              </span>
+              />
             </div>
           </div>
 
@@ -110,13 +108,12 @@ export default function XpModal({
           <div className="mt-10 space-y-2">
             {isLevelUp && (
               <div className="flex items-center justify-center gap-1.5 mb-1">
-                <span
-                  className="material-symbols-outlined text-yellow-400 text-base"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
+                <Icon
+                  name="military_tech"
+                  fill
+                  className="text-yellow-400 text-base"
                   aria-hidden="true"
-                >
-                  military_tech
-                </span>
+                />
                 <span className="text-yellow-400 text-sm font-bold tracking-widest uppercase">
                   Level Up!
                 </span>
@@ -202,9 +199,7 @@ export default function XpModal({
           }}
         >
           <span>次の冒険へ</span>
-          <span className="material-symbols-outlined" aria-hidden="true">
-            rocket_launch
-          </span>
+          <Icon name="rocket_launch" aria-hidden="true" />
         </button>
       </div>
     </div>

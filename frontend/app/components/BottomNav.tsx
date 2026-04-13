@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router";
+import { Icon } from "~/components/Icon";
 
 const navItems = [
   { to: "/home", label: "発見", icon: "explore" },
@@ -27,12 +28,7 @@ export default function BottomNav() {
                 isActive ? "text-primary" : "text-gray-400"
               }`}
             >
-              <span
-                className="material-symbols-outlined text-2xl"
-                style={{ fontVariationSettings: `'FILL' ${isActive ? 1 : 0}` }}
-              >
-                {icon}
-              </span>
+              <Icon name={icon} fill={isActive} className="text-2xl" />
               <span className="text-xs font-medium">{label}</span>
             </NavLink>
           );

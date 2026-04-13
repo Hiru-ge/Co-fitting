@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import type { MetaFunction } from "react-router";
+import { Icon } from "~/components/Icon";
 
 export const meta: MetaFunction = () => [
   { title: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ" },
@@ -178,9 +179,10 @@ export default function LP() {
               "知らない場所に飛び込んで新しい経験をしたい",
             ].map((text) => (
               <li key={text} className="flex items-start gap-3">
-                <span className="material-symbols-outlined text-primary text-lg mt-0.5 shrink-0">
-                  chevron_right
-                </span>
+                <Icon
+                  name="chevron_right"
+                  className="text-primary text-lg mt-0.5 shrink-0"
+                />
                 <span>{text}</span>
               </li>
             ))}
@@ -209,9 +211,7 @@ export default function LP() {
               <div className="lg:flex-1 space-y-8">
                 <div className="flex items-start gap-5">
                   <div className="shrink-0 w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary text-2xl">
-                      explore
-                    </span>
+                    <Icon name="explore" className="text-primary text-2xl" />
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">1. 背中を押す</h3>
@@ -237,9 +237,10 @@ export default function LP() {
               <div className="lg:flex-1 space-y-8">
                 <div className="flex items-start gap-5">
                   <div className="shrink-0 w-12 h-12 rounded-full bg-primary-purple/15 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary-purple text-2xl">
-                      flag
-                    </span>
+                    <Icon
+                      name="flag"
+                      className="text-primary-purple text-2xl"
+                    />
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
@@ -275,9 +276,10 @@ export default function LP() {
               <div className="lg:flex-1 space-y-8">
                 <div className="flex items-start gap-5">
                   <div className="shrink-0 w-12 h-12 rounded-full bg-accent-orange/15 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-accent-orange text-2xl">
-                      trending_up
-                    </span>
+                    <Icon
+                      name="trending_up"
+                      className="text-accent-orange text-2xl"
+                    />
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
@@ -395,9 +397,7 @@ export default function LP() {
 
           {formState === "success" ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <span className="material-symbols-outlined text-primary text-4xl">
-                check_circle
-              </span>
+              <Icon name="check_circle" className="text-primary text-4xl" />
               <p className="font-semibold">登録しました！</p>
               <p className="text-sm text-white/60">
                 iOS版がリリースされたらメールでお知らせします。

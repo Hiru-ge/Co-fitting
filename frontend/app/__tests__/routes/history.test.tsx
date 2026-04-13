@@ -374,7 +374,13 @@ describe("History", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("photo_camera")).toBeInTheDocument();
+        // photo_cameraアイコンはSVGとして描画される（テキストではない）
+        const thumbnails = document.querySelectorAll(
+          ".aspect-square.bg-cover.rounded-lg",
+        );
+        expect(thumbnails.length).toBeGreaterThan(0);
+        const placeholder = thumbnails[0].querySelector("svg");
+        expect(placeholder).toBeInTheDocument();
       });
 
       expect(mockGetPlacePhoto).toHaveBeenCalled();

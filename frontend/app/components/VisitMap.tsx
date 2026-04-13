@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Icon } from "~/components/Icon";
 import { Link } from "react-router";
 import {
   APIProvider,
@@ -47,12 +48,7 @@ function PinMarker({ category }: { category: string }) {
         className="flex items-center justify-center size-9 rounded-full border-2 border-white"
         style={{ backgroundColor: categoryInfo.hexColor }}
       >
-        <span
-          className="material-symbols-outlined text-white text-sm"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          {categoryInfo.icon}
-        </span>
+        <Icon name={categoryInfo.icon} fill className="text-white text-sm" />
       </div>
       <div
         className="w-0 h-0"
@@ -76,12 +72,7 @@ function VisitInfoContent({ visit }: { visit: MapVisit }) {
         {visit.place_name}
       </p>
       <div className="flex items-center gap-1 text-gray-500 text-xs mb-2">
-        <span
-          className="material-symbols-outlined text-xs"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          {categoryInfo.icon}
-        </span>
+        <Icon name={categoryInfo.icon} fill className="text-xs" />
         <span>{categoryInfo.label}</span>
         <span className="mx-0.5">·</span>
         <span>{formatShortDate(visit.visited_at)}</span>

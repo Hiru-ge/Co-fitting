@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Icon } from "~/components/Icon";
 import {
   getNotificationSettings,
   updateNotificationSettings,
@@ -193,9 +194,7 @@ export default function NotificationTab({ authToken }: { authToken: string }) {
       {/* Push通知セクション */}
       <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-200 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            notifications
-          </span>
+          <Icon name="notifications" className="text-primary text-xl" />
           Push通知
         </h2>
 
@@ -203,18 +202,17 @@ export default function NotificationTab({ authToken }: { authToken: string }) {
         <div className="mb-4">
           {isIOS && !isStandalone ? (
             <div className="flex items-start gap-2 bg-blue-900/20 rounded-xl p-3">
-              <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">
-                info
-              </span>
+              <Icon
+                name="info"
+                className="text-blue-500 text-base shrink-0 mt-0.5"
+              />
               <p className="text-xs text-blue-300">
                 Push通知はホーム画面に追加後に利用できます。Safari共有メニューから「ホーム画面に追加」してください。
               </p>
             </div>
           ) : pushPermission === "granted" ? (
             <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-              <span className="material-symbols-outlined text-base">
-                check_circle
-              </span>
+              <Icon name="check_circle" className="text-base" />
               通知が許可されています
             </div>
           ) : pushPermission === "default" ? (
@@ -228,9 +226,7 @@ export default function NotificationTab({ authToken }: { authToken: string }) {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-                <span className="material-symbols-outlined text-base">
-                  notifications_off
-                </span>
+                <Icon name="notifications_off" className="text-base" />
                 通知が拒否されています
               </div>
               <p className="text-xs text-gray-400">
@@ -318,9 +314,7 @@ export default function NotificationTab({ authToken }: { authToken: string }) {
       {/* メール通知セクション */}
       <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
         <h2 className="text-base font-bold text-gray-200 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-xl">
-            mail
-          </span>
+          <Icon name="mail" className="text-primary text-xl" />
           メール通知
         </h2>
 

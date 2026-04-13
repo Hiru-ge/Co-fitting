@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Icon } from "~/components/Icon";
 import type { Place } from "~/types/suggestion";
 import {
   getCategoryInfo,
@@ -108,12 +109,11 @@ export default function DiscoveryCard({
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
-          <span
-            className="material-symbols-outlined text-white"
+          <Icon
+            name={category.icon}
+            className="text-white"
             style={{ fontSize: "12rem" }}
-          >
-            {category.icon}
-          </span>
+          />
         </div>
       )}
 
@@ -162,22 +162,16 @@ export default function DiscoveryCard({
             style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
           >
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">
-                {category.icon}
-              </span>
+              <Icon name={category.icon} className="text-base" />
               {category.label}
             </span>
             <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-base">
-                distance
-              </span>
+              <Icon name="distance" className="text-base" />
               {formatDistance(distance)}
             </span>
             {place.rating > 0 && (
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-base text-yellow-400">
-                  star
-                </span>
+                <Icon name="star" className="text-base text-yellow-400" />
                 {place.rating.toFixed(1)}
               </span>
             )}
@@ -189,9 +183,7 @@ export default function DiscoveryCard({
       {isVisited && (
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
           <div className="bg-white/20 backdrop-blur-md rounded-full p-4">
-            <span className="material-symbols-outlined text-white text-5xl">
-              check_circle
-            </span>
+            <Icon name="check_circle" className="text-white text-5xl" />
           </div>
         </div>
       )}

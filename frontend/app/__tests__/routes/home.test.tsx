@@ -765,8 +765,9 @@ describe("Home画面", () => {
     await waitFor(() => {
       expect(screen.getByText("テストカフェ")).toBeInTheDocument();
     });
-    // isDefaultLocation=true のとき AppHeader のアイコンが location_off に切り替わる
-    expect(screen.getByText("location_off")).toBeInTheDocument();
+    // isDefaultLocation=true のとき AppHeader のアイコンが amber-500 色（location_off）に切り替わる
+    const locationIcon = document.querySelector("svg.text-amber-500");
+    expect(locationIcon).toBeInTheDocument();
   });
 
   test("位置情報モーダルで「設定で許可する」を選ぶと設定画面へ遷移する", async () => {

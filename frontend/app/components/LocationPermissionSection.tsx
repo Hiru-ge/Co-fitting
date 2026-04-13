@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Icon } from "~/components/Icon";
 
 function getAcceptSteps(
   isIOS: boolean,
@@ -88,9 +89,7 @@ export default function LocationPermissionSection() {
     if (permissionState === "granted") {
       return (
         <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-          <span className="material-symbols-outlined text-base">
-            check_circle
-          </span>
+          <Icon name="check_circle" className="text-base" />
           許可済み — 現在地を使って提案しています
         </div>
       );
@@ -100,9 +99,7 @@ export default function LocationPermissionSection() {
       return (
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
-            <span className="material-symbols-outlined text-base">
-              location_off
-            </span>
+            <Icon name="location_off" className="text-base" />
             位置情報が拒否されています
           </div>
           <p className="text-xs text-gray-400">
@@ -142,9 +139,7 @@ export default function LocationPermissionSection() {
 
     return (
       <div className="flex items-start gap-2 bg-blue-900/20 rounded-xl p-3">
-        <span className="material-symbols-outlined text-blue-500 text-base shrink-0 mt-0.5">
-          info
-        </span>
+        <Icon name="info" className="text-blue-500 text-base shrink-0 mt-0.5" />
         <p className="text-xs text-blue-300">
           まだ許可されていません。ホーム画面でスポットを読み込む際に許可ダイアログが表示されます。
           {isIOS &&
@@ -161,9 +156,7 @@ export default function LocationPermissionSection() {
   return (
     <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
       <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary text-xl">
-          my_location
-        </span>
+        <Icon name="my_location" className="text-primary text-xl" />
         位置情報
       </h2>
       <p className="text-sm text-gray-400 mb-4">

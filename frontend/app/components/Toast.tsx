@@ -1,3 +1,4 @@
+import { Icon } from "~/components/Icon";
 import {
   createContext,
   useContext,
@@ -40,11 +41,10 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
       className={`pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg backdrop-blur-md transition-all animate-slide-in ${config.bg}`}
       role="alert"
     >
-      <span
-        className={`material-symbols-outlined text-xl shrink-0 mt-0.5 ${config.iconColor}`}
-      >
-        {config.icon}
-      </span>
+      <Icon
+        name={config.icon}
+        className={`text-xl shrink-0 mt-0.5 ${config.iconColor}`}
+      />
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium ${config.textColor}`}>
           {toast.message}
@@ -66,11 +66,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         className={`shrink-0 rounded-full p-1 transition-colors ${config.closeHover}`}
         aria-label="閉じる"
       >
-        <span
-          className={`material-symbols-outlined text-base ${config.iconColor}`}
-        >
-          close
-        </span>
+        <Icon name="close" className={`text-base ${config.iconColor}`} />
       </button>
     </div>
   );

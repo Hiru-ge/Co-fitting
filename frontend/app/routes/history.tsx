@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/history";
 import { useNavigate, Link } from "react-router";
 import { authRequiredLoader } from "~/lib/auth";
@@ -63,9 +64,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
       >
         {!visit.photoUrl && (
           <div className="flex items-center justify-center size-full text-gray-400">
-            <span className="material-symbols-outlined text-3xl">
-              photo_camera
-            </span>
+            <Icon name="photo_camera" className="text-3xl" />
           </div>
         )}
       </div>
@@ -79,9 +78,7 @@ function VisitHistoryItem({ visit }: { visit: VisitWithPhoto }) {
         </div>
         <p className="text-gray-400 text-xs mt-0.5">{visit.vicinity}</p>
         <div className="flex items-center gap-1 mt-2 text-gray-400">
-          <span className="material-symbols-outlined text-xs">
-            calendar_today
-          </span>
+          <Icon name="calendar_today" className="text-xs" />
           <p className="text-xs font-medium">
             {formatShortDate(visit.visited_at)}
           </p>
@@ -173,9 +170,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
               onClick={() => navigate(-1)}
               className="flex items-center justify-center -ml-2 p-2 rounded-full active:bg-gray-100"
             >
-              <span className="material-symbols-outlined text-2xl">
-                arrow_back_ios_new
-              </span>
+              <Icon name="arrow_back_ios_new" className="text-2xl" />
             </button>
             <h1 className="text-2xl font-bold tracking-tight">
               これまでの旅路
@@ -195,7 +190,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
                 : "bg-white/10 text-white/70"
             }`}
           >
-            <span className="material-symbols-outlined text-base">list</span>
+            <Icon name="list" className="text-base" />
             <span>リスト</span>
           </button>
           <button
@@ -207,7 +202,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
                 : "bg-white/10 text-white/70"
             }`}
           >
-            <span className="material-symbols-outlined text-base">map</span>
+            <Icon name="map" className="text-base" />
             <span>マップ</span>
           </button>
         </div>
@@ -241,9 +236,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
                       : "bg-white/10 text-white/70"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-lg">
-                    {categoryInfo.icon}
-                  </span>
+                  <Icon name={categoryInfo.icon} className="text-lg" />
                   <span className="text-sm font-medium">
                     {categoryInfo.label}
                   </span>
@@ -284,9 +277,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
             <main className="flex flex-col px-4 pt-6 space-y-8">
               {filteredVisits.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
-                  <span className="material-symbols-outlined text-6xl text-gray-300">
-                    explore
-                  </span>
+                  <Icon name="explore" className="text-6xl text-gray-300" />
                   <p className="text-gray-400 text-center text-sm">
                     まだ訪問記録がありません
                     <br />

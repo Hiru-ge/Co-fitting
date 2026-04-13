@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Icon } from "~/components/Icon";
 import { useRef, useState } from "react";
 import { useCardDrag } from "~/hooks/use-card-drag";
 
@@ -109,15 +110,14 @@ export default function CompleteCard({ onSwipe: _ }: CompleteCardProps = {}) {
       {/* コンテンツ */}
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 px-6 text-center">
         {/* トロフィーアイコン */}
-        <span
-          className="material-symbols-outlined text-yellow-400"
+        <Icon
+          name="emoji_events"
+          className="text-yellow-400"
           style={{
             fontSize: "4rem",
             filter: "drop-shadow(0 0 20px rgba(250,200,0,0.7))",
           }}
-        >
-          emoji_events
-        </span>
+        />
 
         {/* メッセージ */}
         <div className="flex flex-col gap-3">
@@ -137,7 +137,7 @@ export default function CompleteCard({ onSwipe: _ }: CompleteCardProps = {}) {
           className="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 transition-colors rounded-full text-white font-bold text-sm"
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <span className="material-symbols-outlined text-base">history</span>
+          <Icon name="history" className="text-base" />
           訪問した場所を振り返る
         </Link>
       </div>

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import { Icon } from "~/components/Icon";
 
 function Section({
   number,
@@ -47,9 +48,7 @@ export default function Privacy() {
             className="flex size-10 items-center justify-center rounded-full bg-white/10"
             aria-label="戻る"
           >
-            <span className="material-symbols-outlined text-xl text-gray-300">
-              arrow_back
-            </span>
+            <Icon name="arrow_back" className="text-xl text-gray-300" />
           </button>
           <h1 className="text-lg font-bold text-center">
             プライバシーポリシー

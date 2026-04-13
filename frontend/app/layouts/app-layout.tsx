@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import BottomNav from "~/components/BottomNav";
+import { Icon } from "~/components/Icon";
 
 const FEEDBACK_URL = "https://forms.gle/upcMz6uV97hmLn9n9";
 
@@ -23,7 +24,7 @@ export default function AppLayout() {
         aria-label="フィードバックを送る"
         className="fixed bottom-20 right-4 z-40 flex items-center justify-center w-12 h-12 rounded-full bg-violet-500 text-white shadow-lg hover:bg-violet-600 active:scale-95 transition-all"
       >
-        <span className="material-symbols-outlined text-[22px]">mail</span>
+        <Icon name="mail" className="text-[22px]" />
       </a>
     </div>
   );

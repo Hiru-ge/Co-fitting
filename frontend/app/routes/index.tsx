@@ -1,6 +1,7 @@
 import { Link, redirect } from "react-router";
 import { getToken } from "~/lib/auth";
 import { isStandalone, isPWAPromptDismissed } from "~/lib/pwa";
+import { Icon } from "~/components/Icon";
 
 export async function clientLoader() {
   const authToken = getToken();
@@ -32,9 +33,7 @@ export default function Index() {
           {/* Step 1 */}
           <div className="flex items-start gap-4">
             <div className="shrink-0 w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-xl">
-                explore
-              </span>
+              <Icon name="explore" className="text-primary text-xl" />
             </div>
             <div>
               <p className="font-semibold text-sm text-white">提案</p>
@@ -47,9 +46,7 @@ export default function Index() {
           {/* Step 2 */}
           <div className="flex items-start gap-4">
             <div className="shrink-0 w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-xl">
-                directions_walk
-              </span>
+              <Icon name="directions_walk" className="text-primary text-xl" />
             </div>
             <div>
               <p className="font-semibold text-sm text-white">訪問</p>
@@ -62,9 +59,7 @@ export default function Index() {
           {/* Step 3 */}
           <div className="flex items-start gap-4">
             <div className="shrink-0 w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-xl">
-                check_circle
-              </span>
+              <Icon name="check_circle" className="text-primary text-xl" />
             </div>
             <div>
               <p className="font-semibold text-sm text-white">記録</p>
@@ -84,9 +79,7 @@ export default function Index() {
             className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 transition-colors hover:bg-white/10"
           >
             <span className="text-sm text-white/70">Roamble ってなに？</span>
-            <span className="material-symbols-outlined text-white/40 text-lg">
-              arrow_forward
-            </span>
+            <Icon name="arrow_forward" className="text-white/40 text-lg" />
           </Link>
         </div>
       </section>

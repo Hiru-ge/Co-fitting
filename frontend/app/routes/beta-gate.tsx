@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, redirect } from "react-router";
 import { isBetaUnlocked, unlockBeta } from "~/lib/beta-access";
+import { Icon } from "~/components/Icon";
 
 export async function clientLoader() {
   if (isBetaUnlocked()) {
@@ -90,9 +91,7 @@ export default function BetaGate() {
             className="flex items-center justify-between w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 transition-colors hover:bg-white/10"
           >
             <span className="text-sm text-white/70">Roamble ってなに？</span>
-            <span className="material-symbols-outlined text-white/40 text-lg">
-              arrow_forward
-            </span>
+            <Icon name="arrow_forward" className="text-white/40 text-lg" />
           </Link>
         </div>
 

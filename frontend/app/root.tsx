@@ -1,8 +1,6 @@
 import "@fontsource/plus-jakarta-sans";
 import "@fontsource/space-grotesk";
 import "@fontsource/noto-sans-jp";
-import "@fontsource/material-symbols-outlined/400.css";
-
 import "./app.css";
 
 import { useEffect } from "react";

@@ -1,3 +1,5 @@
+import { Icon } from "~/components/Icon";
+
 export default function FormMessageDisplay({
   success,
   error,
@@ -8,9 +10,7 @@ export default function FormMessageDisplay({
   if (success) {
     return (
       <p className="text-sm text-green-600 flex items-center gap-1">
-        <span className="material-symbols-outlined text-base">
-          check_circle
-        </span>
+        <Icon name="check_circle" className="text-base" />
         {success}
       </p>
     );
@@ -19,7 +19,7 @@ export default function FormMessageDisplay({
   if (error) {
     return (
       <p className="text-sm text-red-500 flex items-center gap-1">
-        <span className="material-symbols-outlined text-base">error</span>
+        <Icon name="error" className="text-base" />
         {error}
       </p>
     );
