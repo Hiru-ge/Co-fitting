@@ -28,11 +28,12 @@ async function loadPhotos(
     const batch = visits.slice(i, i + PHOTO_BATCH_SIZE);
     const batchResults = await Promise.all(
       batch.map(async (visit) => {
+        if (!visit.photo_reference) return visit;
         try {
           const photoUrl = await getPlacePhoto(
             token,
             visit.place_id,
-            visit.photo_reference as string,
+            visit.photo_reference,
           );
           return { ...visit, photoUrl };
         } catch {

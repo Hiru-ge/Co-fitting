@@ -17,11 +17,12 @@ export async function clientLoader() {
   ]);
   const visits = await Promise.all(
     visitRes.visits.map(async (v: Visit) => {
+      if (!v.photo_reference) return { ...v };
       try {
         const photoUrl = await getPlacePhoto(
           token,
           v.place_id,
-          v.photo_reference as string,
+          v.photo_reference,
         );
         return { ...v, photoUrl };
       } catch {

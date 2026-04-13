@@ -44,15 +44,17 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
       setRating(data.rating ?? null);
 
       // 写真を取得（photo_referenceを渡してRedis TTL失効後も再解決できるようにする）
-      try {
-        const photoUrl = await getPlacePhoto(
-          authToken,
-          data.place_id,
-          data.photo_reference as string,
-        );
-        setPhotoUrl(photoUrl);
-      } catch {
-        // 写真取得失敗はスキップ
+      if (data.photo_reference) {
+        try {
+          const photoUrl = await getPlacePhoto(
+            authToken,
+            data.place_id,
+            data.photo_reference,
+          );
+          setPhotoUrl(photoUrl);
+        } catch {
+          // 写真取得失敗はスキップ
+        }
       }
     } catch (err) {
       showToast(toUserMessage(err));

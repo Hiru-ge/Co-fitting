@@ -4,6 +4,7 @@ import type { Route } from "./+types/home";
 import { redirect } from "react-router";
 import { getToken } from "~/lib/auth";
 import { getInterests } from "~/api/users";
+import { ApiError } from "~/utils/error";
 import { ONBOARDING_SKIPPED_KEY, HOME_TOUR_SEEN_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
 import { sendSuggestionViewed } from "~/lib/gtag";
@@ -26,8 +27,11 @@ export async function clientLoader() {
   let interests: Awaited<ReturnType<typeof getInterests>>;
   try {
     interests = await getInterests(authToken);
-  } catch {
-    throw redirect("/login");
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 401) {
+      throw redirect("/login");
+    }
+    throw err;
   }
 
   const onboardingSkipped =

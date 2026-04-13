@@ -6,6 +6,7 @@ import {
   getRefreshToken,
 } from "~/lib/token-storage";
 import { getUser as getUserFromApi } from "~/api/users";
+import { ApiError } from "~/utils/error";
 
 export { refreshToken, tryRefreshToken } from "~/lib/token-refresh";
 export { getToken, setToken, clearToken } from "~/lib/token-storage";
@@ -66,7 +67,11 @@ export async function authRequiredLoader() {
   try {
     const user = await getUserFromApi(authToken);
     return { user, token: authToken };
-  } catch {
-    throw redirect("/login");
+  } catch (err) {
+    // 401（認証切れ・未認証）のみログインへ。429・500・ネットワークエラー等は上位に伝播させる
+    if (err instanceof ApiError && err.status === 401) {
+      throw redirect("/login");
+    }
+    throw err;
   }
 }
