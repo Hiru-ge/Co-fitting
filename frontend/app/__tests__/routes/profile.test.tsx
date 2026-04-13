@@ -55,8 +55,8 @@ vi.mock("~/api/badges", () => ({
     },
     {
       id: 2,
-      name: "コンフォートゾーン・ブレイカー",
-      description: "初めてコンフォートゾーンを脱却した",
+      name: "ジャンル開拓者",
+      description: "脱却訪問を5件達成した",
       icon_url: "",
     },
     { id: 3, name: "探索者", description: "10回訪問した", icon_url: "" },
@@ -106,8 +106,8 @@ vi.mock("~/api/users", () => ({
     },
     {
       id: 2,
-      name: "コンフォートゾーン・ブレイカー",
-      description: "初めてコンフォートゾーンを脱却した",
+      name: "ジャンル開拓者",
+      description: "脱却訪問を5件達成した",
       icon_url: "",
       earned_at: "2025-08-01T10:00:00Z",
     },
@@ -165,8 +165,8 @@ const mockBadges = [
   },
   {
     id: 2,
-    name: "コンフォートゾーン・ブレイカー",
-    description: "初めてコンフォートゾーンを脱却した",
+    name: "ジャンル開拓者",
+    description: "脱却訪問を5件達成した",
     icon_url: "",
     earned_at: "2025-08-01T10:00:00Z",
   },
@@ -399,9 +399,7 @@ describe("プロフィール画面", () => {
 
     await waitFor(() => {
       expect(screen.getByText("最初の一歩")).toBeInTheDocument();
-      expect(
-        screen.getByText("コンフォートゾーン・ブレイカー"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("ジャンル開拓者")).toBeInTheDocument();
     });
   });
 

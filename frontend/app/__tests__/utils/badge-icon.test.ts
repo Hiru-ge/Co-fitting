@@ -9,8 +9,8 @@ describe("getBadgeIcon", () => {
     expect(result.border).toBe("border-primary");
   });
 
-  test("コンフォートゾーン・ブレイカーのアイコン", () => {
-    const result = getBadgeIcon("コンフォートゾーン・ブレイカー");
+  test("ジャンル開拓者のアイコン", () => {
+    const result = getBadgeIcon("ジャンル開拓者");
     expect(result.icon).toBe("rocket_launch");
     expect(result.color).toBe("text-amber-500");
   });

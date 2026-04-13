@@ -168,18 +168,18 @@ s
 
 **🟢 GREEN**
 
-- [ ] `backend/database/seed.go` の `"コンフォートゾーン・ブレイカー"` → `"ジャンル開拓者"` に変更
-- [ ] `backend/services/email.go` の `badgeIconMap` の当該キーを `"ジャンル開拓者"` に変更
-- [ ] `badges` テーブルの当該レコードを更新するマイグレーション作成
-- [ ] `backend/services/gamification_test.go` のテスト名・バッジ名参照をすべて `"ジャンル開拓者"` に変更
-- [ ] `frontend/app/utils/badge-icon.ts:10` のキー `"コンフォートゾーン・ブレイカー"` → `"ジャンル開拓者"` に変更
-- [ ] `frontend/app/__tests__/utils/badge-icon.test.ts` のバッジ名参照を変更
-- [ ] `frontend/app/__tests__/routes/profile.test.tsx:58,109,168,403` のバッジ名・description参照を変更
-- [ ] `frontend/app/__tests__/routes/home.test.tsx:575,617` のバッジ名参照を変更
+- [x] `backend/database/seed.go` の `"コンフォートゾーン・ブレイカー"` → `"ジャンル開拓者"` に変更
+- [x] `backend/services/email.go` の `badgeIconMap` の当該キーを `"ジャンル開拓者"` に変更
+- [x] `badges` テーブルの当該レコードを更新するマイグレーション作成
+- [x] `backend/services/gamification_test.go` のテスト名・バッジ名参照をすべて `"ジャンル開拓者"` に変更
+- [x] `frontend/app/utils/badge-icon.ts:10` のキー `"コンフォートゾーン・ブレイカー"` → `"ジャンル開拓者"` に変更
+- [x] `frontend/app/__tests__/utils/badge-icon.test.ts` のバッジ名参照を変更
+- [x] `frontend/app/__tests__/routes/profile.test.tsx:58,109,168,403` のバッジ名・description参照を変更
+- [x] `frontend/app/__tests__/routes/home.test.tsx:575,617` のバッジ名参照を変更
 
 **🔵 REFACTOR**
 
-- [ ] `backend/handlers/suggestion_test.go` の `TestProficiencyBasedComfortZone`（2073行目）を `TestProficiencyBasedBreakout` にリネーム
+- [x] `backend/handlers/suggestion_test.go` の `TestProficiencyBasedComfortZone`（2073行目）を `TestProficiencyBasedBreakout` にリネーム
 
 ---
 

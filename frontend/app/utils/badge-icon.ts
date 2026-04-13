@@ -7,7 +7,7 @@ const BADGE_ICON_MAP: Record<
     color: "text-primary",
     border: "border-primary",
   },
-  "コンフォートゾーン・ブレイカー": {
+  ジャンル開拓者: {
     icon: "rocket_launch",
     color: "text-amber-500",
     border: "border-amber-400",

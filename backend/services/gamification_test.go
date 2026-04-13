@@ -511,8 +511,8 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		}
 
 		for _, b := range newBadges {
-			if b.Name == "コンフォートゾーン・ブレイカー" {
-				t.Errorf("should not award 'コンフォートゾーン・ブレイカー' on 4th escape visit, got %v", newBadges)
+			if b.Name == "ジャンル開拓者" {
+				t.Errorf("should not award 'ジャンル開拓者' on 4th escape visit, got %v", newBadges)
 			}
 		}
 	})
@@ -542,12 +542,12 @@ func TestCheckAndAwardBadges(t *testing.T) {
 
 		found := false
 		for _, b := range newBadges {
-			if b.Name == "コンフォートゾーン・ブレイカー" {
+			if b.Name == "ジャンル開拓者" {
 				found = true
 			}
 		}
 		if !found {
-			t.Errorf("expected 'コンフォートゾーン・ブレイカー' badge on 5th escape visit, got %v", newBadges)
+			t.Errorf("expected 'ジャンル開拓者' badge on 5th escape visit, got %v", newBadges)
 		}
 	})
 

@@ -59,10 +59,61 @@ func runDataMigrations(db *gorm.DB) error {
 	if err := migrateV342ExcludeNaturalSpots(db); err != nil {
 		return fmt.Errorf("v342: %w", err)
 	}
+	if err := migrateV343RenameComfortZoneBreakerBadge(db); err != nil {
+		return fmt.Errorf("v343: %w", err)
+	}
 	if err := normalizePremiumVisitCategory(db); err != nil {
 		return fmt.Errorf("premium-category-normalization: %w", err)
 	}
 	return nil
+}
+
+// migrateV343RenameComfortZoneBreakerBadge は
+// バッジ名「コンフォートゾーン・ブレイカー」を「ジャンル開拓者」に移行する。
+// Seed 実行後に旧名・新名の両方が存在するケースでも user_badges を統合して冪等に処理する。
+func migrateV343RenameComfortZoneBreakerBadge(db *gorm.DB) error {
+	const oldName = "コンフォートゾーン・ブレイカー"
+	const newName = "ジャンル開拓者"
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		var oldBadge models.Badge
+		errOld := tx.Where("name = ?", oldName).First(&oldBadge).Error
+		if errOld != nil {
+			return nil
+		}
+
+		var newBadge models.Badge
+		errNew := tx.Where("name = ?", newName).First(&newBadge).Error
+
+		if errNew != nil {
+			if err := tx.Model(&oldBadge).Update("name", newName).Error; err != nil {
+				return fmt.Errorf("badge名更新失敗: %w", err)
+			}
+			return nil
+		}
+
+		if err := tx.Exec(`
+			DELETE ub_old FROM user_badges ub_old
+			INNER JOIN user_badges ub_new
+				ON ub_old.user_id = ub_new.user_id
+				AND ub_new.badge_id = ?
+			WHERE ub_old.badge_id = ?
+		`, newBadge.ID, oldBadge.ID).Error; err != nil {
+			return fmt.Errorf("重複user_badges削除失敗: %w", err)
+		}
+
+		if err := tx.Model(&models.UserBadge{}).
+			Where("badge_id = ?", oldBadge.ID).
+			Update("badge_id", newBadge.ID).Error; err != nil {
+			return fmt.Errorf("user_badges移行失敗: %w", err)
+		}
+
+		if err := tx.Delete(&oldBadge).Error; err != nil {
+			return fmt.Errorf("旧バッジ削除失敗: %w", err)
+		}
+
+		return nil
+	})
 }
 
 // normalizePremiumVisitCategory は「プレミア」ジャンルに紐づく訪問の

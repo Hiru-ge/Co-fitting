@@ -572,8 +572,8 @@ describe("Home画面", () => {
         },
         {
           id: 2,
-          name: "コンフォートゾーン・ブレイカー",
-          description: "脱却訪問を達成！",
+          name: "ジャンル開拓者",
+          description: "脱却訪問を5件達成した",
           icon_url: "",
         },
       ],
@@ -613,9 +613,7 @@ describe("Home画面", () => {
       expect(
         screen.getByRole("dialog", { name: "バッジ獲得" }),
       ).toBeInTheDocument();
-      expect(
-        screen.getByText("コンフォートゾーン・ブレイカー"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("ジャンル開拓者")).toBeInTheDocument();
     });
   });
 

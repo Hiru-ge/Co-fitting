@@ -2068,9 +2068,9 @@ func TestCorruptedCacheHandling(t *testing.T) {
 	})
 }
 
-// TestProficiencyBasedComfortZone は Issue #198 の熟練度ベース脱却判定テスト
+// TestProficiencyBasedBreakout は Issue #198 の熟練度ベース脱却判定テスト
 // 提案APIレスポンスに is_breakout フラグが設定されることを確認する
-func TestProficiencyBasedComfortZone(t *testing.T) {
+func TestProficiencyBasedBreakout(t *testing.T) {
 	cafePlaces := []services.PlaceResult{
 		{PlaceID: "cafe_prof_1", Name: "カフェX", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
 		{PlaceID: "cafe_prof_2", Name: "カフェY", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
