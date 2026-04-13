@@ -3,6 +3,8 @@ import { Icon } from "~/components/Icon";
 import { redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/history-detail";
 import { authRequiredLoader } from "~/lib/auth";
+import { RouteErrorBoundary } from "~/components/RouteErrorBoundary";
+export { RouteErrorBoundary as ErrorBoundary };
 import { getVisit, updateVisit } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { redirect, useNavigate } from "react-router";
 import type { Route } from "./+types/interest-setup";
 import { getToken } from "~/lib/auth";
+import { RouteErrorBoundary } from "~/components/RouteErrorBoundary";
+export { RouteErrorBoundary as ErrorBoundary };
 import { getGenreTags } from "~/api/genres";
 import { getInterests, updateInterests } from "~/api/users";
 import { ONBOARDING_SKIPPED_KEY } from "~/utils/constants";

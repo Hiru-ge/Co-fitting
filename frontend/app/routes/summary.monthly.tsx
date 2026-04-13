@@ -1,5 +1,7 @@
 import type { Route } from "./+types/summary.monthly";
 import { authRequiredLoader } from "~/lib/auth";
+import { RouteErrorBoundary } from "~/components/RouteErrorBoundary";
+export { RouteErrorBoundary as ErrorBoundary };
 import { listVisits } from "~/api/visits";
 import { getUserBadges } from "~/api/users";
 import { getPlacePhoto } from "~/api/places";

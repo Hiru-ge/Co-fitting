@@ -31,7 +31,8 @@ export async function clientLoader() {
     if (err instanceof ApiError && err.status === 401) {
       throw redirect("/login");
     }
-    throw err;
+    // 429・500等の一時的なエラーはホーム画面をそのまま表示（オンボーディングチェックをスキップ）
+    return { token: authToken };
   }
 
   const onboardingSkipped =

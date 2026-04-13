@@ -3,6 +3,7 @@ import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/profile";
 import { useNavigate, Link, useLocation } from "react-router";
 import { logout, authRequiredLoader } from "~/lib/auth";
+import { RouteErrorBoundary } from "~/components/RouteErrorBoundary";
 import { getUserStats, getUserBadges, getProficiency } from "~/api/users";
 import { getAllBadges } from "~/api/badges";
 import { getLevelInfo, getLevelTitle } from "~/utils/level";
@@ -13,6 +14,8 @@ import {
   ONBOARDING_STAGE,
 } from "~/utils/constants";
 import ProfileTourStep from "~/components/ProfileTourStep";
+
+export { RouteErrorBoundary as ErrorBoundary };
 
 export async function clientLoader() {
   const { user, token } = await authRequiredLoader();

@@ -3,6 +3,7 @@ import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/history";
 import { useNavigate, Link } from "react-router";
 import { authRequiredLoader } from "~/lib/auth";
+import { RouteErrorBoundary } from "~/components/RouteErrorBoundary";
 import { listVisits, getMapVisits } from "~/api/visits";
 import { toUserMessage } from "~/utils/error";
 import { useToast } from "~/components/Toast";
@@ -16,6 +17,7 @@ type ViewMode = "list" | "map";
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
 export { authRequiredLoader as clientLoader };
+export { RouteErrorBoundary as ErrorBoundary };
 const PHOTO_BATCH_SIZE = 5;
 
 async function loadPhotos(

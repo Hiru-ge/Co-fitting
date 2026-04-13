@@ -3,6 +3,8 @@ import { Icon } from "~/components/Icon";
 import type { Route } from "./+types/settings";
 import { useNavigate } from "react-router";
 import { authRequiredLoader } from "~/lib/auth";
+import { RouteErrorBoundary } from "~/components/RouteErrorBoundary";
+export { RouteErrorBoundary as ErrorBoundary };
 import { getInterests } from "~/api/users";
 import { getGenreTags } from "~/api/genres";
 import UserInfoTab from "~/components/UserInfoTab";
