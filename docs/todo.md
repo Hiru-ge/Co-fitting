@@ -22,59 +22,17 @@ s
 
 ## Phase 1 バグ修正・機能改善
 
-### 提案除外ジャンル設定実装（Issue #298）
+### ~~提案除外ジャンル設定実装（Issue #298）~~ — 廃止
 
-> **背景**: 公園など「苦手ではないが行きたくもない」ジャンルが頻繁に提案される問題への対応。
-> 3ステートトグル（未設定→興味あり→除外）で興味タグ設定画面に統合。除外ジャンルは提案から完全除外するが、訪問自体は妨げないためXPは通常通り付与する。
-
-**🔴 RED**
-
-- [ ] `backend/handlers/user_test.go` に `TestUpdateInterests_ExcludedStatus` テスト追加
-  - `status: "excluded"` を含むリクエスト → DBに保存されるか検証
-  - `status: "interested"` が3件未満 → 400を返すか検証
-- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_ExcludesExcludedGenres` テスト追加
-  - excludedジャンルの場所が候補に含まれないか検証
-
-**🟢 GREEN**
-
-- [ ] `backend/models/gamification.go` の `UserInterest` 構造体に `Status string \`gorm:"type:enum('interested','excluded');default:'interested';not null" json:"status"\`` フィールド追加
-- [ ] `backend/database/migrate.go` の AutoMigrate でカラム追加反映
-- [ ] `backend/handlers/user.go` の `UpdateInterests` ハンドラ:
-  - リクエスト型を `[]struct{ GenreTagID uint64 \`json:"genre_tag_id"\`; Status string \`json:"status"\` }` に変更
-  - `interested` が3件以上のバリデーション追加
-  - レスポンスの `interestResponse` に `status` フィールド追加
-- [ ] `backend/handlers/suggestion.go` の `getUserInterestGenreNames()`: `WHERE status = 'interested'` 条件を追加
-- [ ] `backend/handlers/suggestion.go` の候補フィルタリング: `excluded` ジャンルに該当する場所を除外
-- [ ] `frontend/app/types/genre.ts` の `Interest` 型に `status: 'interested' | 'excluded'` フィールド追加
-- [ ] `frontend/app/api/genres.ts` の `updateInterests()` リクエストボディを `{ genre_tag_ids: number[] }` から `{ interests: { genre_tag_id: number; status: string }[] }` に変更
-- [ ] `frontend/app/routes/settings.tsx`: ジャンルタグの3ステートトグルUI実装
-  - 未設定（グレー）→ 1回タップ → 興味あり（現行の選択状態）→ 2回タップ → 除外（バツ表示）→ 3回タップ → 未設定
-  - セクションに静的テキスト追加「本当に苦手なジャンル以外の除外は、成長の機会を逃すかも！」
-
-**🔵 REFACTOR**
-
-- [ ] 除外ジャンルのフィルタリングロジックを `getExcludedGenreNames()` 関数に切り出し
-- [ ] トグル状態管理をカスタムフックに切り出し検討
+> 「自然スポット・観光地の提案除外」タスクでシステムレベルの除外が完了すれば、ユーザー個別の除外設定は不要と判断。3ステートトグルは複雑すぎる割にユーザーが使わない。Issue #298 はクローズする。
 
 ---
 
 ## バックエンドコード読解から洗い出したバグ修正・リファクタリング
 
-### 仕様変更・機能改善
+### ~~今すぐ行ける場所のみ表示トグルUI実装（Issue #318）~~ — 廃止
 
-#### 今すぐ行ける場所のみ表示トグルUI実装（Issue #318）
-
-> **背景**: Issue #306（`filter_open_now` デフォルト値を `true` に変更する修正）を再設計。デフォルトを常時ONにすると「営業時間データが存在しない場所が一律除外される」「別に営業時間外でも表示して欲しいユーザーはいそう(すぐにいくわけじゃないユーザー等)」という問題が考えられた。真にやってほしいことは「ユーザーが任意に切り替えられるトグルUIを提供し、ONにしたときは営業時間内 OR 営業時間データなしのスポットを表示する」ことだと判断し、要件を整理して再起票。
-
-**🔴 RED**
-- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_FilterOpenNow_IncludesNoHours` テスト追加（`filter_open_now=true` 時に営業時間データなしの場所が含まれることを検証）
-
-**🟢 GREEN**
-- [ ] `backend/handlers/suggestion.go` の `filter_open_now=true` 時のフィルタロジックを「営業時間内 OR 営業時間データなし」に修正
-- [ ] `frontend/app/routes/suggestions.tsx`（または提案画面）に「今すぐ行ける場所のみ」トグル追加、ON時に `filter_open_now=true` を送信
-
-**🔵 REFACTOR**
-- [ ] なし
+> 設定画面のトグルまでユーザーが辿り着いて操作するとは考えにくい。複雑さを増すだけなので廃止。Issue #318 はクローズ済み。
 
 ---
 
@@ -98,9 +56,9 @@ s
 
 - [ ] なし
 
-### スポット一時スキップ機能（Issue #321）
+### お店一時スキップ機能（Issue #321）
 
-> **背景**：気になっているが今日は行けない・行きたくない場合に「N日間この場所を表示しない」と設定できると、提案リストの体感精度が上がる。
+> **背景**：気になっているが今日は行けない・行きたくない場合に「N日間このお店を表示しない」と設定できると、提案リストの体感精度が上がる。
 
 **🔴 RED**
 
@@ -170,10 +128,93 @@ s
 
 ---
 
-## Phase 2 計画 — 通知機能（実装済み）
+## お店特化・戦略刷新に伴う実装変更（2026-04-13）
+
+> 2026-04-13の方針刷新（`docs/product-strategy.md` 参照）に基づく変更。Roambleを「お店開拓アプリ」に特化し、自然スポット・観光地を提案から除外する。これらは既存タスクより優先度が高い。
+
+### 自然スポット・観光地の提案除外（Issue #342）
+
+> **背景**: お店特化への方針転換により、公園・神社・自然スポット・観光地は提案対象から除外する。`backend/services/suggestion.go` の `VisitableTypes` と対応するジャンルタグ（seed.go・DBデータ）を整理する。
+
+**🔴 RED**
+
+- [ ] `backend/services/suggestion_test.go` に `TestIsVisitablePlace_NaturalAndTourist` テスト追加（`park` / `beach` / `tourist_attraction` / `church` が `false` を返すことを検証）
+
+**🟢 GREEN**
+
+- [ ] `backend/services/suggestion.go` の `VisitableTypes`（27行目〜）から以下を削除:
+  - 自然・アウトドア: `park`, `campground`, `zoo`, `beach`, `lake`, `river`
+  - 観光・宗教: `tourist_attraction`, `church`, `hindu_temple`, `mosque`, `synagogue`
+  - アミューズメント施設: `amusement_park`
+- [ ] `backend/services/suggestion.go` の `placeTypeToGenreName` から削除したタイプのマッピング行を削除
+- [ ] `backend/database/seed.go` のジャンルタグから以下を削除:
+  - アウトドアカテゴリごと削除（`公園・緑地`, `自然・ハイキング`, `海・川・湖`）
+  - 観光・文化カテゴリから `神社・寺`, `観光スポット` を削除
+- [ ] 削除したジャンルタグに紐づく `user_interests` を削除した上で `genre_tags` レコードを削除するマイグレーションスクリプト作成
+
+**🔵 REFACTOR**
+
+- [ ] 削除後に `placeTypeToGenreName` に不整合がないか確認（削除したタイプへのマッピングが残っていないか）
+
+---
+
+### バッジ名「コンフォートゾーン・ブレイカー」変更（Issue #343）
+
+> **背景**: 「コンフォートゾーン」という概念をプロダクト全体から廃止する方針に基づき、バッジ名を変更する。影響ファイル: `backend/database/seed.go:67`, `backend/services/email.go:44`, `backend/services/gamification_test.go:490,514,520,545,550`。
+
+**🟢 GREEN**
+
+- [ ] `backend/database/seed.go` の `"コンフォートゾーン・ブレイカー"` → `"ジャンル開拓者"` に変更
+- [ ] `backend/services/email.go` の `badgeIconMap` の当該キーを `"ジャンル開拓者"` に変更
+- [ ] `badges` テーブルの当該レコードを更新するマイグレーション作成
+- [ ] `backend/services/gamification_test.go` のテスト名・バッジ名参照をすべて `"ジャンル開拓者"` に変更
+
+**🔵 REFACTOR**
+
+- [ ] `backend/handlers/suggestion_test.go` の `TestProficiencyBasedComfortZone`（2073行目）を `TestProficiencyBasedBreakout` にリネーム
+
+---
+
+### プロフィール画面「お店開拓数」露出強化（Issue #344）
+
+> **背景**: Duolingoの「Day 847」に相当する数字として「何軒開拓したか」をプロフィール最上部の最も目立つ位置に配置する。現状は `stats.total_visits` が「総訪問」として小さく表示されている（`frontend/app/routes/profile.tsx:206`）。
+
+**🟢 GREEN**
+
+- [ ] `frontend/app/routes/profile.tsx:208` の「総訪問」ラベルを「お店開拓数」に変更
+- [ ] `stats.total_visits` の数字表示をプロフィールヘッダー部の最上位に昇格させ、レベルXPより目立つ位置に配置する
+
+**🔵 REFACTOR**
+
+- [ ] なし
+
+---
+
+## Phase 2 計画 — 通知機能（実装済み）＋ Receipt of Courage
 
 > 詳細は `docs/notification-roadmap.md` を参照。
 > Issue #270〜#282 の通知基盤（DBモデル・エンドポイント・Push/メールサービス・スケジューラー・フロントエンドUI）はすべて実装済み。
+
+### Receipt of Courage（勇気の証明書）実装（Issue #345・Phase 2最優先）
+
+> **背景**: お店特化への方針転換に伴い、最優先バイラル施策として格上げ（`docs/product-strategy.md §7.2` 参照）。訪問完了時にレシート形式の画像を生成・SNSシェアできる機能。「今日○○カフェに初めて入りました / 23軒目の開拓」という1枚がInstagram StoriesやTikTokで流れることが最大の獲得チャネルになりうる。
+
+**🔴 RED**
+
+- [ ] シェア画像生成ロジックのユニットテスト（お店名・XP・累計開拓数が正しく含まれるか）
+
+**🟢 GREEN**
+
+- [ ] バックエンド: 訪問記録APIレスポンスに `receipt_data`（お店名・獲得XP・累計開拓数・バッジ名）を追加
+- [ ] フロントエンド: XP獲得モーダルにシェアボタン追加
+- [ ] フロントエンド: `html-to-image` 等でレシート形式カードを画像化し Web Share API でシェア
+- [ ] レシートカードのデザイン: お店名・ジャンル・獲得XP・「○軒目の開拓」カウント・日付
+
+**🔵 REFACTOR**
+
+- [ ] なし
+
+---
 
 ---
 

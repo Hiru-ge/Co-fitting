@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-**Roamble** — 新しいお店・場所になかなか行けない人のためのWebアプリ。「また同じ店になってしまう」を解決する。現在地周辺の未訪問スポットをランダム提案して選ぶ手間をなくし、ゲーミフィケーション（XP・レベル・バッジ）で「行けた」成功体験を積み重ねる。
+**Roamble** — 新しいお店になかなか行けない人のためのWebアプリ。「また同じ店になってしまう」を解決する。現在地周辺の知らなかったお店をランダム提案して選ぶ手間をなくし、ゲーミフィケーション（XP・レベル・バッジ）で「入れた」成功体験を積み重ねる。提案するのは飲食店・カフェ・小売店などの「お店」に限定し、公園・自然スポット・観光地は提案しない。
 
 ## 技術スタック
 
@@ -87,7 +87,7 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 
 - **コピーライティング規則**: ユーザーに見える場所（LP・メタタグ・OGP・PWAマニフェスト・アプリ内UI）に書く文言は `docs/marketing/marketing-strategy.md` の規則に従うこと。旧文言（「知らない場所への一歩を、経験値に」「コンフォートゾーン脱却Webアプリ」「コンフォートゾーンを抜け出して」）は使用禁止。正規文言は以下の通り。
   - タイトル / OGP title: `Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ`
-  - description / OGP description: `「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。`
+  - description / OGP description: `「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。`
   - 管理ファイル: `frontend/app/root.tsx`（デフォルトtitle・description）/ `frontend/vite.config.ts`（ビルド時OGP注入・PWAマニフェスト）/ `frontend/app/routes/lp.tsx`（LPページmeta）
 - **SPAモード**（`react-router.config.ts` で `ssr: false`）で動作。サーバーサイド専用の `loader` / `action` は使用不可。必ず `clientLoader` / `clientAction` を使うこと
 - 認証トークン管理は `app/lib/auth.ts` に集約。`getToken` / `setToken` / `clearToken` / `logout` / `getUser`
