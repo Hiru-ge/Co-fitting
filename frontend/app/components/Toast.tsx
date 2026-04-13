@@ -38,7 +38,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
   return (
     <div
-      className={`pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg backdrop-blur-md transition-all animate-slide-in ${config.bg}`}
+      className={`pointer-events-auto flex items-start gap-3 rounded-3xl px-4 py-3 shadow-lg backdrop-blur-md transition-all animate-slide-in ${config.bg}`}
       role="alert"
     >
       <Icon
