@@ -23,7 +23,7 @@ func TestGetAllGenreTags(t *testing.T) {
 
 	t.Run("認証済みユーザーは全ジャンルタグ一覧が取得できる", func(t *testing.T) {
 		var count int64
-		testDB.Table("genre_tags").Count(&count)
+		testDB.Table("genre_tags").Where("category != ?", "プレミア").Count(&count)
 		if count == 0 {
 			t.Skip("ジャンルタグのシードデータが存在しません")
 		}

@@ -71,14 +71,19 @@ vi.mock("~/api/users", () => ({
   }),
   getInterests: vi.fn().mockResolvedValue([
     { genre_tag_id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
-    { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
-    { genre_tag_id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
+    { genre_tag_id: 3, name: "スポーツ施設", category: "スポーツ", icon: "🌳" },
+    { genre_tag_id: 4, name: "映画館", category: "エンタメ", icon: "🎨" },
   ]),
   updateInterests: vi.fn().mockResolvedValue({
     interests: [
       { genre_tag_id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
       { genre_tag_id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
-      { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
+      {
+        genre_tag_id: 3,
+        name: "スポーツ施設",
+        category: "スポーツ",
+        icon: "🌳",
+      },
     ],
     reload_count_remaining: 2,
   }),
@@ -88,9 +93,9 @@ vi.mock("~/api/genres", () => ({
   getGenreTags: vi.fn().mockResolvedValue([
     { id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
     { id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
-    { id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
-    { id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
-    { id: 5, name: "書店", category: "カルチャー", icon: "📚" },
+    { id: 3, name: "スポーツ施設", category: "スポーツ", icon: "🌳" },
+    { id: 4, name: "映画館", category: "エンタメ", icon: "🎨" },
+    { id: 5, name: "書店", category: "エンタメ", icon: "📚" },
   ]),
 }));
 
@@ -119,14 +124,19 @@ function renderSettings() {
     genres: [
       { id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
       { id: 2, name: "レストラン", category: "グルメ", icon: "🍽️" },
-      { id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
-      { id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
-      { id: 5, name: "書店", category: "カルチャー", icon: "📚" },
+      { id: 3, name: "スポーツ施設", category: "スポーツ", icon: "🌳" },
+      { id: 4, name: "映画館", category: "エンタメ", icon: "🎨" },
+      { id: 5, name: "書店", category: "エンタメ", icon: "📚" },
     ],
     interests: [
       { genre_tag_id: 1, name: "カフェ", category: "グルメ", icon: "☕" },
-      { genre_tag_id: 3, name: "公園", category: "アウトドア", icon: "🌳" },
-      { genre_tag_id: 4, name: "美術館", category: "カルチャー", icon: "🎨" },
+      {
+        genre_tag_id: 3,
+        name: "スポーツ施設",
+        category: "スポーツ",
+        icon: "🌳",
+      },
+      { genre_tag_id: 4, name: "映画館", category: "エンタメ", icon: "🎨" },
     ],
   };
   return render(
@@ -337,9 +347,11 @@ describe("設定画面", () => {
       expect(
         screen.getByRole("button", { name: /レストラン/ }),
       ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /公園/ })).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /美術館/ }),
+        screen.getByRole("button", { name: /スポーツ施設/ }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /映画館/ }),
       ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /書店/ })).toBeInTheDocument();
     });
@@ -347,10 +359,10 @@ describe("設定画面", () => {
     test("現在の興味ジャンルが選択状態で表示される", async () => {
       await switchToSuggestionTab();
 
-      // カフェ、公園、美術館が選択済み
+      // カフェ、スポーツ施設、映画館が選択済み
       const cafeChip = screen.getByRole("button", { name: /カフェ/ });
-      const parkChip = screen.getByRole("button", { name: /公園/ });
-      const museumChip = screen.getByRole("button", { name: /美術館/ });
+      const parkChip = screen.getByRole("button", { name: /スポーツ施設/ });
+      const museumChip = screen.getByRole("button", { name: /映画館/ });
       expect(cafeChip).toHaveAttribute("aria-pressed", "true");
       expect(parkChip).toHaveAttribute("aria-pressed", "true");
       expect(museumChip).toHaveAttribute("aria-pressed", "true");
@@ -447,9 +459,9 @@ describe("設定画面", () => {
     test("興味ジャンルが3つ未満だと保存ボタンが無効", async () => {
       const user = await switchToSuggestionTab();
 
-      // 美術館と公園を解除（残り1つ）
-      await user.click(screen.getByRole("button", { name: /美術館/ }));
-      await user.click(screen.getByRole("button", { name: /公園/ }));
+      // 映画館とスポーツ施設を解除（残り1つ）
+      await user.click(screen.getByRole("button", { name: /映画館/ }));
+      await user.click(screen.getByRole("button", { name: /スポーツ施設/ }));
 
       const saveButton = screen.getByRole("button", {
         name: "興味ジャンルを保存",

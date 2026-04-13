@@ -99,9 +99,9 @@ const mockVisits: Visit[] = [
     id: 2,
     user_id: 1,
     place_id: "place2",
-    place_name: "公園B",
+    place_name: "ボウリングB",
     vicinity: "東京都港区",
-    category: "公園",
+    category: "ボウリング",
     lat: 35.6584,
     lng: 139.7454,
     rating: null,
@@ -115,9 +115,9 @@ const mockVisits: Visit[] = [
     id: 3,
     user_id: 1,
     place_id: "place3",
-    place_name: "美術館C",
+    place_name: "書店C",
     vicinity: "東京都中央区",
-    category: "美術館・博物館",
+    category: "書店",
     lat: 35.6694,
     lng: 139.7583,
     rating: null,
@@ -138,24 +138,46 @@ describe("History", () => {
     // デフォルトのモック設定
     mockProtectedLoader.mockResolvedValue({ user: mockUser, token: mockToken });
     mockUseToast.mockReturnValue({ showToast: mockShowToast });
-    mockGetCategoryInfo.mockImplementation((key) => ({
-      label:
-        key === "カフェ"
-          ? "カフェ"
-          : key === "公園"
-            ? "公園"
-            : "美術館・博物館",
-      icon:
-        key === "カフェ" ? "local_cafe" : key === "公園" ? "park" : "museum",
-      gradientColor:
-        key === "カフェ"
-          ? "from-amber-600 to-orange-800"
-          : key === "公園"
-            ? "from-green-500 to-green-700"
-            : "from-purple-500 to-purple-700",
-      hexColor:
-        key === "カフェ" ? "#d97706" : key === "公園" ? "#22c55e" : "#8b5cf6",
-    }));
+    mockGetCategoryInfo.mockImplementation((key) => {
+      if (key === "カフェ") {
+        return {
+          label: "カフェ",
+          icon: "local_cafe",
+          gradientColor: "from-amber-600 to-orange-800",
+          hexColor: "#d97706",
+        };
+      }
+      if (key === "ボウリング") {
+        return {
+          label: "ボウリング",
+          icon: "directions_run",
+          gradientColor: "from-blue-600 to-indigo-800",
+          hexColor: "#2563eb",
+        };
+      }
+      if (key === "書店") {
+        return {
+          label: "書店",
+          icon: "menu_book",
+          gradientColor: "from-yellow-600 to-amber-800",
+          hexColor: "#ca8a04",
+        };
+      }
+      if (key === "プレミア") {
+        return {
+          label: "プレミア",
+          icon: "award_star",
+          gradientColor: "from-amber-500 to-yellow-700",
+          hexColor: "#f59e0b",
+        };
+      }
+      return {
+        label: "お店",
+        icon: "location_on",
+        gradientColor: "from-gray-500 to-gray-700",
+        hexColor: "#6b7280",
+      };
+    });
     mockFormatShortDate.mockImplementation(() => "2月15日");
     mockGroupByMonth.mockImplementation(
       (visits) =>
@@ -248,8 +270,8 @@ describe("History", () => {
 
         // 訪問記録が表示されることを確認
         expect(screen.getByText("カフェA")).toBeInTheDocument();
-        expect(screen.getByText("公園B")).toBeInTheDocument();
-        expect(screen.getByText("美術館C")).toBeInTheDocument();
+        expect(screen.getByText("ボウリングB")).toBeInTheDocument();
+        expect(screen.getByText("書店C")).toBeInTheDocument();
       });
     });
   });
@@ -280,8 +302,8 @@ describe("History", () => {
 
       // 各カテゴリーボタンが表示される
       expect(screen.getByText("カフェ")).toBeInTheDocument();
-      expect(screen.getByText("公園")).toBeInTheDocument();
-      expect(screen.getByText("美術館・博物館")).toBeInTheDocument();
+      expect(screen.getByText("ボウリング")).toBeInTheDocument();
+      expect(screen.getByText("書店")).toBeInTheDocument();
     });
 
     it("should filter visits by category when filter button clicked", async () => {
@@ -312,15 +334,54 @@ describe("History", () => {
         expect(allFilter).toHaveClass("bg-primary-purple text-white");
         // 全ての訪問記録が表示される
         expect(screen.getByText("カフェA")).toBeInTheDocument();
-        expect(screen.getByText("公園B")).toBeInTheDocument();
-        expect(screen.getByText("美術館C")).toBeInTheDocument();
+        expect(screen.getByText("ボウリングB")).toBeInTheDocument();
+        expect(screen.getByText("書店C")).toBeInTheDocument();
+      });
+    });
+
+    it("unknownカテゴリはお店に集約され、フィルタが重複しない", async () => {
+      const unknownVisits: Visit[] = [
+        {
+          ...mockVisits[0],
+          id: 11,
+          place_name: "スポットA",
+          category: "unknown_a",
+        },
+        {
+          ...mockVisits[1],
+          id: 12,
+          place_name: "スポットB",
+          category: "unknown_b",
+        },
+      ];
+      mockListVisits.mockResolvedValue({ visits: unknownVisits, total: 2 });
+
+      render(
+        <MemoryRouter>
+          <History
+            {...({ loaderData: { user: mockUser, token: mockToken } } as any)}
+          />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("スポットA")).toBeInTheDocument();
+      });
+
+      const unknownButtons = screen.getAllByRole("button", { name: /お店/ });
+      expect(unknownButtons).toHaveLength(1);
+
+      fireEvent.click(unknownButtons[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("スポットA")).toBeInTheDocument();
+        expect(screen.getByText("スポットB")).toBeInTheDocument();
       });
     });
   });
 
   describe("Photo loading", () => {
-    it("photo_referenceがない訪問でもgetPlacePhotoを呼ぶ", async () => {
-      // 現在の実装ではphoto_referenceの有無を事前判定せず、取得を試みる
+    it("photo_referenceがない訪問ではgetPlacePhotoを呼ばない", async () => {
       mockListVisits.mockResolvedValue({ visits: mockVisits, total: 3 });
 
       render(
@@ -335,7 +396,7 @@ describe("History", () => {
         expect(screen.getByText("カフェA")).toBeInTheDocument();
       });
 
-      expect(mockGetPlacePhoto).toHaveBeenCalled();
+      expect(mockGetPlacePhoto).not.toHaveBeenCalled();
     });
 
     it("photo_referenceがある訪問はgetPlacePhotoを呼ぶ", async () => {
@@ -362,7 +423,10 @@ describe("History", () => {
     });
 
     it("photo取得に失敗した訪問はプレースホルダーアイコンを表示する", async () => {
-      mockListVisits.mockResolvedValue({ visits: [mockVisits[0]], total: 1 });
+      mockListVisits.mockResolvedValue({
+        visits: [mockVisitWithPhoto],
+        total: 1,
+      });
       mockGetPlacePhoto.mockRejectedValueOnce(new Error("photo not found"));
 
       render(
@@ -383,7 +447,11 @@ describe("History", () => {
         expect(placeholder).toBeInTheDocument();
       });
 
-      expect(mockGetPlacePhoto).toHaveBeenCalled();
+      expect(mockGetPlacePhoto).toHaveBeenCalledWith(
+        mockToken,
+        "place_with_photo",
+        "places/ChIJxxx/photos/AUyyy",
+      );
     });
 
     it("should display photo when successfully loaded", async () => {
@@ -453,7 +521,7 @@ describe("History", () => {
       await waitFor(() => {
         // エラーに関係なく、訪問記録は表示される
         expect(screen.getByText("写真あり店舗")).toBeInTheDocument();
-        expect(screen.getByText("公園B")).toBeInTheDocument();
+        expect(screen.getByText("ボウリングB")).toBeInTheDocument();
       });
     });
   });

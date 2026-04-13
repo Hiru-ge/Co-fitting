@@ -67,12 +67,12 @@ const mockPlaces = [
   },
   {
     place_id: "place_2",
-    name: "テスト公園",
+    name: "テストボウリング",
     vicinity: "渋谷区2-2",
     lat: 35.661,
     lng: 139.701,
     rating: 4.0,
-    types: ["park"],
+    types: ["bowling_alley"],
   },
   {
     place_id: "place_3",
@@ -136,7 +136,7 @@ vi.mock("~/api/users", () => ({
   getInterests: vi.fn().mockResolvedValue([
     { genre_tag_id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
     { genre_tag_id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
-    { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
+    { genre_tag_id: 3, name: "スポーツ施設", category: "スポーツ", icon: "🏃" },
   ]),
 }));
 
@@ -217,7 +217,9 @@ describe("Home clientLoader", () => {
 
   test("getInterests が失敗した場合は /login にのみリダイレクトする", async () => {
     const { getInterests } = await import("~/api/users");
-    vi.mocked(getInterests).mockRejectedValueOnce(new Error("network error"));
+    vi.mocked(getInterests).mockRejectedValueOnce(
+      new ApiError(401, "unauthorized", "UNAUTHORIZED"),
+    );
     const { redirect } = await import("react-router");
     const { clientLoader } = await import("~/routes/home");
 
@@ -314,7 +316,7 @@ describe("Home画面", () => {
     });
 
     // 複数のカードがスタック表示される
-    expect(screen.getByText("テスト公園")).toBeInTheDocument();
+    expect(screen.getByText("テストボウリング")).toBeInTheDocument();
     expect(screen.getByText("テストバー")).toBeInTheDocument();
   });
 
@@ -337,7 +339,7 @@ describe("Home画面", () => {
     // 訪問済みカードが消えて、次のカードが先頭になる
     await waitFor(() => {
       expect(screen.queryByText("テストカフェ")).not.toBeInTheDocument();
-      expect(screen.getByText("テスト公園")).toBeInTheDocument();
+      expect(screen.getByText("テストボウリング")).toBeInTheDocument();
     });
   });
 

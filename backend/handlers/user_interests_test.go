@@ -461,13 +461,13 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		{PlaceID: "cache_cafe_2", Name: "キャッシュカフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
 		{PlaceID: "cache_cafe_3", Name: "キャッシュカフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
 	}
-	museumPlaces := []services.PlaceResult{
-		{PlaceID: "cache_museum_1", Name: "キャッシュ博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
-		{PlaceID: "cache_museum_2", Name: "キャッシュ博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
-		{PlaceID: "cache_museum_3", Name: "キャッシュ博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
-		{PlaceID: "cache_museum_4", Name: "キャッシュ博物館D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"museum"}},
+	bowlingPlaces := []services.PlaceResult{
+		{PlaceID: "cache_bowling_1", Name: "キャッシュボウリング場A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"bowling_alley"}},
+		{PlaceID: "cache_bowling_2", Name: "キャッシュボウリング場B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"bowling_alley"}},
+		{PlaceID: "cache_bowling_3", Name: "キャッシュボウリング場C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"bowling_alley"}},
+		{PlaceID: "cache_bowling_4", Name: "キャッシュボウリング場D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"bowling_alley"}},
 	}
-	mixedPlaces := append(cafePlaces, museumPlaces...)
+	mixedPlaces := append(cafePlaces, bowlingPlaces...)
 
 	t.Run("興味タグ変更だけではキャッシュは残り、is_reloadで初めて新タグが反映される", func(t *testing.T) {
 		cleanupUsers(t)
@@ -480,14 +480,14 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")
 		}
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 
 		// 追加タグ（3つ以上必須）
 		var extraTags []models.GenreTag
-		testDB.Where("name != ? AND name != ?", "カフェ", "博物館・科学館").Limit(2).Find(&extraTags)
+		testDB.Where("name != ? AND name != ?", "カフェ", "スポーツ施設").Limit(2).Find(&extraTags)
 		if len(extraTags) < 2 {
 			t.Skip("追加ジャンルタグが不足しています")
 		}
@@ -522,14 +522,14 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 			firstPlaceIDs[i] = p.PlaceID
 		}
 
-		// ステップ3: 興味タグを博物館に変更（UpdateInterestsはキャッシュをクリアしない）
+		// ステップ3: 興味タグをスポーツ施設に変更（UpdateInterestsはキャッシュをクリアしない）
 		var otherTags []models.GenreTag
-		testDB.Where("name != ? AND name != ?", "カフェ", "博物館・科学館").Limit(2).Find(&otherTags)
+		testDB.Where("name != ? AND name != ?", "カフェ", "スポーツ施設").Limit(2).Find(&otherTags)
 		if len(otherTags) < 2 {
 			t.Skip("追加ジャンルタグが不足しています")
 		}
 		updateBody := map[string]interface{}{
-			"genre_tag_ids": []uint64{museumTag.ID, otherTags[0].ID, otherTags[1].ID},
+			"genre_tag_ids": []uint64{sportsTag.ID, otherTags[0].ID, otherTags[1].ID},
 		}
 		updateJSON, _ := json.Marshal(updateBody)
 		w2 := httptest.NewRecorder()
@@ -570,7 +570,7 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 			}
 		}
 
-		// ステップ5: is_reload で引き直し → 博物館が多い提案が返る
+		// ステップ5: is_reload で引き直し → ボウリング場が多い提案が返る
 		reloadBody := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000, "is_reload": true}
 		reloadJSON, _ := json.Marshal(reloadBody)
 		w4 := httptest.NewRecorder()
@@ -585,18 +585,18 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 
 		thirdResp := parseSuggestions(t, w4.Body.Bytes())
 
-		// 博物館が多いことを確認（タグ変更がis_reloadで反映されている）
-		thirdMuseumCount := 0
+		// ボウリング場が多いことを確認（タグ変更がis_reloadで反映されている）
+		thirdBowlingCount := 0
 		for _, p := range thirdResp {
 			for _, typ := range p.Types {
-				if typ == "museum" {
-					thirdMuseumCount++
+				if typ == "bowling_alley" {
+					thirdBowlingCount++
 					break
 				}
 			}
 		}
-		if thirdMuseumCount < 2 {
-			t.Errorf("is_reload後の提案で博物館が2件以上であることを期待しましたが、%d件でした", thirdMuseumCount)
+		if thirdBowlingCount < 2 {
+			t.Errorf("is_reload後の提案でボウリング場が2件以上であることを期待しましたが、%d件でした", thirdBowlingCount)
 		}
 	})
 
@@ -608,9 +608,9 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")
 		}
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 
 		// ユーザーA（カフェタグ）
@@ -618,12 +618,12 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		tokenA := generateTestToken(userA.ID)
 		testDB.Create(&models.UserInterest{UserID: userA.ID, GenreTagID: cafeTag.ID})
 
-		// ユーザーB（博物館タグ）- 別のメールアドレスで作成
-		userB := models.User{Email: "suggest-museum@example.com", DisplayName: "Museum User"}
+		// ユーザーB（スポーツ施設タグ）- 別のメールアドレスで作成
+		userB := models.User{Email: "suggest-bowling@example.com", DisplayName: "Bowling User"}
 		testDB.Create(&userB)
 		tokenB := generateTestToken(userB.ID)
 
-		testDB.Create(&models.UserInterest{UserID: userB.ID, GenreTagID: museumTag.ID})
+		testDB.Create(&models.UserInterest{UserID: userB.ID, GenreTagID: sportsTag.ID})
 
 		mock := &mockPlacesClient{Results: mixedPlaces}
 		router := setupSuggestionRouterWithRedis(mock)
@@ -668,12 +668,12 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 				}
 			}
 		}
-		// ユーザーBは博物館が多い
-		museumCountB := 0
+		// ユーザーBはボウリング場が多い
+		bowlingCountB := 0
 		for _, p := range respB {
 			for _, typ := range p.Types {
-				if typ == "museum" {
-					museumCountB++
+				if typ == "bowling_alley" {
+					bowlingCountB++
 					break
 				}
 			}
@@ -682,8 +682,8 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		if cafeCountA < 2 {
 			t.Errorf("ユーザーA（カフェタグ）の提案でカフェが2件以上であることを期待しましたが、%d件でした", cafeCountA)
 		}
-		if museumCountB < 2 {
-			t.Errorf("ユーザーB（博物館タグ）の提案で博物館が2件以上であることを期待しましたが、%d件でした", museumCountB)
+		if bowlingCountB < 2 {
+			t.Errorf("ユーザーB（スポーツ施設タグ）の提案でボウリング場が2件以上であることを期待しましたが、%d件でした", bowlingCountB)
 		}
 	})
 }

@@ -30,9 +30,9 @@ const mockVisits = [
     id: 1,
     user_id: 1,
     place_id: "ChIJ_m1",
-    place_name: "上野公園",
+    place_name: "上野ボウリング",
     vicinity: "台東区",
-    category: "park",
+    category: "bowling_alley",
     lat: 35.714,
     lng: 139.774,
     rating: null,
@@ -46,9 +46,9 @@ const mockVisits = [
     id: 2,
     user_id: 1,
     place_id: "ChIJ_m2",
-    place_name: "浅草寺",
+    place_name: "浅草書店",
     vicinity: "台東区",
-    category: "temple",
+    category: "book_store",
     lat: 35.714,
     lng: 139.796,
     rating: null,
@@ -137,8 +137,8 @@ describe("SummaryMonthly", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("上野公園")).toBeInTheDocument();
-    expect(await screen.findByText("浅草寺")).toBeInTheDocument();
+    expect(await screen.findByText("上野ボウリング")).toBeInTheDocument();
+    expect(await screen.findByText("浅草書店")).toBeInTheDocument();
   });
 
   test("バッジ名一覧が表示される", async () => {

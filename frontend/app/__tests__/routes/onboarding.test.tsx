@@ -42,9 +42,9 @@ vi.mock("react-router", async () => {
 const mockGenres = vi.hoisted(() => [
   { id: 1, name: "カフェ", category: "食べる・飲む", icon: "☕" },
   { id: 2, name: "ラーメン", category: "食べる・飲む", icon: "🍜" },
-  { id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
-  { id: 4, name: "美術館", category: "自然・観光", icon: "🎨" },
-  { id: 5, name: "ジム", category: "スポーツ・健康", icon: "💪" },
+  { id: 3, name: "スポーツ施設", category: "スポーツ", icon: "🏃" },
+  { id: 4, name: "書店", category: "文化", icon: "📚" },
+  { id: 5, name: "サウナ", category: "リラクゼーション", icon: "♨️" },
 ]);
 
 vi.mock("~/api/genres", () => ({
@@ -95,15 +95,18 @@ describe("Onboarding画面", () => {
       expect(
         screen.getByRole("button", { name: /ラーメン/ }),
       ).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /公園/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /スポーツ施設/ }),
+      ).toBeInTheDocument();
     });
   });
 
   test("カテゴリ別にグループ化されて表示される", () => {
     renderOnboarding();
     expect(screen.getByText("食べる・飲む")).toBeInTheDocument();
-    expect(screen.getByText("自然・観光")).toBeInTheDocument();
-    expect(screen.getByText("スポーツ・健康")).toBeInTheDocument();
+    expect(screen.getByText("スポーツ")).toBeInTheDocument();
+    expect(screen.getByText("文化")).toBeInTheDocument();
+    expect(screen.getByText("リラクゼーション")).toBeInTheDocument();
   });
 
   test("タグをクリックすると選択状態になる", async () => {
@@ -146,7 +149,7 @@ describe("Onboarding画面", () => {
 
     await user.click(screen.getByRole("button", { name: /カフェ/ }));
     await user.click(screen.getByRole("button", { name: /ラーメン/ }));
-    await user.click(screen.getByRole("button", { name: /公園/ }));
+    await user.click(screen.getByRole("button", { name: /スポーツ施設/ }));
 
     const saveButton = screen.getByRole("button", { name: /選択して始める/ });
     expect(saveButton).not.toBeDisabled();
@@ -158,7 +161,7 @@ describe("Onboarding画面", () => {
 
     await user.click(screen.getByRole("button", { name: /カフェ/ }));
     await user.click(screen.getByRole("button", { name: /ラーメン/ }));
-    await user.click(screen.getByRole("button", { name: /公園/ }));
+    await user.click(screen.getByRole("button", { name: /スポーツ施設/ }));
 
     expect(
       screen.getByRole("button", { name: /選択して始める \(3\)/ }),
@@ -171,7 +174,7 @@ describe("Onboarding画面", () => {
 
     await user.click(screen.getByRole("button", { name: /カフェ/ }));
     await user.click(screen.getByRole("button", { name: /ラーメン/ }));
-    await user.click(screen.getByRole("button", { name: /公園/ }));
+    await user.click(screen.getByRole("button", { name: /スポーツ施設/ }));
 
     const saveButton = screen.getByRole("button", { name: /選択して始める/ });
     await user.click(saveButton);
@@ -209,7 +212,7 @@ describe("Onboarding画面", () => {
 
     await user.click(screen.getByRole("button", { name: /カフェ/ }));
     await user.click(screen.getByRole("button", { name: /ラーメン/ }));
-    await user.click(screen.getByRole("button", { name: /公園/ }));
+    await user.click(screen.getByRole("button", { name: /スポーツ施設/ }));
 
     await user.click(screen.getByRole("button", { name: /選択して始める/ }));
 
@@ -226,10 +229,9 @@ describe("Onboarding画面", () => {
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("button", { name: /公園/ })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    expect(
+      screen.getByRole("button", { name: /スポーツ施設/ }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: /ラーメン/ })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -262,7 +264,12 @@ describe("Onboarding clientLoader", () => {
         category: "食べる・飲む",
         icon: "🍜",
       },
-      { genre_tag_id: 3, name: "公園", category: "自然・観光", icon: "🌳" },
+      {
+        genre_tag_id: 3,
+        name: "スポーツ施設",
+        category: "スポーツ",
+        icon: "🏃",
+      },
     ]);
 
     const { redirect } = await import("react-router");

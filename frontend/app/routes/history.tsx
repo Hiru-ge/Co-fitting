@@ -16,6 +16,11 @@ import VisitMap from "~/components/VisitMap";
 type ViewMode = "list" | "map";
 type VisitWithPhoto = Visit & { photoUrl?: string };
 
+type HistoryCategoryFilter = {
+  label: string;
+  info: ReturnType<typeof getCategoryInfo>;
+};
+
 export { authRequiredLoader as clientLoader };
 export { RouteErrorBoundary as ErrorBoundary };
 const PHOTO_BATCH_SIZE = 5;
@@ -102,14 +107,18 @@ export default function History({ loaderData }: Route.ComponentProps) {
   const [mapVisits, setMapVisits] = useState<MapVisit[]>([]);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  // DBから取得した訪問履歴からユニークなカテゴリーを抽出
-  const availableCategories = useMemo(() => {
-    const categories = new Set<string>();
+  // DBから取得した訪問履歴から表示ラベルごとのユニークなカテゴリーを抽出
+  const availableCategoryFilters = useMemo<HistoryCategoryFilter[]>(() => {
+    const categories = new Map<string, HistoryCategoryFilter>();
     visits.forEach((visit) => {
-      categories.add(visit.category);
+      const info = getCategoryInfo(visit.category);
+      if (!categories.has(info.label)) {
+        categories.set(info.label, { label: info.label, info });
+      }
     });
-    // 配列に変換してソート（表示順序を安定化）
-    return Array.from(categories).sort();
+    return Array.from(categories.values()).sort((a, b) =>
+      a.label.localeCompare(b.label, "ja"),
+    );
   }, [visits]);
 
   useEffect(() => {
@@ -159,7 +168,9 @@ export default function History({ loaderData }: Route.ComponentProps) {
   const filteredVisits =
     activeFilter === "all"
       ? visits
-      : visits.filter((v) => v.category === activeFilter);
+      : visits.filter(
+          (v) => getCategoryInfo(v.category).label === activeFilter,
+        );
 
   const grouped = groupByMonth(filteredVisits, (v) => v.visited_at);
 
@@ -226,23 +237,20 @@ export default function History({ loaderData }: Route.ComponentProps) {
             </button>
 
             {/* 動的カテゴリーボタン */}
-            {availableCategories.map((categoryKey) => {
-              const categoryInfo = getCategoryInfo(categoryKey);
-              const isActive = activeFilter === categoryKey;
+            {availableCategoryFilters.map(({ label, info }) => {
+              const isActive = activeFilter === label;
               return (
                 <button
-                  key={categoryKey}
-                  onClick={() => setActiveFilter(categoryKey)}
+                  key={label}
+                  onClick={() => setActiveFilter(label)}
                   className={`flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-full px-5 transition-colors ${
                     isActive
                       ? "bg-primary-purple text-white"
                       : "bg-white/10 text-white/70"
                   }`}
                 >
-                  <Icon name={categoryInfo.icon} className="text-lg" />
-                  <span className="text-sm font-medium">
-                    {categoryInfo.label}
-                  </span>
+                  <Icon name={info.icon} className="text-lg" />
+                  <span className="text-sm font-medium">{label}</span>
                 </button>
               );
             })}

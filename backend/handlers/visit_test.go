@@ -112,8 +112,8 @@ func TestCreateVisit(t *testing.T) {
 
 		body := map[string]interface{}{
 			"place_id":   "ChIJl_no_rating",
-			"place_name": "公園 パーク",
-			"category":   "park",
+			"place_name": "テストバー",
+			"category":   "bar",
 			"lat":        35.680,
 			"lng":        139.655,
 			"visited_at": "2024-02-08T10:00:00Z",
@@ -351,7 +351,7 @@ func TestCreateVisit(t *testing.T) {
 func TestCreateVisitIsBreakout(t *testing.T) {
 	router := setupVisitRouter()
 
-	t.Run("興味外ジャンル(museum)の訪問でis_breakout=trueになる", func(t *testing.T) {
+	t.Run("興味外ジャンル(bowling_alley)の訪問でis_breakout=trueになる", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -365,11 +365,11 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_museum_001",
-			"place_name":  "渋谷区立博物館",
+			"place_id":    "ChIJl_bowling_001",
+			"place_name":  "渋谷ボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
-			"place_types": []string{"museum", "point_of_interest"},
+			"category":    "bowling_alley",
+			"place_types": []string{"bowling_alley", "point_of_interest"},
 			"lat":         35.677,
 			"lng":         139.650,
 			"visited_at":  "2024-02-07T15:30:00Z",
@@ -388,11 +388,11 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 
 		// DBのis_breakoutがtrueであることを確認
 		var visit models.Visit
-		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_001", user.ID).First(&visit).Error; err != nil {
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_bowling_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if !visit.IsBreakout {
-			t.Error("Expected is_breakout=true for out-of-interest genre (museum), got false")
+			t.Error("Expected is_breakout=true for out-of-interest genre (bowling_alley), got false")
 		}
 	})
 
@@ -534,30 +534,30 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
 
-		// カフェを興味タグに設定するが、博物館の熟練度はLv.2に事前設定
+		// カフェを興味タグに設定するが、スポーツ施設の熟練度はLv.2に事前設定
 		var cafeTag models.GenreTag
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
-			GenreTagID: museumTag.ID,
+			GenreTagID: sportsTag.ID,
 			XP:         100,
 			Level:      2,
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_museum_lv2_001",
-			"place_name":  "熟知の博物館",
+			"place_id":    "ChIJl_bowling_lv2_001",
+			"place_name":  "慣れ始めのボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
-			"place_types": []string{"museum", "point_of_interest"},
+			"category":    "bowling_alley",
+			"place_types": []string{"bowling_alley", "point_of_interest"},
 			"lat":         35.677,
 			"lng":         139.650,
 			"visited_at":  "2024-02-08T10:00:00Z",
@@ -575,11 +575,11 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 
 		var visit models.Visit
-		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv2_001", user.ID).First(&visit).Error; err != nil {
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_bowling_lv2_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if !visit.IsBreakout {
-			t.Error("Expected is_breakout=true for museum with proficiency Lv.2 (Lv.5以下なので脱却扱い), got false")
+			t.Error("Expected is_breakout=true for bowling_alley with proficiency Lv.2 (Lv.5以下なので脱却扱い), got false")
 		}
 	})
 
@@ -640,24 +640,24 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		// 博物館（興味外）の熟練度をLv.5（XP=802）に設定 → 閾値ちょうどなので脱却
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		// スポーツ施設（興味外）の熟練度をLv.5（XP=802）に設定 → 閾値ちょうどなので脱却
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
-			GenreTagID: museumTag.ID,
+			GenreTagID: sportsTag.ID,
 			XP:         802,
 			Level:      5,
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_museum_lv5_001",
-			"place_name":  "熟練博物館",
+			"place_id":    "ChIJl_bowling_lv5_001",
+			"place_name":  "熟練ボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
-			"place_types": []string{"museum", "point_of_interest"},
+			"category":    "bowling_alley",
+			"place_types": []string{"bowling_alley", "point_of_interest"},
 			"lat":         35.677,
 			"lng":         139.650,
 			"visited_at":  "2024-02-09T10:00:00Z",
@@ -675,7 +675,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 
 		var visit models.Visit
-		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv5_001", user.ID).First(&visit).Error; err != nil {
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_bowling_lv5_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if !visit.IsBreakout {
@@ -695,24 +695,24 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		// 博物館（興味外）の熟練度をLv.6（XP=1170）に設定 → 閾値超えなので通常扱い
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		// スポーツ施設（興味外）の熟練度をLv.6（XP=1170）に設定 → 閾値超えなので通常扱い
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
-			GenreTagID: museumTag.ID,
+			GenreTagID: sportsTag.ID,
 			XP:         1170,
 			Level:      6,
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_museum_lv6_001",
-			"place_name":  "通い慣れた博物館",
+			"place_id":    "ChIJl_bowling_lv6_001",
+			"place_name":  "通い慣れたボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
-			"place_types": []string{"museum", "point_of_interest"},
+			"category":    "bowling_alley",
+			"place_types": []string{"bowling_alley", "point_of_interest"},
 			"lat":         35.677,
 			"lng":         139.650,
 			"visited_at":  "2024-02-09T10:30:00Z",
@@ -730,7 +730,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 
 		var visit models.Visit
-		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv6_001", user.ID).First(&visit).Error; err != nil {
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_bowling_lv6_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if visit.IsBreakout {
@@ -800,23 +800,23 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
-			GenreTagID: museumTag.ID,
+			GenreTagID: sportsTag.ID,
 			XP:         801,
 			Level:      4,
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_museum_lv4_001",
-			"place_name":  "あと一歩の博物館",
+			"place_id":    "ChIJl_bowling_lv4_001",
+			"place_name":  "あと一歩のボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
-			"place_types": []string{"museum", "point_of_interest"},
+			"category":    "bowling_alley",
+			"place_types": []string{"bowling_alley", "point_of_interest"},
 			"lat":         35.677,
 			"lng":         139.650,
 			"visited_at":  "2024-02-09T12:00:00Z",
@@ -834,7 +834,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 
 		var visit models.Visit
-		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv4_001", user.ID).First(&visit).Error; err != nil {
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_bowling_lv4_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if !visit.IsBreakout {
@@ -854,24 +854,24 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		// 博物館（興味外）の熟練度をLv.20（XP=13357、最大レベル）に設定
-		var museumTag models.GenreTag
-		if err := testDB.Where("name = ?", "博物館・科学館").First(&museumTag).Error; err != nil {
-			t.Skip("博物館・科学館ジャンルタグが見つかりません")
+		// スポーツ施設（興味外）の熟練度をLv.20（XP=13357、最大レベル）に設定
+		var sportsTag models.GenreTag
+		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
+			t.Skip("スポーツ施設ジャンルタグが見つかりません")
 		}
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
-			GenreTagID: museumTag.ID,
+			GenreTagID: sportsTag.ID,
 			XP:         13357,
 			Level:      20,
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_museum_lv20_001",
-			"place_name":  "極めた博物館",
+			"place_id":    "ChIJl_bowling_lv20_001",
+			"place_name":  "極めたボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
-			"place_types": []string{"museum", "point_of_interest"},
+			"category":    "bowling_alley",
+			"place_types": []string{"bowling_alley", "point_of_interest"},
 			"lat":         35.677,
 			"lng":         139.650,
 			"visited_at":  "2024-02-09T13:00:00Z",
@@ -889,7 +889,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 
 		var visit models.Visit
-		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_museum_lv20_001", user.ID).First(&visit).Error; err != nil {
+		if err := testDB.Where("place_id = ? AND user_id = ?", "ChIJl_bowling_lv20_001", user.ID).First(&visit).Error; err != nil {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if visit.IsBreakout {
@@ -902,7 +902,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 func createVisitsForUser(t *testing.T, userID uint64, count int) []models.Visit {
 	t.Helper()
 	visits := make([]models.Visit, count)
-	categories := []string{"cafe", "park", "museum", "restaurant", "temple"}
+	categories := []string{"cafe", "bar", "bowling_alley", "restaurant", "karaoke"}
 	for i := 0; i < count; i++ {
 		visits[i] = models.Visit{
 			UserID:    userID,
@@ -1872,7 +1872,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
 
-		// 興味タグにカフェを設定して、美術館（興味外）に訪問
+		// 興味タグにカフェを設定して、ボウリング場（興味外）に訪問
 		database.SeedMasterData(testDB) //nolint:errcheck
 		var cafeTag models.GenreTag
 		testDB.Where("name = ?", "カフェ").First(&cafeTag)
@@ -1882,13 +1882,13 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJgamif_museum",
-			"place_name":  "テスト美術館",
+			"place_id":    "ChIJgamif_bowling",
+			"place_name":  "テストボウリング場",
 			"vicinity":    "東京都渋谷区",
-			"category":    "museum",
+			"category":    "bowling_alley",
 			"lat":         35.677,
 			"lng":         139.650,
-			"place_types": []string{"art_gallery", "museum"},
+			"place_types": []string{"bowling_alley"},
 			"visited_at":  "2024-03-01T10:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)

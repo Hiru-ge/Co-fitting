@@ -123,9 +123,9 @@ vi.mock("~/api/users", () => ({
     },
     {
       genre_tag_id: 2,
-      genre_name: "公園・緑地",
-      category: "アウトドア",
-      icon: "park",
+      genre_name: "スポーツ施設",
+      category: "スポーツ",
+      icon: "directions_run",
       xp: 150,
       level: 2,
     },
@@ -183,9 +183,9 @@ const mockProficiency = [
   },
   {
     genre_tag_id: 2,
-    genre_name: "公園・緑地",
-    category: "アウトドア",
-    icon: "park",
+    genre_name: "スポーツ施設",
+    category: "スポーツ",
+    icon: "directions_run",
     xp: 150,
     level: 2,
   },
@@ -508,7 +508,7 @@ describe("プロフィール画面", () => {
     await waitFor(() => {
       expect(screen.getByText("得意ジャンル")).toBeInTheDocument();
       expect(screen.getByText("カフェ")).toBeInTheDocument();
-      expect(screen.getByText("公園・緑地")).toBeInTheDocument();
+      expect(screen.getByText("スポーツ施設")).toBeInTheDocument();
     });
 
     // ジャンル名がtruncateクラスを持つspan要素であること

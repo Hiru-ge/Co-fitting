@@ -143,6 +143,48 @@ describe("HistoryDetail", () => {
       });
     });
 
+    it("未知カテゴリはお店として表示する", async () => {
+      mockGetVisit.mockResolvedValue({
+        ...mockVisit,
+        category: "unknown_category",
+      });
+
+      render(
+        <MemoryRouter>
+          <HistoryDetail
+            loaderData={{ user: mockUser, token: mockToken, visitId: 1 }}
+            params={{ id: "1" }}
+            matches={[] as any}
+          />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("お店")).toBeInTheDocument();
+      });
+    });
+
+    it("プレミアカテゴリはプレミアとして表示する", async () => {
+      mockGetVisit.mockResolvedValue({
+        ...mockVisit,
+        category: "プレミア",
+      });
+
+      render(
+        <MemoryRouter>
+          <HistoryDetail
+            loaderData={{ user: mockUser, token: mockToken, visitId: 1 }}
+            params={{ id: "1" }}
+            matches={[] as any}
+          />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("プレミア")).toBeInTheDocument();
+      });
+    });
+
     it("ローディング中はスケルトンを表示する", async () => {
       mockGetVisit.mockImplementation(() => new Promise(() => {}));
       render(
@@ -338,8 +380,11 @@ describe("HistoryDetail", () => {
   });
 
   describe("写真取得の getPlacePhoto 経由化", () => {
-    it("写真取得が getPlacePhoto 経由であること", async () => {
-      mockGetVisit.mockResolvedValue(mockVisit);
+    it("photo_reference がある場合に getPlacePhoto 経由で写真取得すること", async () => {
+      mockGetVisit.mockResolvedValue({
+        ...mockVisit,
+        photo_reference: "places/ChIJxxx/photos/AUyyy",
+      });
       mockGetPlacePhoto.mockResolvedValue("https://example.com/photo.jpg");
 
       render(
@@ -356,7 +401,7 @@ describe("HistoryDetail", () => {
         expect(mockGetPlacePhoto).toHaveBeenCalledWith(
           mockToken,
           "place1",
-          undefined,
+          "places/ChIJxxx/photos/AUyyy",
         );
       });
     });

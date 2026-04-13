@@ -15,30 +15,21 @@ func seedGenreTags(db *gorm.DB) error {
 		{Name: "ラーメン・麺類", Category: "飲食", Icon: "ramen_dining"},
 		{Name: "居酒屋・バー", Category: "飲食", Icon: "sports_bar"},
 		{Name: "スイーツ・ベーカリー", Category: "飲食", Icon: "bakery_dining"},
-		// アウトドア
-		{Name: "公園・緑地", Category: "アウトドア", Icon: "park"},
-		{Name: "自然・ハイキング", Category: "アウトドア", Icon: "terrain"},
-		{Name: "海・川・湖", Category: "アウトドア", Icon: "water"},
 		// スポーツ
-		{Name: "スポーツジム", Category: "スポーツ", Icon: "fitness_center"},
 		{Name: "スポーツ施設", Category: "スポーツ", Icon: "directions_run"},
-		// 文化・芸術
-		{Name: "美術館・ギャラリー", Category: "文化・芸術", Icon: "palette"},
-		{Name: "博物館・科学館", Category: "文化・芸術", Icon: "museum"},
-		{Name: "図書館・書店", Category: "文化・芸術", Icon: "menu_book"},
+		// 文化
+		{Name: "書店", Category: "文化", Icon: "menu_book"},
 		// エンタメ
 		{Name: "映画館", Category: "エンタメ", Icon: "movie"},
 		{Name: "カラオケ", Category: "エンタメ", Icon: "mic"},
 		{Name: "ゲームセンター", Category: "エンタメ", Icon: "sports_esports"},
 		// ショッピング
-		{Name: "ショッピングモール", Category: "ショッピング", Icon: "shopping_bag"},
 		{Name: "雑貨・セレクトショップ", Category: "ショッピング", Icon: "storefront"},
 		// リラクゼーション
 		{Name: "温泉・銭湯", Category: "リラクゼーション", Icon: "hot_tub"},
 		{Name: "マッサージ・スパ", Category: "リラクゼーション", Icon: "spa"},
-		// 観光・文化
-		{Name: "神社・寺", Category: "観光・文化", Icon: "temple_buddhist"},
-		{Name: "観光スポット", Category: "観光・文化", Icon: "photo_camera"},
+		// プレミア（訪問履歴の表示専用。興味タグ選択・提案対象外）
+		{Name: "プレミア", Category: "プレミア", Icon: "award_star"},
 	}
 
 	for _, tag := range tags {

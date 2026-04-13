@@ -138,27 +138,27 @@ s
 
 **🔴 RED**
 
-- [ ] `backend/services/suggestion_test.go` に `TestIsVisitablePlace_ExcludedTypes` テスト追加（`park` / `beach` / `tourist_attraction` / `church` / `library` / `museum` / `art_gallery` / `aquarium` / `stadium` / `shopping_mall` / `department_store` / `gym` / `fitness_center` が `false` を返すことを検証）
+- [x] `backend/services/suggestion_test.go` に `TestIsVisitablePlace_ExcludedTypes` テスト追加（`park` / `beach` / `tourist_attraction` / `church` / `library` / `museum` / `art_gallery` / `aquarium` / `stadium` / `shopping_mall` / `department_store` / `gym` / `fitness_center` が `false` を返すことを検証）
 
 **🟢 GREEN**
 
-- [ ] `backend/services/suggestion.go` の `VisitableTypes`（27行目〜）から以下を削除:
+- [x] `backend/services/suggestion.go` の `VisitableTypes`（27行目〜）から以下を削除:
   - 自然・アウトドア: `park`, `campground`, `zoo`, `beach`, `lake`, `river`
   - 観光・宗教: `tourist_attraction`, `church`, `hindu_temple`, `mosque`, `synagogue`
   - 文化・教養施設: `library`, `museum`, `art_gallery`, `aquarium`
   - アミューズメント・スポーツ: `amusement_park`, `stadium`
   - 複合商業施設: `shopping_mall`, `department_store`
   - フィットネス: `gym`, `fitness_center`
-- [ ] `backend/services/suggestion.go` の `placeTypeToGenreName` から削除したタイプのマッピング行を削除
-- [ ] `backend/database/seed.go` のジャンルタグから以下を削除:
+- [x] `backend/services/suggestion.go` の `placeTypeToGenreName` から削除したタイプのマッピング行を削除
+- [x] `backend/database/seed.go` のジャンルタグから以下を削除:
   - アウトドアカテゴリごと削除（`公園・緑地`, `自然・ハイキング`, `海・川・湖`）
   - 観光・文化カテゴリから `神社・寺`, `観光スポット`, `美術館・博物館`, `水族館・動物園` を削除
   - スポーツ・アクティビティカテゴリから `スタジアム・アリーナ`, `フィットネス・ジム` を削除（カテゴリ自体が対象タイプのみで構成されている場合はカテゴリごと削除）
-- [ ] 削除したジャンルタグに紐づく `user_interests` を削除した上で `genre_tags` レコードを削除するマイグレーションスクリプト作成
+- [x] 削除したジャンルタグに紐づく `user_interests` を削除した上で `genre_tags` レコードを削除するマイグレーション.goを作成
 
 **🔵 REFACTOR**
 
-- [ ] 削除後に `placeTypeToGenreName` に不整合がないか確認（削除したタイプへのマッピングが残っていないか）
+- [x] 削除後に `placeTypeToGenreName` に不整合がないか確認（削除したタイプへのマッピングが残っていないか）
 
 ---
 

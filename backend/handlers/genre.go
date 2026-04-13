@@ -31,7 +31,7 @@ type genreTagResponse struct {
 // @Router       /api/genres [get]
 func (h *GenreHandler) GetAllGenreTags(c *gin.Context) {
 	var genres []models.GenreTag
-	if err := h.DB.Order("category ASC, name ASC").Find(&genres).Error; err != nil {
+	if err := h.DB.Where("category != ?", "プレミア").Order("category ASC, name ASC").Find(&genres).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}

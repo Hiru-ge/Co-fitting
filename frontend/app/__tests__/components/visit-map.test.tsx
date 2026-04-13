@@ -75,10 +75,10 @@ const mockVisits: MapVisit[] = [
   {
     id: 2,
     place_id: "ChIJdef",
-    place_name: "公園B",
+    place_name: "ボウリングB",
     lat: 35.68,
     lng: 139.66,
-    category: "park",
+    category: "bowling_alley",
     visited_at: "2024-02-11T10:00:00Z",
   },
 ];
@@ -185,7 +185,7 @@ describe("VisitMap", () => {
 
     // 2枚目
     fireEvent.click(screen.getAllByTestId("map-marker")[1]);
-    expect(screen.getByText("公園B")).toBeInTheDocument();
+    expect(screen.getByText("ボウリングB")).toBeInTheDocument();
     expect(screen.queryByText("カフェA")).toBeNull();
   });
 

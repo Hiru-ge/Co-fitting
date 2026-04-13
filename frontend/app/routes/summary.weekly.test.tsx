@@ -30,9 +30,9 @@ const mockVisits = [
     id: 1,
     user_id: 1,
     place_id: "ChIJ_1",
-    place_name: "代々木公園",
+    place_name: "渋谷ボウリング",
     vicinity: "渋谷区",
-    category: "park",
+    category: "bowling_alley",
     lat: 35.677,
     lng: 139.65,
     rating: null,
@@ -137,7 +137,7 @@ describe("SummaryWeekly", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("代々木公園")).toBeInTheDocument();
+    expect(await screen.findByText("渋谷ボウリング")).toBeInTheDocument();
     expect(await screen.findByText("原宿カフェ")).toBeInTheDocument();
   });
 

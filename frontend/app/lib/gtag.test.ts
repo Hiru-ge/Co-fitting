@@ -23,7 +23,7 @@ describe("gtag wrappers", () => {
       placesCount: 3,
       interestMatchCount: 2,
       breakoutCount: 1,
-      categories: ["カフェ", "公園"],
+      categories: ["カフェ", "ボウリング"],
       isReload: true,
     });
 
@@ -31,7 +31,7 @@ describe("gtag wrappers", () => {
       places_count: 3,
       interest_match_count: 2,
       breakout_count: 1,
-      categories: "カフェ,公園",
+      categories: "カフェ,ボウリング",
       is_reload: true,
     });
   });

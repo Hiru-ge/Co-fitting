@@ -33,41 +33,17 @@ var VisitableTypes = map[string]bool{
 	"meal_takeaway":    true,
 	"ramen_restaurant": true,
 	// エンタメ
-	"amusement_park":   true,
-	"aquarium":         true,
 	"bowling_alley":    true,
 	"movie_theater":    true,
 	"night_club":       true,
 	"karaoke":          true,
 	"amusement_center": true,
 	"video_arcade":     true,
-	// 文化・アート
-	"art_gallery": true,
-	"museum":      true,
-	"library":     true,
-	"book_store":  true,
-	// 自然・アウトドア
-	"park":       true,
-	"campground": true,
-	"zoo":        true,
-	"beach":      true,
-	"lake":       true,
-	"river":      true,
+	// 文化
+	"book_store": true,
 	// ショッピング
-	"shopping_mall":    true,
 	"clothing_store":   true,
-	"department_store": true,
 	"home_goods_store": true,
-	// 観光
-	"tourist_attraction": true,
-	"church":             true,
-	"hindu_temple":       true,
-	"mosque":             true,
-	"synagogue":          true,
-	// スポーツ・アクティブ
-	"gym":            true,
-	"fitness_center": true,
-	"stadium":        true,
 	// リラクゼーション
 	"spa":         true,
 	"public_bath": true,
@@ -94,45 +70,21 @@ var placeTypeToGenreName = map[string]string{
 	"night_club":       "居酒屋・バー",
 	"bakery":           "スイーツ・ベーカリー",
 	"ramen_restaurant": "ラーメン・麺類",
-	// アウトドア・自然
-	"park":       "公園・緑地",
-	"campground": "自然・ハイキング",
-	"beach":      "海・川・湖",
-	"lake":       "海・川・湖",
-	"river":      "海・川・湖",
-	// 文化・芸術
-	"art_gallery": "美術館・ギャラリー",
-	"museum":      "博物館・科学館",
-	"library":     "図書館・書店",
-	"book_store":  "図書館・書店",
+	// 文化
+	"book_store": "書店",
 	// エンタメ
 	"movie_theater":    "映画館",
 	"bowling_alley":    "スポーツ施設",
 	"karaoke":          "カラオケ",
 	"amusement_center": "ゲームセンター",
 	"video_arcade":     "ゲームセンター",
-	// スポーツ・アクティブ
-	"gym":            "スポーツジム",
-	"fitness_center": "スポーツジム",
-	"stadium":        "スポーツ施設",
 	// リラクゼーション
 	"spa":         "マッサージ・スパ",
 	"public_bath": "温泉・銭湯",
 	"sauna":       "温泉・銭湯",
 	// ショッピング
-	"shopping_mall":    "ショッピングモール",
 	"clothing_store":   "雑貨・セレクトショップ",
-	"department_store": "ショッピングモール",
 	"home_goods_store": "雑貨・セレクトショップ",
-	// 観光・文化
-	"church":             "神社・寺",
-	"hindu_temple":       "神社・寺",
-	"mosque":             "神社・寺",
-	"synagogue":          "神社・寺",
-	"tourist_attraction": "観光スポット",
-	"aquarium":           "観光スポット",
-	"zoo":                "観光スポット",
-	"amusement_park":     "観光スポット",
 }
 
 // breakoutLevelThreshold は脱却判定の熟練度閾値

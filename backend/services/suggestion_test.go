@@ -22,6 +22,22 @@ func TestIsVisitablePlace(t *testing.T) {
 	})
 }
 
+func TestIsVisitablePlace_ExcludedTypes(t *testing.T) {
+	excluded := []string{
+		"park", "beach", "tourist_attraction", "church", "library",
+		"museum", "art_gallery", "aquarium", "stadium", "shopping_mall",
+		"department_store", "gym", "fitness_center",
+	}
+	for _, typ := range excluded {
+		typ := typ
+		t.Run(typ+"はfalse", func(t *testing.T) {
+			if services.IsVisitablePlace([]string{typ}) {
+				t.Fatalf("expected false for %s", typ)
+			}
+		})
+	}
+}
+
 func TestGetGenreNameFromTypes(t *testing.T) {
 	t.Run("最初に一致したジャンル名を返す", func(t *testing.T) {
 		got := services.GetGenreNameFromTypes([]string{"cafe", "park"})
