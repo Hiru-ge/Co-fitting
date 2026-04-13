@@ -104,9 +104,7 @@ describe("getErrorMessageByCustomCode", () => {
   });
 
   test("NO_NEARBY_PLACES に対応する日本語メッセージを返す", () => {
-    expect(getErrorMessageByCustomCode("NO_NEARBY_PLACES")).toContain(
-      "スポット",
-    );
+    expect(getErrorMessageByCustomCode("NO_NEARBY_PLACES")).toContain("お店");
   });
 
   test("NO_INTEREST_PLACES に対応する日本語メッセージを返す", () => {

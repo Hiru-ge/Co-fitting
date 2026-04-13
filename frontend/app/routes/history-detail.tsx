@@ -176,7 +176,7 @@ export default function HistoryDetail({ loaderData }: Route.ComponentProps) {
               {visit.is_breakout && (
                 <div className="flex items-center gap-1 text-primary">
                   <Icon name="emoji_events" className="text-sm" />
-                  <span>コンフォートゾーン脱却</span>
+                  <span>新ジャンル開拓</span>
                 </div>
               )}
             </div>

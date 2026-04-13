@@ -70,7 +70,7 @@ export function useSuggestionLoad({
       }
 
       if (collected.length === 0) {
-        setError("近くのスポットが見つかりませんでした");
+        setError("近くのお店が見つかりませんでした");
         setPlaces([]);
         setOriginalCardOrder([]);
         return;

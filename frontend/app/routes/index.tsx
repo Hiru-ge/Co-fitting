@@ -38,7 +38,7 @@ export default function Index() {
             <div>
               <p className="font-semibold text-sm text-white">提案</p>
               <p className="text-xs text-white/60">
-                現在地の近くからスポットを提案
+                現在地の近くからお店を提案
               </p>
             </div>
           </div>

@@ -17,12 +17,12 @@ export class ApiError extends Error {
  * 提案API用のユーザー向けメッセージ定数
  */
 export const SUGGESTION_MESSAGES = {
-  NO_NEARBY_PLACES: "近くのスポットが見つかりませんでした",
+  NO_NEARBY_PLACES: "近くのお店が見つかりませんでした",
   NO_INTEREST_PLACES:
     "興味ジャンルに合う施設が近くにありませんでした。半径を広げるか、興味ジャンルを見直してみてください",
   ALL_VISITED_NEARBY:
-    "この近くのスポットは最近すべて訪問済みです。しばらく時間を置くか、別のエリアを探してみてください",
-  FETCH_ERROR: "スポットの取得に失敗しました",
+    "この近くのお店は最近すべて訪問済みです。しばらく時間を置くか、別のエリアを試してみてください",
+  FETCH_ERROR: "お店の取得に失敗しました",
 } as const;
 
 /**
@@ -45,11 +45,11 @@ export const API_ERROR_CODES = {
 export function getErrorMessageByCustomCode(code: string): string | undefined {
   switch (code) {
     case "NO_NEARBY_PLACES":
-      return "近くのスポットが見つかりませんでした";
+      return "近くのお店が見つかりませんでした";
     case "NO_INTEREST_PLACES":
       return "興味ジャンルに合う施設が近くにありませんでした。半径を広げるか、興味ジャンルを見直してみてください";
     case "ALL_VISITED_NEARBY":
-      return "この近くのスポットは最近すべて訪問済みです。しばらく時間を置くか、別のエリアを探してみてください";
+      return "この近くのお店は最近すべて訪問済みです。しばらく時間を置くか、別のエリアを試してみてください";
     case "INTERNAL_ERROR":
       return "サーバーエラーが発生しました。時間をおいて再度お試しください";
     case "DAILY_LIMIT_REACHED":

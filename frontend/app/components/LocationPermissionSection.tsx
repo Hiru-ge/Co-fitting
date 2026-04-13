@@ -141,7 +141,7 @@ export default function LocationPermissionSection() {
       <div className="flex items-start gap-2 bg-blue-900/20 rounded-xl p-3">
         <Icon name="info" className="text-blue-500 text-base shrink-0 mt-0.5" />
         <p className="text-xs text-blue-300">
-          まだ許可されていません。ホーム画面でスポットを読み込む際に許可ダイアログが表示されます。
+          まだ許可されていません。ホーム画面でお店を読み込む際に許可ダイアログが表示されます。
           {isIOS &&
             (isStandalone
               ? "許可後は「設定 → 位置情報サービス → Roamble」で管理できます。"
@@ -160,7 +160,7 @@ export default function LocationPermissionSection() {
         位置情報
       </h2>
       <p className="text-sm text-gray-400 mb-4">
-        現在地をもとにスポットを提案します。許可しない場合はデフォルト位置（渋谷駅付近）が使われます。
+        現在地をもとにお店を提案します。許可しない場合はデフォルト位置（渋谷駅付近）が使われます。
       </p>
       {renderStatusDisplay()}
     </section>

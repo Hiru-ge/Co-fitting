@@ -8,7 +8,7 @@ export const meta: MetaFunction = () => [
   {
     name: "description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
   },
   { property: "og:type", content: "website" },
   { property: "og:url", content: "https://roamble.app/lp" },
@@ -19,7 +19,7 @@ export const meta: MetaFunction = () => [
   {
     property: "og:description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
   },
   { property: "og:image", content: "https://roamble.app/ogp.png" },
   { property: "og:site_name", content: "Roamble" },
@@ -33,7 +33,7 @@ export const meta: MetaFunction = () => [
   {
     name: "twitter:description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
   },
   { name: "twitter:image", content: "https://roamble.app/ogp.png" },
   { tagName: "link", rel: "canonical", href: "https://roamble.app/lp" },
@@ -43,7 +43,7 @@ export const meta: MetaFunction = () => [
       "@type": "WebApplication",
       name: "Roamble",
       description:
-        "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+        "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
       url: "https://roamble.app/lp",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
@@ -127,11 +127,11 @@ export default function LP() {
                 「いつも同じ店」を、抜け出そう。
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
-                近くの未訪問スポットをランダム提案。行くたびに
+                近くの知らなかったお店をランダム提案。行くたびに
                 <span className="font-semibold text-primary">経験値</span>
                 が積み上がる。
                 <br />
-                日常の行動圏が、小さな冒険のフィールドになる。
+                行きつけのお店が、少しずつ広がっていく。
               </p>
               <a
                 href="#ios-notify"
@@ -149,7 +149,7 @@ export default function LP() {
               />
               <img
                 src="/images/lp/home.png"
-                alt="スポット提案画面"
+                alt="お店提案画面"
                 className="w-32 sm:w-40 lg:w-48 rounded-2xl shadow-xl z-10"
               />
               <img
@@ -174,9 +174,9 @@ export default function LP() {
           <ul className="space-y-4 text-sm text-white/80 lg:grid lg:grid-cols-2 lg:gap-x-12 lg:space-y-0 lg:gap-y-4">
             {[
               "気になる店があるのに一人で入る勇気が出ない",
-              "結局いつものチェーン店、いつもの行動範囲に落ち着く",
-              "「新しい場所に行きたい」のに、いざとなると足が動かない",
-              "知らない場所に飛び込んで新しい経験をしたい",
+              "結局いつものチェーン店、いつもの店に落ち着く",
+              "「新しいお店に行きたい」のに、いざとなると足が動かない",
+              "知らないお店に飛び込んで新しい体験をしたい",
             ].map((text) => (
               <li key={text} className="flex items-start gap-3">
                 <Icon
@@ -226,7 +226,7 @@ export default function LP() {
               <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
                   src="/images/lp/home.png"
-                  alt="スポット提案画面"
+                  alt="お店提案画面"
                   className="w-48 sm:w-56 lg:w-64 rounded-2xl shadow-lg"
                 />
               </div>
@@ -286,7 +286,7 @@ export default function LP() {
                       3. 成長を実感する
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      訪問履歴が増えるたび、レベルアップやバッジ獲得を通じて、行動範囲とともに
+                      知らなかったお店が積み上がるたびに、レベルアップやバッジ獲得を通じて
                       <span className="font-semibold text-white">
                         自分自身の可能性
                       </span>

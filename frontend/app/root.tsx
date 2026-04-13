@@ -109,7 +109,7 @@ export default function Root() {
         <title>Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ</title>
         <meta
           name="description"
-          content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ"
+          content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ"
         />
         {/* beforeinstallprompt を早期キャプチャ */}
         <script

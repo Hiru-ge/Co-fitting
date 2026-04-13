@@ -117,7 +117,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
             <Icon name="explore_off" className="text-6xl text-gray-400" />
             <p className="text-gray-500 text-center">
-              {error || "近くのスポットが見つかりませんでした"}
+              {error || "近くのお店が見つかりませんでした"}
             </p>
             <button
               onClick={() => loadSuggestions()}

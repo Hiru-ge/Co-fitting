@@ -284,7 +284,7 @@ export default function History({ loaderData }: Route.ComponentProps) {
                   <p className="text-gray-400 text-center text-sm">
                     まだ訪問記録がありません
                     <br />
-                    新しい場所を発見しに行きましょう！
+                    新しいお店を開拓しに行きましょう！
                   </p>
                 </div>
               ) : (

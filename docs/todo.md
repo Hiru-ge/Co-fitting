@@ -160,7 +160,7 @@ s
 
 ### バッジ名「コンフォートゾーン・ブレイカー」変更（Issue #343）
 
-> **背景**: 「コンフォートゾーン」という概念をプロダクト全体から廃止する方針に基づき、バッジ名を変更する。影響ファイル: `backend/database/seed.go:67`, `backend/services/email.go:44`, `backend/services/gamification_test.go:490,514,520,545,550`。
+> **背景**: 「コンフォートゾーン」という概念をプロダクト全体から廃止する方針に基づき、バッジ名を変更する。バックエンド・フロントエンド・テストコードをすべて同時に変更すること。
 
 **🟢 GREEN**
 
@@ -168,6 +168,10 @@ s
 - [ ] `backend/services/email.go` の `badgeIconMap` の当該キーを `"ジャンル開拓者"` に変更
 - [ ] `badges` テーブルの当該レコードを更新するマイグレーション作成
 - [ ] `backend/services/gamification_test.go` のテスト名・バッジ名参照をすべて `"ジャンル開拓者"` に変更
+- [ ] `frontend/app/utils/badge-icon.ts:10` のキー `"コンフォートゾーン・ブレイカー"` → `"ジャンル開拓者"` に変更
+- [ ] `frontend/app/__tests__/utils/badge-icon.test.ts` のバッジ名参照を変更
+- [ ] `frontend/app/__tests__/routes/profile.test.tsx:58,109,168,403` のバッジ名・description参照を変更
+- [ ] `frontend/app/__tests__/routes/home.test.tsx:575,617` のバッジ名参照を変更
 
 **🔵 REFACTOR**
 

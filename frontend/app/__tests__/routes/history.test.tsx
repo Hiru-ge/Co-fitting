@@ -234,7 +234,7 @@ describe("History", () => {
           screen.getByText(/まだ訪問記録がありません/),
         ).toBeInTheDocument();
         expect(
-          screen.getByText(/新しい場所を発見しに行きましょう！/),
+          screen.getByText(/新しいお店を開拓しに行きましょう！/),
         ).toBeInTheDocument();
       });
     });

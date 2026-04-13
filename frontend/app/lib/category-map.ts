@@ -6,7 +6,7 @@ export interface CategoryInfo {
 }
 
 const DEFAULT_CATEGORY: CategoryInfo = {
-  label: "スポット",
+  label: "お店",
   icon: "location_on",
   gradientColor: "from-gray-500 to-gray-700",
   hexColor: "#6b7280",

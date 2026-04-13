@@ -21,7 +21,7 @@ describe("getCategoryInfo", () => {
 
   test("未知のcategory → デフォルトカテゴリが返る", () => {
     const info = getCategoryInfo("unknown_type");
-    expect(info.label).toBe("スポット");
+    expect(info.label).toBe("お店");
     expect(info.icon).toBe("location_on");
     expect(info.gradientColor).toContain("gray");
     expect(info.hexColor).toBe("#6b7280");
@@ -31,57 +31,57 @@ describe("getCategoryInfo", () => {
 describe("getCategoryInfo - 追加タイプ（Issue #226）", () => {
   test("meal_takeaway → テイクアウトのCategoryInfoが返る", () => {
     const info = getCategoryInfo("meal_takeaway");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("ramen_restaurant → ラーメンのCategoryInfoが返る", () => {
     const info = getCategoryInfo("ramen_restaurant");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("karaoke → カラオケのCategoryInfoが返る", () => {
     const info = getCategoryInfo("karaoke");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("bowling_alley → ボーリングのCategoryInfoが返る", () => {
     const info = getCategoryInfo("bowling_alley");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("amusement_center → ゲームセンターのCategoryInfoが返る", () => {
     const info = getCategoryInfo("amusement_center");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("fitness_center → ジムのCategoryInfoが返る", () => {
     const info = getCategoryInfo("fitness_center");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("public_bath → 銭湯のCategoryInfoが返る", () => {
     const info = getCategoryInfo("public_bath");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("sauna → サウナのCategoryInfoが返る", () => {
     const info = getCategoryInfo("sauna");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("department_store → ショッピングのCategoryInfoが返る", () => {
     const info = getCategoryInfo("department_store");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("beach → ビーチのCategoryInfoが返る", () => {
     const info = getCategoryInfo("beach");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 
   test("campground → キャンプのCategoryInfoが返る", () => {
     const info = getCategoryInfo("campground");
-    expect(info.label).not.toBe("スポット");
+    expect(info.label).not.toBe("お店");
   });
 });
 

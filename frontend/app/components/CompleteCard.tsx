@@ -127,7 +127,7 @@ export default function CompleteCard({ onSwipe: _ }: CompleteCardProps = {}) {
           <p className="text-gray-400 text-sm leading-relaxed">
             今日の冒険はすべて達成しました。
             <br />
-            明日また新しいスポットが待っています！
+            明日また新しいお店が待っています！
           </p>
         </div>
 

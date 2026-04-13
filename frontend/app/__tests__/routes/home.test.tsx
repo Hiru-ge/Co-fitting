@@ -350,9 +350,7 @@ describe("Home画面", () => {
     renderHome();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("スポットの取得に失敗しました"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("お店の取得に失敗しました")).toBeInTheDocument();
     });
     expect(mockShowToast).toHaveBeenCalled();
   });
@@ -714,9 +712,7 @@ describe("Home画面", () => {
     renderHomeStrict();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("スポットの取得に失敗しました"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("お店の取得に失敗しました")).toBeInTheDocument();
     });
 
     expect(mockShowToast).toHaveBeenCalledTimes(1);
@@ -930,9 +926,7 @@ describe("ホームページ レイアウト・スクロール制御", () => {
     const { container } = renderHome();
 
     await waitFor(() => {
-      expect(
-        screen.getByText("スポットの取得に失敗しました"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("お店の取得に失敗しました")).toBeInTheDocument();
     });
 
     const rootDiv = container.firstChild as HTMLElement;
