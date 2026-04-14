@@ -127,7 +127,9 @@ export default function LP() {
                 「いつも同じ店」を、抜け出そう。
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
-                近くの知らなかったお店をランダム提案。行くたびに
+                近くの知らなかったお店をランダム提案。
+                <br />
+                行くたびに
                 <span className="font-semibold text-primary">経験値</span>
                 が積み上がる。
                 <br />
