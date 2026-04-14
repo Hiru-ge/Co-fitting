@@ -7,6 +7,9 @@ import { getRefreshToken, setToken } from "~/lib/token-storage";
  */
 export async function refreshToken(): Promise<void> {
   const refresh = getRefreshToken();
+  if (!refresh) {
+    throw new Error("No refresh token available");
+  }
 
   const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
     method: "POST",
@@ -18,8 +21,13 @@ export async function refreshToken(): Promise<void> {
     throw new Error(`Token refresh failed: ${res.status}`);
   }
 
-  const { access_token, refresh_token } = await res.json();
-  setToken(access_token, refresh_token);
+  const { access_token } = await res.json();
+  if (!access_token) {
+    throw new Error("Token refresh failed: missing access_token");
+  }
+
+  // バックエンドは access_token のみ返すため、既存refreshトークンを保持する。
+  setToken(access_token, refresh);
 }
 
 /**

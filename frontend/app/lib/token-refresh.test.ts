@@ -13,7 +13,7 @@ describe("token-refresh", () => {
     vi.clearAllMocks();
   });
 
-  test("refreshToken成功時にsetTokenが呼ばれる", async () => {
+  test("refreshToken成功時にrefresh_token未返却でも既存値でsetTokenが呼ばれる", async () => {
     vi.mocked(getRefreshToken).mockReturnValue("refresh-ok");
 
     global.fetch = vi.fn().mockResolvedValue({
@@ -21,14 +21,13 @@ describe("token-refresh", () => {
       json: () =>
         Promise.resolve({
           access_token: "new-access",
-          refresh_token: "new-refresh",
         }),
     } as Response);
 
     await refreshToken();
 
     expect(fetch).toHaveBeenCalled();
-    expect(setToken).toHaveBeenCalledWith("new-access", "new-refresh");
+    expect(setToken).toHaveBeenCalledWith("new-access", "refresh-ok");
   });
 
   test("refreshToken失敗時は例外を投げる", async () => {
@@ -51,7 +50,7 @@ describe("token-refresh", () => {
 
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ access_token: "a", refresh_token: "r" }),
+      json: () => Promise.resolve({ access_token: "a" }),
     } as Response);
     await expect(tryRefreshToken()).resolves.toBe(true);
 

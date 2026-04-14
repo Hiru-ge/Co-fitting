@@ -176,7 +176,7 @@ describe("refreshToken / tryRefreshToken", () => {
     vi.restoreAllMocks();
   });
 
-  test("refreshToken: 成功時にアクセストークンとリフレッシュトークンが更新される", async () => {
+  test("refreshToken: 成功時にrefresh_token未返却でも既存リフレッシュトークンを保持する", async () => {
     const { refreshToken } = await import("~/lib/auth");
 
     localStorage.setItem("roamble_refresh_token", "old-refresh");
@@ -186,14 +186,13 @@ describe("refreshToken / tryRefreshToken", () => {
       json: () =>
         Promise.resolve({
           access_token: "new-access",
-          refresh_token: "new-refresh",
         }),
     });
 
     await refreshToken();
 
     expect(localStorage.getItem("roamble_token")).toBe("new-access");
-    expect(localStorage.getItem("roamble_refresh_token")).toBe("new-refresh");
+    expect(localStorage.getItem("roamble_refresh_token")).toBe("old-refresh");
   });
 
   test("refreshToken: 失敗時に Error を throw する", async () => {
@@ -230,7 +229,6 @@ describe("refreshToken / tryRefreshToken", () => {
       json: () =>
         Promise.resolve({
           access_token: "new-access",
-          refresh_token: "new-refresh",
         }),
     });
 
