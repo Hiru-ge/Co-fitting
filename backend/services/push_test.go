@@ -115,7 +115,7 @@ func TestSendPushToUser_Success(t *testing.T) {
 func TestPushPayload_JSONSerialization(t *testing.T) {
 	payload := services.PushPayload{
 		Title: "新しい提案",
-		Body:  "今日のおすすめスポットがあります",
+		Body:  "今日のおすすめのお店があります",
 		URL:   "/suggestions",
 	}
 

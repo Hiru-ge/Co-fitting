@@ -156,8 +156,8 @@ test.describe("主要ユーザーフロー", () => {
     await expect(
       page
         .getByText("行ってきた！")
-        .or(page.getByText("近くのスポットが見つかりませんでした"))
-        .or(page.getByText("スポットの取得に失敗しました")),
+        .or(page.getByText("近くのお店が見つかりませんでした"))
+        .or(page.getByText("お店の取得に失敗しました")),
     ).toBeVisible({ timeout: 15_000 });
 
     // ボトムナビゲーションの確認

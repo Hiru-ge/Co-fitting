@@ -487,7 +487,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		}
 	})
 
-	t.Run("コンフォートゾーン脱却訪問4件ではバッジが付与されない", func(t *testing.T) {
+	t.Run("新ジャンル開拓訪問4件ではバッジが付与されない", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge3a@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
@@ -517,7 +517,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		}
 	})
 
-	t.Run("コンフォートゾーン脱却訪問5件目でバッジが付与される", func(t *testing.T) {
+	t.Run("新ジャンル開拓訪問5件目でバッジが付与される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "badge3b@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
@@ -724,7 +724,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			testDB.Create(&models.Visit{
 				UserID:    user.ID,
 				PlaceID:   fmt.Sprintf("place_weekend_sat_%d", i),
-				PlaceName: fmt.Sprintf("週末スポット%d", i+1),
+				PlaceName: fmt.Sprintf("週末お店%d", i+1),
 				Category:  "cafe",
 				Latitude:  35.67,
 				Longitude: 139.65,
@@ -760,7 +760,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			testDB.Create(&models.Visit{
 				UserID:    user.ID,
 				PlaceID:   fmt.Sprintf("place_weekend_sun_%d", i),
-				PlaceName: fmt.Sprintf("日曜スポット%d", i+1),
+				PlaceName: fmt.Sprintf("日曜お店%d", i+1),
 				Category:  "cafe",
 				Latitude:  35.67,
 				Longitude: 139.65,
@@ -796,7 +796,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			testDB.Create(&models.Visit{
 				UserID:    user.ID,
 				PlaceID:   fmt.Sprintf("place_weekend_2_%d", i),
-				PlaceName: fmt.Sprintf("週末スポット%d", i+1),
+				PlaceName: fmt.Sprintf("週末お店%d", i+1),
 				Category:  "cafe",
 				Latitude:  35.67,
 				Longitude: 139.65,
@@ -828,7 +828,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 			testDB.Create(&models.Visit{
 				UserID:    user.ID,
 				PlaceID:   fmt.Sprintf("place_weekday_%d", i),
-				PlaceName: fmt.Sprintf("平日スポット%d", i+1),
+				PlaceName: fmt.Sprintf("平日お店%d", i+1),
 				Category:  "cafe",
 				Latitude:  35.67,
 				Longitude: 139.65,
@@ -858,15 +858,15 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		sundayTime := time.Date(2024, 1, 21, 14, 0, 0, 0, utils.JST)
 
 		testDB.Create(&models.Visit{
-			UserID: user.ID, PlaceID: "place_sat_mixed_1", PlaceName: "土曜スポット1",
+			UserID: user.ID, PlaceID: "place_sat_mixed_1", PlaceName: "土曜お店1",
 			Category: "cafe", Latitude: 35.67, Longitude: 139.65, VisitedAt: saturdayTime,
 		})
 		testDB.Create(&models.Visit{
-			UserID: user.ID, PlaceID: "place_sat_mixed_2", PlaceName: "土曜スポット2",
+			UserID: user.ID, PlaceID: "place_sat_mixed_2", PlaceName: "土曜お店2",
 			Category: "cafe", Latitude: 35.67, Longitude: 139.65, VisitedAt: saturdayTime.Add(time.Hour),
 		})
 		testDB.Create(&models.Visit{
-			UserID: user.ID, PlaceID: "place_sun_mixed_1", PlaceName: "日曜スポット1",
+			UserID: user.ID, PlaceID: "place_sun_mixed_1", PlaceName: "日曜お店1",
 			Category: "cafe", Latitude: 35.67, Longitude: 139.65, VisitedAt: sundayTime,
 		})
 
@@ -900,7 +900,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
 			PlaceID:   "place_tokyo",
-			PlaceName: "東京スポット",
+			PlaceName: "東京お店",
 			Category:  "cafe",
 			Latitude:  tokyoLat,
 			Longitude: tokyoLng,
@@ -912,7 +912,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
 			PlaceID:   "place_yokohama",
-			PlaceName: "横浜スポット",
+			PlaceName: "横浜お店",
 			Category:  "cafe",
 			Latitude:  yokohamaLat,
 			Longitude: yokohamaLng,
@@ -945,7 +945,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
 			PlaceID:   "place_tokyo2",
-			PlaceName: "東京スポット",
+			PlaceName: "東京お店",
 			Category:  "cafe",
 			Latitude:  tokyoLat,
 			Longitude: tokyoLng,
@@ -957,7 +957,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		testDB.Create(&models.Visit{
 			UserID:    user.ID,
 			PlaceID:   "place_shinjuku",
-			PlaceName: "新宿スポット",
+			PlaceName: "新宿お店",
 			Category:  "cafe",
 			Latitude:  shinjukuLat,
 			Longitude: shinjukuLng,
@@ -1012,13 +1012,13 @@ func TestCheckAndAwardBadges(t *testing.T) {
 
 		// 近くの過去訪問（新宿）
 		testDB.Create(&models.Visit{
-			UserID: user.ID, PlaceID: "place_near", PlaceName: "近いスポット",
+			UserID: user.ID, PlaceID: "place_near", PlaceName: "近いお店",
 			Category: "cafe", Latitude: 35.6896, Longitude: 139.7006,
 			VisitedAt: time.Now().Add(-48 * time.Hour),
 		})
 		// 遠くの過去訪問（東京）
 		testDB.Create(&models.Visit{
-			UserID: user.ID, PlaceID: "place_far", PlaceName: "東京スポット",
+			UserID: user.ID, PlaceID: "place_far", PlaceName: "東京お店",
 			Category: "cafe", Latitude: 35.6812, Longitude: 139.7671,
 			VisitedAt: time.Now().Add(-24 * time.Hour),
 		})
@@ -1026,7 +1026,7 @@ func TestCheckAndAwardBadges(t *testing.T) {
 		// 横浜（東京から30km）の新しい訪問
 		yokohamaLat, yokohamaLng := 35.4660, 139.6225
 		testDB.Create(&models.Visit{
-			UserID: user.ID, PlaceID: "place_yokohama2", PlaceName: "横浜スポット",
+			UserID: user.ID, PlaceID: "place_yokohama2", PlaceName: "横浜お店",
 			Category: "cafe", Latitude: yokohamaLat, Longitude: yokohamaLng,
 			VisitedAt: time.Now(),
 		})

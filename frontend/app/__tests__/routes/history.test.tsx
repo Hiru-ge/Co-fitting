@@ -344,13 +344,13 @@ describe("History", () => {
         {
           ...mockVisits[0],
           id: 11,
-          place_name: "スポットA",
+          place_name: "お店A",
           category: "unknown_a",
         },
         {
           ...mockVisits[1],
           id: 12,
-          place_name: "スポットB",
+          place_name: "お店B",
           category: "unknown_b",
         },
       ];
@@ -365,7 +365,7 @@ describe("History", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("スポットA")).toBeInTheDocument();
+        expect(screen.getByText("お店A")).toBeInTheDocument();
       });
 
       const unknownButtons = screen.getAllByRole("button", { name: /お店/ });
@@ -374,8 +374,8 @@ describe("History", () => {
       fireEvent.click(unknownButtons[0]);
 
       await waitFor(() => {
-        expect(screen.getByText("スポットA")).toBeInTheDocument();
-        expect(screen.getByText("スポットB")).toBeInTheDocument();
+        expect(screen.getByText("お店A")).toBeInTheDocument();
+        expect(screen.getByText("お店B")).toBeInTheDocument();
       });
     });
   });

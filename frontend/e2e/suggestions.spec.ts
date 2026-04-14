@@ -133,7 +133,7 @@ test.describe("提案フロー", () => {
     ).toBeVisible();
   });
 
-  test("全スポット訪問済みでメッセージ表示", async ({ page, context }) => {
+  test("全お店訪問済みでメッセージ表示", async ({ page, context }) => {
     const user = buildTestUser("e2e_suggest_all_visited");
     const login = await devTestLogin(user.email, user.displayName);
     await ensureOnboardingCompleted(login.access_token);
@@ -155,7 +155,7 @@ test.describe("提案フロー", () => {
 
     await expect(
       page.getByText(
-        "この近くのスポットは最近すべて訪問済みです。しばらく時間を置くか、別のエリアを探してみてください",
+        "この近くのお店は最近すべて訪問済みです。しばらく時間を置くか、別のエリアを試してみてください",
       ),
     ).toBeVisible({ timeout: 15000 });
   });

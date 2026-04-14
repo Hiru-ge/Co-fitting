@@ -933,7 +933,7 @@ describe("ホームページ レイアウト・スクロール制御", () => {
     expect(rootDiv).not.toHaveClass("min-h-max");
   });
 
-  test("スポット表示中のルートコンテナにmin-h-maxクラスがない", async () => {
+  test("お店表示中のルートコンテナにmin-h-maxクラスがない", async () => {
     const { container } = renderHome();
 
     await waitFor(() => {

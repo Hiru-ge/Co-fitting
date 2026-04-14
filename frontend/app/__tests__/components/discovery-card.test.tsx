@@ -16,7 +16,7 @@ vi.mock("~/utils/helpers", async (importOriginal) => {
 
 const basePlace = {
   place_id: "place_1",
-  name: "テストスポット",
+  name: "テストお店",
   vicinity: "渋谷区1-1",
   lat: 35.66,
   lng: 139.7,

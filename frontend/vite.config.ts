@@ -18,9 +18,9 @@ const injectOgpPlugin = {
       return; // dev mode など build/client が存在しない場合はスキップ
     }
     const metaTags = [
-      '<meta name="description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+      '<meta name="description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
       '<meta property="og:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
-      '<meta property="og:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+      '<meta property="og:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
       '<meta property="og:type" content="website">',
       '<meta property="og:url" content="https://roamble.app/lp">',
       '<meta property="og:image" content="https://roamble.app/ogp.png">',
@@ -31,7 +31,7 @@ const injectOgpPlugin = {
       '<meta name="twitter:card" content="summary_large_image">',
       '<meta name="twitter:site" content="@roamble_app">',
       '<meta name="twitter:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
-      '<meta name="twitter:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の未訪問スポットをランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+      '<meta name="twitter:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
       '<meta name="twitter:image" content="https://roamble.app/ogp.png">',
     ].join("\n    ");
     const patched = html
