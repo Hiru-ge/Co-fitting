@@ -124,7 +124,7 @@ export default function LP() {
                 Roamble
               </h1>
               <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
-                「いつも同じ店」を、抜け出そう。
+                「いつも同じ店」を抜け出そう
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
                 近くの知らなかったお店をランダム提案。
@@ -133,14 +133,21 @@ export default function LP() {
                 <span className="font-semibold text-primary">経験値</span>
                 が積み上がる。
                 <br />
-                行きつけのお店が、少しずつ広がっていく。
               </p>
-              <a
-                href="#ios-notify"
-                className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
-              >
-                iOS版リリース通知を受け取る
-              </a>
+              <div className="flex flex-col items-center lg:items-start gap-3">
+                <a
+                  href="/beta-gate"
+                  className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
+                >
+                  さっそく始める
+                </a>
+                <a
+                  href="#ios-notify"
+                  className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
+                >
+                  iOS版リリース通知を受け取る
+                </a>
+              </div>
             </div>
             {/* スクリーンショット */}
             <div className="mt-12 lg:mt-0 flex items-end justify-center gap-3 px-2 lg:shrink-0">
@@ -175,10 +182,10 @@ export default function LP() {
           </h2>
           <ul className="space-y-4 text-sm text-white/80 lg:grid lg:grid-cols-2 lg:gap-x-12 lg:space-y-0 lg:gap-y-4">
             {[
-              "気になる店があるのに一人で入る勇気が出ない",
-              "結局いつものチェーン店、いつもの店に落ち着く",
-              "「新しいお店に行きたい」のに、いざとなると足が動かない",
-              "知らないお店に飛び込んで新しい体験をしたい",
+              "気になる店があるのに入る勇気が出ない",
+              "結局いつもの店に落ち着く",
+              "新しいお店に行きたいのに、なんだか億劫",
+              "知らない店に飛び込んで新しい体験をしたい",
             ].map((text) => (
               <li key={text} className="flex items-start gap-3">
                 <Icon
@@ -190,9 +197,9 @@ export default function LP() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-center text-white/60 leading-relaxed">
-            Roambleは、そんなあなたの
+            Roambleは、あなたの
             <span className="font-semibold text-white">勇気ある一歩</span>
-            をサポートします。
+            をサポートします
           </p>
         </div>
       </section>
@@ -288,7 +295,7 @@ export default function LP() {
                       3. 成長を実感する
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      知らなかったお店が積み上がるたびに、レベルアップやバッジ獲得を通じて
+                      知らなかったお店が登録されるたび、レベルアップやバッジ獲得を通じて
                       <span className="font-semibold text-white">
                         自分自身の可能性
                       </span>
@@ -351,7 +358,13 @@ export default function LP() {
             作っている人
           </h2>
           <p className="text-sm text-white/70 leading-relaxed text-center mb-6">
-            新しいお店になかなか踏み出せない課題を持つ個人開発者が、「自分自身が使いたいと思えるアプリを作る」前提で開発に取り組んでいます。
+            <span className="font-semibold text-white">
+              開発者自身、新しいお店を開拓できずにいる一人です
+            </span>
+            <br />
+            Roambleは、「自分が使いたいと思うものを作る」...その一点で作り始めたアプリです。
+            <br />
+            同じようなモヤモヤを感じている人の背中を押す存在になれたら嬉しいです。
             <br />
             開発の過程は X (Twitter) で #BuildInPublic として公開しています。
           </p>
@@ -392,7 +405,7 @@ export default function LP() {
             iOS版リリース通知を受け取る
           </h2>
           <p className="text-sm text-white/60 mb-6 text-center">
-            iOS版の開発を進めています。
+            現在、iOS版の開発を進めています。
             <br />
             リリース時にメールでお知らせしますので、メールアドレスを登録してください。
           </p>
