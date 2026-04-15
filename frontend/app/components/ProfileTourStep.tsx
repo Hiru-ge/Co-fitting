@@ -59,7 +59,7 @@ export default function ProfileTourStep({
           aria-hidden="true"
           style={{
             position: "fixed",
-            top: targetRect.top - SPOTLIGHT_PADDING + 24,
+            top: targetRect.top - SPOTLIGHT_PADDING,
             left: targetRect.left - SPOTLIGHT_PADDING,
             width: targetRect.width + SPOTLIGHT_PADDING * 2,
             height: targetRect.height + SPOTLIGHT_PADDING * 2,
