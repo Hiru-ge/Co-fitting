@@ -117,6 +117,9 @@ export default function DiscoveryCard({
         </div>
       )}
 
+      {/* 上部の黒グラデーション(MEMO: この実装は上から被せているだけで不格好なので、何か代案があれば変える) */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-b from-black/80 via-black/50 to-transparent pointer-events-none" />
+
       {/* バッジ */}
       <div className="absolute top-4 left-4 flex gap-2">
         <span className="bg-white/30 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
