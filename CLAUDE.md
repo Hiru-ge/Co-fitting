@@ -72,16 +72,7 @@ cd /Users/hiruge/Project/Roamble/.claude/worktrees/feat-xxx && claude .
 Agentツールで `isolation: "worktree"` を使う場合も同様に、手動でworktreeを用意してから `EnterWorktree` で入ること。
 
 **git操作について**: Issue作成（`gh issue create`）以外のgit操作（commit・push・PR作成など）は行わないこと。タスクが完了したら `docs/todo.md` の該当項目にチェックを入れること。Issue作成時は、`Phase0`, `Phase1`, `Phase2`, `Phase3`, `Phase4`, `frontend`, `backend` の中から適切なラベルを付与すること。
-現在のフェーズ: **Phase 1（ドッグフーディング中）** — ゲーミフィケーション（XP・レベル・バッジ）・Google OAuth・興味タグ/パーソナライズ提案などを実装済み。現在はPhase 1最終段階としてベータ版公開中。ユーザーフィードバックをもとに品質改善とバグ修正を継続中。Phase 2以降の機能（Gemini API連携、リマインダー、ソーシャル機能など）は一切実装せず、Phase 1の完成度向上に集中すること。
-
-Phase 1のスコープ（実装済み・ベータ版公開中）:
-- ゲーミフィケーション（XP・レベル・バッジ）
-- Google OAuth
-- 興味タグ / パーソナライズ提案
-- チャレンジモード
-- Phase 0機能（提案・訪問記録・JWT認証）はすべて完了済み
-
-Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソーシャル機能、フレンド機能などのPhase 3以降の機能は一切実装しないこと。Phase 1はあくまで「基本的なゲーミフィケーション要素とパーソナライズ提案の実装と品質向上」に集中すること。
+現在のフェーズ: **Phase 2**。通知機能はすべて実装済みで、現在はユーザーフィードバックを元にしたブラッシュアップフェーズ。Phase 3以降の機能（iOS開発・Gemini API連携・リマインダー・ソーシャル機能など）は一切実装しないこと。
 
 ## フロントエンド注意事項
 
@@ -117,11 +108,15 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 - ファイル内のコア処理（ハンドラのメイン関数、`Start` などのエントリポイント）は下側に配置する
 - 新規実装・リファクタ時も同ルールを維持し、依存先が下に来る並びは作らない
 
-## 主要APIパス（Phase 1）
+## 主要APIパス（Phase 2）
 
+### 認証
 - `POST /api/auth/oauth/google` — Google OAuth認証
 - `POST /api/auth/refresh` — トークンリフレッシュ
 - `POST /api/auth/logout` — ログアウト
+- `POST /api/beta/verify` — ベータ合言葉検証
+
+### ユーザー
 - `GET /api/users/me` — ユーザー情報
 - `GET /api/users/me/stats` — XP・レベル統計
 - `GET /api/users/me/badges` — 取得バッジ一覧
@@ -130,20 +125,45 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 - `PUT /api/users/me/interests` — 興味タグ更新
 - `PATCH /api/users/me` — プロフィール更新
 - `DELETE /api/users/me` — アカウント削除
+
+### マスタ
 - `GET /api/badges` — バッジ一覧
 - `GET /api/genres` — ジャンル一覧
+
+### 提案・訪問
 - `POST /api/suggestions` — 提案生成（興味タグによるパーソナライズ対応）
 - `POST /api/visits` — 訪問記録
 - `GET /api/visits` — 訪問履歴
 - `GET /api/visits/map` — 訪問マップデータ
 - `PATCH /api/visits/:id` — 訪問記録更新
 - `GET /api/visits/:id` — 訪問記録詳細
+- `GET /api/places/:placeId/photo` — 施設写真取得
 
-## データモデル（Phase 1）
+### 通知（Phase 2）
+- `GET /api/notifications/push/vapid-key` — VAPID公開鍵取得
+- `POST /api/notifications/push/subscribe` — Web Push購読登録
+- `DELETE /api/notifications/push/subscribe` — Web Push購読解除
+- `GET /api/notifications/settings` — 通知設定取得
+- `PUT /api/notifications/settings` — 通知設定更新
 
-主要テーブル: `users`, `visits`, `genre_tags`, `badges`, `user_interests`, `genre_proficiencies`, `user_badges`
+## データモデル
 
-## XP設計（Phase 1）
+### コア
+- `users` — ユーザー基本情報（メール、表示名、レベル、XP、ストリーク）
+- `visit_history` — 訪問記録（場所、ジャンル、XP獲得、メモ）
+- `genre_tags` — ジャンルマスタ（施設カテゴリ）
+- `genre_proficiency` — ジャンル習熟度（ユーザーごとのジャンル別XP・レベル）
+
+### ゲーミフィケーション
+- `badges` — バッジマスタ（条件・説明・アイコン）
+- `user_badges` — ユーザーが獲得したバッジ
+- `user_interests` — ユーザーの興味タグ（選択したジャンル）
+
+### 通知（Phase 2）
+- `push_subscriptions` — Web Push購読登録情報
+- `notification_settings` — ユーザーごとの通知設定（有効/無効）
+
+## XP設計
 
 | アクション | XP |
 |-----------|-----|
@@ -151,7 +171,6 @@ Phase 1で**やらないもの**: Gemini API連携、リマインダー、ソー
 | チャレンジ訪問（興味タグ外 かつ 熟練度Lv.5以下のジャンル） | 100 XP |
 | 初エリアボーナス（前回訪問地から10km以上） | +30 XP |
 | ストリークボーナス（週次） | 連続週数 × 10 XP（上限100 XP） |
-| 感想メモ記入 | +10 XP |
 
 ## プロジェクトドキュメント
 
