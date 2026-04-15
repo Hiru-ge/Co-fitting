@@ -136,7 +136,7 @@ export default function DiscoveryCard({
       </div>
 
       {/* 施設情報 */}
-      <div className="absolute bottom-0 left-0 right-0 px-6 pt-20 pb-20 bg-gradientColor-to-t from-black/70 via-black/40 to-transparent">
+      <div className="absolute bottom-0 left-0 right-0 px-6 pt-32 pb-20 bg-linear-to-t from-black/80 via-black/50 to-transparent">
         <h2
           className="text-2xl font-extrabold text-white leading-tight mb-2"
           style={{ textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}
