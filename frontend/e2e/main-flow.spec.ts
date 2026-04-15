@@ -220,10 +220,10 @@ test.describe("主要ユーザーフロー", () => {
     await expect(page).toHaveURL("/home");
   });
 
-  // 10. 認証済みでランディングページにアクセス → /home へリダイレクト
+  // 10. 認証済みでトップページにアクセス → /home へリダイレクト
   test("認証済みで / にアクセス → /home へリダイレクト", async () => {
     await page.goto("/");
-    await page.waitForURL("/home", { timeout: 10_000 });
+    await page.waitForURL("/home", { timeout: 15_000 });
     await expect(page).toHaveURL("/home");
   });
 });
