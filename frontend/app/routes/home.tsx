@@ -156,7 +156,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 {/* アクションボタンをカード下部にオーバーレイ */}
                 <div
                   data-tour="action-buttons"
-                  className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-4"
+                  className="absolute bottom-0 left-0 right-0 z-20 px-4 pb-2"
                 >
                   <ActionButtons
                     onCheckIn={handleCheckIn}

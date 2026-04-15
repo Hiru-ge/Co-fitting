@@ -24,21 +24,19 @@ export default function ActionButtons({
 
   return (
     <div className="flex items-center gap-3 w-full">
-      <div className="flex flex-col items-center gap-0.5">
+      <div className="flex flex-col items-center gap-0.5 pt-4.5">
         <button
           onClick={onReload}
           disabled={isReloadDisabled}
           aria-label="リロード"
-          className="size-12 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+          className="size-12 flex items-center justify-center rounded-full bg-white/50 backdrop-blur-sm shadow-md disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
         >
           <Icon
             name={isReloading ? "progress_activity" : "refresh"}
-            className={`text-xl text-gray-300 ${isReloading ? "animate-spin" : ""}`}
+            className={`text-xl text-gray-10 ${isReloading ? "animate-spin" : ""}`}
           />
         </button>
-        <span className="text-xs text-white/70">
-          あと{reloadCountRemaining}回
-        </span>
+        <span className="text-xs text-white">あと{reloadCountRemaining}回</span>
       </div>
 
       <button
