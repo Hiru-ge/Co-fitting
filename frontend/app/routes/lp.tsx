@@ -171,7 +171,9 @@ export default function LP() {
                 「いつも同じ店」を抜け出そう
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
-                近くの知らなかったお店をランダム提案。
+                なかなか店が決められない日も、Roambleがランダムにお店を提案。
+                <br />
+                新しいお店開拓やカフェ開拓を、迷わず続けられる。
                 <br />
                 行くたびに
                 <span className="font-semibold text-primary">経験値</span>
@@ -239,9 +241,9 @@ export default function LP() {
           </h2>
           <ul className="space-y-4 text-sm text-white/80 lg:grid lg:grid-cols-2 lg:gap-x-12 lg:space-y-0 lg:gap-y-4">
             {[
-              "気になる店があるのに入る勇気が出ない",
+              "気になる店があるのに、入るのに勇気がいる",
               "結局いつもの店に落ち着く",
-              "新しいお店に行きたいのに、なんだか億劫",
+              "初めて入る店は緊張してしまう",
               "知らない店に飛び込んで新しい体験をしたい",
             ].map((text) => (
               <li key={text} className="flex items-start gap-3">
@@ -268,7 +270,7 @@ export default function LP() {
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold mb-12 text-center">
-            Roambleで、日常をクエストにする
+            Roambleで、新しいお店を開拓しよう
           </h2>
 
           <div className="space-y-16 lg:space-y-20">
@@ -280,11 +282,13 @@ export default function LP() {
                     <Icon name="explore" className="text-primary text-2xl" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base mb-1">1. 背中を押す</h3>
+                    <h3 className="font-bold text-base mb-1">
+                      1. 店が決められないを解消する
+                    </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      現在地の近くから「まだ行ったことのない場所」をランダムに提案します。
+                      現在地の近くから、まだ行ったことのないお店をランダムに提案します。
                       <br></br>
-                      選ぶ手間はゼロ。あとは勇気を出して踏み出すだけです。
+                      選ぶ手間はゼロ。お店開拓の最初の一歩はもう踏み出しています。
                     </p>
                   </div>
                 </div>
@@ -314,7 +318,7 @@ export default function LP() {
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
-                      2. 一歩を記録する
+                      2. 入るのに勇気がいる店でも動ける
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
                       提案された場所に実際に行き、「行った！」ボタンを押すことで
@@ -322,7 +326,7 @@ export default function LP() {
                         {" "}
                         経験値
                       </span>
-                      を獲得できます。「怖かったけど行けた」という成功体験が、確かな数値として積み上がります。
+                      を獲得できます。初めて入る店で緊張した日も、「行けた」を数値で振り返れます。
                     </p>
                   </div>
                 </div>
@@ -361,7 +365,7 @@ export default function LP() {
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
-                      3. 成長を実感する
+                      3. お店開拓とカフェ開拓が続く
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
                       知らなかったお店が登録されるたび、レベルアップやバッジ獲得を通じて

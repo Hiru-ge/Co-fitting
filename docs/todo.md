@@ -11,7 +11,6 @@
 
 - [ ] `localStorage` に保存しているトークンに対して XSS リスクがある場合、Content-Security-Policy ヘッダーが設定されているか（`public/_headers` に CSP 未設定。ベータ版では許容範囲だが、正式リリース前に追加推奨）
 - [ ] リフレッシュトークンを httpOnly Cookie に移行する（現状は `localStorage` に保存しており、XSS が刺さると盗まれるリスクがある。対応にはバックエンドでの Cookie 発行・CSRF 対策とセットで実装が必要。ユーザー数が増えるフェーズで対応を検討）
-s
 ---
 
 ## 3/8〜: Optional（ひと段落後）
@@ -121,7 +120,7 @@ s
 
 - [x] Lighthouse・Google Search Consoleで現状のスコア・インデックス状況・検索パフォーマンスを確認し、改善の基準値を記録する
 - [x] `/funnel-analysis` SKILLを使って現状のユーザー行動を分析し、継続率や実質アクティブユーザー数、検索流入の影響、UIのどこに摩擦があるかを把握する。前回実行が2026-03-26のため、そこからの変化も分析する。結果は `docs/marketing/analysis/` 下にまとめる。
-- [ ] ラッコキーワード（https://rakkokeyword.com/）でキーワード選定を実施し、`frontend/app/routes/lp.tsx` のmeta情報（title・description・OGP）と本文コピーを更新する。
+- [x] ラッコキーワード（https://rakkokeyword.com/）でキーワード選定を実施し、`frontend/app/routes/lp.tsx` のmeta情報（title・description・OGP）と本文コピーを更新する。（正規コピーは `docs/marketing/marketing-strategy.md` に固定し、本文コピーと見出しで非ブランド検索語を反映）
 - [x] `frontend/react-router.config.ts` の `prerender` オプションに `/lp` を追加し、ビルド時に静的HTMLを生成する（React Router v7 の prerender 機能を使用）
 - [x] `frontend/public/sitemap.xml` を作成し `/lp` を含める
 - [x] `frontend/public/robots.txt` を作成し `Sitemap:` ディレクティブを追記
