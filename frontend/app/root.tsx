@@ -1,6 +1,3 @@
-import "@fontsource/plus-jakarta-sans";
-import "@fontsource/space-grotesk";
-import "@fontsource/noto-sans-jp";
 import "./app.css";
 
 import { useEffect } from "react";
@@ -13,13 +10,10 @@ import {
   redirect,
   useLocation,
 } from "react-router";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "~/components/Toast";
 import { isBetaUnlocked } from "~/lib/beta-access";
 import { GA4_ID, sendPageView } from "~/lib/gtag";
-import { registerSW } from "virtual:pwa-register";
-registerSW({ immediate: true });
 
 const BETA_EXCLUDED_PATHS = ["/beta-gate", "/lp", "/privacy"] as const;
 const queryClient = new QueryClient();
@@ -100,6 +94,26 @@ function PageViewTracker() {
   return null;
 }
 
+function PWARegister() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === "/lp") return;
+
+    let cancelled = false;
+
+    void import("virtual:pwa-register").then(({ registerSW }) => {
+      if (!cancelled) registerSW({ immediate: true });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname]);
+
+  return null;
+}
+
 export default function Root() {
   return (
     <html lang="ja">
@@ -146,17 +160,14 @@ export default function Root() {
         <Links />
       </head>
       <body>
-        <GoogleOAuthProvider
-          clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}
-        >
-          <QueryClientProvider client={queryClient}>
-            <ToastProvider>
-              <GA4Initializer />
-              <PageViewTracker />
-              <Outlet />
-            </ToastProvider>
-          </QueryClientProvider>
-        </GoogleOAuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider>
+            <PWARegister />
+            <GA4Initializer />
+            <PageViewTracker />
+            <Outlet />
+          </ToastProvider>
+        </QueryClientProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

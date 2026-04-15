@@ -119,14 +119,17 @@ s
 
 **🟢 GREEN**
 
-- [ ] Lighthouse・Google Search Consoleで現状のスコア・インデックス状況・検索パフォーマンスを確認し、改善の基準値を記録する
-- [ ] `frontend/react-router.config.ts` の `prerender` オプションに `/lp` を追加し、ビルド時に静的HTMLを生成する（React Router v7 の prerender 機能を使用）
-- [ ] ラッコキーワード（https://rakkokeyword.com/）でキーワード選定を実施し、`frontend/app/routes/lp.tsx` のmeta情報（title・description・OGP）と本文コピーを更新する
-- [ ] `frontend/public/sitemap.xml` を作成し `/lp` を含める
-- [ ] `frontend/public/robots.txt` を作成し `Sitemap:` ディレクティブを追記
-- [ ] `frontend/app/routes/lp.tsx` のスクリーンショット・機能紹介画像（`<img>` タグ）に `width` / `height` 属性を追加してCLSを防ぐ
-- [ ] TikTok埋め込みスクリプトの読み込みをIntersection Observer等で遅延させ、LCPへの影響を最小化する
-- [ ] Lighthouseでパフォーマンス測定し、フロントエンド起因の指摘事項（CLS・LCP・未使用CSS等）のみ対応する。TTFBやサーバー応答速度の改善はiOS版リリース後にインフラ増強とセットで対応する
+- [x] Lighthouse・Google Search Consoleで現状のスコア・インデックス状況・検索パフォーマンスを確認し、改善の基準値を記録する
+- [x] `/funnel-analysis` SKILLを使って現状のユーザー行動を分析し、継続率や実質アクティブユーザー数、検索流入の影響、UIのどこに摩擦があるかを把握する。前回実行が2026-03-26のため、そこからの変化も分析する。結果は `docs/marketing/analysis/` 下にまとめる。
+- [ ] ラッコキーワード（https://rakkokeyword.com/）でキーワード選定を実施し、`frontend/app/routes/lp.tsx` のmeta情報（title・description・OGP）と本文コピーを更新する。
+- [x] `frontend/react-router.config.ts` の `prerender` オプションに `/lp` を追加し、ビルド時に静的HTMLを生成する（React Router v7 の prerender 機能を使用）
+- [x] `frontend/public/sitemap.xml` を作成し `/lp` を含める
+- [x] `frontend/public/robots.txt` を作成し `Sitemap:` ディレクティブを追記
+- [x] `frontend/app/routes/lp.tsx` のスクリーンショット・機能紹介画像（`<img>` タグ）に `width` / `height` 属性を追加してCLSを防ぐ
+- [x] TikTok埋め込みスクリプトの読み込みをIntersection Observer等で遅延させ、LCPへの影響を最小化する
+- [x] Lighthouseでパフォーマンス測定し、フロントエンド起因の指摘事項（CLS・LCP・未使用CSS等）のみ対応する。TTFBやサーバー応答速度の改善はiOS版リリース後にインフラ増強とセットで対応する
+- [ ] ベータゲートを撤廃するべきか(あるいは期間限定でベータ版リクエストを再受付するか)を検討する。ファネル分析の結果、コア層は使ってくれているが母数が少ない(大多数がベータゲートに阻まれて離脱している)ので、期間限定で再受付してデータを増やすのも手。ただし、「ベータ版はベータ版リクエストしてくれた方限定」というふうに訴求してきたので、そこで登録してくれたユーザーへの裏切りにならないかは考慮する必要がある。
+- [ ] 以上の改善・検討が全て完了したら、調査結果と改善内容を `docs/marketing/seo-improvement.md` にまとめる
 
 **🔵 REFACTOR**
 

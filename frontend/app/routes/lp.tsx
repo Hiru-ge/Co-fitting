@@ -1,7 +1,16 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link } from "react-router";
-import type { MetaFunction } from "react-router";
+import type { LinksFunction, MetaFunction } from "react-router";
 import { Icon } from "~/components/Icon";
+
+export const links: LinksFunction = () => [
+  {
+    rel: "preload",
+    as: "image",
+    href: "/images/lp/home.webp",
+    fetchPriority: "high",
+  },
+];
 
 export const meta: MetaFunction = () => [
   { title: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ" },
@@ -62,8 +71,10 @@ type FormState = "idle" | "submitting" | "success" | "error";
 export default function LP() {
   const [email, setEmail] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
+  const [shouldLoadTikTok, setShouldLoadTikTok] = useState(false);
+  const tiktokSectionRef = useRef<HTMLDivElement>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setFormState("submitting");
     try {
@@ -87,23 +98,56 @@ export default function LP() {
   }
 
   useEffect(() => {
+    const target = tiktokSectionRef.current;
+    if (!target || shouldLoadTikTok) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadTikTok(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "0px", threshold: 0.25 },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [shouldLoadTikTok]);
+
+  useEffect(() => {
+    if (!shouldLoadTikTok) return;
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[src="https://www.tiktok.com/embed.js"]',
+    );
+    if (existingScript) return;
+
     const script = document.createElement("script");
     script.src = "https://www.tiktok.com/embed.js";
     script.async = true;
-    document.body.appendChild(script);
+
+    const scheduleScriptLoad = () => document.body.appendChild(script);
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(scheduleScriptLoad, { timeout: 1500 });
+    } else {
+      setTimeout(scheduleScriptLoad, 800);
+    }
+
     return () => {
       if (document.body.contains(script)) document.body.removeChild(script);
     };
-  }, []);
+  }, [shouldLoadTikTok]);
 
   return (
-    <div className="min-h-dvh bg-bg-dark text-white">
+    <main
+      className="min-h-dvh bg-bg-dark text-white"
+      style={{ fontFamily: '"Hiragino Sans", "Yu Gothic", sans-serif' }}
+    >
       {/* ── Sticky Header ── */}
       <header className="sticky top-0 z-50 bg-bg-dark/80 backdrop-blur-md border-b border-white/10">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="font-bold font-display-alt text-primary text-lg">
-            Roamble
-          </span>
+          <span className="font-bold text-primary text-lg">Roamble</span>
           <a
             href="#ios-notify"
             className="px-4 py-1.5 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
@@ -120,10 +164,10 @@ export default function LP() {
           <div className="flex flex-col items-center text-center lg:flex-row lg:items-center lg:text-left lg:gap-16">
             {/* テキスト */}
             <div className="lg:flex-1">
-              <h1 className="text-5xl font-bold font-display-alt tracking-tight text-primary mb-4">
+              <h1 className="text-5xl font-bold tracking-tight text-primary mb-4">
                 Roamble
               </h1>
-              <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
+              <p className="text-2xl font-bold leading-snug max-w-md mb-6 lg:max-w-none">
                 「いつも同じ店」を抜け出そう
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
@@ -152,18 +196,31 @@ export default function LP() {
             {/* スクリーンショット */}
             <div className="mt-12 lg:mt-0 flex items-end justify-center gap-3 px-2 lg:shrink-0">
               <img
-                src="/images/lp/history.png"
+                src="/images/lp/history.webp"
                 alt="訪問履歴画面"
+                width={390}
+                height={844}
+                loading="lazy"
+                decoding="async"
                 className="w-28 sm:w-36 lg:w-40 rounded-2xl shadow-lg -rotate-3"
               />
               <img
-                src="/images/lp/home.png"
+                src="/images/lp/home.webp"
                 alt="お店提案画面"
+                width={390}
+                height={844}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
                 className="w-32 sm:w-40 lg:w-48 rounded-2xl shadow-xl z-10"
               />
               <img
-                src="/images/lp/profile.png"
+                src="/images/lp/profile.webp"
                 alt="マイページ画面"
+                width={390}
+                height={844}
+                loading="lazy"
+                decoding="async"
                 className="w-28 sm:w-36 lg:w-40 rounded-2xl shadow-lg rotate-3"
               />
             </div>
@@ -177,7 +234,7 @@ export default function LP() {
       {/* ── Pain Points ── */}
       <section className="px-6 py-12">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-6 text-center">
+          <h2 className="text-xl font-bold mb-6 text-center">
             こんな経験、ありませんか？
           </h2>
           <ul className="space-y-4 text-sm text-white/80 lg:grid lg:grid-cols-2 lg:gap-x-12 lg:space-y-0 lg:gap-y-4">
@@ -210,7 +267,7 @@ export default function LP() {
       {/* ── Features ── */}
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-12 text-center">
+          <h2 className="text-xl font-bold mb-12 text-center">
             Roambleで、日常をクエストにする
           </h2>
 
@@ -234,8 +291,12 @@ export default function LP() {
               </div>
               <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
-                  src="/images/lp/home.png"
+                  src="/images/lp/home.webp"
                   alt="お店提案画面"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  decoding="async"
                   className="w-48 sm:w-56 lg:w-64 rounded-2xl shadow-lg"
                 />
               </div>
@@ -268,13 +329,21 @@ export default function LP() {
               </div>
               <div className="mt-6 lg:mt-0 flex justify-center gap-4 lg:shrink-0">
                 <img
-                  src="/images/lp/xp-modal.png"
+                  src="/images/lp/xp-modal.webp"
                   alt="XP獲得画面"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  decoding="async"
                   className="w-40 sm:w-48 lg:w-52 rounded-2xl shadow-lg"
                 />
                 <img
-                  src="/images/lp/badge-modal.png"
+                  src="/images/lp/badge-modal.webp"
                   alt="バッジ獲得画面"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  decoding="async"
                   className="w-40 sm:w-48 lg:w-52 rounded-2xl shadow-lg"
                 />
               </div>
@@ -306,8 +375,12 @@ export default function LP() {
               </div>
               <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
-                  src="/images/lp/profile-batch.png"
+                  src="/images/lp/profile-badge.webp"
                   alt="バッジ一覧画面"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  decoding="async"
                   className="w-48 sm:w-56 lg:w-64 rounded-2xl shadow-lg"
                 />
               </div>
@@ -322,18 +395,33 @@ export default function LP() {
       {/* ── Demo Video ── */}
       <section className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-6 text-center">
-            使ってみた動画
-          </h2>
-          <div className="flex justify-center">
-            <blockquote
-              className="tiktok-embed"
-              cite="https://www.tiktok.com/@roamble/video/7613356529164504341"
-              data-video-id="7613356529164504341"
-              style={{ maxWidth: "325px", minWidth: "325px" }}
-            >
-              <section />
-            </blockquote>
+          <h2 className="text-xl font-bold mb-6 text-center">使ってみた動画</h2>
+          <div ref={tiktokSectionRef} className="flex justify-center">
+            <div style={{ width: "325px", minHeight: "740px" }}>
+              {shouldLoadTikTok ? (
+                <blockquote
+                  className="tiktok-embed"
+                  cite="https://www.tiktok.com/@roamble/video/7613356529164504341"
+                  data-video-id="7613356529164504341"
+                  style={{
+                    maxWidth: "325px",
+                    minWidth: "325px",
+                    minHeight: "740px",
+                  }}
+                >
+                  <section style={{ minHeight: "740px" }} />
+                </blockquote>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShouldLoadTikTok(true)}
+                  className="rounded-2xl border border-white/15 bg-white/5 px-4 py-6 text-sm text-white/80 hover:bg-white/10"
+                  style={{ width: "325px", minHeight: "740px" }}
+                >
+                  TikTok動画を読み込む
+                </button>
+              )}
+            </div>
           </div>
           <p className="mt-3 text-center text-sm">
             <a
@@ -354,9 +442,7 @@ export default function LP() {
       {/* ── About the Developer ── */}
       <section className="px-6 py-12">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-6 text-center">
-            作っている人
-          </h2>
+          <h2 className="text-xl font-bold mb-6 text-center">作っている人</h2>
           <p className="text-sm text-white/70 leading-relaxed text-center mb-6">
             <span className="font-semibold text-white">
               開発者自身、新しいお店を開拓できずにいる一人です
@@ -401,7 +487,7 @@ export default function LP() {
       {/* ── iOS Notify ── */}
       <section id="ios-notify" className="px-6 py-12">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-3 text-center">
+          <h2 className="text-xl font-bold mb-3 text-center">
             iOS版リリース通知を受け取る
           </h2>
           <p className="text-sm text-white/60 mb-6 text-center">
@@ -456,9 +542,7 @@ export default function LP() {
       {/* ── Start Now CTA ── */}
       <section className="px-6 py-12 text-center">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-4">
-            さっそく始める
-          </h2>
+          <h2 className="text-xl font-bold mb-4">さっそく始める</h2>
           <p className="text-sm text-white/60 mb-6">
             現在Webベータ版を公開中です。
             <br />
@@ -479,6 +563,6 @@ export default function LP() {
           プライバシーポリシー
         </Link>
       </footer>
-    </div>
+    </main>
   );
 }

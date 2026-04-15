@@ -24,7 +24,7 @@ func seedGenreTags(db *gorm.DB) error {
 		{Name: "カラオケ", Category: "エンタメ", Icon: "mic"},
 		{Name: "ゲームセンター", Category: "エンタメ", Icon: "sports_esports"},
 		// ショッピング
-		{Name: "雑貨・セレクトショップ", Category: "ショッピング", Icon: "storefront"},
+		{Name: "雑貨・セレクトショップ", Category: "ショッピング", Icon: "shopping_bag"},
 		// リラクゼーション
 		{Name: "温泉・銭湯", Category: "リラクゼーション", Icon: "hot_tub"},
 		{Name: "マッサージ・スパ", Category: "リラクゼーション", Icon: "spa"},

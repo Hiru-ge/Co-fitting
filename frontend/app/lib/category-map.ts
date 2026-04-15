@@ -117,7 +117,7 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
   },
   home_goods_store: {
     label: "雑貨",
-    icon: "home",
+    icon: "shopping_bag",
     gradientColor: "from-amber-500 to-orange-700",
     hexColor: "#f59e0b",
   },

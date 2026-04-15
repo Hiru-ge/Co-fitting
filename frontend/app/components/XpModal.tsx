@@ -90,15 +90,14 @@ export default function XpModal({
             <div
               className="relative size-32 rounded-full flex items-center justify-center border-4 border-white/20"
               style={{
-                background: "linear-gradient(135deg, #13ecec, #0891b2)",
-                boxShadow: "0 0 40px rgba(19, 236, 236, 0.4)",
+                background: "linear-gradient(135deg, #67e8f9, #22d3ee)",
+                boxShadow: "0 0 40px rgba(34, 211, 238, 0.45)",
               }}
             >
               <Icon
                 name="check"
-                fill
                 className="text-white"
-                style={{ fontSize: "6.5rem" }}
+                style={{ fontSize: "5.5rem" }}
                 aria-hidden="true"
               />
             </div>

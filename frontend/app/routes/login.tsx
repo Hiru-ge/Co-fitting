@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
-import { GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { setToken, googleOAuth } from "~/lib/auth";
 import { toUserMessage } from "~/utils/error";
 import { sendLogin } from "~/lib/gtag";
@@ -60,17 +60,21 @@ export default function Login() {
           </p>
         </div>
 
-        <div
-          className={`flex justify-center ${isGoogleLoading ? "opacity-50 pointer-events-none" : ""}`}
+        <GoogleOAuthProvider
+          clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}
         >
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            text="signin_with"
-            shape="rectangular"
-            width="297"
-          />
-        </div>
+          <div
+            className={`flex justify-center ${isGoogleLoading ? "opacity-50 pointer-events-none" : ""}`}
+          >
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              text="signin_with"
+              shape="rectangular"
+              width="297"
+            />
+          </div>
+        </GoogleOAuthProvider>
 
         {googleError && (
           <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
