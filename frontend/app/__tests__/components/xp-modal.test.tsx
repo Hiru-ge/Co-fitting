@@ -90,7 +90,7 @@ describe("XpModal", () => {
     expect(within(breakdownEl).getByText("50")).toBeInTheDocument();
   });
 
-  test("脱却訪問の場合に「脱却訪問」が表示される", () => {
+  test("チャレンジ訪問の場合に「チャレンジ訪問」が表示される", () => {
     render(
       <XpModal
         {...defaultProps}
@@ -102,7 +102,7 @@ describe("XpModal", () => {
         }}
       />,
     );
-    expect(screen.getByText(/脱却訪問/)).toBeInTheDocument();
+    expect(screen.getByText(/チャレンジ訪問/)).toBeInTheDocument();
   });
 
   test("複数ボーナスがある場合にすべて表示される", () => {
@@ -117,7 +117,7 @@ describe("XpModal", () => {
         }}
       />,
     );
-    expect(screen.getByText(/脱却訪問/)).toBeInTheDocument();
+    expect(screen.getByText(/チャレンジ訪問/)).toBeInTheDocument();
     expect(screen.getByText(/初エリア/)).toBeInTheDocument();
   });
 

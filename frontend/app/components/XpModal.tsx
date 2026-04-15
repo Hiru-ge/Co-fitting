@@ -143,7 +143,7 @@ export default function XpModal({
               }}
             >
               <XpBreakdownRow
-                label={isBreakout ? "脱却訪問" : "通常訪問"}
+                label={isBreakout ? "チャレンジ訪問" : "通常訪問"}
                 xp={xpBreakdown.base_xp}
                 isHighlight={isBreakout}
                 isShowPlus={false}

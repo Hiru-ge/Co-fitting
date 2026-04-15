@@ -194,7 +194,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         </button>
       </div>
 
-      {/* ── 脱却チャレンジ統計 ── */}
+      {/* ── チャレンジ統計 ── */}
       <div className="px-4 pb-2">
         <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
@@ -211,7 +211,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
               <p className="text-xl font-extrabold text-amber-500">
                 {stats.challenge_visits}
               </p>
-              <p className="text-[10px] text-gray-500">脱却チャレンジ</p>
+              <p className="text-[10px] text-gray-500">チャレンジ訪問</p>
             </div>
             <div>
               <p className="text-xl font-extrabold text-indigo-500">

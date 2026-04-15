@@ -130,7 +130,7 @@ export default function DiscoveryCard({
         </span>
         {place.is_breakout === true && (
           <span className="bg-red-600 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full">
-            脱却モード
+            チャレンジ
           </span>
         )}
       </div>

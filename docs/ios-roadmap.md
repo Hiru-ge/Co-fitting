@@ -54,7 +54,7 @@
 - [ ] GPS権限リクエスト（`expo-location` 使用）
   - `NSLocationWhenInUseUsageDescription` に日本語で用途を明記
 - [ ] Google Maps 表示（`react-native-maps` 使用）
-- [ ] 脱却モード UI
+- [ ] チャレンジモード UI
 
 ### B-2. 訪問記録機能
 - [ ] 訪問記録入力画面

@@ -2572,7 +2572,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "base_xp": {
-                    "description": "ベースXP（通常50 or 脱却100）",
+                    "description": "ベースXP（通常50 or チャレンジ100）",
                     "type": "integer"
                 },
                 "first_area_bonus": {

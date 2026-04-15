@@ -402,7 +402,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
 
-		// "カフェ" 興味タグを設定 → 興味タグ内のLv.1は脱却扱いしない
+		// "カフェ" 興味タグを設定 → 興味タグ内のLv.1はチャレンジ扱いしない
 		var cafeTag models.GenreTag
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")
@@ -445,7 +445,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
-		// 興味タグを設定しない（初回訪問なので熟練度なし → 脱却扱い）
+		// 興味タグを設定しない（初回訪問なので熟練度なし → チャレンジ扱い）
 
 		body := map[string]interface{}{
 			"place_id":    "ChIJl_nointerest_001",
@@ -478,7 +478,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 	})
 
-	t.Run("興味タグ外ジャンルの熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_breakout=true）", func(t *testing.T) {
+	t.Run("興味タグ外ジャンルの熟練度Lv.2でもチャレンジ扱い（Lv.5以下なのでis_breakout=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -489,7 +489,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 			t.Skip("カフェジャンルタグが見つかりません")
 		}
 
-		// 熟練度をLv.2（xp=100以上）に事前設定（興味タグ未設定なので脱却扱い）
+		// 熟練度をLv.2（xp=100以上）に事前設定（興味タグ未設定なのでチャレンジ扱い）
 		testDB.Create(&models.GenreProficiency{
 			UserID:     user.ID,
 			GenreTagID: cafeTag.ID,
@@ -528,7 +528,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 	})
 
-	t.Run("興味外ジャンルで熟練度Lv.2でも脱却扱い（Lv.5以下なのでis_breakout=true）", func(t *testing.T) {
+	t.Run("興味外ジャンルで熟練度Lv.2でもチャレンジ扱い（Lv.5以下なのでis_breakout=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -579,7 +579,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if !visit.IsBreakout {
-			t.Error("Expected is_breakout=true for bowling_alley with proficiency Lv.2 (Lv.5以下なので脱却扱い), got false")
+			t.Error("Expected is_breakout=true for bowling_alley with proficiency Lv.2 (Lv.5以下なのでチャレンジ扱い), got false")
 		}
 	})
 
@@ -626,9 +626,9 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 	})
 
-	// === 境界テスト: 脱却判定の熟練度閾値（Lv.5以下=脱却、Lv.6以上=通常）と最大レベル（Lv.20） ===
+	// === 境界テスト: チャレンジ判定の熟練度閾値（Lv.5以下=チャレンジ、Lv.6以上=通常）と最大レベル（Lv.20） ===
 
-	t.Run("興味タグ外×熟練度Lv.5（閾値上限）は脱却扱い（is_breakout=true）", func(t *testing.T) {
+	t.Run("興味タグ外×熟練度Lv.5（閾値上限）はチャレンジ扱い（is_breakout=true）", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -640,7 +640,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
-		// スポーツ施設（興味外）の熟練度をLv.5（XP=802）に設定 → 閾値ちょうどなので脱却
+		// スポーツ施設（興味外）の熟練度をLv.5（XP=802）に設定 → 閾値ちょうどなのでチャレンジ
 		var sportsTag models.GenreTag
 		if err := testDB.Where("name = ?", "スポーツ施設").First(&sportsTag).Error; err != nil {
 			t.Skip("スポーツ施設ジャンルタグが見つかりません")
@@ -788,7 +788,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 	})
 
-	t.Run("興味タグ外×熟練度Lv.4（XP=801、Lv.5直前の境界）でも脱却扱い", func(t *testing.T) {
+	t.Run("興味タグ外×熟練度Lv.4（XP=801、Lv.5直前の境界）でもチャレンジ扱い", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -1867,7 +1867,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		}
 	})
 
-	t.Run("脱却訪問（is_breakout=true）で100XP基本値", func(t *testing.T) {
+	t.Run("チャレンジ訪問（is_breakout=true）で100XP基本値", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createTestUserForVisit(t)
 		token := generateTestToken(user.ID)
@@ -1907,7 +1907,7 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
 
 		xpEarned, _ := resp["xp_earned"].(float64)
-		// 脱却訪問基本値は100XP以上
+		// チャレンジ訪問基本値は100XP以上
 		if xpEarned < 100 {
 			t.Errorf("Expected xp_earned >= 100 for comfort zone break, got %.0f", xpEarned)
 		}

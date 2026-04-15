@@ -42,7 +42,7 @@ export interface CreateVisitRequest {
 
 // XP計算内訳
 export interface XPBreakdown {
-  base_xp: number; // ベースXP（通常50 or 脱却100）
+  base_xp: number; // ベースXP（通常50 or チャレンジ100）
   first_area_bonus: number; // 初エリアボーナス（0 or 30）
   streak_bonus: number; // ストリークボーナス（0〜100）
 }

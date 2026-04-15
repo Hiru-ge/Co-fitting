@@ -146,7 +146,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 		return
 	}
 
-	// is_breakout の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする
+	// is_breakout の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問をチャレンジ扱いとする
 	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
 	genre := resolveGenreFromPlaceTypes(h.DB, userID, req.PlaceTypes)
 

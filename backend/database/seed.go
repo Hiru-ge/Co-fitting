@@ -56,7 +56,7 @@ func seedBadges(db *gorm.DB) error {
 		},
 		{
 			Name:          "ジャンル開拓者",
-			Description:   "脱却訪問を5件達成した",
+			Description:   "チャレンジ訪問を5件達成した",
 			IconURL:       "",
 			ConditionJSON: `{"type":"breakout","threshold":5}`,
 		},

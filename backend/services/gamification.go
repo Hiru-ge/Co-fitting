@@ -11,7 +11,7 @@ import (
 
 const (
 	XPNormalVisit        = 50  // 通常訪問
-	XPComfortBreak       = 100 // 脱却訪問
+	XPComfortBreak       = 100 // チャレンジ訪問
 	XPFirstArea          = 30  // 初めてのエリアボーナス
 	XPStreakBonusPerWeek = 10  // ストリークボーナス（1週あたり）
 	XPStreakBonusMax     = 100 // ストリークボーナス上限（10週連続から固定）
@@ -66,7 +66,7 @@ type GamificationResult struct {
 }
 
 type XPBreakdown struct {
-	BaseXP         int `json:"base_xp"`          // ベースXP（通常50 or 脱却100）
+	BaseXP         int `json:"base_xp"`          // ベースXP（通常50 or チャレンジ100）
 	FirstAreaBonus int `json:"first_area_bonus"` // 初エリアボーナス
 	StreakBonus    int `json:"streak_bonus"`     // ストリークボーナス
 }
@@ -77,7 +77,7 @@ type badgeCondition struct {
 }
 
 // CalcXP はXPを計算して返す
-// isBreakout: 興味ジャンル外ならtrue（脱却訪問）
+// isBreakout: 興味ジャンル外ならtrue（チャレンジ訪問）
 // isFirstArea: 初めてのエリア訪問ならtrue
 func CalcXP(isBreakout bool, isFirstArea bool) int {
 	xp := XPNormalVisit
@@ -221,7 +221,7 @@ func UpdateGenreProficiency(db *gorm.DB, userID uint64, genreTagID *uint64, xpEa
 }
 
 // CheckAndAwardBadges はバッジ条件をチェックして未獲得バッジを付与し、新規獲得バッジを返す
-// isBreakout: 今回の訪問が脱却訪問かどうか
+// isBreakout: 今回の訪問がチャレンジ訪問かどうか
 // visitCount: 現在の総訪問数（今回の訪問含む）
 // visitedAt: 今回の訪問日時
 // coords: 今回の訪問地点の緯度・経度（省略可。new_area判定に使用）

@@ -96,7 +96,7 @@ export default function ProfileTourStep({
           </h2>
           <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
             {
-              "訪問するたびにXPとバッジが貯まります\n興味外ジャンルへの脱却訪問はボーナスXP！"
+              "訪問するたびにXPとバッジが貯まります\n興味外ジャンルへのチャレンジ訪問はボーナスXP！"
             }
           </p>
         </div>

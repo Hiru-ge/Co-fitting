@@ -96,7 +96,7 @@ func (h *UserHandler) GetStats(c *gin.Context) {
 	var totalVisits int64
 	h.DB.Model(&models.Visit{}).Where("user_id = ?", userID).Count(&totalVisits)
 
-	// is_breakout=true は「興味ジャンル外＝脱却訪問」を意味する
+	// is_breakout=true は「興味ジャンル外＝チャレンジ訪問」を意味する
 	var breakoutVisits int64
 	h.DB.Model(&models.Visit{}).Where("user_id = ? AND is_breakout = ?", userID, true).Count(&breakoutVisits)
 

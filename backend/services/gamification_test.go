@@ -77,7 +77,7 @@ func TestCalcXP(t *testing.T) {
 		}
 	})
 
-	t.Run("脱却訪問（is_breakout=true）は100XP", func(t *testing.T) {
+	t.Run("チャレンジ訪問（is_breakout=true）は100XP", func(t *testing.T) {
 		xp := services.CalcXP(true, false)
 		if xp != 100 {
 			t.Errorf("expected 100, got %d", xp)
@@ -91,7 +91,7 @@ func TestCalcXP(t *testing.T) {
 		}
 	})
 
-	t.Run("脱却+初エリア =130XP", func(t *testing.T) {
+	t.Run("チャレンジ+初エリア =130XP", func(t *testing.T) {
 		xp := services.CalcXP(true, true)
 		// 100 + 30 = 130
 		if xp != 130 {
@@ -1083,7 +1083,7 @@ func TestProcessGamification(t *testing.T) {
 		}
 	})
 
-	t.Run("脱却訪問で100XP基本値が加算される", func(t *testing.T) {
+	t.Run("チャレンジ訪問で100XP基本値が加算される", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif2@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
@@ -1643,7 +1643,7 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 		}
 	})
 
-	t.Run("脱却訪問のXPBreakdownはBaseXP=100を返す", func(t *testing.T) {
+	t.Run("チャレンジ訪問のXPBreakdownはBaseXP=100を返す", func(t *testing.T) {
 		cleanupUsers(t)
 		user := createUser(t, "gamif_breakdown_escape@example.com")
 		database.SeedMasterData(testDB) //nolint:errcheck
@@ -1652,11 +1652,11 @@ func TestProcessGamificationXPBreakdown(t *testing.T) {
 		visit := models.Visit{
 			UserID:     user.ID,
 			PlaceID:    "place_escape_test",
-			PlaceName:  "脱却テスト",
+			PlaceName:  "チャレンジテスト",
 			Category:   "cafe",
 			Latitude:   35.6895,
 			Longitude:  139.6917,
-			IsBreakout: true, // 脱却訪問
+			IsBreakout: true, // チャレンジ訪問
 			GenreTagID: &tag.ID,
 			VisitedAt:  time.Now(),
 		}

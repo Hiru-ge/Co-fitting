@@ -573,7 +573,7 @@ describe("Home画面", () => {
         {
           id: 2,
           name: "ジャンル開拓者",
-          description: "脱却訪問を5件達成した",
+          description: "チャレンジ訪問を5件達成した",
           icon_url: "",
         },
       ],

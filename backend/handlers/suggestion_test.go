@@ -1467,7 +1467,7 @@ func TestInterestMatchFlag(t *testing.T) {
 	})
 }
 
-// TestBreakoutModeSuggestion は Issue #179 の脱却モードテスト
+// TestBreakoutModeSuggestion は Issue #179 のチャレンジモードテスト
 // 提案APIレスポンスの各施設に is_interest_match フラグが正しく設定されることを確認する
 func TestBreakoutModeSuggestion(t *testing.T) {
 	cafePlaces := []services.PlaceResult{
@@ -2068,7 +2068,7 @@ func TestCorruptedCacheHandling(t *testing.T) {
 	})
 }
 
-// TestProficiencyBasedBreakout は Issue #198 の熟練度ベース脱却判定テスト
+// TestProficiencyBasedBreakout は Issue #198 の熟練度ベースチャレンジ判定テスト
 // 提案APIレスポンスに is_breakout フラグが設定されることを確認する
 func TestProficiencyBasedBreakout(t *testing.T) {
 	cafePlaces := []services.PlaceResult{
@@ -2139,7 +2139,7 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 		user := createTestUser(t)
 		token := generateTestToken(user.ID)
 
-		// カフェジャンルの熟練度をLv.2に設定（Lv.5以下なので脱却扱い）
+		// カフェジャンルの熟練度をLv.2に設定（Lv.5以下なのでチャレンジ扱い）
 		var cafeTag models.GenreTag
 		if err := testDB.Where("name = ?", "カフェ").First(&cafeTag).Error; err != nil {
 			t.Skip("カフェジャンルタグが見つかりません")

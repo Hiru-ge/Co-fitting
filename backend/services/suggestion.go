@@ -87,8 +87,8 @@ var placeTypeToGenreName = map[string]string{
 	"home_goods_store": "雑貨・セレクトショップ",
 }
 
-// breakoutLevelThreshold は脱却判定の熟練度閾値
-// ジャンル熟練度がこのレベル未満（Lv.5以下 = 0〜499XP）なら脱却扱い
+// breakoutLevelThreshold はチャレンジ判定の熟練度閾値
+// ジャンル熟練度がこのレベル未満（Lv.5以下 = 0〜499XP）ならチャレンジ扱い
 const breakoutLevelThreshold = 6
 
 // maxDailySuggestions は日次キャッシュで返す最大施設数
@@ -172,8 +172,8 @@ func FilterOpenNowPlaces(places []PlaceResult) []PlaceResult {
 	return filtered
 }
 
-// IsBreakoutVisit はジャンル熟練度と興味タグに基づいて脱却訪問かどうかを判定する。
-// 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問を脱却扱いとする。
+// IsBreakoutVisit はジャンル熟練度と興味タグに基づいてチャレンジ訪問かどうかを判定する。
+// 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問をチャレンジ扱いとする。
 func IsBreakoutVisit(db *gorm.DB, userID uint64, genreName string) bool {
 	if genreName == "" {
 		return false

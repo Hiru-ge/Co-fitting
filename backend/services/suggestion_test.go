@@ -188,14 +188,14 @@ func TestIsBreakoutVisit(t *testing.T) {
 	cafe := getOrCreateGenreTag(t, "カフェ")
 	park := getOrCreateGenreTag(t, "公園・緑地")
 
-	t.Run("興味タグ内は脱却でない", func(t *testing.T) {
+	t.Run("興味タグ内はチャレンジでない", func(t *testing.T) {
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafe.ID})
 		if services.IsBreakoutVisit(testDB, user.ID, "カフェ") {
 			t.Fatal("interest genre should not be breakout")
 		}
 	})
 
-	t.Run("興味外かつ熟練度が低い場合は脱却", func(t *testing.T) {
+	t.Run("興味外かつ熟練度が低い場合はチャレンジ", func(t *testing.T) {
 		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, park.ID).
 			Delete(&models.GenreProficiency{})
 		testDB.Create(&models.GenreProficiency{UserID: user.ID, GenreTagID: park.ID, Level: 3})
@@ -204,7 +204,7 @@ func TestIsBreakoutVisit(t *testing.T) {
 		}
 	})
 
-	t.Run("興味外でも熟練度が高い場合は脱却でない", func(t *testing.T) {
+	t.Run("興味外でも熟練度が高い場合はチャレンジでない", func(t *testing.T) {
 		testDB.Where("user_id = ? AND genre_tag_id = ?", user.ID, park.ID).
 			Delete(&models.GenreProficiency{})
 		testDB.Create(&models.GenreProficiency{UserID: user.ID, GenreTagID: park.ID, Level: 8})

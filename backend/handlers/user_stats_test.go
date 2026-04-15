@@ -36,7 +36,7 @@ func TestGetStats(t *testing.T) {
 		}
 		testDB.Create(&user)
 
-		// IsBreakout=true は「興味ジャンル外＝脱却訪問」を意味する
+		// IsBreakout=true は「興味ジャンル外＝チャレンジ訪問」を意味する
 		visits := []models.Visit{
 			{UserID: user.ID, PlaceID: "place1", PlaceName: "カフェA", Category: "cafe", Latitude: 35.0, Longitude: 139.0, IsBreakout: false, XpEarned: 50, VisitedAt: time.Now()},
 			{UserID: user.ID, PlaceID: "place2", PlaceName: "バーB", Category: "bar", Latitude: 35.1, Longitude: 139.1, IsBreakout: true, XpEarned: 100, VisitedAt: time.Now()},
