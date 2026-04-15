@@ -6,42 +6,51 @@ import { VitePWA } from "vite-plugin-pwa";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-/** SPAモードでクローラーが読む静的OGPタグをindex.htmlに注入する */
+/** SPAモードでクローラーが読む静的OGPタグをHTMLに注入する */
+const OGP_META_TAGS = [
+  '<meta name="description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+  '<meta property="og:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
+  '<meta property="og:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+  '<meta property="og:type" content="website">',
+  '<meta property="og:url" content="https://roamble.app/lp">',
+  '<meta property="og:image" content="https://roamble.app/ogp.png">',
+  '<meta property="og:image:width" content="1200">',
+  '<meta property="og:image:height" content="630">',
+  '<meta property="og:site_name" content="Roamble">',
+  '<meta property="og:locale" content="ja_JP">',
+  '<meta name="twitter:card" content="summary_large_image">',
+  '<meta name="twitter:site" content="@roamble_app">',
+  '<meta name="twitter:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
+  '<meta name="twitter:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
+  '<meta name="twitter:image" content="https://roamble.app/ogp.png">',
+].join("\n    ");
+
+function patchHtml(html: string): string {
+  return html
+    .replace('lang="en"', 'lang="ja"')
+    .replace(
+      "<title>Loading...</title>",
+      "<title>Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ</title>",
+    )
+    .replace("</head>", `    ${OGP_META_TAGS}\n  </head>`);
+}
+
 const injectOgpPlugin = {
   name: "inject-ogp",
   closeBundle() {
-    const indexPath = resolve(__dirname, "build/client/index.html");
-    let html: string;
-    try {
-      html = readFileSync(indexPath, "utf-8");
-    } catch {
-      return; // dev mode など build/client が存在しない場合はスキップ
+    const targets = [
+      resolve(__dirname, "build/client/index.html"),
+      resolve(__dirname, "build/client/lp/index.html"),
+    ];
+    for (const filePath of targets) {
+      let html: string;
+      try {
+        html = readFileSync(filePath, "utf-8");
+      } catch {
+        continue; // ファイルが存在しない場合はスキップ
+      }
+      writeFileSync(filePath, patchHtml(html), "utf-8");
     }
-    const metaTags = [
-      '<meta name="description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
-      '<meta property="og:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
-      '<meta property="og:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
-      '<meta property="og:type" content="website">',
-      '<meta property="og:url" content="https://roamble.app/lp">',
-      '<meta property="og:image" content="https://roamble.app/ogp.png">',
-      '<meta property="og:image:width" content="1200">',
-      '<meta property="og:image:height" content="630">',
-      '<meta property="og:site_name" content="Roamble">',
-      '<meta property="og:locale" content="ja_JP">',
-      '<meta name="twitter:card" content="summary_large_image">',
-      '<meta name="twitter:site" content="@roamble_app">',
-      '<meta name="twitter:title" content="Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ">',
-      '<meta name="twitter:description" content="「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。">',
-      '<meta name="twitter:image" content="https://roamble.app/ogp.png">',
-    ].join("\n    ");
-    const patched = html
-      .replace('lang="en"', 'lang="ja"')
-      .replace(
-        "<title>Loading...</title>",
-        "<title>Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ</title>",
-      )
-      .replace("</head>", `    ${metaTags}\n  </head>`);
-    writeFileSync(indexPath, patched, "utf-8");
   },
 };
 
