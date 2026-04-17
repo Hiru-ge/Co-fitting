@@ -87,16 +87,16 @@
 
 **🔴 RED**
 
-- [ ] `backend/services/scheduler_test.go` に土曜・日曜文言の送信内容テストを追加
+- [x] `backend/services/scheduler_test.go` に土曜・日曜文言の送信内容テストを追加
 
 **🟢 GREEN**
 
-- [ ] `backend/services/scheduler.go` の土曜朝リマインダー文言を「今日は土曜日！ちょっとお出かけしてみない？」に変更
-- [ ] `backend/services/scheduler.go` の日曜朝リマインダー文言を「今日は日曜日！絶好のお出かけ日和だね！」に変更
+- [x] `backend/services/scheduler.go` の土曜朝リマインダー文言を「今日は土曜日！ちょっとお出かけしてみない？」に変更
+- [x] `backend/services/scheduler.go` の日曜朝リマインダー文言を「今日は日曜日！絶好のお出かけ日和だね！」に変更
 
 **🔵 REFACTOR**
 
-- [ ] 曜日別文言定義を定数化して可読性を維持
+- [x] 曜日別文言定義を定数化して可読性を維持
 
 ---
 

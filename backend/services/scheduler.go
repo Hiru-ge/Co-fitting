@@ -259,6 +259,29 @@ func (s *NotificationScheduler) dispatchSummaryNotifications(
 	}
 }
 
+// 曜日別デイリーサジェスション通知文言
+const (
+	dailySuggestionTitle       = "提案カードがリフレッシュされたよ！"
+	dailySuggestionBodyDefault = "Roambleをのぞいてみて。新しい冒険があなたを待ってる！"
+	dailySuggestionBodySat     = "今日は土曜日！ちょっとお出かけしてみない？"
+	dailySuggestionBodySun     = "今日は日曜日！絶好のお出かけ日和だね！"
+)
+
+func DailySuggestionPayload(weekday time.Weekday) PushPayload {
+	body := dailySuggestionBodyDefault
+	switch weekday {
+	case time.Saturday:
+		body = dailySuggestionBodySat
+	case time.Sunday:
+		body = dailySuggestionBodySun
+	}
+	return PushPayload{
+		Title: dailySuggestionTitle,
+		Body:  body,
+		URL:   "/home",
+	}
+}
+
 // SendDailySuggestionNotifications はPush購読ユーザー全員にデイリーサジェスション通知を送信する
 func (s *NotificationScheduler) SendDailySuggestionNotifications() {
 	userIDs, err := fetchDailySuggestionTargetUserIDs(s.db)
@@ -267,11 +290,7 @@ func (s *NotificationScheduler) SendDailySuggestionNotifications() {
 		return
 	}
 
-	payload := PushPayload{
-		Title: "提案カードがリフレッシュされたよ！",
-		Body:  "Roambleをのぞいてみて。新しい冒険があなたを待ってる！",
-		URL:   "/home",
-	}
+	payload := DailySuggestionPayload(time.Now().In(utils.JST).Weekday())
 
 	for _, userID := range userIDs {
 		if err := s.push.SendToUser(userID, payload); err != nil {

@@ -251,6 +251,26 @@ func TestSendWeeklySummaryNotifications_PushAndEmail(t *testing.T) {
 	assert.Equal(t, 120, mockEmail.weeklyCalls[0].data.TotalXP)
 }
 
+// TestDailySuggestionPayload_Saturday は土曜日に土曜専用文言が返ることを検証する
+func TestDailySuggestionPayload_Saturday(t *testing.T) {
+	payload := services.DailySuggestionPayload(time.Saturday)
+	assert.Equal(t, "今日は土曜日！ちょっとお出かけしてみない？", payload.Body)
+}
+
+// TestDailySuggestionPayload_Sunday は日曜日に日曜専用文言が返ることを検証する
+func TestDailySuggestionPayload_Sunday(t *testing.T) {
+	payload := services.DailySuggestionPayload(time.Sunday)
+	assert.Equal(t, "今日は日曜日！絶好のお出かけ日和だね！", payload.Body)
+}
+
+// TestDailySuggestionPayload_Weekday は平日にデフォルト文言が返ることを検証する
+func TestDailySuggestionPayload_Weekday(t *testing.T) {
+	for _, weekday := range []time.Weekday{time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday} {
+		payload := services.DailySuggestionPayload(weekday)
+		assert.Equal(t, "Roambleをのぞいてみて。新しい冒険があなたを待ってる！", payload.Body)
+	}
+}
+
 func TestSendMonthlySummaryNotifications_PushAndEmail(t *testing.T) {
 	cleanupNotificationSettings(t)
 	cleanupPushSubscriptions(t)
