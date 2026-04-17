@@ -16,7 +16,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "~/components/Toast";
 import { isBetaUnlocked } from "~/lib/beta-access";
-import { GA4_ID, sendPageView } from "~/lib/gtag";
+import { GA4_ID, sendPageView, sendReminderOpened } from "~/lib/gtag";
 
 const BETA_EXCLUDED_PATHS = ["/beta-gate", "/lp", "/privacy"] as const;
 const queryClient = new QueryClient();
@@ -93,7 +93,32 @@ function PageViewTracker() {
   const location = useLocation();
   useEffect(() => {
     sendPageView(location.pathname);
-  }, [location.pathname]);
+
+    const searchParams = new URLSearchParams(location.search);
+    const reminderType = searchParams.get("reminder_type");
+    const isFromReminder =
+      searchParams.get("from") === "reminder" && reminderType;
+
+    if (!isFromReminder) return;
+
+    const allowedReminderTypes = new Set([
+      "daily_refresh",
+      "streak_reminder",
+      "weekly_summary",
+      "monthly_summary",
+      "weekend_refresh",
+    ]);
+
+    if (!allowedReminderTypes.has(reminderType)) return;
+    sendReminderOpened({
+      reminderType: reminderType as
+        | "daily_refresh"
+        | "streak_reminder"
+        | "weekly_summary"
+        | "monthly_summary"
+        | "weekend_refresh",
+    });
+  }, [location.pathname, location.search]);
   return null;
 }
 

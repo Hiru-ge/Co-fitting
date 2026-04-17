@@ -7,7 +7,11 @@ import { getInterests } from "~/api/users";
 import { ApiError } from "~/utils/error";
 import { ONBOARDING_SKIPPED_KEY, HOME_TOUR_SEEN_KEY } from "~/utils/constants";
 import { useSuggestions } from "~/hooks/use-suggestions";
-import { sendSuggestionViewed } from "~/lib/gtag";
+import {
+  sendFirstSuggestionViewed,
+  sendFirstValueMilestone,
+  sendSuggestionViewed,
+} from "~/lib/gtag";
 import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import AppHeader from "~/components/AppHeader";
 import DiscoveryCard from "~/components/DiscoveryCard";
@@ -78,13 +82,24 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     if (firstViewSentRef.current || !currentPlace) return;
     firstViewSentRef.current = true;
+    const category = pickCategoryFromAPIPlaceTypes(currentPlace.types ?? []);
     sendSuggestionViewed({
       placeName: currentPlace.name,
-      category: pickCategoryFromAPIPlaceTypes(currentPlace.types ?? []),
+      category,
       isInterestMatch: !!currentPlace.is_interest_match,
       isBreakout: !!currentPlace.is_breakout,
       cardIndex: 0,
     });
+
+    if (localStorage.getItem("first_suggestion_viewed_sent") !== "true") {
+      sendFirstSuggestionViewed({
+        category,
+        isInterestMatch: !!currentPlace.is_interest_match,
+        isBreakout: !!currentPlace.is_breakout,
+      });
+      sendFirstValueMilestone({ milestone: "first_suggestion_viewed" });
+      localStorage.setItem("first_suggestion_viewed_sent", "true");
+    }
   }, [currentPlace]);
 
   function getTruncatedLocationLabel(vicinity: string) {

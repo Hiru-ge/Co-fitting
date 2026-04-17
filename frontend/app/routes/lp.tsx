@@ -2,6 +2,11 @@ import { useState, useEffect, useRef, type FormEvent } from "react";
 import { Link } from "react-router";
 import type { LinksFunction, MetaFunction } from "react-router";
 import { Icon } from "~/components/Icon";
+import {
+  sendIosNotifySubmitted,
+  sendLpCtaClicked,
+  sendLpSectionViewed,
+} from "~/lib/gtag";
 
 export const links: LinksFunction = () => [
   {
@@ -72,7 +77,18 @@ export default function LP() {
   const [email, setEmail] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
   const [shouldLoadTikTok, setShouldLoadTikTok] = useState(false);
-  const tiktokSectionRef = useRef<HTMLDivElement>(null);
+  const tiktokSectionRef = useRef<HTMLElement>(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const painPointsSectionRef = useRef<HTMLElement>(null);
+  const featuresSectionRef = useRef<HTMLElement>(null);
+  const iosNotifySectionRef = useRef<HTMLElement>(null);
+
+  function trackLpCtaClick(params: {
+    ctaType: "start" | "ios_notify" | "tiktok";
+    section: "header" | "hero" | "demo" | "final_cta";
+  }) {
+    sendLpCtaClicked(params);
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -91,11 +107,60 @@ export default function LP() {
         }),
       });
       const data = await res.json();
+      sendIosNotifySubmitted({
+        sourceSection: "ios_notify",
+        success: data.success,
+      });
       setFormState(data.success ? "success" : "error");
     } catch {
+      sendIosNotifySubmitted({ sourceSection: "ios_notify", success: false });
       setFormState("error");
     }
   }
+
+  useEffect(() => {
+    const sectionTargets: Array<{
+      ref: { current: HTMLElement | null };
+      sectionName: "hero" | "pain_points" | "features" | "demo" | "ios_notify";
+    }> = [
+      { ref: heroSectionRef, sectionName: "hero" },
+      { ref: painPointsSectionRef, sectionName: "pain_points" },
+      { ref: featuresSectionRef, sectionName: "features" },
+      { ref: tiktokSectionRef, sectionName: "demo" },
+      { ref: iosNotifySectionRef, sectionName: "ios_notify" },
+    ];
+
+    const viewedSections = new Set<string>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+
+          const sectionName = entry.target.getAttribute("data-lp-section");
+          if (!sectionName || viewedSections.has(sectionName)) return;
+
+          viewedSections.add(sectionName);
+          sendLpSectionViewed({
+            sectionName: sectionName as
+              | "hero"
+              | "pain_points"
+              | "features"
+              | "demo"
+              | "ios_notify",
+          });
+        });
+      },
+      { threshold: 0.35 },
+    );
+
+    sectionTargets.forEach(({ ref, sectionName }) => {
+      if (!ref.current) return;
+      ref.current.setAttribute("data-lp-section", sectionName);
+      observer.observe(ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const target = tiktokSectionRef.current;
@@ -149,6 +214,9 @@ export default function LP() {
           </span>
           <a
             href="#ios-notify"
+            onClick={() =>
+              trackLpCtaClick({ ctaType: "ios_notify", section: "header" })
+            }
             className="px-4 py-1.5 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
           >
             iOS版通知を受け取る
@@ -157,7 +225,7 @@ export default function LP() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="px-6 pt-16 pb-12">
+      <section ref={heroSectionRef} className="px-6 pt-16 pb-12">
         <div className="max-w-5xl mx-auto">
           {/* PC: 2カラム、モバイル: 縦積み */}
           <div className="flex flex-col items-center text-center lg:flex-row lg:items-center lg:text-left lg:gap-16">
@@ -170,11 +238,11 @@ export default function LP() {
                 「いつも同じ店」を抜け出そう
               </p>
               <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
-                なかなか店が決められない日も、Roambleがランダムにお店を提案。
+                店が決められない日も、Roambleが次の一軒を提案。
                 <br />
                 新しいお店開拓やカフェ開拓を、迷わず続けられる。
                 <br />
-                行くたびに
+                初めて入る店で緊張した日も、行くたびに
                 <span className="font-semibold text-primary">経験値</span>
                 が積み上がる。
                 <br />
@@ -182,12 +250,18 @@ export default function LP() {
               <div className="flex flex-col items-center lg:items-start gap-3">
                 <a
                   href="/beta-gate"
+                  onClick={() =>
+                    trackLpCtaClick({ ctaType: "start", section: "hero" })
+                  }
                   className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
                 >
                   さっそく始める
                 </a>
                 <a
                   href="#ios-notify"
+                  onClick={() =>
+                    trackLpCtaClick({ ctaType: "ios_notify", section: "hero" })
+                  }
                   className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
                 >
                   iOS版リリース通知を受け取る
@@ -233,7 +307,7 @@ export default function LP() {
       <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Pain Points ── */}
-      <section className="px-6 py-12">
+      <section ref={painPointsSectionRef} className="px-6 py-12">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             こんな経験、ありませんか？
@@ -266,7 +340,7 @@ export default function LP() {
       <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Features ── */}
-      <section className="px-6 py-12">
+      <section ref={featuresSectionRef} className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-12 text-center">
             Roambleで、新しいお店を開拓しよう
@@ -287,7 +361,7 @@ export default function LP() {
                     <p className="text-sm text-white/70 leading-relaxed">
                       現在地の近くから、まだ行ったことのないお店をランダムに提案します。
                       <br></br>
-                      選ぶ手間はゼロ。お店開拓の最初の一歩はもう踏み出しています。
+                      選ぶ手間はゼロ。ちょっとチャレンジングな提案も低頻度で混ぜ、あなたの背中を押します。
                     </p>
                   </div>
                 </div>
@@ -396,12 +470,12 @@ export default function LP() {
       <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── Demo Video ── */}
-      <section className="px-6 py-12">
+      <section ref={tiktokSectionRef} className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
             使ってみた動画
           </h2>
-          <div ref={tiktokSectionRef} className="flex justify-center">
+          <div className="flex justify-center">
             <div style={{ width: "325px", minHeight: "740px" }}>
               {shouldLoadTikTok ? (
                 <blockquote
@@ -419,7 +493,10 @@ export default function LP() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setShouldLoadTikTok(true)}
+                  onClick={() => {
+                    trackLpCtaClick({ ctaType: "tiktok", section: "demo" });
+                    setShouldLoadTikTok(true);
+                  }}
                   className="rounded-2xl border border-white/15 bg-white/5 px-4 py-6 text-sm text-white/80 hover:bg-white/10"
                   style={{ width: "325px", minHeight: "740px" }}
                 >
@@ -433,6 +510,9 @@ export default function LP() {
               href="https://www.tiktok.com/@roamble/video/7613356529164504341"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() =>
+                trackLpCtaClick({ ctaType: "tiktok", section: "demo" })
+              }
               className="text-primary hover:underline"
             >
               TikTokで見る →
@@ -492,7 +572,7 @@ export default function LP() {
       <div className="mx-auto w-12 h-px bg-white/10" />
 
       {/* ── iOS Notify ── */}
-      <section id="ios-notify" className="px-6 py-12">
+      <section id="ios-notify" ref={iosNotifySectionRef} className="px-6 py-12">
         <div className="max-w-xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-3 text-center">
             iOS版リリース通知を受け取る
@@ -559,6 +639,9 @@ export default function LP() {
           </p>
           <a
             href="/beta-gate"
+            onClick={() =>
+              trackLpCtaClick({ ctaType: "start", section: "final_cta" })
+            }
             className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
           >
             さっそく始める

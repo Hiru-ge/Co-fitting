@@ -152,3 +152,73 @@ export function sendPushPermissionDenied(source: "banner" | "settings") {
 export function sendNotificationSettingChanged(field: string, value: boolean) {
   gtag("event", "notification_setting_changed", { field, value });
 }
+
+export function sendLpCtaClicked(params: {
+  ctaType: "start" | "ios_notify" | "tiktok";
+  section: "header" | "hero" | "demo" | "final_cta";
+}) {
+  gtag("event", "lp_cta_clicked", {
+    cta_type: params.ctaType,
+    section: params.section,
+  });
+}
+
+export function sendLpSectionViewed(params: {
+  sectionName: "hero" | "pain_points" | "features" | "demo" | "ios_notify";
+}) {
+  gtag("event", "lp_section_viewed", {
+    section_name: params.sectionName,
+  });
+}
+
+export function sendIosNotifySubmitted(params: {
+  sourceSection: "hero" | "ios_notify";
+  success: boolean;
+}) {
+  gtag("event", "ios_notify_submitted", {
+    source_section: params.sourceSection,
+    success: params.success,
+  });
+}
+
+export function sendFirstSuggestionViewed(params: {
+  category: string;
+  isInterestMatch: boolean;
+  isBreakout: boolean;
+}) {
+  gtag("event", "first_suggestion_viewed", {
+    category: params.category,
+    is_interest_match: params.isInterestMatch,
+    is_breakout: params.isBreakout,
+  });
+}
+
+export function sendFirstValueMilestone(params: {
+  milestone:
+    | "first_suggestion_viewed"
+    | "first_visit_recorded"
+    | "first_daily_completed";
+}) {
+  gtag("event", "first_value_milestone", {
+    milestone: params.milestone,
+  });
+}
+
+export function sendReminderOpened(params: {
+  reminderType:
+    | "daily_refresh"
+    | "streak_reminder"
+    | "weekly_summary"
+    | "monthly_summary"
+    | "weekend_refresh";
+}) {
+  gtag("event", "reminder_opened", {
+    reminder_type: params.reminderType,
+  });
+}
+
+export function sendWeeklyReactivation(params: { streakWeeks: number }) {
+  gtag("event", "weekly_reactivation", {
+    streak_weeks: params.streakWeeks,
+  });
+}

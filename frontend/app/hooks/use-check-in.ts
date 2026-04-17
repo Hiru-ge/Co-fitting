@@ -9,8 +9,10 @@ import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import {
   sendBadgeEarned,
   sendDailyCompleted,
+  sendFirstValueMilestone,
   sendLevelUp,
   sendVisitRecorded,
+  sendWeeklyReactivation,
 } from "~/lib/gtag";
 import { ApiError, toUserMessage } from "~/utils/error";
 import type {
@@ -85,6 +87,11 @@ export function useCheckIn({
       if (result.is_daily_completed) {
         setIsCompleted(true);
         sendDailyCompleted();
+
+        if (localStorage.getItem("first_daily_completed_sent") !== "true") {
+          sendFirstValueMilestone({ milestone: "first_daily_completed" });
+          localStorage.setItem("first_daily_completed_sent", "true");
+        }
       }
 
       sendVisitRecorded({
@@ -96,6 +103,18 @@ export function useCheckIn({
         firstAreaBonus: result.xp_breakdown?.first_area_bonus,
         streakBonus: result.xp_breakdown?.streak_bonus,
       });
+
+      if (localStorage.getItem("first_visit_recorded_sent") !== "true") {
+        sendFirstValueMilestone({ milestone: "first_visit_recorded" });
+        localStorage.setItem("first_visit_recorded_sent", "true");
+      }
+
+      const streakBonus = result.xp_breakdown?.streak_bonus ?? 0;
+      if (streakBonus > 0) {
+        sendWeeklyReactivation({
+          streakWeeks: Math.max(1, Math.floor(streakBonus / 10)),
+        });
+      }
 
       if (result.xp_earned !== undefined) {
         setXpModalState({
