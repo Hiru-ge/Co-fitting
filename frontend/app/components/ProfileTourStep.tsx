@@ -51,7 +51,7 @@ export default function ProfileTourStep({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="使い方ツアー ステップ3"
+      aria-label="使い方ツアー ステップ4"
       className="fixed inset-0 z-60"
     >
       {targetRect ? (
@@ -89,7 +89,7 @@ export default function ProfileTourStep({
           }}
         >
           <p className="text-xs font-bold tracking-widest text-primary/70 mb-3">
-            3 / 3
+            4 / 4
           </p>
           <h2 className="text-white text-base font-bold leading-snug mb-2">
             XPとバッジを集めよう

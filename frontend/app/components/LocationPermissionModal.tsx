@@ -14,7 +14,7 @@ export default function LocationPermissionModal({
       role="dialog"
       aria-modal="true"
       aria-label="位置情報が利用できません"
-      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      className="fixed inset-x-0 top-0 bottom-16 z-80 flex items-center justify-center p-6"
     >
       {/* 背景オーバーレイ */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />

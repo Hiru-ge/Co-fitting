@@ -21,6 +21,7 @@ import XpModal from "~/components/XpModal";
 import BadgeModal from "~/components/BadgeModal";
 import CompleteCard from "~/components/CompleteCard";
 import HomeTourModal from "~/components/HomeTourModal";
+import SampleVisitModal from "~/components/SampleVisitModal";
 import LocationPermissionModal from "~/components/LocationPermissionModal";
 import PushNotificationBanner from "~/components/PushNotificationBanner";
 
@@ -216,6 +217,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {badgeQueue.length > 0 && (
         <BadgeModal badge={badgeQueue[0]} onClose={handleBadgeModalClose} />
       )}
+
+      {/* サンプル訪問カード: ツアー中に表示（DiscoveryCardの上） */}
+      {isShowTour && <SampleVisitModal />}
 
       {/* チュートリアルツアーモーダル: 初回のみ表示 */}
       {isShowTour && <HomeTourModal onClose={() => setShowTour(false)} />}

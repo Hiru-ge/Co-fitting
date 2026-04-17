@@ -5,6 +5,8 @@ import {
   ONBOARDING_STAGE_KEY,
   ONBOARDING_STAGE,
 } from "~/utils/constants";
+import XpModal from "~/components/XpModal";
+import { useSampleVisit } from "~/hooks/use-sample-visit";
 
 interface HomeTourModalProps {
   onClose: () => void;
@@ -22,22 +24,30 @@ function isSameRect(prev: DOMRect | null, next: DOMRect | null) {
   );
 }
 
-// ホーム側のステップ（ステップ3はプロフィールページで表示）
+// ホーム側のステップ（ステップ4はプロフィールページで表示）
 const HOME_TOUR_STEPS = [
   {
-    selector: '[data-tour="discovery-card-top"]',
-    title: "近くの場所が提案されます",
+    selector: '[data-tour="sample-visit-card"]',
+    title: "近くの場所が提案されるよ！",
     description:
-      "カードをスワイプで次の提案へ移動\nリロードで提案カードを引き直せます",
+      "カードをスワイプで次の提案へ移動\nリロードで提案カードを引き直し！",
   },
   {
-    selector: '[data-tour="action-buttons"]',
-    title: "到着したら訪問を記録しましょう",
-    description: "施設の半径100m以内で\n「行ってきた！」ボタンが押せます",
+    selector: '[data-tour="sample-action-buttons"]',
+    title: "到着したら訪問を記録しよう",
+    description: "施設の半径200m以内で\n「行ってきた！」ボタンが押せるよ",
+  },
+  {
+    selector: '[data-tour="sample-action-buttons"]',
+    title: "訪問を体験してみよう",
+    description:
+      "体験用のお店を用意したよ！\n「行ってきた！」を押して\n訪問記録の流れを体験してみよう！",
   },
 ];
 
-const TOTAL_STEPS = 3; // プロフィールのステップ3を含む合計
+const SAMPLE_VISIT_STEP = 2;
+const SAMPLE_VISIT_TRIGGER_EVENT = "sample-visit-triggered";
+const TOTAL_STEPS = 4; // プロフィールのステップ4を含む合計
 const SPOTLIGHT_PADDING = 10;
 const PANEL_SIDE_MARGIN = 16;
 const PANEL_EDGE_GAP = 16;
@@ -51,7 +61,30 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
   const [panelHeight, setPanelHeight] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
   const currentStep = HOME_TOUR_STEPS[step];
-  const isLastHomeStep = step === HOME_TOUR_STEPS.length - 1;
+  const isSampleVisitStep = step === SAMPLE_VISIT_STEP;
+
+  const { isShowingXpModal, pseudoXpData, completeSampleVisit, closeXpModal } =
+    useSampleVisit();
+
+  useEffect(() => {
+    function handleSampleVisitTriggered() {
+      if (step === SAMPLE_VISIT_STEP) {
+        completeSampleVisit();
+      }
+    }
+
+    window.addEventListener(
+      SAMPLE_VISIT_TRIGGER_EVENT,
+      handleSampleVisitTriggered,
+    );
+
+    return () => {
+      window.removeEventListener(
+        SAMPLE_VISIT_TRIGGER_EVENT,
+        handleSampleVisitTriggered,
+      );
+    };
+  }, [step, completeSampleVisit]);
 
   useEffect(() => {
     let animationFrameId = 0;
@@ -116,19 +149,22 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
   }
 
   function handleNext() {
-    if (isLastHomeStep) {
-      // ステップ3はプロフィールページで表示
-      localStorage.setItem(ONBOARDING_STAGE_KEY, ONBOARDING_STAGE.PROFILE_TOUR);
-      navigate("/profile", { state: { fromTour: true } });
-    } else {
+    if (step < HOME_TOUR_STEPS.length - 1) {
       setStep((s) => s + 1);
     }
   }
 
+  function handlePseudoXpClose() {
+    closeXpModal();
+    localStorage.setItem(ONBOARDING_STAGE_KEY, ONBOARDING_STAGE.PROFILE_TOUR);
+    navigate("/profile", { state: { fromTour: true } });
+  }
+
   const measuredPanelHeight = panelHeight || ESTIMATED_PANEL_HEIGHT;
 
+  // ステップ2・3はアクションボタン付近をスポットライトするため、パネルをターゲットの上に配置
   const panelStyle: React.CSSProperties =
-    step === 1 && targetRect
+    (step === 1 || step === 2) && targetRect
       ? {
           position: "absolute",
           left: "50%",
@@ -163,6 +199,9 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
       aria-modal="true"
       aria-label="使い方ツアー"
       className="fixed inset-0 z-60"
+      style={{
+        pointerEvents: isSampleVisitStep && !isShowingXpModal ? "none" : "auto",
+      }}
     >
       {spotlightRect ? (
         <>
@@ -232,50 +271,70 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
         <div className="absolute inset-0 bg-black/75" aria-hidden="true" />
       )}
 
-      <div
-        ref={panelRef}
-        className="z-10"
-        style={{
-          ...panelStyle,
-          width: `calc(100vw - ${PANEL_SIDE_MARGIN * 2}px)`,
-          maxWidth: "20rem",
-        }}
-      >
+      {!isShowingXpModal && (
         <div
-          className="rounded-2xl p-5 text-center"
+          ref={panelRef}
+          className="z-10"
           style={{
-            background: "rgba(16, 34, 34, 0.97)",
-            border: "1px solid rgba(82, 91, 187, 0.4)",
-            backdropFilter: "blur(12px)",
+            ...panelStyle,
+            width: `calc(100vw - ${PANEL_SIDE_MARGIN * 2}px)`,
+            maxWidth: "20rem",
+            pointerEvents: "auto",
           }}
         >
-          <p className="text-xs font-bold tracking-widest text-primary/70 mb-3">
-            {step + 1} / {TOTAL_STEPS}
-          </p>
-          <h2 className="text-white text-base font-bold leading-snug mb-2">
-            {currentStep.title}
-          </h2>
-          <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
-            {currentStep.description}
-          </p>
-        </div>
+          <div
+            className="rounded-2xl p-5 text-center"
+            style={{
+              background: "rgba(16, 34, 34, 0.97)",
+              border: "1px solid rgba(82, 91, 187, 0.4)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <p className="text-xs font-bold tracking-widest text-primary/70 mb-3">
+              {step + 1} / {TOTAL_STEPS}
+            </p>
+            <h2 className="text-white text-base font-bold leading-snug mb-2">
+              {currentStep.title}
+            </h2>
+            <p className="text-white/60 text-sm leading-relaxed whitespace-pre-line">
+              {currentStep.description}
+            </p>
+          </div>
 
-        <div className="mt-3 flex gap-2">
-          <button
-            onClick={handleSkip}
-            className="flex-1 py-2.5 rounded-full text-sm text-gray-400 border border-gray-600 bg-black hover:text-gray-300 transition-colors"
-          >
-            スキップ
-          </button>
-          <button
-            onClick={handleNext}
-            className="flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-95"
-            style={{ background: "#525BBB", color: "#fff" }}
-          >
-            次へ
-          </button>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={handleSkip}
+              className={`py-2.5 rounded-full text-sm text-gray-400 border border-gray-600 bg-black hover:text-gray-300 transition-colors ${
+                isSampleVisitStep ? "w-full" : "flex-1"
+              }`}
+            >
+              スキップ
+            </button>
+            {!isSampleVisitStep && (
+              <button
+                onClick={handleNext}
+                className="flex-1 py-2.5 rounded-full text-sm font-bold transition-all active:scale-95"
+                style={{ background: "#525BBB", color: "#fff" }}
+              >
+                次へ
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* 疑似XP演出（実訪問APIは呼び出さない） */}
+      {isShowingXpModal && (
+        <XpModal
+          xpEarned={pseudoXpData.xpEarned}
+          totalXp={pseudoXpData.totalXp}
+          currentLevel={pseudoXpData.currentLevel}
+          isLevelUp={pseudoXpData.isLevelUp}
+          newLevel={pseudoXpData.newLevel}
+          xpBreakdown={pseudoXpData.xpBreakdown}
+          onClose={handlePseudoXpClose}
+        />
+      )}
     </div>
   );
 }

@@ -27,6 +27,7 @@ vi.mock("react-router", async () => {
 });
 
 import HomeTourModal from "~/components/HomeTourModal";
+import SampleVisitModal from "~/components/SampleVisitModal";
 
 describe("HomeTourModal", () => {
   beforeEach(() => {
@@ -49,7 +50,7 @@ describe("HomeTourModal", () => {
     expect(screen.getByText(/訪問を記録/)).toBeInTheDocument();
   });
 
-  test("ステップ2にも「次へ」ボタンが表示される（マイページへ遷移するため）", async () => {
+  test("ステップ2にも「次へ」ボタンが表示される", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
@@ -61,18 +62,23 @@ describe("HomeTourModal", () => {
     ).not.toBeInTheDocument();
   });
 
-  test("ステップ2「次へ」押下で onboarding_stage がlocalStorageに書き込まれる", async () => {
+  test("ステップ3ではツアーモーダルに「行ってきた！」ボタンが表示されない", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
 
-    await user.click(screen.getByRole("button", { name: "次へ" })); // step 2
-    await user.click(screen.getByRole("button", { name: "次へ" })); // → profile
+    // step 1 → step 2
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    // step 2 → step 3 (サンプル訪問)
+    await user.click(screen.getByRole("button", { name: "次へ" }));
 
-    expect(localStorage.getItem("onboarding_stage")).toBe("profile_tour");
+    expect(screen.getByText(/サンプル訪問を体験/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "行ってきた！" }),
+    ).not.toBeInTheDocument();
   });
 
-  test("ステップ2「次へ」押下で /profile に遷移する", async () => {
+  test("ステップ3ではオーバーレイがクリックスルーになる", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
@@ -80,18 +86,82 @@ describe("HomeTourModal", () => {
     await user.click(screen.getByRole("button", { name: "次へ" }));
     await user.click(screen.getByRole("button", { name: "次へ" }));
 
+    expect(screen.getByRole("dialog", { name: "使い方ツアー" })).toHaveStyle({
+      pointerEvents: "none",
+    });
+  });
+
+  test("ステップ3でダミーカードの「行ってきた！」押下で疑似XPモーダルが表示される", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(
+      <>
+        <SampleVisitModal />
+        <HomeTourModal onClose={onClose} />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "行ってきた！" }));
+
+    expect(screen.getByText("クエスト完了！")).toBeInTheDocument();
+    expect(screen.getByText("+50 XP")).toBeInTheDocument();
+  });
+
+  test("サンプル訪問完了時にAPIが呼び出されない（履歴非反映）", async () => {
+    const fetchSpy = vi.spyOn(global, "fetch");
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(
+      <>
+        <SampleVisitModal />
+        <HomeTourModal onClose={onClose} />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "行ってきた！" }));
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  test("疑似XPモーダルを閉じると onboarding_stage が書き込まれ /profile に遷移する", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(
+      <>
+        <SampleVisitModal />
+        <HomeTourModal onClose={onClose} />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "行ってきた！" }));
+    await user.click(screen.getByRole("button", { name: /次の冒険へ/ }));
+
+    expect(localStorage.getItem("onboarding_stage")).toBe("profile_tour");
     expect(mockNavigate).toHaveBeenCalledWith("/profile", {
       state: { fromTour: true },
     });
   });
 
-  test("ステップ2「次へ」押下では home_tour_seen は書き込まれない（プロフィールで完了するため）", async () => {
+  test("ステップ3完了前に home_tour_seen は書き込まれない", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<HomeTourModal onClose={onClose} />);
+    render(
+      <>
+        <SampleVisitModal />
+        <HomeTourModal onClose={onClose} />
+      </>,
+    );
 
     await user.click(screen.getByRole("button", { name: "次へ" }));
     await user.click(screen.getByRole("button", { name: "次へ" }));
+    await user.click(screen.getByRole("button", { name: "行ってきた！" }));
 
     expect(localStorage.getItem("home_tour_seen")).toBeNull();
   });
@@ -127,18 +197,18 @@ describe("HomeTourModal", () => {
     ).toBeInTheDocument();
   });
 
-  test("ステップ数インジケーターが正しく表示される（1/3）", () => {
+  test("ステップ数インジケーターが正しく表示される（1/4）", () => {
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
-    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+    expect(screen.getByText("1 / 4")).toBeInTheDocument();
   });
 
-  test("次へを押すとインジケーターが更新される（2/3）", async () => {
+  test("次へを押すとインジケーターが更新される（2/4）", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
 
     await user.click(screen.getByRole("button", { name: "次へ" }));
-    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+    expect(screen.getByText("2 / 4")).toBeInTheDocument();
   });
 });

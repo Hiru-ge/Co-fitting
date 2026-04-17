@@ -435,10 +435,10 @@ describe("プロフィール画面", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("dialog", { name: "使い方ツアー ステップ3" }),
+        screen.getByRole("dialog", { name: "使い方ツアー ステップ4" }),
       ).toBeInTheDocument();
       expect(screen.getByText("XPとバッジを集めよう")).toBeInTheDocument();
-      expect(screen.getByText("3 / 3")).toBeInTheDocument();
+      expect(screen.getByText("4 / 4")).toBeInTheDocument();
     });
   });
 
@@ -450,7 +450,7 @@ describe("プロフィール画面", () => {
     });
 
     expect(
-      screen.queryByRole("dialog", { name: "使い方ツアー ステップ3" }),
+      screen.queryByRole("dialog", { name: "使い方ツアー ステップ4" }),
     ).not.toBeInTheDocument();
   });
 
