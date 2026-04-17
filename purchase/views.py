@@ -61,9 +61,10 @@ def get_preset_limit(request):
 def webhook(request):
     """StripeのWebhookを受け取り、サブスクリプション状態を管理するエンドポイント"""
     payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
 
     try:
-        event = StripeService.construct_event(payload, stripe.api_key)
+        event = StripeService.construct_event(payload, sig_header)
     except ValueError:
         return ResponseHelper.create_error_response("invalid_payload", "Invalid payload")
     except stripe.error.SignatureVerificationError:

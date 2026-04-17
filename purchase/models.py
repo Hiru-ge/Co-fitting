@@ -92,18 +92,12 @@ class StripeService:
         return None
 
     @staticmethod
-    def construct_event(payload, api_key):
-        """Stripeイベントを構築"""
-        try:
-            stripe.api_key = AppConstants.STRIPE_API_KEY
-            event = stripe.Event.construct_from(
-                json.loads(payload), api_key
-            )
-            return event
-        except ValueError:
-            raise ValueError("Invalid payload")
-        except stripe.error.SignatureVerificationError:
-            raise stripe.error.SignatureVerificationError("Invalid signature")
+    def construct_event(payload, sig_header):
+        """Stripeイベントを構築（シグネチャ検証あり）"""
+        stripe.api_key = AppConstants.STRIPE_API_KEY
+        return stripe.Webhook.construct_event(
+            payload, sig_header, AppConstants.STRIPE_WEBHOOK_SECRET
+        )
 
 
 class SubscriptionManager:

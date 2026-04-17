@@ -51,6 +51,7 @@ class AppConstants:
 
     # Stripe設定
     STRIPE_API_KEY = settings.STRIPE_API_KEY
+    STRIPE_WEBHOOK_SECRET = settings.STRIPE_WEBHOOK_SECRET
 
     # Stripe Price ID（プランごと）
     STRIPE_PRICE_IDS = {
