@@ -35,7 +35,9 @@ type Deps struct {
 func Setup(router *gin.Engine, deps Deps) {
 	// グローバルミドルウェア
 	router.Use(middleware.CORS(deps.AllowedOrigins))
-	router.Use(middleware.RateLimit(middleware.NewRateLimiter(120, time.Minute)))
+	if deps.Environment != "development" {
+		router.Use(middleware.RateLimit(middleware.NewRateLimiter(120, time.Minute)))
+	}
 
 	// ヘルスチェック
 	router.GET("/health", deps.HealthHandler.HealthCheck)

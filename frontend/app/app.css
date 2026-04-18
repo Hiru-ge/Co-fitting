@@ -58,7 +58,6 @@ body {
   scrollbar-width: none;
 }
 
-
 /* ── Toast animation ── */
 @keyframes slide-in {
   from {

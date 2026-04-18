@@ -4,6 +4,9 @@ import userEvent from "@testing-library/user-event";
 
 // @react-oauth/google をモック（GoogleLogin コンポーネントをテスト用スタブに置き換える）
 vi.mock("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
   GoogleLogin: ({
     onSuccess,
     onError,

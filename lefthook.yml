@@ -1,5 +1,5 @@
 pre-commit:
-  parallel: true
+  parallel: false
   commands:
     frontend-format:
       root: "frontend/"
@@ -11,6 +11,8 @@ pre-commit:
       run: npx eslint {staged_files}
     frontend-typecheck:
       run: cd frontend && node_modules/.bin/tsc --noEmit
+    frontend-test:
+      run: cd frontend && npx vitest run
     backend-format:
       root: "backend/"
       glob: "*.go"
@@ -21,6 +23,8 @@ pre-commit:
       root: "backend/"
       glob: "*.go"
       run: golangci-lint run ./...
+    backend-test:
+      run: cd backend && go test -p 1 ./...
 
 pre-push:
   parallel: false

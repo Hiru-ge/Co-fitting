@@ -44,13 +44,23 @@ async function injectAuthTokens(
   accessToken: string,
   refreshToken: string,
 ) {
-  await page.evaluate(
+  await page.addInitScript(
     ({ at, rt }) => {
       localStorage.setItem("roamble_token", at);
       localStorage.setItem("roamble_refresh_token", rt);
     },
     { at: accessToken, rt: refreshToken },
   );
+
+  await page
+    .evaluate(
+      ({ at, rt }) => {
+        localStorage.setItem("roamble_token", at);
+        localStorage.setItem("roamble_refresh_token", rt);
+      },
+      { at: accessToken, rt: refreshToken },
+    )
+    .catch(() => undefined);
 }
 
 // ─── テスト ─────────────────────────────────────────
@@ -222,7 +232,14 @@ test.describe("主要ユーザーフロー", () => {
 
   // 10. 認証済みでトップページにアクセス → /home へリダイレクト
   test("認証済みで / にアクセス → /home へリダイレクト", async () => {
-    await page.goto("/");
+    const { access_token, refresh_token } = await devTestLogin(
+      TEST_USER.email,
+      TEST_USER.displayName,
+    );
+    await injectAuthTokens(page, access_token, refresh_token);
+
+    // SPAリダイレクトが即時発火すると goto が ERR_ABORTED を返すことがあるため許容
+    await page.goto("/").catch(() => undefined);
     await page.waitForURL("/home", { timeout: 15_000 });
     await expect(page).toHaveURL("/home");
   });

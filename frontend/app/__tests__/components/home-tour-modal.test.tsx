@@ -38,7 +38,7 @@ describe("HomeTourModal", () => {
   test("最初のステップが表示される", () => {
     const onClose = vi.fn();
     render(<HomeTourModal onClose={onClose} />);
-    expect(screen.getByText(/近くの場所が提案されます/)).toBeInTheDocument();
+    expect(screen.getByText(/近くの場所が提案されるよ/)).toBeInTheDocument();
   });
 
   test("「次へ」ボタンで次のステップに進む", async () => {
@@ -72,7 +72,7 @@ describe("HomeTourModal", () => {
     // step 2 → step 3 (サンプル訪問)
     await user.click(screen.getByRole("button", { name: "次へ" }));
 
-    expect(screen.getByText(/サンプル訪問を体験/)).toBeInTheDocument();
+    expect(screen.getByText(/訪問を体験してみよう/)).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "行ってきた！" }),
     ).not.toBeInTheDocument();

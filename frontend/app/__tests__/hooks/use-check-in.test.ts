@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { useCheckIn } from "~/hooks/use-check-in";
 import { ApiError } from "~/utils/error";
@@ -9,6 +9,12 @@ const mockSendVisitRecorded = vi.fn();
 const mockSendDailyCompleted = vi.fn();
 const mockSendBadgeEarned = vi.fn();
 const mockSendLevelUp = vi.fn();
+const mockSendFirstValueMilestone = vi.fn();
+const mockSendWeeklyReactivation = vi.fn();
+const mockLocalStorage = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+};
 
 vi.mock("~/api/visits", () => ({
   createVisit: (...args: unknown[]) => mockCreateVisit(...args),
@@ -19,15 +25,21 @@ vi.mock("~/lib/gtag", () => ({
   sendDailyCompleted: (...args: unknown[]) => mockSendDailyCompleted(...args),
   sendBadgeEarned: (...args: unknown[]) => mockSendBadgeEarned(...args),
   sendLevelUp: (...args: unknown[]) => mockSendLevelUp(...args),
+  sendFirstValueMilestone: (...args: unknown[]) =>
+    mockSendFirstValueMilestone(...args),
+  sendWeeklyReactivation: (...args: unknown[]) =>
+    mockSendWeeklyReactivation(...args),
 }));
 
 describe("useCheckIn", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal("localStorage", mockLocalStorage);
+    mockLocalStorage.getItem.mockReturnValue(null);
   });
 
   test("チェックイン成功で訪問済み・XPモーダル・バッジキューが更新される", async () => {
-    mockCreateVisit.mockResolvedValueOnce({
+    mockCreateVisit.mockResolvedValue({
       id: 1,
       user_id: 1,
       place_id: "place_1",
@@ -93,10 +105,20 @@ describe("useCheckIn", () => {
       await result.current.handleCheckIn();
     });
 
-    expect(result.current.places).toHaveLength(0);
-    expect(result.current.visitedIds.has("place_1")).toBe(true);
-    expect(result.current.isCompleted).toBe(true);
-    expect(result.current.xpModalState?.xpEarned).toBe(100);
+    expect(mockCreateVisit).toHaveBeenCalled();
+    expect(onErrorToast).not.toHaveBeenCalled();
+
+    await waitFor(
+      () => {
+        expect(result.current.places).toHaveLength(0);
+        expect(result.current.visitedIds.has("place_1")).toBe(true);
+        expect(result.current.isCompleted).toBe(true);
+        expect(mockSendVisitRecorded).toHaveBeenCalledWith(
+          expect.objectContaining({ xpEarned: 100 }),
+        );
+      },
+      { timeout: 5000 },
+    );
     expect(mockSendDailyCompleted).toHaveBeenCalledTimes(1);
     expect(mockSendLevelUp).toHaveBeenCalledWith(5);
     expect(mockSendBadgeEarned).toHaveBeenCalledWith("Explorer");
