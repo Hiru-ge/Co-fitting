@@ -234,13 +234,13 @@ export default function LP() {
               <h1 className="text-5xl font-bold font-display-alt tracking-tight text-primary mb-4">
                 Roamble
               </h1>
-              <p className="text-2xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
+              <p className="text-xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
                 「いつも同じ店」を抜け出そう
               </p>
-              <p className="text-base text-white/70 max-w-sm leading-relaxed mb-8 lg:max-w-md mx-auto lg:mx-0">
-                店が決められない日も、Roambleが次の一軒を提案。
+              <p className="text-sm text-white/70 max-w-sm leading-relaxed mb-8 text-left lg:max-w-md mx-auto lg:mx-0">
+                店が決められない日も、Roambleが次の1軒を提案。
                 <br />
-                新しいお店開拓やカフェ開拓を、迷わず続けられる。
+                新しいお店開拓やカフェ開拓を迷わず続けられる。
                 <br />
                 初めて入る店で緊張した日も、行くたびに
                 <span className="font-semibold text-primary">経験値</span>
@@ -343,7 +343,7 @@ export default function LP() {
       <section ref={featuresSectionRef} className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-12 text-center">
-            Roambleで、新しいお店を開拓しよう
+            Roambleで新しいお店を開拓しよう
           </h2>
 
           <div className="space-y-16 lg:space-y-20">
@@ -394,12 +394,14 @@ export default function LP() {
                       2. 入るのに勇気がいる店でも動ける
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      提案された場所に実際に行き、「行った！」ボタンを押すことで
+                      提案された場所に実際に行き、「行ってきた！」ボタンを押すことで
                       <span className="font-semibold text-primary">
                         {" "}
                         経験値
                       </span>
-                      を獲得できます。初めて入る店で緊張した日も、「行けた」を数値で振り返れます。
+                      を獲得できます。
+                      <br />
+                      初めて入る店は緊張しますが、経験値が積み上がることで、次第に新しいお店に飛び込むことへの抵抗感が減っていきます。
                     </p>
                   </div>
                 </div>
@@ -532,18 +534,51 @@ export default function LP() {
           </h2>
           <p className="text-sm text-white/70 leading-relaxed text-center mb-6">
             <span className="font-semibold text-white">
-              開発者自身、新しいお店を開拓できずにいる一人です
+              私自身、新しいお店を開拓できずにいる一人です
             </span>
             <br />
-            Roambleは、「自分が使いたいと思うものを作る」...その一点で作り始めたアプリです。
+            Roambleは「新しい店開拓したいけどなんか面倒だな〜何か強制力みたいなのがあればな〜」という自分の欲求から生まれたアプリです。
             <br />
-            同じようなモヤモヤを感じている人の背中を押す存在になれたら嬉しいです。
+            同じような悩みを持つ人の役に立てれば嬉しいです！
             <br />
-            開発の過程は X (Twitter) で #BuildInPublic として公開しています。
+            開発の過程は X (Twitter) で Roamble開発ログ として公開しています。
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {/* アカウントへのリンクは横並び */}
+            <span className="flex items-center gap-3">
+              <a
+                href="https://x.com/Hiru_ge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm transition-colors hover:bg-white/10"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+                <span>@Hiru_ge</span>
+              </a>
+              <a
+                href="https://x.com/roamble_app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm transition-colors hover:bg-white/10"
+              >
+                <svg
+                  className="w-4 h-4"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+                <span>@roamble_app</span>
+              </a>
+            </span>
             <a
-              href="https://x.com/Hiru_ge"
+              href="https://x.com/search?q=from%3AHiru_ge%20Roamble%E9%96%8B%E7%99%BA%E3%83%AD%E3%82%B0&f=live"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm transition-colors hover:bg-white/10"
@@ -551,18 +586,8 @@ export default function LP() {
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
-              <span>@Hiru_ge</span>
-            </a>
-            <a
-              href="https://x.com/roamble_app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm transition-colors hover:bg-white/10"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-              </svg>
-              <span>@roamble_app</span>
+              <Icon name="history" className="text-white/80" />
+              <span>開発ログをのぞく</span>
             </a>
           </div>
         </div>
