@@ -63,8 +63,8 @@
 
 **🟢 GREEN**
 
-- [ ] `frontend/app/routes/lp.tsx` のコピーを英語訳し、ブラウザの `Accept-Language` が `en` 系の場合に英語テキストを表示する（または `/en` ルートを用意する）
-- [ ] メタタグ（title・description・OGP）を英語に切り替える
+- [x] `frontend/app/routes/lp.tsx` のコピーを英語訳し、ブラウザの `Accept-Language` が `en` 系の場合に英語テキストを表示する（または `/en` ルートを用意する）
+- [x] メタタグ（title・description・OGP）を英語に切り替える
 
 **🔵 REFACTOR**
 

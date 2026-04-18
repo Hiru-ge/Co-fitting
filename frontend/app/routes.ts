@@ -10,6 +10,7 @@ export default [
 
   // ランディング・認証
   route("lp", "routes/lp.tsx"),
+  route("lp/en", "routes/lp-en.tsx"),
   route("login", "routes/login.tsx"),
 
   // ベータ版ゲート・PWAインストール促進

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type FormEvent } from "react";
-import { Link, redirect } from "react-router";
+import { Link } from "react-router";
 import type { LinksFunction, MetaFunction } from "react-router";
 import { Icon } from "~/components/Icon";
 import {
@@ -18,39 +18,39 @@ export const links: LinksFunction = () => [
 ];
 
 export const meta: MetaFunction = () => [
-  { title: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ" },
+  { title: "Roamble: Discover New Spots, Break Your Usual Routine" },
   {
     name: "description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+      "For those who always end up at the same place. Roamble suggests undiscovered spots nearby, and every visit earns you XP, level-ups, and badges.",
   },
   { property: "og:type", content: "website" },
-  { property: "og:url", content: "https://roamble.app/lp" },
+  { property: "og:url", content: "https://roamble.app/lp/en" },
   {
     property: "og:title",
-    content: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ",
+    content: "Roamble: Discover New Spots, Break Your Usual Routine",
   },
   {
     property: "og:description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+      "For those who always end up at the same place. Roamble suggests undiscovered spots nearby, and every visit earns you XP, level-ups, and badges.",
   },
   { property: "og:image", content: "https://roamble.app/ogp.png" },
   { property: "og:site_name", content: "Roamble" },
-  { property: "og:locale", content: "ja_JP" },
+  { property: "og:locale", content: "en_US" },
   { name: "twitter:card", content: "summary_large_image" },
   { name: "twitter:site", content: "@roamble_app" },
   {
     name: "twitter:title",
-    content: "Roamble：「いつも同じ店」を抜け出す、新しいお店開拓アプリ",
+    content: "Roamble: Discover New Spots, Break Your Usual Routine",
   },
   {
     name: "twitter:description",
     content:
-      "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
+      "For those who always end up at the same place. Roamble suggests undiscovered spots nearby, and every visit earns you XP, level-ups, and badges.",
   },
   { name: "twitter:image", content: "https://roamble.app/ogp.png" },
-  { tagName: "link", rel: "canonical", href: "https://roamble.app/lp" },
+  { tagName: "link", rel: "canonical", href: "https://roamble.app/lp/en" },
   {
     tagName: "link",
     rel: "alternate",
@@ -75,11 +75,11 @@ export const meta: MetaFunction = () => [
       "@type": "WebApplication",
       name: "Roamble",
       description:
-        "「また同じ店になってしまった」を卒業したい人へ。現在地周辺の知らなかったお店をランダム提案し、訪問するたびにXP・レベルアップ・バッジを獲得できるお店開拓アプリ。",
-      url: "https://roamble.app/lp",
+        "For those who always end up at the same place. Roamble suggests undiscovered spots nearby, and every visit earns you XP, level-ups, and badges.",
+      url: "https://roamble.app/lp/en",
       applicationCategory: "LifestyleApplication",
       operatingSystem: "Web",
-      inLanguage: "ja",
+      inLanguage: "en",
       author: {
         "@type": "Person",
         name: "Hiru_ge",
@@ -89,16 +89,9 @@ export const meta: MetaFunction = () => [
   },
 ];
 
-export function clientLoader() {
-  if (navigator.language.startsWith("en")) {
-    throw redirect("/lp/en");
-  }
-  return null;
-}
-
 type FormState = "idle" | "submitting" | "success" | "error";
 
-export default function LP() {
+export default function LPEn() {
   const [email, setEmail] = useState("");
   const [formState, setFormState] = useState<FormState>("idle");
   const [shouldLoadTikTok, setShouldLoadTikTok] = useState(false);
@@ -128,7 +121,7 @@ export default function LP() {
         body: JSON.stringify({
           access_key: import.meta.env.VITE_WEB3FORMS_KEY,
           email,
-          subject: "Roamble iOS版リリース通知リクエスト",
+          subject: "Roamble iOS Launch Notification Request",
         }),
       });
       const data = await res.json();
@@ -244,7 +237,7 @@ export default function LP() {
             }
             className="px-4 py-1.5 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
           >
-            iOS版通知を受け取る
+            Get notified for iOS
           </a>
         </div>
       </header>
@@ -260,16 +253,17 @@ export default function LP() {
                 Roamble
               </h1>
               <p className="text-xl font-bold font-display leading-snug max-w-md mb-6 lg:max-w-none">
-                「いつも同じ店」を抜け出そう
+                Break free from your usual spots
               </p>
               <p className="text-sm text-white/70 max-w-sm leading-relaxed mb-8 text-left lg:max-w-md mx-auto lg:mx-0">
-                店が決められない日も、Roambleが次の1軒を提案。
+                When you can&apos;t decide where to go, Roamble picks your next
+                spot.
                 <br />
-                新しいお店開拓やカフェ開拓を迷わず続けられる。
+                Keep discovering new restaurants and cafes without the
+                hesitation.
                 <br />
-                初めて入る店で緊張した日も、行くたびに
-                <span className="font-semibold text-primary">経験値</span>
-                が積み上がる。
+                Even when a new place feels intimidating, every visit builds
+                your <span className="font-semibold text-primary">XP</span>.
                 <br />
               </p>
               <div className="flex flex-col items-center lg:items-start gap-3">
@@ -280,7 +274,7 @@ export default function LP() {
                   }
                   className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
                 >
-                  さっそく始める
+                  Get started
                 </a>
                 <a
                   href="#ios-notify"
@@ -289,7 +283,7 @@ export default function LP() {
                   }
                   className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
                 >
-                  iOS版リリース通知を受け取る
+                  Get notified for iOS launch
                 </a>
               </div>
             </div>
@@ -297,7 +291,7 @@ export default function LP() {
             <div className="mt-12 lg:mt-0 flex items-end justify-center gap-3 px-2 lg:shrink-0">
               <img
                 src="/images/lp/history.webp"
-                alt="訪問履歴画面"
+                alt="Visit history screen"
                 width={390}
                 height={844}
                 loading="lazy"
@@ -306,7 +300,7 @@ export default function LP() {
               />
               <img
                 src="/images/lp/home.webp"
-                alt="お店提案画面"
+                alt="Spot suggestion screen"
                 width={390}
                 height={844}
                 loading="eager"
@@ -316,7 +310,7 @@ export default function LP() {
               />
               <img
                 src="/images/lp/profile.webp"
-                alt="マイページ画面"
+                alt="Profile screen"
                 width={390}
                 height={844}
                 loading="lazy"
@@ -325,6 +319,9 @@ export default function LP() {
               />
             </div>
           </div>
+          <p className="mt-6 text-center text-xs text-white/40">
+            Screenshots are in Japanese. English UI coming with the iOS version.
+          </p>
         </div>
       </section>
 
@@ -335,14 +332,14 @@ export default function LP() {
       <section ref={painPointsSectionRef} className="px-6 py-12">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
-            こんな経験、ありませんか？
+            Sound familiar?
           </h2>
           <ul className="space-y-4 text-sm text-white/80 lg:grid lg:grid-cols-2 lg:gap-x-12 lg:space-y-0 lg:gap-y-4">
             {[
-              "気になる店があるのに、入るのに勇気がいる",
-              "結局いつもの店に落ち着く",
-              "初めて入る店は緊張してしまう",
-              "知らない店に飛び込んで新しい体験をしたい",
+              "You're curious about a place, but stepping in takes courage",
+              "You always end up at the same familiar spot",
+              "Trying somewhere new feels unexpectedly nerve-wracking",
+              "You want to explore unknown spots and have new experiences",
             ].map((text) => (
               <li key={text} className="flex items-start gap-3">
                 <Icon
@@ -354,9 +351,8 @@ export default function LP() {
             ))}
           </ul>
           <p className="mt-6 text-sm text-center text-white/60 leading-relaxed">
-            Roambleは、あなたの
-            <span className="font-semibold text-white">勇気ある一歩</span>
-            をサポートします
+            Roamble is here to support that{" "}
+            <span className="font-semibold text-white">brave first step</span>
           </p>
         </div>
       </section>
@@ -368,7 +364,7 @@ export default function LP() {
       <section ref={featuresSectionRef} className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-12 text-center">
-            Roambleで新しいお店を開拓しよう
+            Discover new spots with Roamble
           </h2>
 
           <div className="space-y-16 lg:space-y-20">
@@ -381,12 +377,14 @@ export default function LP() {
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
-                      1. 店が決められないを解消する
+                      1. No more &quot;where should we go?&quot;
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      現在地の近くから、まだ行ったことのないお店をランダムに提案します。
-                      <br></br>
-                      選ぶ手間はゼロ。ちょっとチャレンジングな提案も低頻度で混ぜ、あなたの背中を押します。
+                      Roamble randomly suggests places near you that you
+                      haven&apos;t visited yet.
+                      <br />
+                      Zero effort to choose. An occasional challenging
+                      suggestion is thrown in to gently push you further.
                     </p>
                   </div>
                 </div>
@@ -394,7 +392,7 @@ export default function LP() {
               <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
                   src="/images/lp/home.webp"
-                  alt="お店提案画面"
+                  alt="Spot suggestion screen"
                   width={390}
                   height={844}
                   loading="lazy"
@@ -416,17 +414,15 @@ export default function LP() {
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
-                      2. 入るのに勇気がいる店でも動ける
+                      2. Step into places that once felt intimidating
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      提案された場所に実際に行き、「行ってきた！」ボタンを押すことで
-                      <span className="font-semibold text-primary">
-                        {" "}
-                        経験値
-                      </span>
-                      を獲得できます。
+                      Visit the suggested spot and tap &apos;I went!&apos; to
+                      earn
+                      <span className="font-semibold text-primary"> XP</span>.
                       <br />
-                      初めて入る店は緊張しますが、経験値が積み上がることで、次第に新しいお店に飛び込むことへの抵抗感が減っていきます。
+                      New places can feel intimidating at first, but as your XP
+                      builds up, that hesitation naturally fades.
                     </p>
                   </div>
                 </div>
@@ -434,7 +430,7 @@ export default function LP() {
               <div className="mt-6 lg:mt-0 flex justify-center gap-4 lg:shrink-0">
                 <img
                   src="/images/lp/xp-modal.webp"
-                  alt="XP獲得画面"
+                  alt="XP earned screen"
                   width={390}
                   height={844}
                   loading="lazy"
@@ -443,7 +439,7 @@ export default function LP() {
                 />
                 <img
                   src="/images/lp/badge-modal.webp"
-                  alt="バッジ獲得画面"
+                  alt="Badge earned screen"
                   width={390}
                   height={844}
                   loading="lazy"
@@ -465,14 +461,15 @@ export default function LP() {
                   </div>
                   <div>
                     <h3 className="font-bold text-base mb-1">
-                      3. お店開拓とカフェ開拓が続く
+                      3. Keep the exploration going
                     </h3>
                     <p className="text-sm text-white/70 leading-relaxed">
-                      知らなかったお店が登録されるたび、レベルアップやバッジ獲得を通じて
+                      Each new spot you log brings level-ups and badges — and a
+                      growing sense of{" "}
                       <span className="font-semibold text-white">
-                        自分自身の可能性
+                        your own potential
                       </span>
-                      も広がっていく実感が得られます。
+                      .
                     </p>
                   </div>
                 </div>
@@ -480,7 +477,7 @@ export default function LP() {
               <div className="mt-6 lg:mt-0 flex justify-center lg:shrink-0">
                 <img
                   src="/images/lp/profile-badge.webp"
-                  alt="バッジ一覧画面"
+                  alt="Badge collection screen"
                   width={390}
                   height={844}
                   loading="lazy"
@@ -500,7 +497,7 @@ export default function LP() {
       <section ref={tiktokSectionRef} className="px-6 py-12">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
-            使ってみた動画
+            See it in action
           </h2>
           <div className="flex justify-center">
             <div style={{ width: "325px", minHeight: "740px" }}>
@@ -527,7 +524,7 @@ export default function LP() {
                   className="rounded-2xl border border-white/15 bg-white/5 px-4 py-6 text-sm text-white/80 hover:bg-white/10"
                   style={{ width: "325px", minHeight: "740px" }}
                 >
-                  TikTok動画を読み込む
+                  Load TikTok video
                 </button>
               )}
             </div>
@@ -542,7 +539,7 @@ export default function LP() {
               }
               className="text-primary hover:underline"
             >
-              TikTokで見る →
+              Watch on TikTok →
             </a>
           </p>
         </div>
@@ -555,21 +552,20 @@ export default function LP() {
       <section className="px-6 py-12">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-6 text-center">
-            作っている人
+            About the Developer
           </h2>
           <p className="text-sm text-white/70 leading-relaxed text-center mb-6">
             <span className="font-semibold text-white">
-              私自身、新しいお店を開拓できずにいる一人です
+              I&apos;m someone who still struggles to try new places.
             </span>
             <br />
-            Roambleは「新しい店開拓したいけどなんか面倒だな〜何か強制力みたいなのがあればな〜」という自分の欲求から生まれたアプリです。
-            <br />
-            同じような悩みを持つ人の役に立てれば嬉しいです！
-            <br />
-            開発の過程は X (Twitter) で Roamble開発ログ として公開しています。
+            Roamble started from my own frustration — &quot;I want to try new
+            spots, but I just never get around to it. Wish something would just
+            push me.&quot;
+            <br />I built it hoping it helps others in the same boat.
+            <br />I share the dev journey on X (Twitter) as the Roamble dev log.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            {/* アカウントへのリンクは横並び */}
             <span className="flex items-center gap-3">
               <a
                 href="https://x.com/Hiru_ge"
@@ -612,7 +608,7 @@ export default function LP() {
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
               <Icon name="history" className="text-white/80" />
-              <span>開発ログをのぞく</span>
+              <span>See the dev log</span>
             </a>
           </div>
         </div>
@@ -625,20 +621,20 @@ export default function LP() {
       <section id="ios-notify" ref={iosNotifySectionRef} className="px-6 py-12">
         <div className="max-w-xl mx-auto">
           <h2 className="text-xl font-bold font-display mb-3 text-center">
-            iOS版リリース通知を受け取る
+            Get notified when iOS launches
           </h2>
           <p className="text-sm text-white/60 mb-6 text-center">
-            現在、iOS版の開発を進めています。
+            iOS version is currently in development.
             <br />
-            リリース時にメールでお知らせしますので、メールアドレスを登録してください。
+            Drop your email and we&apos;ll let you know when it&apos;s ready.
           </p>
 
           {formState === "success" ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <Icon name="check_circle" className="text-primary text-4xl" />
-              <p className="font-semibold">登録しました！</p>
+              <p className="font-semibold">You&apos;re in!</p>
               <p className="text-sm text-white/60">
-                iOS版がリリースされたらメールでお知らせします。
+                We&apos;ll email you when the iOS version launches.
               </p>
             </div>
           ) : (
@@ -650,7 +646,7 @@ export default function LP() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="メールアドレスを入力"
+                placeholder="Enter your email"
                 required
                 disabled={formState === "submitting"}
                 className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-sm placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
@@ -660,14 +656,14 @@ export default function LP() {
                 disabled={formState === "submitting" || !email.trim()}
                 className="px-6 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
-                {formState === "submitting" ? "送信中..." : "通知を受け取る"}
+                {formState === "submitting" ? "Sending..." : "Notify me"}
               </button>
             </form>
           )}
 
           {formState === "error" && (
             <p className="mt-3 text-sm text-red-400 text-center">
-              送信に失敗しました。しばらく時間をおいて再度お試しください。
+              Something went wrong. Please try again later.
             </p>
           )}
         </div>
@@ -679,13 +675,11 @@ export default function LP() {
       {/* ── Start Now CTA ── */}
       <section className="px-6 py-12 text-center">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-xl font-bold font-display mb-4">
-            さっそく始める
-          </h2>
+          <h2 className="text-xl font-bold font-display mb-4">Get started</h2>
           <p className="text-sm text-white/60 mb-6">
-            現在Webベータ版を公開中です。
+            The web beta is live now.
             <br />
-            合言葉をお持ちの方はそのまま始められます。
+            If you have the passphrase, you&apos;re ready to go.
           </p>
           <a
             href="/beta-gate"
@@ -694,7 +688,7 @@ export default function LP() {
             }
             className="inline-block px-8 py-3 rounded-lg bg-primary text-bg-dark font-bold text-sm transition-colors hover:bg-primary/90"
           >
-            さっそく始める
+            Get started
           </a>
         </div>
       </section>
@@ -702,7 +696,7 @@ export default function LP() {
       {/* ── Footer ── */}
       <footer className="px-6 py-6 text-center text-xs text-white/30">
         <Link to="/privacy" className="hover:underline">
-          プライバシーポリシー
+          Privacy Policy
         </Link>
       </footer>
     </main>
