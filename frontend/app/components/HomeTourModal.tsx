@@ -53,6 +53,8 @@ const PANEL_SIDE_MARGIN = 16;
 const PANEL_EDGE_GAP = 16;
 const PANEL_SPOTLIGHT_GAP = 12;
 const ESTIMATED_PANEL_HEIGHT = 188;
+const PANEL_EXTRA_LIFT = 40;
+const PANEL_EXTRA_LIFT_LANDSCAPE = 40;
 
 export default function HomeTourModal({ onClose }: HomeTourModalProps) {
   const navigate = useNavigate();
@@ -161,6 +163,10 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
   }
 
   const measuredPanelHeight = panelHeight || ESTIMATED_PANEL_HEIGHT;
+  const isLandscapeViewport = window.innerWidth > window.innerHeight;
+  const extraLift = isLandscapeViewport
+    ? PANEL_EXTRA_LIFT_LANDSCAPE
+    : PANEL_EXTRA_LIFT;
 
   // ステップ2・3はアクションボタン付近をスポットライトするため、パネルをターゲットの上に配置
   const panelStyle: React.CSSProperties =
@@ -172,7 +178,10 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
           top: Math.max(
             PANEL_EDGE_GAP,
             Math.min(
-              targetRect.top - measuredPanelHeight - PANEL_SPOTLIGHT_GAP,
+              targetRect.top -
+                measuredPanelHeight -
+                PANEL_SPOTLIGHT_GAP -
+                extraLift,
               window.innerHeight - measuredPanelHeight - PANEL_EDGE_GAP,
             ),
           ),
@@ -278,7 +287,7 @@ export default function HomeTourModal({ onClose }: HomeTourModalProps) {
           style={{
             ...panelStyle,
             width: `calc(100vw - ${PANEL_SIDE_MARGIN * 2}px)`,
-            maxWidth: "20rem",
+            maxWidth: isLandscapeViewport ? "24rem" : "20rem",
             pointerEvents: "auto",
           }}
         >

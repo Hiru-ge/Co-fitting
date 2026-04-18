@@ -16,20 +16,18 @@ export default function SampleVisitModal() {
 
       {/* home.tsx の main と同じレイアウトでカードを配置 */}
       <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 pb-20 pt-4 overflow-hidden">
-        <div className="flex-1 min-h-0 relative w-full pointer-events-auto">
+        <div className="flex-1 min-h-0 relative w-full max-w-md mx-auto pointer-events-auto">
           {/* DiscoveryCard を踏襲したカードUI */}
           <div
             data-tour="sample-visit-card"
-            className="absolute inset-0 rounded-3xl overflow-hidden bg-linear-to-br from-amber-600 to-orange-800 shadow-xl"
+            className="absolute inset-0 rounded-3xl overflow-hidden shadow-xl"
           >
-            {/* カテゴリアイコン（透過） */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-10">
-              <Icon
-                name="local_cafe"
-                className="text-white"
-                style={{ fontSize: "12rem" }}
-              />
-            </div>
+            <img
+              src="/images/cafe-roamble.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
 
             {/* 上部グラデーション */}
             <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-b from-black/80 via-black/50 to-transparent pointer-events-none" />
