@@ -165,3 +165,28 @@ func IncrementDailyReloadCount(ctx context.Context, client *redis.Client, userID
 	}
 	return int(newCount), nil
 }
+
+// スヌーズ機能
+// キーフォーマット: place:snooze:{userID}:{placeID}（存在しているか否かだけでスヌーズ状態を管理する）
+
+func GeneratePlaceSnoozeKey(userID string, placeID string) string {
+	return fmt.Sprintf("place:snooze:%s:%s", userID, placeID)
+}
+
+func SetPlaceSnooze(ctx context.Context, client *redis.Client, userID string, placeID string, days int) error {
+	key := GeneratePlaceSnoozeKey(userID, placeID)
+	ttl := time.Duration(days) * 24 * time.Hour
+	return client.Set(ctx, key, 1, ttl).Err()
+}
+
+func IsPlaceSnoozed(ctx context.Context, client *redis.Client, userID string, placeID string) (bool, error) {
+	key := GeneratePlaceSnoozeKey(userID, placeID)
+	_, err := client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check place snooze: %w", err)
+	}
+	return true, nil
+}

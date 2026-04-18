@@ -1,10 +1,13 @@
 package services
 
 import (
+	"context"
 	"math/rand/v2"
 	"time"
 
+	"github.com/Hiru-ge/roamble/database"
 	"github.com/Hiru-ge/roamble/models"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
@@ -153,6 +156,25 @@ func FilterOutVisited(db *gorm.DB, userID uint64, places []PlaceResult) []PlaceR
 	var result []PlaceResult
 	for _, p := range places {
 		if !visitedSet[p.PlaceID] {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
+func FilterOutSnoozed(ctx context.Context, client *redis.Client, userIDStr string, places []PlaceResult) []PlaceResult {
+	if client == nil || len(places) == 0 {
+		return places
+	}
+
+	var result []PlaceResult
+	for _, p := range places {
+		snoozed, err := database.IsPlaceSnoozed(ctx, client, userIDStr, p.PlaceID)
+		if err != nil {
+			result = append(result, p)
+			continue
+		}
+		if !snoozed {
 			result = append(result, p)
 		}
 	}

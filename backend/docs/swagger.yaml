@@ -1032,6 +1032,52 @@ paths:
       summary: 通知設定更新
       tags:
       - Notifications
+  /api/places/{place_id}/snooze:
+    post:
+      description: 指定したお店を一定期間提案から除外する。期間は days クエリパラメータで指定する（1〜365の整数、必須）。
+      parameters:
+      - description: Place ID
+        in: path
+        name: place_id
+        required: true
+        type: string
+      - description: スヌーズ期間（日数、1〜365）
+        in: query
+        name: days
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: お店のスヌーズ設定
+      tags:
+      - Places
   /api/places/{placeId}/photo:
     get:
       description: Place ID に対応する写真URLを取得する。キャッシュ未ヒット時のみ photo_reference を使って解決する

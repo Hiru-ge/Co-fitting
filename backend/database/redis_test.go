@@ -395,6 +395,144 @@ func TestGetDailyReloadCount(t *testing.T) {
 	})
 }
 
+// === スヌーズ機能のテスト ===
+
+func cleanupPlaceSnoozeKeys(t *testing.T) {
+	t.Helper()
+	ctx := context.Background()
+	var cursor uint64
+	for {
+		keys, nextCursor, err := testRedisClient.Scan(ctx, cursor, "place:snooze:*", 100).Result()
+		if err != nil {
+			break
+		}
+		if len(keys) > 0 {
+			testRedisClient.Del(ctx, keys...)
+		}
+		cursor = nextCursor
+		if cursor == 0 {
+			break
+		}
+	}
+}
+
+func TestGeneratePlaceSnoozeKey(t *testing.T) {
+	t.Run("スヌーズキーが正しいフォーマットで生成される", func(t *testing.T) {
+		key := GeneratePlaceSnoozeKey("123", "place_abc")
+		expected := "place:snooze:123:place_abc"
+		if key != expected {
+			t.Errorf("Expected key '%s', got '%s'", expected, key)
+		}
+	})
+
+	t.Run("異なるユーザーIDで異なるキーが生成される", func(t *testing.T) {
+		key1 := GeneratePlaceSnoozeKey("user1", "place_abc")
+		key2 := GeneratePlaceSnoozeKey("user2", "place_abc")
+		if key1 == key2 {
+			t.Errorf("Expected different keys for different users, got same: '%s'", key1)
+		}
+	})
+
+	t.Run("異なる場所IDで異なるキーが生成される", func(t *testing.T) {
+		key1 := GeneratePlaceSnoozeKey("user1", "place_abc")
+		key2 := GeneratePlaceSnoozeKey("user1", "place_xyz")
+		if key1 == key2 {
+			t.Errorf("Expected different keys for different places, got same: '%s'", key1)
+		}
+	})
+}
+
+func TestSetPlaceSnooze(t *testing.T) {
+	t.Run("SetPlaceSnooze後にIsPlaceSnoozedがtrueを返す", func(t *testing.T) {
+		cleanupPlaceSnoozeKeys(t)
+		ctx := context.Background()
+
+		err := SetPlaceSnooze(ctx, testRedisClient, "user1", "place_abc", 7)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		snoozed, err := IsPlaceSnoozed(ctx, testRedisClient, "user1", "place_abc")
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if !snoozed {
+			t.Error("Expected IsPlaceSnoozed to return true after SetPlaceSnooze")
+		}
+	})
+
+	t.Run("7日分のTTLが正しく設定される", func(t *testing.T) {
+		cleanupPlaceSnoozeKeys(t)
+		ctx := context.Background()
+
+		err := SetPlaceSnooze(ctx, testRedisClient, "user1", "place_abc", 7)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		key := GeneratePlaceSnoozeKey("user1", "place_abc")
+		ttl, err := testRedisClient.TTL(ctx, key).Result()
+		if err != nil {
+			t.Fatalf("Failed to get TTL: %v", err)
+		}
+		// 6日以上残っているはず（テスト実行の遅延を考慮）
+		if ttl < 6*24*time.Hour {
+			t.Errorf("Expected TTL > 6 days, got %v", ttl)
+		}
+	})
+
+	t.Run("異なるユーザーのスヌーズは独立している", func(t *testing.T) {
+		cleanupPlaceSnoozeKeys(t)
+		ctx := context.Background()
+
+		err := SetPlaceSnooze(ctx, testRedisClient, "user1", "place_abc", 7)
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+
+		snoozed, err := IsPlaceSnoozed(ctx, testRedisClient, "user2", "place_abc")
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if snoozed {
+			t.Error("Expected user2's snooze to be unaffected by user1's snooze")
+		}
+	})
+}
+
+func TestIsPlaceSnoozed(t *testing.T) {
+	t.Run("スヌーズ未設定の場合はfalseを返す", func(t *testing.T) {
+		cleanupPlaceSnoozeKeys(t)
+		ctx := context.Background()
+
+		snoozed, err := IsPlaceSnoozed(ctx, testRedisClient, "user1", "place_abc")
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if snoozed {
+			t.Error("Expected IsPlaceSnoozed to return false for missing key")
+		}
+	})
+
+	t.Run("TTL切れのキーはfalseを返す", func(t *testing.T) {
+		cleanupPlaceSnoozeKeys(t)
+		ctx := context.Background()
+
+		// 1ミリ秒TTLで保存
+		key := GeneratePlaceSnoozeKey("user1", "place_expire")
+		testRedisClient.Set(ctx, key, 1, 1*time.Millisecond)
+		time.Sleep(5 * time.Millisecond)
+
+		snoozed, err := IsPlaceSnoozed(ctx, testRedisClient, "user1", "place_expire")
+		if err != nil {
+			t.Fatalf("Unexpected error: %v", err)
+		}
+		if snoozed {
+			t.Error("Expected IsPlaceSnoozed to return false after TTL expiry")
+		}
+	})
+}
+
 func TestIncrementDailyReloadCount(t *testing.T) {
 	t.Run("初回インクリメントで1を返す", func(t *testing.T) {
 		cleanupAllSuggestionKeys(t)

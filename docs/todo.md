@@ -24,26 +24,32 @@
 > 詳細は `docs/notification-roadmap.md` を参照。
 > Issue #270〜#282 の通知基盤（DBモデル・エンドポイント・Push/メールサービス・スケジューラー・フロントエンドUI）はすべて実装済み。
 
-### お店一時スキップ機能（Issue #321）
+### お店一時スヌーズ機能（Issue #321）
 
-> **背景**：気になっているが今日は行けない・行きたくない場合に「N日間このお店を表示しない」と設定できると、提案リストの体感精度が上がる。
+> **背景**：気になっているが今日は行けない・行きたくない場合に「7日間このお店を表示しない」と設定できると、提案リストの体感精度が上がる。
 
 **🔴 RED**
 
-- [ ] `backend/handlers/suggestion_test.go` に `TestGetSuggestions_ExcludesSkippedSpots` テスト追加（スキップ登録済みの場所が提案に含まれないことを検証）
+- [x] `backend/database/redis_test.go` に `TestGeneratePlaceSnoozeKey` / `TestSetPlaceSnooze` / `TestIsPlaceSnoozed` を追加（TTL検証・ユーザー間独立性・期限切れ後false）
+- [x] `backend/handlers/skip_test.go` を新規作成し `TestSnoozePlace` を追加（200返却・Redisへの保存確認・`days`省略で400・`days=0`で400・`days=366`で400・認証なし401）
+- [x] `backend/handlers/suggestion_test.go` に `TestSuggest_SnoozeFilter` を追加（スヌーズ期間中は提案から除外・スヌーズなし施設は通常通り提案）
+- [x] `frontend/app/__tests__/components/discovery-card.test.tsx` にスヌーズボタンのテストを追加（最前面カードに表示・`onSnooze`コールバック呼び出し・`depthFromTop=1`では非表示）
 
 **🟢 GREEN**
 
-- [ ] `backend/models/skip.go` に `SpotSkip` 構造体追加（`user_id uint64`, `place_id string`, `skip_until time.Time`）
-- [ ] `backend/database/migrate.go` の AutoMigrate に `SpotSkip` 追加
-- [ ] `POST /api/spots/:place_id/skip` エンドポイント実装（ボディ: `{ days: int }`）
-- [ ] `backend/handlers/suggestion.go` のフィルタリングで有効期限内スキップ対象の場所を除外
-- [ ] `frontend/app/api/spots.ts` に `skipSpot(placeId: string, days: number)` 追加
-- [ ] 提案カードに「N日間スキップ」ボタン追加・`skipSpot()` 呼び出し実装
+- [x] `backend/database/redis.go` に `GeneratePlaceSnoozeKey(userID, placeID string) string` / `SetPlaceSnooze(ctx, client, userID, placeID string, days int) error` / `IsPlaceSnoozed(ctx, client, userID, placeID string) (bool, error)` を追加（Redisキー: `place:snooze:{userID}:{placeID}`）
+- [x] `backend/handlers/skip.go` に `SnoozeHandler` と `SnoozePlace` メソッドを実装（`POST /api/places/:place_id/snooze?days=N`、`days`はクエリパラメータ必須・1〜365の整数）
+- [x] `backend/services/suggestion.go` に `FilterOutSnoozed(ctx, client, userIDStr string, places []PlaceResult) []PlaceResult` を追加し、`suggestion.go` のフィルタリングパス（キャッシュヒット時・通常時の両方）で呼び出す
+- [x] `frontend/app/api/places.ts` に `snoozePlace(authToken, placeId string, days int)` を追加
+- [x] `frontend/app/hooks/use-snooze.ts` を新規作成（`openSnoozeModal` / `confirmSnooze` / `cancelSnooze`・確認後に楽観的更新してバックグラウンドでAPI呼び出し）
+- [x] `frontend/app/components/SnoozeConfirmModal.tsx` を新規作成（確認モーダルUI）
+- [x] `frontend/app/hooks/use-suggestions.ts` に `useSnooze` を組み込み、returnオブジェクトにモーダル状態を追加
+- [x] `frontend/app/routes/home.tsx` に `SnoozeConfirmModal` をレンダリング追加
+- [x] `frontend/app/components/DiscoveryCard.tsx` にスヌーズボタン追加（`data-testid="skip-button"`・最前面カードのみ・`onSnooze` prop経由）
 
 **🔵 REFACTOR**
 
-- [ ] 期限切れ `SpotSkip` レコードの定期削除をスケジューラーに追加
+- [x] なし
 
 ---
 

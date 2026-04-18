@@ -144,6 +144,8 @@ func main() {
 		Scheduler:   scheduler,
 	}
 
+	snoozeHandler := &handlers.SnoozeHandler{RedisClient: redisClient}
+
 	router := gin.Default()
 	routes.Setup(router, routes.Deps{
 		AuthHandler:         authHandler,
@@ -158,6 +160,7 @@ func main() {
 		DevHandler:          devHandler,
 		BetaHandler:         betaHandler,
 		NotificationHandler: notificationHandler,
+		SnoozeHandler:       snoozeHandler,
 		JWTSecret:           jwtCfg.Secret,
 		RedisClient:         redisClient,
 		AllowedOrigins:      appCfg.CORS.AllowedOrigins,

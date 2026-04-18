@@ -291,6 +291,7 @@ func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID
 		var dailyPlaces []services.PlaceResult
 		if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
 			filtered := services.FilterOutVisited(h.DB, userID, dailyPlaces)
+			filtered = services.FilterOutSnoozed(ctx, h.RedisClient, userIDStr, filtered)
 			if len(filtered) > 0 {
 				interestNames, _ := services.GetUserInterestGenreNames(h.DB, userID)
 				for i := range filtered {
@@ -438,13 +439,19 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		}
 	}
 
-	unvisited := services.FilterOutVisited(h.DB, userID, places)
-	if len(unvisited) == 0 {
+	unVisited := services.FilterOutVisited(h.DB, userID, places)
+	if len(unVisited) == 0 {
 		c.JSON(http.StatusOK, SuggestionResult{IsCompleted: true, Notice: "ALL_VISITED_NEARBY"})
 		return
 	}
 
-	selected, notice := services.BuildPersonalizedSelections(h.DB, userID, unvisited)
+	unSnoozed := services.FilterOutSnoozed(ctx, h.RedisClient, userIDStr, unVisited)
+	if len(unSnoozed) == 0 {
+		c.JSON(http.StatusOK, SuggestionResult{IsCompleted: true, Notice: "ALL_SNOOZED_NEARBY"})
+		return
+	}
+
+	selected, notice := services.BuildPersonalizedSelections(h.DB, userID, unSnoozed)
 
 	if h.RedisClient != nil {
 		data, _ := json.Marshal(selected)

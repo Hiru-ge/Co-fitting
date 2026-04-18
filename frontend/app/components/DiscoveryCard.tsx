@@ -18,6 +18,7 @@ interface DiscoveryCardProps {
   /** スタック内の位置 (0 = 最前面) */
   depthFromTop: number;
   onSwipe?: () => void;
+  onSnooze?: () => void;
 }
 
 const SWIPE_THRESHOLD = 120;
@@ -33,6 +34,7 @@ export default function DiscoveryCard({
   photoUrl,
   depthFromTop,
   onSwipe,
+  onSnooze,
 }: DiscoveryCardProps) {
   const category = getCategoryInfo(pickCategoryFromAPIPlaceTypes(place.types));
   const distance = calcHaversineDistance(
@@ -120,6 +122,21 @@ export default function DiscoveryCard({
 
       {/* 上部の黒グラデーション(MEMO: この実装は上から被せているだけで不格好なので、何か代案があれば変える) */}
       <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-b from-black/80 via-black/50 to-transparent pointer-events-none" />
+
+      {/* スヌーズボタン（最前面カードのみ表示） */}
+      {isTopCard && (
+        <button
+          data-testid="skip-button"
+          className="absolute top-4 right-4 flex items-center justify-center w-11 h-11 bg-black/30 backdrop-blur-md text-white rounded-full active:scale-95 transition-transform"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSnooze?.();
+          }}
+        >
+          <Icon name="snooze" className="text-xl" />
+        </button>
+      )}
 
       {/* バッジ */}
       <div className="absolute top-4 left-4 flex gap-2">

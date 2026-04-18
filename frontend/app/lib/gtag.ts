@@ -85,6 +85,22 @@ export function sendSuggestionSkipped(params: {
   });
 }
 
+export function sendSuggestionSnoozed(params: {
+  placeName: string;
+  category: string;
+  isInterestMatch: boolean;
+  isBreakout: boolean;
+  snoozeDays: number;
+}) {
+  gtag("event", "suggestion_snoozed", {
+    place_name: params.placeName,
+    category: params.category,
+    is_interest_match: params.isInterestMatch,
+    is_breakout: params.isBreakout,
+    snooze_days: params.snoozeDays,
+  });
+}
+
 export function sendSuggestionReloaded(reloadCountRemaining: number) {
   gtag("event", "suggestion_reloaded", {
     reload_count_remaining: reloadCountRemaining,

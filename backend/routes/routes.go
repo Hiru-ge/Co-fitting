@@ -25,6 +25,7 @@ type Deps struct {
 	DevHandler          *handlers.DevHandler
 	BetaHandler         *handlers.BetaHandler
 	NotificationHandler *handlers.NotificationHandler
+	SnoozeHandler       *handlers.SnoozeHandler
 	JWTSecret           string
 	RedisClient         *redis.Client
 	AllowedOrigins      []string
@@ -91,6 +92,9 @@ func Setup(router *gin.Engine, deps Deps) {
 	}
 	if deps.PlacePhotoHandler != nil {
 		api.GET("/places/:placeId/photo", deps.PlacePhotoHandler.GetPhoto)
+	}
+	if deps.SnoozeHandler != nil {
+		api.POST("/places/:place_id/snooze", deps.SnoozeHandler.SnoozePlace)
 	}
 	api.POST("/visits", deps.VisitHandler.CreateVisit)
 	api.GET("/visits", deps.VisitHandler.ListVisits)

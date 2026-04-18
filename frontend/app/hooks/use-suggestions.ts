@@ -7,8 +7,13 @@ import {
   type PlaceWithPhoto,
 } from "~/hooks/use-suggestion-load";
 import { useCheckIn } from "~/hooks/use-check-in";
+import { useSnooze } from "~/hooks/use-snooze";
 import { useToast } from "~/components/Toast";
-import { sendSuggestionViewed, sendSuggestionSkipped } from "~/lib/gtag";
+import {
+  sendSuggestionViewed,
+  sendSuggestionSkipped,
+  sendSuggestionSnoozed,
+} from "~/lib/gtag";
 
 export function useSuggestions(authToken: string) {
   const { showToast } = useToast();
@@ -67,6 +72,28 @@ export function useSuggestions(authToken: string) {
     });
   }
 
+  const snooze = useSnooze({
+    authToken,
+    onConfirmed: () => {
+      const snoozedPlace = suggestionLoad.places[0];
+      if (!snoozedPlace) return;
+      sendSuggestionSnoozed({
+        placeName: snoozedPlace.name,
+        category: pickCategoryFromAPIPlaceTypes(snoozedPlace.types ?? []),
+        isInterestMatch: !!snoozedPlace.is_interest_match,
+        isBreakout: !!snoozedPlace.is_breakout,
+        snoozeDays: 7,
+      });
+      suggestionLoad.setPlaces((prev) => prev.slice(1));
+    },
+  });
+
+  function handleSnooze() {
+    const place = suggestionLoad.places[0];
+    if (!place) return;
+    snooze.openSnoozeModal(place.place_id, place.name);
+  }
+
   const currentPlace: PlaceWithPhoto | undefined = suggestionLoad.places[0];
   const isVisited = currentPlace
     ? checkIn.visitedIds.has(currentPlace.place_id)
@@ -103,11 +130,15 @@ export function useSuggestions(authToken: string) {
     isVisited,
     currentIndex,
     isNearCurrentPlace,
+    isSnoozeModalOpen: snooze.isModalOpen,
     loadSuggestions: suggestionLoad.loadSuggestions,
     handleReload: suggestionLoad.handleReload,
     handleUseDefaultLocation,
     handleGoToSettings,
     handleSwipe,
+    handleSnooze,
+    confirmSnooze: snooze.confirmSnooze,
+    cancelSnooze: snooze.cancelSnooze,
     handleCheckIn: checkIn.handleCheckIn,
     handleXpModalClose: checkIn.handleXpModalClose,
     handleBadgeModalClose: checkIn.handleBadgeModalClose,

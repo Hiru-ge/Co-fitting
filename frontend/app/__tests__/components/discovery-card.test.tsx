@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import DiscoveryCard from "~/components/DiscoveryCard";
 
 vi.mock("~/lib/geolocation", () => ({
@@ -70,35 +70,35 @@ describe("DiscoveryCard ジャンルバッジ", () => {
   });
 });
 
-// 熟練度ベースチャレンジモードバッジテスト
-describe("DiscoveryCard チャレンジモードバッジ（熟練度ベース）", () => {
-  test("is_breakout=true の場合にチャレンジモードバッジが表示される", () => {
+// 熟練度ベースチャレンジバッジテスト
+describe("DiscoveryCard チャレンジバッジ（熟練度ベース）", () => {
+  test("is_breakout=true の場合にチャレンジバッジが表示される", () => {
     renderCard({ is_breakout: true });
-    expect(screen.getByText("チャレンジモード")).toBeTruthy();
+    expect(screen.getByText("チャレンジ")).toBeTruthy();
   });
 
-  test("is_breakout=true の場合、チャレンジモードバッジに赤系カラーが適用される（Issue #222: 視認性改善）", () => {
+  test("is_breakout=true の場合、チャレンジバッジに赤系カラーが適用される（Issue #222: 視認性改善）", () => {
     const { container } = renderCard({ is_breakout: true });
     const badge = Array.from(container.querySelectorAll("span")).find(
-      (el) => el.textContent === "チャレンジモード",
+      (el) => el.textContent === "チャレンジ",
     );
     expect(badge).toBeTruthy();
     expect(badge?.className).toMatch(/red/);
   });
 
-  test("is_breakout=false の場合はチャレンジモードバッジが表示されない", () => {
+  test("is_breakout=false の場合はチャレンジバッジが表示されない", () => {
     renderCard({ is_breakout: false });
-    expect(screen.queryByText("チャレンジモード")).toBeNull();
+    expect(screen.queryByText("チャレンジ")).toBeNull();
   });
 
-  test("is_breakout 未指定の場合はチャレンジモードバッジが表示されない", () => {
+  test("is_breakout 未指定の場合はチャレンジバッジが表示されない", () => {
     renderCard();
-    expect(screen.queryByText("チャレンジモード")).toBeNull();
+    expect(screen.queryByText("チャレンジ")).toBeNull();
   });
 
-  test("is_interest_match=false でも is_breakout が設定されていなければチャレンジモードバッジは表示されない", () => {
+  test("is_interest_match=false でも is_breakout が設定されていなければチャレンジバッジは表示されない", () => {
     renderCard({ is_interest_match: false });
-    expect(screen.queryByText("チャレンジモード")).toBeNull();
+    expect(screen.queryByText("チャレンジ")).toBeNull();
   });
 });
 
@@ -129,5 +129,49 @@ describe("DiscoveryCard Google Maps施設詳細", () => {
     expect(link.getAttribute("href")).toBe(
       "https://www.google.com/maps/place/?q=place_id:place_2",
     );
+  });
+});
+
+// === Issue #321: 7日間スキップボタンのテスト ===
+describe("DiscoveryCard スキップボタン", () => {
+  test("最前面カード（depthFromTop=0）にスキップボタンが表示される", () => {
+    renderCard();
+    expect(screen.getByTestId("skip-button")).toBeTruthy();
+  });
+
+  test("スヌーズボタンをクリックするとonSnoozeが呼ばれる", () => {
+    const onSnooze = vi.fn();
+    render(
+      <DiscoveryCard
+        place={{ ...basePlace }}
+        isVisited={false}
+        userLat={35.658}
+        userLng={139.7016}
+        depthFromTop={0}
+        onSnooze={onSnooze}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("skip-button"));
+    expect(onSnooze).toHaveBeenCalledTimes(1);
+  });
+
+  test("onSnoozeが未指定でもスヌーズボタンのクリックでエラーにならない", () => {
+    renderCard();
+    expect(() => {
+      fireEvent.click(screen.getByTestId("skip-button"));
+    }).not.toThrow();
+  });
+
+  test("スタック奥のカード（depthFromTop>0）ではスキップボタンが表示されない", () => {
+    render(
+      <DiscoveryCard
+        place={{ ...basePlace }}
+        isVisited={false}
+        userLat={35.658}
+        userLng={139.7016}
+        depthFromTop={1}
+      />,
+    );
+    expect(screen.queryByTestId("skip-button")).toBeNull();
   });
 });

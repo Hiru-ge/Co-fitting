@@ -22,6 +22,7 @@ import BadgeModal from "~/components/BadgeModal";
 import CompleteCard from "~/components/CompleteCard";
 import HomeTourModal from "~/components/HomeTourModal";
 import SampleVisitModal from "~/components/SampleVisitModal";
+import SnoozeConfirmModal from "~/components/SnoozeConfirmModal";
 import LocationPermissionModal from "~/components/LocationPermissionModal";
 import PushNotificationBanner from "~/components/PushNotificationBanner";
 
@@ -74,6 +75,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     handleUseDefaultLocation,
     handleGoToSettings,
     handleSwipe,
+    handleSnooze,
+    confirmSnooze,
+    cancelSnooze,
+    isSnoozeModalOpen,
     handleCheckIn,
     handleXpModalClose,
     handleBadgeModalClose,
@@ -166,6 +171,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     photoUrl={place.photoUrl}
                     depthFromTop={i}
                     onSwipe={i === 0 ? handleSwipe : undefined}
+                    onSnooze={i === 0 ? handleSnooze : undefined}
                   />
                 ))}
 
@@ -216,6 +222,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       {/* バッジ獲得モーダル: 同上 */}
       {badgeQueue.length > 0 && (
         <BadgeModal badge={badgeQueue[0]} onClose={handleBadgeModalClose} />
+      )}
+
+      {/* スヌーズ確認モーダル */}
+      {isSnoozeModalOpen && (
+        <SnoozeConfirmModal onConfirm={confirmSnooze} onClose={cancelSnooze} />
       )}
 
       {/* サンプル訪問カード: ツアー中に表示（DiscoveryCardの上） */}

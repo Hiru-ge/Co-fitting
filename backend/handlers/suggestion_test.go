@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -2987,6 +2988,109 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		}
 		if !found {
 			t.Error("営業時間不明の施設がshould_filter_open_now=trueで除外されている（除外されるべきではない）")
+		}
+	})
+}
+
+// TestSuggest_SnoozeFilter は Issue #321 スヌーズ機能のフィルタリングテスト
+func TestSuggest_SnoozeFilter(t *testing.T) {
+	if testRedisClient == nil {
+		t.Skip("Redis not available")
+	}
+
+	snoozePlaces := []services.PlaceResult{
+		{PlaceID: "snooze_place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
+		{PlaceID: "snooze_place_2", Name: "Bar Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"bar"}},
+		{PlaceID: "snooze_place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+	}
+
+	t.Run("スキップ期間中の施設は提案に出ない", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+		database.DeleteKeysByPattern(context.Background(), testRedisClient, "place:snooze:*") //nolint:errcheck
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// snooze_place_1 をスヌーズ済みにする
+		userIDStr := strconv.FormatUint(user.ID, 10)
+		ctx := context.Background()
+		if err := database.SetPlaceSnooze(ctx, testRedisClient, userIDStr, "snooze_place_1", 7); err != nil {
+			t.Fatalf("Failed to set place snooze: %v", err)
+		}
+
+		mock := &mockPlacesClient{Results: snoozePlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		for _, p := range resp {
+			if p.PlaceID == "snooze_place_1" {
+				t.Error("Expected snoozed place 'snooze_place_1' to be excluded from suggestions")
+			}
+		}
+	})
+
+	t.Run("スヌーズしていないお店は通常通り提案に出る", func(t *testing.T) {
+		cleanupUsers(t)
+		cleanupAllSuggestionCache(t)
+		database.DeleteKeysByPattern(context.Background(), testRedisClient, "place:snooze:*") //nolint:errcheck
+
+		user := createTestUser(t)
+		token := generateTestToken(user.ID)
+
+		// snooze_place_1 のみスヌーズ
+		userIDStr := strconv.FormatUint(user.ID, 10)
+		ctx := context.Background()
+		if err := database.SetPlaceSnooze(ctx, testRedisClient, userIDStr, "snooze_place_1", 7); err != nil {
+			t.Fatalf("Failed to set place snooze: %v", err)
+		}
+
+		mock := &mockPlacesClient{Results: snoozePlaces}
+		router := setupSuggestionRouterWithRedis(mock)
+
+		body := map[string]interface{}{
+			"lat":    35.6762,
+			"lng":    139.6503,
+			"radius": 3000,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		foundNonSnoozed := false
+		for _, p := range resp {
+			if p.PlaceID == "snooze_place_2" || p.PlaceID == "snooze_place_3" {
+				foundNonSnoozed = true
+			}
+		}
+		if !foundNonSnoozed {
+			t.Error("Expected non-snoozed places to appear in suggestions")
 		}
 	})
 }
