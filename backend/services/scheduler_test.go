@@ -89,14 +89,67 @@ func cleanupNotificationSettings(t *testing.T) {
 	testDB.Exec("DELETE FROM notification_settings")
 }
 
-// TestSchedulerJobsRegistered はStart()後に4件のジョブが登録されることを検証する
+// TestSchedulerJobsRegistered はStart()後に5件のジョブが登録されることを検証する
 func TestSchedulerJobsRegistered(t *testing.T) {
 	mockPush := &mockPushSender{}
 	sched := services.NewNotificationScheduler(mockPush, nil, testDB)
 	sched.Start()
 	defer sched.Stop()
 
-	assert.Equal(t, 4, services.NotificationSchedulerEntryCount(sched), "4件のジョブが登録されるべき")
+	assert.Equal(t, 5, services.NotificationSchedulerEntryCount(sched), "5件のジョブが登録されるべき")
+}
+
+// TestResetExpiredStreaks_ResetsUsersWhoMissedThisWeek は
+// 当週未訪問かつ streak_count > 0 のユーザーの streak_count が 0 になることを検証する
+func TestResetExpiredStreaks_ResetsUsersWhoMissedThisWeek(t *testing.T) {
+	cleanupNotificationSettings(t)
+	cleanupPushSubscriptions(t)
+	cleanupUsers(t)
+
+	now := time.Now().In(utils.JST)
+	weekday := int(now.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	thisMonday := time.Date(now.Year(), now.Month(), now.Day()-weekday+1, 0, 0, 0, 0, utils.JST)
+	lastWeekVisit := thisMonday.AddDate(0, 0, -3) // 先週の訪問
+
+	// userA: streak_count > 0 かつ先週訪問 → リセット対象
+	userA := createUser(t, "streak-reset-a@example.com")
+	streakLast := lastWeekVisit
+	require.NoError(t, testDB.Model(&userA).Updates(map[string]interface{}{
+		"streak_count": 5,
+		"streak_last":  streakLast,
+	}).Error)
+
+	// userB: streak_count > 0 かつ今週訪問済み → リセット対象外
+	userB := createUser(t, "streak-reset-b@example.com")
+	thisWeekVisit := thisMonday.Add(10 * time.Hour)
+	streakLastB := thisWeekVisit
+	require.NoError(t, testDB.Model(&userB).Updates(map[string]interface{}{
+		"streak_count": 3,
+		"streak_last":  streakLastB,
+	}).Error)
+
+	// userC: streak_count = 0 → リセット不要（対象外）
+	userC := createUser(t, "streak-reset-c@example.com")
+	streakLastC := lastWeekVisit
+	require.NoError(t, testDB.Model(&userC).Updates(map[string]interface{}{
+		"streak_count": 0,
+		"streak_last":  streakLastC,
+	}).Error)
+
+	sched := services.NewNotificationScheduler(nil, nil, testDB)
+	sched.ResetExpiredStreaks()
+
+	var updatedA, updatedB, updatedC models.User
+	require.NoError(t, testDB.First(&updatedA, userA.ID).Error)
+	require.NoError(t, testDB.First(&updatedB, userB.ID).Error)
+	require.NoError(t, testDB.First(&updatedC, userC.ID).Error)
+
+	assert.Equal(t, 0, updatedA.StreakCount, "先週訪問・今週未訪問ユーザーのストリークは0になるべき")
+	assert.Equal(t, 3, updatedB.StreakCount, "今週訪問済みユーザーのストリークは変わらないべき")
+	assert.Equal(t, 0, updatedC.StreakCount, "streak_count=0のユーザーは変わらない")
 }
 
 // TestRunDailySuggestionNotification_SendsToSubscribers はPush購読ユーザーに

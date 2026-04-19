@@ -106,6 +106,26 @@
 
 ---
 
+### ストリーク週次リセットcronジョブ実装（Issue #348）
+
+> **背景**: 訪問しない限り streak_count が永久に保持され続けるため、当週未訪問ユーザーのストリークが正しくリセットされない。日曜0時 JST に未訪問ユーザーの streak_count を 0 にリセットするcronジョブを追加する。
+
+**🔴 RED**
+
+- [x] `backend/services/scheduler_test.go` に `TestSchedulerJobsRegistered` を5件に更新
+- [x] `backend/services/scheduler_test.go` に `TestResetExpiredStreaks_ResetsUsersWhoMissedThisWeek` を追加（先週訪問・今週未訪問 → streak_count=0 / 今週訪問済み → 変化なし / streak_count=0 → 変化なし）
+
+**🟢 GREEN**
+
+- [x] `backend/services/scheduler.go` に `ResetExpiredStreaks()` メソッドを追加（`WHERE streak_count > 0 AND streak_last < thisWeekMonday` のユーザーを一括更新）
+- [x] `backend/services/scheduler.go` の `Start()` に `"0 0 * * 0"` でcronジョブを登録
+
+**🔵 REFACTOR**
+
+- [x] なし（weekStart は既存のものを流用）
+
+---
+
 ### オンボーディングサンプル訪問導線実装（Issue #346）
 
 > **背景**: 新規ユーザーがオンボーディング中に提案→訪問の一連フローを疑似体験できる導線を追加する。訪問履歴には反映しない。Phase 3への先送りを撤回し、Web版でも実装する。

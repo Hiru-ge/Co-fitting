@@ -384,6 +384,20 @@ func (s *NotificationScheduler) SendMonthlySummaryNotifications() {
 	)
 }
 
+// ResetExpiredStreaks は当週（月曜0時〜）未訪問かつ streak_count > 0 のユーザーの
+// streak_count を 0 にリセットする。日曜0時 JST に実行することを想定。
+func (s *NotificationScheduler) ResetExpiredStreaks() {
+	thisWeekMonday := weekStart(time.Now())
+	result := s.db.Model(&models.User{}).
+		Where("streak_count > 0 AND streak_last < ?", thisWeekMonday).
+		Update("streak_count", 0)
+	if result.Error != nil {
+		log.Printf("scheduler: reset expired streaks: %v", result.Error)
+		return
+	}
+	log.Printf("scheduler: reset expired streaks: %d users reset", result.RowsAffected)
+}
+
 // Stop はスケジューラーを停止する
 func (s *NotificationScheduler) Stop() {
 	s.cron.Stop()
@@ -398,6 +412,10 @@ func (s *NotificationScheduler) Start() {
 	// ストリークリマインダー: 毎週日曜7時 JST（今週未訪問で「今日行かないとストリーク切れる」ユーザーに送信）
 	s.cron.AddFunc("0 7 * * 0", func() { //nolint:errcheck
 		s.SendStreakReminderNotifications()
+	})
+	// ストリーク期限切れリセット: 毎週日曜0時 JST（当週未訪問ユーザーの streak_count を 0 に）
+	s.cron.AddFunc("0 0 * * 0", func() { //nolint:errcheck
+		s.ResetExpiredStreaks()
 	})
 	// 週次サマリー: 毎週月曜朝10時 JST
 	s.cron.AddFunc("0 10 * * 1", func() { //nolint:errcheck
