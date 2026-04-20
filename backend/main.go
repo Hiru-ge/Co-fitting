@@ -53,10 +53,10 @@ func initNotificationScheduler(db *gorm.DB, notificationCfg *config.Notification
 	return services.NewNotificationScheduler(pushSvc, emailSvc, db)
 }
 
-func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client, placesAPIKey string) (*handlers.SuggestionHandler, *handlers.PlacePhotoHandler) {
+func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client, placesAPIKey string) (*handlers.SuggestionHandler, *handlers.PlacePhotoHandler, *handlers.PlacePickerHandler) {
 	if placesAPIKey == "" {
 		log.Println("Warning: GOOGLE_PLACES_API_KEY not set, suggestions endpoint disabled")
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	placesClient, err := handlers.NewGooglePlacesClient(placesAPIKey)
@@ -72,6 +72,10 @@ func initPlacesHandlers(db *gorm.DB, redisClient *redis.Client, placesAPIKey str
 		}, &handlers.PlacePhotoHandler{
 			RedisClient: redisClient,
 			APIKey:      placesAPIKey,
+		}, &handlers.PlacePickerHandler{
+			DB:          db,
+			Places:      placesClient,
+			RedisClient: redisClient,
 		}
 }
 
@@ -128,7 +132,7 @@ func main() {
 	genreHandler := &handlers.GenreHandler{DB: db}
 	visitHandler := &handlers.VisitHandler{DB: db, Environment: appCfg.Server.Environment}
 	oauthHandler := initOAuthHandler(db, jwtCfg, redisClient, appCfg.Google.OAuthClientID)
-	suggestionHandler, placePhotoHandler := initPlacesHandlers(db, redisClient, appCfg.Google.PlacesAPIKey)
+	suggestionHandler, placePhotoHandler, placePickerHandler := initPlacesHandlers(db, redisClient, appCfg.Google.PlacesAPIKey)
 	healthHandler := &handlers.HealthHandler{DB: db, RedisClient: redisClient}
 	betaHandler := &handlers.BetaHandler{Passphrase: appCfg.Beta.Passphrase}
 	notificationHandler := &handlers.NotificationHandler{VAPIDPublicKey: appCfg.Notification.VAPIDPublicKey, DB: db}
@@ -156,6 +160,7 @@ func main() {
 		VisitHandler:        visitHandler,
 		SuggestionHandler:   suggestionHandler,
 		PlacePhotoHandler:   placePhotoHandler,
+		PlacePickerHandler:  placePickerHandler,
 		HealthHandler:       healthHandler,
 		DevHandler:          devHandler,
 		BetaHandler:         betaHandler,

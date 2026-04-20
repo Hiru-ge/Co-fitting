@@ -1,6 +1,6 @@
 # TODO — ベータ版ロードマップ
 
-> Phase 2 の実装は一通り完了。現段階は、自分含むユーザーのFBを元にしたブラッシュアップフェーズ。iOS移行前に対応するのは #321（スキップ機能）・#322（LP英語化のみ）・#344（開拓数露出強化）・#346（オンボーディングサンプル訪問導線）・#347（土日リフレッシュリマインダー文言最適化）の5件。#320（効果音）・#345（Receipt of Courage）はiOS版で実装するためPhase 3に移動済み。
+> Phase 2 の実装は一通り完了。現段階は、自分含むユーザーのFBを元にしたブラッシュアップフェーズ。iOS移行前に対応するのは #321（スキップ機能）・#322（LP英語化のみ）・#344（開拓数露出強化）・#346（オンボーディングサンプル訪問導線）・#347（土日リフレッシュリマインダー文言最適化）・#349（マップ行き先指定）の6件。#320（効果音）・#345（Receipt of Courage）はiOS版で実装するためPhase 3に移動済み。#349 実装完了。
 > 現在のドメイン: `roamble.app`（本番）/ `roamble.pages.dev`（Cloudflare Pages デフォルト）
 
 ---
@@ -146,6 +146,33 @@
 **🔵 REFACTOR**
 
 - [x] サンプル訪問UIと状態管理を分離し、iOS移植時に流用しやすい構造にする
+
+---
+
+### マップで行き先指定・提案カード先頭追加機能（Issue #349）
+
+> **背景** 以前から気になっていたお店に狙って訪問できないのは不便なので、お店を指定して提案カードの先頭に入れられる機能を追加する。場所ラベルのピルをタップするとマップが開き、周囲1km内の訪問可能施設からピンを選んで「ここに行く！」を押すとホーム画面に戻り、そのお店が先頭カードに入っている想定。近くに行ってから指定するケースを考えているので、キャッシュへの永続化は行わずセッション内のみ反映。
+
+**🔴 RED**
+
+- [x] `backend/handlers/place_picker_test.go` を新規作成し `TestGetVisitablePlaces` を追加（200で施設リスト返却・`lat`/`lng` 欠けで400・30日以内訪問済みは除外・`VisitableTypes` 外は除外・認証なし401）
+- [x] `frontend/app/__tests__/hooks/use-suggestion-load.test.ts` に `prependPlace` のテストを追加（呼び出し後に指定施設が `places[0]` に来る・上限4枚で既存3枚に追加した場合も先頭に入る）
+- [x] `frontend/app/__tests__/components/PlacePickerMap.test.tsx` を新規作成（マップが表示される・ピンクリックでポップアップが表示される・「ここに行く！」ボタンで `onSelect` コールバックが呼ばれる）
+
+**🟢 GREEN**
+
+- [x] `backend/handlers/place_picker.go` に `PlacePickerHandler` と `GetNearbyVisitablePlaces` メソッドを実装（`GET /api/places/nearby?lat=X&lng=Y`・半径1km固定・`services.IsVisitablePlace` でタイプフィルタ・`services.FilterOutVisited` で30日内訪問済み除外・`services.FilterOutSnoozed` でスヌーズ除外・`GetUserInterestGenreNames`+`GetGenreNameFromTypes` で `is_interest_match`・`IsBreakoutVisit` で `is_breakout` を設定）
+- [x] `backend/routes.go` に `GET /api/places/nearby` ルートを追加
+- [x] `frontend/app/api/places.ts` に `getNearbyVisitablePlaces(authToken: string, lat: number, lng: number): Promise<Place[]>` を追加
+- [x] `frontend/app/hooks/use-suggestion-load.ts` に `prependPlace(place: PlaceWithPhoto) => void` を追加し `use-suggestions.ts` 経由で公開（`places` の先頭に挿入・`originalCardOrder` も更新して CardIndicator のドット表示に対応・描画上限は home.tsx で `slice(0, 4)` で制御）
+- [x] `frontend/app/components/iconPaths.ts` に `gps-fixed`（照準アイコン）を追加
+- [x] `frontend/app/components/AppHeader.tsx` を改修（`onLocationClick` でピルをタップ可能ボタンに・照準アイコン追加・`onClose` prop 追加でピッカーオープン中は戻るボタン+「行き先を選ぶ」表示に切り替え・プロフィールリンク削除）
+- [x] `frontend/app/components/PlacePickerMap.tsx` を新規作成（`@vis.gl/react-google-maps` でマップ表示・`getNearbyVisitablePlaces` でピン取得・`PinMarker` 再利用・ピンタップで施設ポップアップ表示・「ここに行く！」ボタンで `onSelect(place)` を呼ぶ・`fixed` オーバーレイではなくレイアウトフロー内に組み込み AppHeader と「Roamble」ロゴ位置を共有）
+- [x] `frontend/app/routes/home.tsx` に `PlacePickerMap` の表示状態管理と `prependPlace` 呼び出しを追加・`places.slice(0, 3)` を `places.slice(0, 4)` に変更
+
+**🔵 REFACTOR**
+
+- [x] `VisitMap.tsx` と `PlacePickerMap.tsx` の `PinMarker` 共通化は差異が小さく切り出しのメリットが薄いため見送り
 
 ---
 

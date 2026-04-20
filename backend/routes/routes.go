@@ -21,6 +21,7 @@ type Deps struct {
 	VisitHandler        *handlers.VisitHandler
 	SuggestionHandler   *handlers.SuggestionHandler
 	PlacePhotoHandler   *handlers.PlacePhotoHandler
+	PlacePickerHandler  *handlers.PlacePickerHandler
 	HealthHandler       *handlers.HealthHandler
 	DevHandler          *handlers.DevHandler
 	BetaHandler         *handlers.BetaHandler
@@ -97,6 +98,9 @@ func Setup(router *gin.Engine, deps Deps) {
 	}
 	if deps.SnoozeHandler != nil {
 		api.POST("/places/:place_id/snooze", deps.SnoozeHandler.SnoozePlace)
+	}
+	if deps.PlacePickerHandler != nil {
+		api.GET("/places/nearby", deps.PlacePickerHandler.GetNearbyVisitablePlaces)
 	}
 	api.POST("/visits", deps.VisitHandler.CreateVisit)
 	api.GET("/visits", deps.VisitHandler.ListVisits)

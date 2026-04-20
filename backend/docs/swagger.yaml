@@ -1127,6 +1127,54 @@ paths:
       summary: 施設写真URL取得
       tags:
       - Places
+  /api/places/nearby:
+    get:
+      description: 指定した位置情報の周囲1km内から、訪問可能かつ30日以内未訪問の施設を返す。マップ行き先指定機能で利用する。
+      parameters:
+      - description: 緯度
+        in: query
+        name: lat
+        required: true
+        type: number
+      - description: 経度
+        in: query
+        name: lng
+        required: true
+        type: number
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              items:
+                $ref: '#/definitions/services.PlaceResult'
+              type: array
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 行き先候補施設の取得
+      tags:
+      - Places
   /api/suggestions:
     post:
       consumes:

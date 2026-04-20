@@ -1,4 +1,15 @@
 import { apiCall } from "./client";
+import type { Place } from "~/types/suggestion";
+
+export async function getNearbyVisitablePlaces(
+  authToken: string,
+  lat: number,
+  lng: number,
+): Promise<Place[]> {
+  const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+  const data = await apiCall(`/api/places/nearby?${params}`, authToken);
+  return data.places ?? [];
+}
 
 export async function snoozePlace(
   authToken: string,

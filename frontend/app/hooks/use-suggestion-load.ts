@@ -155,6 +155,11 @@ export function useSuggestionLoad({
     await query.refetch();
   }, [query]);
 
+  function prependPlace(place: PlaceWithPhoto) {
+    setPlaces((prev) => [place, ...prev]);
+    setOriginalCardOrder((prev) => [place.place_id, ...prev]);
+  }
+
   return {
     places,
     setPlaces,
@@ -167,5 +172,6 @@ export function useSuggestionLoad({
     isLoading: query.isLoading || (query.isFetching && !isReloading),
     loadSuggestions: handleRetry,
     handleReload,
+    prependPlace,
   };
 }

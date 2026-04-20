@@ -142,5 +142,6 @@ export function useSuggestions(authToken: string) {
     handleCheckIn: checkIn.handleCheckIn,
     handleXpModalClose: checkIn.handleXpModalClose,
     handleBadgeModalClose: checkIn.handleBadgeModalClose,
+    prependPlace: suggestionLoad.prependPlace,
   };
 }

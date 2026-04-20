@@ -13,6 +13,8 @@ import {
   sendSuggestionViewed,
 } from "~/lib/gtag";
 import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
+import { getPlacePhoto } from "~/api/places";
+import type { Place } from "~/types/suggestion";
 import AppHeader from "~/components/AppHeader";
 import DiscoveryCard from "~/components/DiscoveryCard";
 import CardIndicator from "~/components/CardIndicator";
@@ -25,6 +27,7 @@ import SampleVisitModal from "~/components/SampleVisitModal";
 import SnoozeConfirmModal from "~/components/SnoozeConfirmModal";
 import LocationPermissionModal from "~/components/LocationPermissionModal";
 import PushNotificationBanner from "~/components/PushNotificationBanner";
+import PlacePickerMap from "~/components/PlacePickerMap";
 
 export async function clientLoader() {
   const authToken = getToken();
@@ -52,6 +55,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const [isShowTour, setShowTour] = useState(
     () => localStorage.getItem(HOME_TOUR_SEEN_KEY) === null,
   );
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const {
     places,
     isLoading,
@@ -82,7 +86,25 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     handleCheckIn,
     handleXpModalClose,
     handleBadgeModalClose,
+    prependPlace,
   } = useSuggestions(authToken);
+
+  async function handlePlaceSelect(place: Place) {
+    let photoUrl: string | undefined;
+    if (place.photo_reference) {
+      try {
+        photoUrl = await getPlacePhoto(
+          authToken,
+          place.place_id,
+          place.photo_reference,
+        );
+      } catch {
+        // 写真取得失敗は無視してカードは表示する
+      }
+    }
+    prependPlace({ ...place, photoUrl });
+    setIsPickerOpen(false);
+  }
 
   const firstViewSentRef = useRef(false);
   useEffect(() => {
@@ -153,15 +175,29 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <AppHeader
             locationLabel={getTruncatedLocationLabel(currentPlace!.vicinity)}
             isDefaultLocation={isUsingDefaultLocation}
+            onLocationClick={() => setIsPickerOpen(true)}
+            onClose={isPickerOpen ? () => setIsPickerOpen(false) : undefined}
           />
 
-          <main className="flex-1 min-h-0 flex flex-col items-center justify-center px-6 pb-20 pt-4 overflow-hidden">
+          {isPickerOpen && (
+            <PlacePickerMap
+              authToken={authToken}
+              userLat={userPos.lat}
+              userLng={userPos.lng}
+              excludePlaceIds={places.map((p) => p.place_id)}
+              onSelect={handlePlaceSelect}
+            />
+          )}
+
+          <main
+            className={`flex-1 min-h-0 flex flex-col items-center justify-center px-6 pb-20 pt-4 overflow-hidden${isPickerOpen ? " hidden" : ""}`}
+          >
             {places.length > 0 && (
               <div
                 data-tour="discovery-cards"
                 className="flex-1 min-h-0 relative w-full"
               >
-                {places.slice(0, 3).map((place, i) => (
+                {places.slice(0, 4).map((place, i) => (
                   <DiscoveryCard
                     key={place.place_id}
                     place={place}
