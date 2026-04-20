@@ -5,7 +5,7 @@
 //
 // 使い方:
 //
-//	MYSQL_HOST=... MYSQL_USER=... MYSQL_PASSWORD=... MYSQL_DBNAME=... \
+//	MYSQL_HOST=... MYSQL_USER=... MYSQL_PASSWORD=... MYSQL_DATABASE=... MYSQL_PORT=4000 \
 //	go run ./cmd/reset-streak/main.go
 //
 //	# 実行前に対象ユーザー数だけ確認する場合
