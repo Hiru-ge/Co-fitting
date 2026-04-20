@@ -32,7 +32,10 @@ function StatCard({
 }: StatCardProps) {
   return (
     <div className="bg-surface rounded-2xl px-4 py-6 text-center">
-      <Icon name={icon} className={`text-[28px] block mb-1 ${accentClass}`} />
+      <Icon
+        name={icon}
+        className={`text-[28px] block mx-auto mb-1 ${accentClass}`}
+      />
       <div
         className={`text-[52px] font-black leading-none tracking-[-2px] ${accentClass}`}
       >
@@ -110,7 +113,7 @@ export default function SummaryReport({
           <div className="text-center py-12">
             <Icon
               name="progress_activity"
-              className="animate-spin text-[40px] text-primary"
+              className="animate-spin text-[40px] text-primary block mx-auto"
             />
           </div>
         )}
@@ -124,7 +127,10 @@ export default function SummaryReport({
 
             {errorMessage && (
               <div className="text-center py-8 text-[#ff6b6b]">
-                <Icon name="error_outline" className="text-[48px] block mb-3" />
+                <Icon
+                  name="error_outline"
+                  className="text-[48px] block mx-auto mb-3"
+                />
                 <p className="text-[15px] m-0">{errorMessage}</p>
               </div>
             )}
@@ -182,7 +188,7 @@ export default function SummaryReport({
                   <div className="text-center py-8 text-dim">
                     <Icon
                       name="explore_off"
-                      className="text-[48px] block mb-3"
+                      className="text-[48px] block mx-auto mb-3"
                     />
                     <p className="text-base mb-1 text-secondary">
                       この期間の冒険記録がありません
