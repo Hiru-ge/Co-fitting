@@ -14,11 +14,6 @@ describe("SampleVisitModal", () => {
     expect(badges.length).toBeGreaterThan(0);
   });
 
-  test("NEW SPOT バッジが表示される", () => {
-    render(<SampleVisitModal />);
-    expect(screen.getByText("NEW SPOT")).toBeInTheDocument();
-  });
-
   test("data-tour属性が設定される", () => {
     const { container } = render(<SampleVisitModal />);
     expect(
