@@ -33,7 +33,6 @@ var VisitableTypes = map[string]bool{
 	"cafe":             true,
 	"bar":              true,
 	"bakery":           true,
-	"meal_takeaway":    true,
 	"ramen_restaurant": true,
 	// エンタメ
 	"bowling_alley":    true,
@@ -68,7 +67,6 @@ var placeTypeToGenreName = map[string]string{
 	// 飲食
 	"cafe":             "カフェ",
 	"restaurant":       "レストラン",
-	"meal_takeaway":    "レストラン",
 	"bar":              "居酒屋・バー",
 	"night_club":       "居酒屋・バー",
 	"bakery":           "スイーツ・ベーカリー",
@@ -90,6 +88,28 @@ var placeTypeToGenreName = map[string]string{
 	"home_goods_store": "雑貨・セレクトショップ",
 }
 
+// placeTypePriority はジャンル判定の優先順。特化タイプが汎用タイプより先に評価されるよう並べる。
+// Googleが返す types 配列の順序に依存せず、より適切なジャンル名を選ぶために使用する。
+var placeTypePriority = []string{
+	"ramen_restaurant",
+	"cafe",
+	"bakery",
+	"bar",
+	"night_club",
+	"karaoke",
+	"amusement_center",
+	"video_arcade",
+	"bowling_alley",
+	"movie_theater",
+	"book_store",
+	"spa",
+	"public_bath",
+	"sauna",
+	"clothing_store",
+	"home_goods_store",
+	"restaurant",
+}
+
 // breakoutLevelThreshold はチャレンジ判定の熟練度閾値
 // ジャンル熟練度がこのレベル未満（Lv.5以下 = 0〜499XP）ならチャレンジ扱い
 const breakoutLevelThreshold = 6
@@ -100,11 +120,18 @@ const maxDailySuggestions = 3
 // visitedExclusionDays は訪問済みフィルタの閾値日数
 const visitedExclusionDays = 30
 
-// GetGenreNameFromTypes はPlace TypesからGenreTag名を返す（最初にマッチしたもの）
+// GetGenreNameFromTypes はPlace TypesからGenreTag名を返す。
+// placeTypePriority の順で評価し、特化タイプが汎用タイプより優先されるようにする。
 func GetGenreNameFromTypes(types []string) string {
+	typeSet := make(map[string]bool, len(types))
 	for _, t := range types {
-		if name, ok := placeTypeToGenreName[t]; ok {
-			return name
+		typeSet[t] = true
+	}
+	for _, t := range placeTypePriority {
+		if typeSet[t] {
+			if name, ok := placeTypeToGenreName[t]; ok {
+				return name
+			}
 		}
 	}
 	return ""

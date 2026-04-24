@@ -29,11 +29,6 @@ describe("getCategoryInfo", () => {
 });
 
 describe("getCategoryInfo - 追加タイプ（Issue #226）", () => {
-  test("meal_takeaway → テイクアウトのCategoryInfoが返る", () => {
-    const info = getCategoryInfo("meal_takeaway");
-    expect(info.label).not.toBe("お店");
-  });
-
   test("ramen_restaurant → ラーメンのCategoryInfoが返る", () => {
     const info = getCategoryInfo("ramen_restaurant");
     expect(info.label).not.toBe("お店");
@@ -92,19 +87,19 @@ describe("getCategoryInfo - 追加タイプ（Issue #226）", () => {
 });
 
 describe("pickCategoryFromAPIPlaceTypes", () => {
-  test("typesの先頭がCATEGORY_MAPにある場合はそのキーを返す", () => {
+  test("cafeを含む場合はcafeを返す", () => {
     expect(
       pickCategoryFromAPIPlaceTypes(["cafe", "food", "establishment"]),
     ).toBe("cafe");
   });
 
-  test("先頭が未知でも後続に既知のキーがあればそれを返す", () => {
+  test("Googleの順序に関係なくbakeryがrestaurantより優先される", () => {
     expect(
       pickCategoryFromAPIPlaceTypes(["food", "bakery", "establishment"]),
     ).toBe("bakery");
   });
 
-  test("複数未知の後に既知がある場合もマッチする", () => {
+  test("既知タイプが後続にあってもマッチする", () => {
     expect(
       pickCategoryFromAPIPlaceTypes([
         "point_of_interest",
@@ -114,7 +109,7 @@ describe("pickCategoryFromAPIPlaceTypes", () => {
     ).toBe("restaurant");
   });
 
-  test("CATEGORY_MAPにない場合はtypes[0]を返す", () => {
+  test("優先リストにないタイプのみの場合はtypes[0]を返す", () => {
     expect(
       pickCategoryFromAPIPlaceTypes(["unknown_type", "also_unknown"]),
     ).toBe("unknown_type");
@@ -124,15 +119,20 @@ describe("pickCategoryFromAPIPlaceTypes", () => {
     expect(pickCategoryFromAPIPlaceTypes([])).toBe("other");
   });
 
-  test("bakeryのtypesが[food, bakery, ...]の順でもbakeryを返す", () => {
+  test("ramen_restaurantとrestaurantが混在するときramen_restaurantが優先される", () => {
     expect(
       pickCategoryFromAPIPlaceTypes([
+        "restaurant",
+        "ramen_restaurant",
         "food",
-        "bakery",
-        "store",
-        "point_of_interest",
         "establishment",
       ]),
-    ).toBe("bakery");
+    ).toBe("ramen_restaurant");
+  });
+
+  test("meal_takeawayとrestaurantが混在するときrestaurantが返る", () => {
+    expect(
+      pickCategoryFromAPIPlaceTypes(["meal_takeaway", "restaurant", "food"]),
+    ).toBe("restaurant");
   });
 });
