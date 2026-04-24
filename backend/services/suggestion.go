@@ -33,6 +33,7 @@ var VisitableTypes = map[string]bool{
 	"cafe":             true,
 	"bar":              true,
 	"bakery":           true,
+	"ice_cream_shop":   true,
 	"ramen_restaurant": true,
 	// エンタメ
 	"bowling_alley":    true,
@@ -70,6 +71,7 @@ var placeTypeToGenreName = map[string]string{
 	"bar":              "居酒屋・バー",
 	"night_club":       "居酒屋・バー",
 	"bakery":           "スイーツ・ベーカリー",
+	"ice_cream_shop":   "スイーツ・ベーカリー",
 	"ramen_restaurant": "ラーメン・麺類",
 	// 文化
 	"book_store": "書店",
@@ -93,6 +95,7 @@ var placeTypeToGenreName = map[string]string{
 var placeTypePriority = []string{
 	"ramen_restaurant",
 	"cafe",
+	"ice_cream_shop",
 	"bakery",
 	"bar",
 	"night_club",

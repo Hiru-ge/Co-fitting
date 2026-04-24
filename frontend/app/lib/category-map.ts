@@ -43,6 +43,12 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     gradientColor: "from-orange-400 to-amber-600",
     hexColor: "#fb923c",
   },
+  ice_cream_shop: {
+    label: "スイーツ",
+    icon: "icecream",
+    gradientColor: "from-pink-300 to-rose-500",
+    hexColor: "#f9a8d4",
+  },
   ramen_restaurant: {
     label: "ラーメン",
     icon: "ramen_dining",
@@ -132,6 +138,7 @@ export function getCategoryInfo(category: string): CategoryInfo {
 const PLACE_TYPE_PRIORITY = [
   "ramen_restaurant",
   "cafe",
+  "ice_cream_shop",
   "bakery",
   "bar",
   "night_club",
