@@ -603,7 +603,7 @@ func TestSuggestDailyCache(t *testing.T) {
 
 		twoPlaces := []services.PlaceResult{
 			{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-			{PlaceID: "place_2", Name: "Bar Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"bar"}},
+			{PlaceID: "place_2", Name: "Restaurant Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"restaurant"}},
 		}
 
 		mock := &trackingMockPlacesClient{Results: twoPlaces}
@@ -3091,6 +3091,93 @@ func TestSuggest_SnoozeFilter(t *testing.T) {
 		}
 		if !foundNonSnoozed {
 			t.Error("Expected non-snoozed places to appear in suggestions")
+		}
+	})
+}
+
+func TestSuggest_AdultVenueFilter(t *testing.T) {
+	mockPlaces := []services.PlaceResult{
+		{PlaceID: "bar_1", Name: "居酒屋A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Types: []string{"bar", "food"}},
+		{PlaceID: "club_1", Name: "クラブB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Types: []string{"night_club", "entertainment"}},
+		{PlaceID: "cafe_1", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Types: []string{"cafe"}},
+	}
+
+	t.Run("enable_adult_venues=false のユーザーには bar/night_club が含まれない", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// GORM は default:true の bool フィールドで zero value (false) をスキップするため、
+		// Create 後に Save で明示的に false を書き込む
+		user := models.User{
+			Email:             "no-adult@example.com",
+			DisplayName:       "No Adult User",
+			EnableAdultVenues: true,
+		}
+		testDB.Create(&user)
+		user.EnableAdultVenues = false
+		testDB.Save(&user)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		for _, p := range resp {
+			if p.PlaceID == "bar_1" || p.PlaceID == "club_1" {
+				t.Errorf("Expected adult venue %s to be filtered out", p.PlaceID)
+			}
+		}
+		if len(resp) != 1 || resp[0].PlaceID != "cafe_1" {
+			t.Errorf("Expected only cafe_1, got %+v", resp)
+		}
+	})
+
+	t.Run("enable_adult_venues=true のユーザーには bar/night_club が含まれる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:             "with-adult@example.com",
+			DisplayName:       "With Adult User",
+			EnableAdultVenues: true,
+		}
+		testDB.Create(&user)
+		token := generateTestToken(user.ID)
+
+		mock := &mockPlacesClient{Results: mockPlaces}
+		router := setupSuggestionRouter(mock)
+
+		body := map[string]interface{}{"lat": 35.6762, "lng": 139.6503, "radius": 3000}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/suggestions", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		resp := parseSuggestions(t, w.Body.Bytes())
+		ids := map[string]bool{}
+		for _, p := range resp {
+			ids[p.PlaceID] = true
+		}
+		if !ids["bar_1"] && !ids["club_1"] {
+			t.Error("Expected at least one adult venue to be included when enable_adult_venues=true")
 		}
 	})
 }

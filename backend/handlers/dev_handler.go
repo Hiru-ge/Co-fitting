@@ -146,8 +146,9 @@ func (h *DevHandler) TestLogin(c *gin.Context) {
 		}
 
 		user = models.User{
-			Email:       req.Email,
-			DisplayName: req.DisplayName,
+			Email:             req.Email,
+			DisplayName:       req.DisplayName,
+			EnableAdultVenues: true,
 		}
 		if err := h.DB.Create(&user).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})

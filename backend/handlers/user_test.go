@@ -464,6 +464,88 @@ func TestUpdateSearchRadius(t *testing.T) {
 	})
 }
 
+func TestUpdateMe_EnableAdultVenues(t *testing.T) {
+	router := setupUserRouterWithPatch()
+
+	t.Run("enable_adult_venuesをtrueに更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		// GORM は default:true の bool フィールドで zero value (false) をスキップするため、
+		// Create 後に Save で明示的に false を書き込む
+		user := models.User{
+			Email:             "adult@example.com",
+			DisplayName:       "Adult User",
+			EnableAdultVenues: true,
+		}
+		testDB.Create(&user)
+		user.EnableAdultVenues = false
+		testDB.Save(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"enable_adult_venues": true,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp) //nolint:errcheck
+		if resp["enable_adult_venues"] != true {
+			t.Errorf("Expected enable_adult_venues true, got %v", resp["enable_adult_venues"])
+		}
+
+		var updated models.User
+		testDB.First(&updated, user.ID)
+		if !updated.EnableAdultVenues {
+			t.Error("Expected DB enable_adult_venues to be true")
+		}
+	})
+
+	t.Run("enable_adult_venuesをfalseに更新できる", func(t *testing.T) {
+		cleanupUsers(t)
+
+		user := models.User{
+			Email:             "adult2@example.com",
+			DisplayName:       "Adult User2",
+			EnableAdultVenues: true,
+		}
+		testDB.Create(&user)
+
+		token := generateTestToken(user.ID)
+
+		body := map[string]interface{}{
+			"enable_adult_venues": false,
+		}
+		jsonBody, _ := json.Marshal(body)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("PATCH", "/api/users/me", bytes.NewBuffer(jsonBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		router.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("Expected status %d, got %d. Body: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var updated models.User
+		testDB.First(&updated, user.ID)
+		if updated.EnableAdultVenues {
+			t.Error("Expected DB enable_adult_venues to be false")
+		}
+	})
+}
+
 func setupUserRouterWithDelete() *gin.Engine {
 	userHandler := &UserHandler{
 		DB:          testDB,

@@ -220,20 +220,29 @@ const defaultSearchRadius uint = 3000
 
 const maxSearchRadius uint = 50000
 
-func (h *SuggestionHandler) resolveRadius(userID uint64, requestedRadius uint) uint {
+type userSettings struct {
+	radius            uint
+	enableAdultVenues bool
+}
+
+func (h *SuggestionHandler) resolveUserSettings(userID uint64, requestedRadius uint) userSettings {
 	radius := requestedRadius
-	if radius == 0 {
-		var user models.User
-		if err := h.DB.Select("search_radius").First(&user, userID).Error; err == nil && user.SearchRadius > 0 {
+	enableAdultVenues := false
+
+	var user models.User
+	if err := h.DB.Select("search_radius", "enable_adult_venues").First(&user, userID).Error; err == nil {
+		if radius == 0 && user.SearchRadius > 0 {
 			radius = user.SearchRadius
-		} else {
-			radius = defaultSearchRadius
 		}
+		enableAdultVenues = user.EnableAdultVenues
+	}
+	if radius == 0 {
+		radius = defaultSearchRadius
 	}
 	if radius > maxSearchRadius {
 		radius = maxSearchRadius
 	}
-	return radius
+	return userSettings{radius: radius, enableAdultVenues: enableAdultVenues}
 }
 
 func (h *SuggestionHandler) getReloadCount(ctx context.Context, userIDStr, today string) (int, error) {
@@ -281,7 +290,7 @@ func (h *SuggestionHandler) reload(ctx context.Context, userIDStr, today string,
 	return newCount, false, 0, nil
 }
 
-func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID uint64, userIDStr, today string, req suggestionRequest, reloadRemaining int) (*SuggestionResult, bool) {
+func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID uint64, userIDStr, today string, req suggestionRequest, reloadRemaining int, enableAdultVenues bool) (*SuggestionResult, bool) {
 	if h.RedisClient == nil {
 		return nil, false
 	}
@@ -292,6 +301,9 @@ func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID
 		if err := json.Unmarshal([]byte(cached), &dailyPlaces); err == nil && len(dailyPlaces) > 0 {
 			filtered := services.FilterOutVisited(h.DB, userID, dailyPlaces)
 			filtered = services.FilterOutSnoozed(ctx, h.RedisClient, userIDStr, filtered)
+			if !enableAdultVenues {
+				filtered = services.FilterAdultVenues(filtered)
+			}
 			if len(filtered) > 0 {
 				interestNames, _ := services.GetUserInterestGenreNames(h.DB, userID)
 				for i := range filtered {
@@ -391,7 +403,8 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		return
 	}
 
-	req.Radius = h.resolveRadius(userID, req.Radius)
+	settings := h.resolveUserSettings(userID, req.Radius)
+	req.Radius = settings.radius
 
 	ctx := c.Request.Context()
 	today := time.Now().In(utils.JST).Format("2006-01-02")
@@ -413,7 +426,7 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		reloadRemaining = 0
 	}
 
-	if result, found := h.findDailySuggestionCache(ctx, userID, userIDStr, today, req, reloadRemaining); found {
+	if result, found := h.findDailySuggestionCache(ctx, userID, userIDStr, today, req, reloadRemaining, settings.enableAdultVenues); found {
 		c.JSON(http.StatusOK, *result)
 		return
 	}
@@ -424,6 +437,10 @@ func (h *SuggestionHandler) Suggest(c *gin.Context) {
 		log.Printf("NearbySearch error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to search nearby places", "code": "INTERNAL_ERROR"})
 		return
+	}
+
+	if !settings.enableAdultVenues {
+		places = services.FilterAdultVenues(places)
 	}
 
 	if len(places) == 0 {

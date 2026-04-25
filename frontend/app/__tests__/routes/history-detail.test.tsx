@@ -39,6 +39,7 @@ const mockUser: User = {
   email: "test@example.com",
   display_name: "Test User",
   search_radius: 500,
+  enable_adult_venues: true,
   avatar_url: null,
   created_at: "2026-02-15T10:00:00Z",
   updated_at: "2026-02-15T10:00:00Z",

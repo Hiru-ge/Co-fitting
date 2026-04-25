@@ -357,8 +357,9 @@ const minSearchRadius uint = 3000
 const maxSettingRadius uint = 30000
 
 type updateMeRequest struct {
-	DisplayName  *string `json:"display_name"`
-	SearchRadius *uint   `json:"search_radius"`
+	DisplayName       *string `json:"display_name"`
+	SearchRadius      *uint   `json:"search_radius"`
+	EnableAdultVenues *bool   `json:"enable_adult_venues"`
 }
 
 type updateMeResponse struct {
@@ -368,11 +369,11 @@ type updateMeResponse struct {
 
 // UpdateMe godoc
 // @Summary      ユーザー情報更新
-// @Description  JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius 変更時はリロード1回分を消費して提案キャッシュをクリアする。
+// @Description  JWT認証済みユーザーの表示名・提案半径・成人向け施設設定を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius または enable_adult_venues 変更時はリロード1回分を消費して提案キャッシュをクリアする。
 // @Tags         Users
 // @Accept       json
 // @Produce      json
-// @Param        refresh_suggestions  query  bool  false  "true の場合（提案半径変更時）、提案キャッシュをクリアしリロードカウントを消費する"
+// @Param        refresh_suggestions  query  bool  false  "true の場合（提案半径または成人向け施設設定変更時）、提案キャッシュをクリアしリロードカウントを消費する"
 // @Param        body  body  updateMeRequest  true  "更新情報"
 // @Success      200  {object}  updateMeResponse
 // @Failure      400  {object}  map[string]string
@@ -394,8 +395,8 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 
-	if req.DisplayName == nil && req.SearchRadius == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "display_name or search_radius is required"})
+	if req.DisplayName == nil && req.SearchRadius == nil && req.EnableAdultVenues == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "display_name or search_radius or enable_adult_venues is required"})
 		return
 	}
 
@@ -435,15 +436,18 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 	if req.SearchRadius != nil {
 		user.SearchRadius = *req.SearchRadius
 	}
+	if req.EnableAdultVenues != nil {
+		user.EnableAdultVenues = *req.EnableAdultVenues
+	}
 
 	if err := h.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update user"})
 		return
 	}
 
-	// refresh_suggestions=true かつ提案半径変更時は提案キャッシュをクリアしリロードカウントを消費する
+	// refresh_suggestions=true かつ提案に影響する設定変更時は提案キャッシュをクリアしリロードカウントを消費する
 	reloadCountRemaining := database.MaxDailyReloads
-	if c.Query("refresh_suggestions") == "true" && req.SearchRadius != nil && h.RedisClient != nil {
+	if c.Query("refresh_suggestions") == "true" && (req.SearchRadius != nil || req.EnableAdultVenues != nil) && h.RedisClient != nil {
 		ctx := c.Request.Context()
 		today := time.Now().In(utils.JST).Format("2006-01-02")
 		userIDStr := fmt.Sprintf("%d", userID)

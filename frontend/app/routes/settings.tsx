@@ -83,6 +83,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             genres={genres}
             initialInterests={interests}
             initialRadius={user.search_radius ?? 10000}
+            initialEnableAdultVenues={user.enable_adult_venues ?? false}
           />
         )}
         {activeTab === "notification" && (

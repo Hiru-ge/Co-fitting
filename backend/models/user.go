@@ -3,18 +3,18 @@ package models
 import "time"
 
 type User struct {
-	ID           uint64     `gorm:"primaryKey" json:"id"`
-	Email        string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
-	DisplayName  string     `gorm:"not null" json:"display_name"`
-	AvatarURL    *string    `json:"avatar_url"`
-	Level        int        `gorm:"default:1;not null" json:"level"`
-	TotalXP      int        `gorm:"default:0;not null" json:"total_xp"`
-	StreakCount  int        `gorm:"default:0;not null" json:"streak_count"`
-	StreakLast   *time.Time `json:"streak_last"`
-	SearchRadius uint       `gorm:"default:10000;not null" json:"search_radius"`
-	SettingsJSON *string    `gorm:"type:json" json:"settings_json"`
-	CreatedAt    time.Time  `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt    time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
+	ID                uint64     `gorm:"primaryKey" json:"id"`
+	Email             string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
+	DisplayName       string     `gorm:"not null" json:"display_name"`
+	AvatarURL         *string    `json:"avatar_url"`
+	Level             int        `gorm:"default:1;not null" json:"level"`
+	TotalXP           int        `gorm:"default:0;not null" json:"total_xp"`
+	StreakCount       int        `gorm:"default:0;not null" json:"streak_count"`
+	StreakLast        *time.Time `json:"streak_last"`
+	SearchRadius      uint       `gorm:"default:10000;not null" json:"search_radius"`
+	EnableAdultVenues bool       `gorm:"default:true;not null" json:"enable_adult_venues"`
+	CreatedAt         time.Time  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt         time.Time  `gorm:"autoUpdateTime" json:"updated_at"`
 
 	Visits []Visit `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }

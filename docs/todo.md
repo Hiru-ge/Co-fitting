@@ -176,6 +176,34 @@
 
 ---
 
+### 成人向け施設（居酒屋・バー・クラブ）提案設定（Issue #350）
+
+> **背景**: `bar`（居酒屋・バー）・`night_club`（クラブ）は成人向け施設のため、成人していないユーザーが意図せず提案を受けることがある。設定画面から「提案に含める/含めない」をON/OFFできるようにする。デフォルトはオフ（含めない）とし、ユーザーが任意でオンにする。合わせて `User` モデルの未使用フィールド `settings_json` を削除する。
+
+**🔴 RED**
+
+- [x] `backend/services/suggestion_test.go` に `TestFilterAdultVenues` を追加（`bar` タイプは除外される・`night_club` タイプは除外される・それ以外のタイプは除外されない・空スライスは空を返す）
+- [x] `backend/handlers/user_test.go` に `TestUpdateMe_EnableAdultVenues` を追加（`enable_adult_venues=true` で200・保存値が正しく反映される・`refresh_suggestions=true` で提案キャッシュがクリアされる）
+- [x] `backend/handlers/suggestion_test.go` に `TestSuggest_AdultVenueFilter` を追加（`enable_adult_venues=false` のユーザーには `bar`/`night_club` が含まれない・`enable_adult_venues=true` のユーザーには含まれる）
+
+**🟢 GREEN**
+
+- [x] `backend/models/user.go` の `User` struct に `EnableAdultVenues bool` フィールド追加（`gorm:"default:false;not null" json:"enable_adult_venues"`）・`SettingsJSON *string` フィールドを削除（`AutoMigrate` が `enable_adult_venues` カラムを自動追加する）
+- [x] `backend/database/migrate.go` に `dropLegacyColumns(db *gorm.DB) error` を `Migrate` より上に追加し `Migrate` の `AutoMigrate` 完了後に呼び出す。`db.Migrator().HasColumn(&models.User{}, "settings_json")` で存在確認してから `db.Migrator().DropColumn(&models.User{}, "settings_json")` を実行する（本番・ローカル・テストDBのいずれでも安全に動作するよう、カラムが存在しない場合はスキップ）
+- [x] `backend/services/suggestion.go` に `AdultVenueTypes = map[string]bool{"bar": true, "night_club": true}` と `FilterAdultVenues(places []PlaceResult) []PlaceResult` を追加
+- [x] `backend/handlers/suggestion.go` の `resolveRadius` を `resolveUserSettings(userID uint64) (radius uint, enableAdultVenues bool)` に拡張し、`Suggest` 内で `enable_adult_venues=false` の場合に `FilterAdultVenues` を適用（`fetchPlacesFromCacheOrAPI` の後・`FilterOpenNowPlaces` の前）。`findDailySuggestionCache` 内でも同様に適用
+- [x] `backend/handlers/user.go` の `updateMeRequest` に `EnableAdultVenues *bool json:"enable_adult_venues"` を追加し `UpdateMe` で保存。設定変更時は `refresh_suggestions=true` 時にキャッシュクリア（既存の `search_radius` 変更と同じパターン）
+- [x] `frontend/app/types/auth.ts` の `User` 型に `enable_adult_venues: boolean` を追加
+- [x] `frontend/app/api/users.ts` に `updateAdultVenueSetting(authToken: string, enabled: boolean, refreshSuggestions?: boolean): Promise<{ reload_count_remaining: number }>` を追加
+- [x] `frontend/app/routes/settings.tsx` の `clientLoader` で `user.enable_adult_venues` を `SuggestionTab` に渡す
+- [x] `frontend/app/components/SuggestionTab.tsx` に「居酒屋・バー・クラブを提案に含める」トグルスイッチセクションを追加（初期値は `user.enable_adult_venues`・保存時は `RefreshSuggestionsModal` を経由してキャッシュクリア）
+
+**🔵 REFACTOR**
+
+- [x] なし
+
+---
+
 ## Phase 3 計画（iOS）— #321・#322・#344・#346 対応後に着手
 
 ### XP獲得・バッジ取得時の効果音追加（Issue #320）

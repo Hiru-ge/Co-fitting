@@ -3,6 +3,7 @@ export interface User {
   email: string;
   display_name: string;
   search_radius: number;
+  enable_adult_venues: boolean;
   avatar_url: string | null;
   created_at: string;
   updated_at: string;

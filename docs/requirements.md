@@ -454,7 +454,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 │ total_xp     │
 │ streak_count │     ┌──────────────────┐     ┌──────────────────┐
 │ streak_last  │     │  visit_history   │     │   user_badges    │
-│ settings_json│     ├──────────────────┤     ├──────────────────┤
+│ enable_adult_│     ├──────────────────┤     ├──────────────────┤
 │ created_at   │──┐  │ id (PK)          │  ┌──│ id (PK)          │
 │ updated_at   │  └─→│ user_id (FK)     │  │  │ user_id (FK)     │←─┐
 └──────────────┘     │ place_id (Google)│  │  │ badge_id (FK)    │   │
@@ -528,7 +528,7 @@ Phase 0のフィードバックを反映し、以下を追加。Phase 0で後回
 | Method | Path | Phase |
 |--------|------|-------|
 | GET | `/api/users/me` | Phase 0 | |
-| PATCH | `/api/users/me` | Phase 1 | display_name・search_radius を更新可（avatar_urlはGoogle提供）。`?refresh_suggestions=true` を付与 + search_radius 変更時はキャッシュクリア + リロードカウントインクリメント。レスポンスに `reload_count_remaining` を含む |
+| PATCH | `/api/users/me` | Phase 1 | display_name・search_radius・enable_adult_venues を更新可（avatar_urlはGoogle提供）。`?refresh_suggestions=true` を付与 + search_radius または enable_adult_venues 変更時はキャッシュクリア + リロードカウントインクリメント。レスポンスに `reload_count_remaining` を含む |
 | GET | `/api/users/me/stats` | Phase 1 | |
 | DELETE | `/api/users/me` | Phase 1 | |
 | GET | `/api/users/me/interests` | Phase 1 |

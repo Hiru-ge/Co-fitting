@@ -153,9 +153,10 @@ func (h *OAuthHandler) GoogleOAuth(c *gin.Context) {
 		}
 
 		user = models.User{
-			Email:       userInfo.Email,
-			DisplayName: displayName,
-			AvatarURL:   avatarURL,
+			Email:             userInfo.Email,
+			DisplayName:       displayName,
+			AvatarURL:         avatarURL,
+			EnableAdultVenues: true,
 		}
 
 		if err := h.DB.Create(&user).Error; err != nil {

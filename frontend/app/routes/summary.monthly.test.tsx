@@ -76,6 +76,7 @@ const mockUser = {
   email: "test@example.com",
   display_name: "テストユーザー",
   search_radius: 1000,
+  enable_adult_venues: true,
   avatar_url: null,
   created_at: "2024-01-01T00:00:00Z",
   updated_at: "2024-01-01T00:00:00Z",

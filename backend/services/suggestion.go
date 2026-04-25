@@ -53,6 +53,31 @@ var VisitableTypes = map[string]bool{
 	"sauna":       true,
 }
 
+// AdultVenueTypes は成人向け施設タイプ（居酒屋・バー・クラブ）
+var AdultVenueTypes = map[string]bool{
+	"bar":        true,
+	"night_club": true,
+}
+
+// FilterAdultVenues は成人向け施設（居酒屋・バー・クラブ）を除外する。
+// ユーザーの enable_adult_venues が false の場合に呼び出す。
+func FilterAdultVenues(places []PlaceResult) []PlaceResult {
+	filtered := make([]PlaceResult, 0, len(places))
+	for _, p := range places {
+		adult := false
+		for _, t := range p.Types {
+			if AdultVenueTypes[t] {
+				adult = true
+				break
+			}
+		}
+		if !adult {
+			filtered = append(filtered, p)
+		}
+	}
+	return filtered
+}
+
 // IsVisitablePlace は施設タイプが提案対象かどうかを返す
 func IsVisitablePlace(types []string) bool {
 	for _, t := range types {

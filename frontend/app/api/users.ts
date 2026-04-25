@@ -30,6 +30,20 @@ export async function updateSearchRadius(
   });
 }
 
+export async function updateAdultVenueSetting(
+  authToken: string,
+  enabled: boolean,
+  refreshSuggestions?: boolean,
+): Promise<{ reload_count_remaining: number }> {
+  const url = refreshSuggestions
+    ? "/api/users/me?refresh_suggestions=true"
+    : "/api/users/me";
+  return apiCall(url, authToken, {
+    method: "PATCH",
+    body: JSON.stringify({ enable_adult_venues: enabled }),
+  });
+}
+
 export async function deleteAccount(authToken: string): Promise<void> {
   await apiCall("/api/users/me", authToken, {
     method: "DELETE",

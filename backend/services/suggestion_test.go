@@ -182,6 +182,55 @@ func TestFilterOutVisited(t *testing.T) {
 	}
 }
 
+func TestFilterAdultVenues(t *testing.T) {
+	t.Run("barタイプの施設が除外される", func(t *testing.T) {
+		input := []services.PlaceResult{
+			{PlaceID: "bar_1", Types: []string{"bar", "food"}},
+			{PlaceID: "cafe_1", Types: []string{"cafe"}},
+		}
+		result := services.FilterAdultVenues(input)
+		if len(result) != 1 {
+			t.Fatalf("expected 1 place, got %d", len(result))
+		}
+		if result[0].PlaceID != "cafe_1" {
+			t.Fatalf("expected cafe_1, got %s", result[0].PlaceID)
+		}
+	})
+
+	t.Run("night_clubタイプの施設が除外される", func(t *testing.T) {
+		input := []services.PlaceResult{
+			{PlaceID: "club_1", Types: []string{"night_club", "entertainment"}},
+			{PlaceID: "restaurant_1", Types: []string{"restaurant"}},
+		}
+		result := services.FilterAdultVenues(input)
+		if len(result) != 1 {
+			t.Fatalf("expected 1 place, got %d", len(result))
+		}
+		if result[0].PlaceID != "restaurant_1" {
+			t.Fatalf("expected restaurant_1, got %s", result[0].PlaceID)
+		}
+	})
+
+	t.Run("成人向け以外のタイプは除外されない", func(t *testing.T) {
+		input := []services.PlaceResult{
+			{PlaceID: "cafe_1", Types: []string{"cafe"}},
+			{PlaceID: "restaurant_1", Types: []string{"restaurant"}},
+			{PlaceID: "karaoke_1", Types: []string{"karaoke"}},
+		}
+		result := services.FilterAdultVenues(input)
+		if len(result) != 3 {
+			t.Fatalf("expected 3 places, got %d", len(result))
+		}
+	})
+
+	t.Run("空スライスは空を返す", func(t *testing.T) {
+		result := services.FilterAdultVenues([]services.PlaceResult{})
+		if len(result) != 0 {
+			t.Fatalf("expected 0 places, got %d", len(result))
+		}
+	})
+}
+
 func TestIsBreakoutVisit(t *testing.T) {
 	cleanupUsers(t)
 	user := createUser(t, "breakout@example.com")

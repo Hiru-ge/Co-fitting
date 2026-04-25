@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { updateInterests, updateSearchRadius } from "~/api/users";
+import {
+  updateInterests,
+  updateSearchRadius,
+  updateAdultVenueSetting,
+} from "~/api/users";
 import { sendInterestsUpdated, sendSearchRadiusUpdated } from "~/lib/gtag";
 import type { GenreTag, Interest } from "~/types/genre";
 import FormMessageDisplay from "~/components/FormMessageDisplay";
@@ -19,6 +23,7 @@ interface SuggestionTabProps {
   genres: GenreTag[];
   initialInterests: Interest[];
   initialRadius: number;
+  initialEnableAdultVenues: boolean;
 }
 
 function RefreshSuggestionsModal({
@@ -65,6 +70,7 @@ export default function SuggestionTab({
   genres,
   initialInterests,
   initialRadius,
+  initialEnableAdultVenues,
 }: SuggestionTabProps) {
   const [selectedGenreIds, setSelectedGenreIds] = useState<number[]>(
     initialInterests.map((i) => i.genre_tag_id),
@@ -76,10 +82,16 @@ export default function SuggestionTab({
   const radiusForm = useFormMessage();
   const [isSavingRadius, setIsSavingRadius] = useState(false);
 
-  const [showRefreshModal, setShowRefreshModal] = useState(false);
-  const [pendingSave, setPendingSave] = useState<"interests" | "radius" | null>(
-    null,
+  const [enableAdultVenues, setEnableAdultVenues] = useState<boolean>(
+    initialEnableAdultVenues,
   );
+  const adultVenueForm = useFormMessage();
+  const [isSavingAdultVenue, setIsSavingAdultVenue] = useState(false);
+
+  const [showRefreshModal, setShowRefreshModal] = useState(false);
+  const [pendingSave, setPendingSave] = useState<
+    "interests" | "radius" | "adultVenue" | null
+  >(null);
 
   function updateSelectedGenres(id: number) {
     setSelectedGenreIds((prev) =>
@@ -101,6 +113,22 @@ export default function SuggestionTab({
       interestForm.setError("興味ジャンルの保存に失敗しました");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function saveAdultVenueSetting(withRefresh: boolean) {
+    setIsSavingAdultVenue(true);
+    try {
+      await updateAdultVenueSetting(authToken, enableAdultVenues, withRefresh);
+      adultVenueForm.setMsg(
+        withRefresh
+          ? "設定を保存しました"
+          : "設定は保存されました。提案は明日リセット時に反映されます",
+      );
+    } catch {
+      adultVenueForm.setError("設定の保存に失敗しました");
+    } finally {
+      setIsSavingAdultVenue(false);
     }
   }
 
@@ -135,12 +163,21 @@ export default function SuggestionTab({
     setShowRefreshModal(true);
   }
 
+  async function handleSaveAdultVenue(e: React.FormEvent) {
+    e.preventDefault();
+    adultVenueForm.reset();
+    setPendingSave("adultVenue");
+    setShowRefreshModal(true);
+  }
+
   async function handleConfirmRefresh() {
     setShowRefreshModal(false);
     if (pendingSave === "interests") {
       await saveInterests(true);
     } else if (pendingSave === "radius") {
       await saveRadius(true);
+    } else if (pendingSave === "adultVenue") {
+      await saveAdultVenueSetting(true);
     }
     setPendingSave(null);
   }
@@ -238,6 +275,53 @@ export default function SuggestionTab({
         </form>
       </section>
 
+      <section className="bg-white/5 rounded-2xl border border-white/10 shadow-sm p-5">
+        <h2 className="text-base font-bold text-gray-200 mb-2 flex items-center gap-2">
+          <Icon name="sport-bar" className="text-primary text-xl" />
+          年齢に合わせた提案
+        </h2>
+        <p className="text-sm text-gray-500 mb-4">
+          居酒屋・バー・クラブを提案に含めるか設定します。
+        </p>
+        <form onSubmit={handleSaveAdultVenue} className="space-y-4">
+          <label className="flex items-center justify-between cursor-pointer">
+            <span className="text-sm text-gray-300">
+              居酒屋・バー・クラブを提案に含める
+            </span>
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only"
+                checked={enableAdultVenues}
+                onChange={(e) => setEnableAdultVenues(e.target.checked)}
+                aria-label="居酒屋・バー・クラブを提案に含める"
+              />
+              <div
+                className={`w-11 h-6 rounded-full transition-colors ${
+                  enableAdultVenues ? "bg-primary" : "bg-gray-600"
+                }`}
+              />
+              <div
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  enableAdultVenues ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </div>
+          </label>
+          <FormMessageDisplay
+            success={adultVenueForm.msg}
+            error={adultVenueForm.error}
+          />
+          <button
+            type="submit"
+            disabled={isSavingAdultVenue}
+            className={SUBMIT_CLASS}
+          >
+            {isSavingAdultVenue ? "保存中..." : "設定を保存"}
+          </button>
+        </form>
+      </section>
+
       {showRefreshModal && (
         <RefreshSuggestionsModal
           onClose={() => {
@@ -245,7 +329,7 @@ export default function SuggestionTab({
             setPendingSave(null);
           }}
           onConfirm={handleConfirmRefresh}
-          isSaving={isSaving || isSavingRadius}
+          isSaving={isSaving || isSavingRadius || isSavingAdultVenue}
         />
       )}
     </div>

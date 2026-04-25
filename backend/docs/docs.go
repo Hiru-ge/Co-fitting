@@ -1188,7 +1188,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "JWT認証済みユーザーの表示名・提案半径を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius 変更時はリロード1回分を消費して提案キャッシュをクリアする。",
+                "description": "JWT認証済みユーザーの表示名・提案半径・成人向け施設設定を更新する（各フィールドはオプショナル）。refresh_suggestions=true かつ search_radius または enable_adult_venues 変更時はリロード1回分を消費して提案キャッシュをクリアする。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1202,7 +1202,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "boolean",
-                        "description": "true の場合（提案半径変更時）、提案キャッシュをクリアしリロードカウントを消費する",
+                        "description": "true の場合（提案半径または成人向け施設設定変更時）、提案キャッシュをクリアしリロードカウントを消費する",
                         "name": "refresh_suggestions",
                         "in": "query"
                     },
@@ -2472,6 +2472,9 @@ const docTemplate = `{
                 "display_name": {
                     "type": "string"
                 },
+                "enable_adult_venues": {
+                    "type": "boolean"
+                },
                 "search_radius": {
                     "type": "integer"
                 }
@@ -2492,6 +2495,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "enable_adult_venues": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2503,9 +2509,6 @@ const docTemplate = `{
                 },
                 "search_radius": {
                     "type": "integer"
-                },
-                "settings_json": {
-                    "type": "string"
                 },
                 "streak_count": {
                     "type": "integer"
@@ -2593,6 +2596,9 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "enable_adult_venues": {
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -2601,9 +2607,6 @@ const docTemplate = `{
                 },
                 "search_radius": {
                     "type": "integer"
-                },
-                "settings_json": {
-                    "type": "string"
                 },
                 "streak_count": {
                     "type": "integer"
