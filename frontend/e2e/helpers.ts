@@ -15,7 +15,6 @@ export interface MockSuggestionPlace {
   lat: number;
   lng: number;
   rating: number;
-  types: string[];
   is_interest_match?: boolean;
   is_breakout?: boolean;
   photo_reference?: string;
@@ -134,7 +133,6 @@ export function samplePlaces(prefix: string): MockSuggestionPlace[] {
       lat: 35.658,
       lng: 139.701,
       rating: 4.2,
-      types: ["cafe"],
       is_interest_match: true,
       is_breakout: false,
     },
@@ -145,7 +143,6 @@ export function samplePlaces(prefix: string): MockSuggestionPlace[] {
       lat: 35.659,
       lng: 139.702,
       rating: 4.1,
-      types: ["bowling_alley"],
       is_interest_match: false,
       is_breakout: true,
     },
@@ -156,7 +153,6 @@ export function samplePlaces(prefix: string): MockSuggestionPlace[] {
       lat: 35.66,
       lng: 139.703,
       rating: 4.0,
-      types: ["restaurant"],
       is_interest_match: true,
       is_breakout: false,
     },

@@ -5,7 +5,6 @@ import {
   type SetStateAction,
 } from "react";
 import { createVisit } from "~/api/visits";
-import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import {
   sendBadgeEarned,
   sendDailyCompleted,
@@ -65,7 +64,7 @@ export function useCheckIn({
 
     setIsCheckingIn(true);
     try {
-      const category = pickCategoryFromAPIPlaceTypes(place.types ?? []);
+      const category = place.display_type;
 
       const result: CreateVisitResponse = await createVisit(authToken, {
         place_id: place.place_id,
@@ -75,7 +74,6 @@ export function useCheckIn({
         lat: place.lat,
         lng: place.lng,
         photo_reference: place.photo_reference,
-        place_types: place.types,
         visited_at: new Date().toISOString(),
         user_lat: userPos.lat,
         user_lng: userPos.lng,

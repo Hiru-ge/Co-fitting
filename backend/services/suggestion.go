@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"math/rand/v2"
+	"strings"
 	"time"
 
 	"github.com/Hiru-ge/roamble/database"
@@ -13,28 +14,57 @@ import (
 
 // PlaceResult は場所提案APIの個別施設を表す
 type PlaceResult struct {
-	PlaceID         string   `json:"place_id"`
-	Name            string   `json:"name"`
-	Vicinity        string   `json:"vicinity"`
-	Lat             float64  `json:"lat"`
-	Lng             float64  `json:"lng"`
-	Rating          float32  `json:"rating"`
-	Types           []string `json:"types"`
-	PhotoReference  string   `json:"photo_reference,omitempty"`
-	IsInterestMatch *bool    `json:"is_interest_match"`
-	IsBreakout      *bool    `json:"is_breakout"`
-	IsOpenNow       *bool    `json:"is_open_now,omitempty"`
+	PlaceID         string  `json:"place_id"`
+	Name            string  `json:"name"`
+	Vicinity        string  `json:"vicinity"`
+	Lat             float64 `json:"lat"`
+	Lng             float64 `json:"lng"`
+	Rating          float32 `json:"rating"`
+	PrimaryType     string  `json:"primary_type"`
+	DisplayType     string  `json:"display_type,omitempty"`
+	PhotoReference  string  `json:"photo_reference,omitempty"`
+	IsInterestMatch *bool   `json:"is_interest_match"`
+	IsBreakout      *bool   `json:"is_breakout"`
+	IsOpenNow       *bool   `json:"is_open_now,omitempty"`
 }
 
-// VisitableTypes は提案対象とする施設タイプの許可リスト
+// placeTypeToDisplayType は表示用タイプへのマッピング。
+// フロントはこのキーを使って表示するだけにし、集約ロジックはバックエンドで一元化する。
+var placeTypeToDisplayType = map[string]string{
+	"cafe":                        "cafe",
+	"coffee_shop":                 "cafe",
+	"tea_house":                   "cafe",
+	"restaurant":                  "restaurant",
+	"bar":                         "bar",
+	"japanese_izakaya_restaurant": "bar",
+	"yakitori_restaurant":         "bar",
+	"wine_bar":                    "bar",
+	"night_club":                  "night_club",
+	"bakery":                      "bakery",
+	"ice_cream_shop":              "ice_cream_shop",
+	"ramen_restaurant":            "ramen_restaurant",
+	"book_store":                  "book_store",
+	"movie_theater":               "movie_theater",
+	"bowling_alley":               "bowling_alley",
+	"karaoke":                     "karaoke",
+	"amusement_center":            "amusement_center",
+	"video_arcade":                "video_arcade",
+	"spa":                         "spa",
+	"public_bath":                 "public_bath",
+	"sauna":                       "sauna",
+	"clothing_store":              "clothing_store",
+	"home_goods_store":            "home_goods_store",
+}
+
+// VisitableTypes は Google Places API の includedTypes に渡す抽象タイプの一覧。
+// 具体タイプ（ramen_restaurant 等）はここに含めず、抽象タイプ（restaurant）に包含させる(∵ includedTypesは50種類までしか指定できないため)
 var VisitableTypes = map[string]bool{
 	// グルメ
-	"restaurant":       true,
-	"cafe":             true,
-	"bar":              true,
-	"bakery":           true,
-	"ice_cream_shop":   true,
-	"ramen_restaurant": true,
+	"restaurant":     true,
+	"cafe":           true,
+	"bar":            true,
+	"bakery":         true,
+	"ice_cream_shop": true,
 	// エンタメ
 	"bowling_alley":    true,
 	"movie_theater":    true,
@@ -55,8 +85,11 @@ var VisitableTypes = map[string]bool{
 
 // AdultVenueTypes は成人向け施設タイプ（居酒屋・バー・クラブ）
 var AdultVenueTypes = map[string]bool{
-	"bar":        true,
-	"night_club": true,
+	"bar":                         true,
+	"night_club":                  true,
+	"japanese_izakaya_restaurant": true,
+	"yakitori_restaurant":         true,
+	"wine_bar":                    true,
 }
 
 // FilterAdultVenues は成人向け施設（居酒屋・バー・クラブ）を除外する。
@@ -64,75 +97,30 @@ var AdultVenueTypes = map[string]bool{
 func FilterAdultVenues(places []PlaceResult) []PlaceResult {
 	filtered := make([]PlaceResult, 0, len(places))
 	for _, p := range places {
-		adult := false
-		for _, t := range p.Types {
-			if AdultVenueTypes[t] {
-				adult = true
-				break
-			}
-		}
-		if !adult {
+		if !AdultVenueTypes[p.PrimaryType] {
 			filtered = append(filtered, p)
 		}
 	}
 	return filtered
 }
 
-// IsVisitablePlace は施設タイプが提案対象かどうかを返す
-func IsVisitablePlace(types []string) bool {
-	for _, t := range types {
-		if VisitableTypes[t] {
-			return true
-		}
-	}
-	return false
+// IsVisitablePlace は施設の primaryType が提案対象かどうかを返す。
+// DisplayTypeFromPrimaryType で表示用タイプに変換で着れば自ずと提案対象であるとわかる。
+func IsVisitablePlace(primaryType string) bool {
+	return GetDisplayTypeFromPrimaryType(primaryType) != ""
 }
 
-// placeTypeToGenreName はGoogle Maps Place TypeからGenreTag名（日本語）へのマッピング
-var placeTypeToGenreName = map[string]string{
-	// 飲食（詳細タイプ）
-	"ramen_restaurant":          "ラーメン・麺類",
-	"izakaya_restaurant":        "居酒屋・バー",
-	"yakitori_restaurant":       "居酒屋・バー",
-	"wine_bar":                  "居酒屋・バー",
-	"fast_food_restaurant":      "レストラン",
-	"hamburger_restaurant":      "レストラン",
-	"japanese_restaurant":       "レストラン",
-	"sushi_restaurant":          "レストラン",
-	"seafood_restaurant":        "レストラン",
-	"steak_house":               "レストラン",
-	"barbecue_restaurant":       "レストラン",
-	"italian_restaurant":        "レストラン",
-	"chinese_restaurant":        "レストラン",
-	"korean_restaurant":         "レストラン",
-	"american_restaurant":       "レストラン",
-	"french_restaurant":         "レストラン",
-	"thai_restaurant":           "レストラン",
-	"vietnamese_restaurant":     "レストラン",
-	"indian_restaurant":         "レストラン",
-	"pizza_restaurant":          "レストラン",
-	"sandwich_shop":             "レストラン",
-	"breakfast_restaurant":      "レストラン",
-	"brunch_restaurant":         "レストラン",
-	"vegan_restaurant":          "レストラン",
-	"vegetarian_restaurant":     "レストラン",
-	"mediterranean_restaurant":  "レストラン",
-	"middle_eastern_restaurant": "レストラン",
-	"spanish_restaurant":        "レストラン",
-	"greek_restaurant":          "レストラン",
-	"turkish_restaurant":        "レストラン",
-	"indonesian_restaurant":     "レストラン",
-	"lebanese_restaurant":       "レストラン",
-	"brazilian_restaurant":      "レストラン",
-	"coffee_shop":               "カフェ",
-	"tea_house":                 "カフェ",
-	// 飲食（汎用タイプ）
-	"restaurant":     "レストラン",
-	"bar":            "居酒屋・バー",
-	"night_club":     "居酒屋・バー",
-	"bakery":         "スイーツ・ベーカリー",
-	"ice_cream_shop": "スイーツ・ベーカリー",
-	"cafe":           "カフェ",
+// displayTypeToGenreName は display_type（placeTypeToDisplayType の値）から GenreTag名（日本語）へのマッピング。
+// primaryType → GetDisplayTypeFromPrimaryType → ここで解決することで、具体タイプを網羅した大きなマップが不要になる。
+var displayTypeToGenreName = map[string]string{
+	// 飲食
+	"cafe":             "カフェ",
+	"restaurant":       "レストラン",
+	"ramen_restaurant": "ラーメン・麺類",
+	"bar":              "居酒屋・バー",
+	"night_club":       "居酒屋・バー",
+	"bakery":           "スイーツ・ベーカリー",
+	"ice_cream_shop":   "スイーツ・ベーカリー",
 	// 文化
 	"book_store": "書店",
 	// エンタメ
@@ -150,66 +138,6 @@ var placeTypeToGenreName = map[string]string{
 	"home_goods_store": "雑貨・セレクトショップ",
 }
 
-// placeTypePriority はジャンル判定の優先順。特化タイプが汎用タイプより先に評価されるよう並べる。
-// Googleが返す types 配列の順序に依存せず、より適切なジャンル名を選ぶために使用する。
-var placeTypePriority = []string{
-	// 詳細な飲食タイプ（汎用タイプより必ず先に評価する）
-	"ramen_restaurant",
-	"izakaya_restaurant",
-	"yakitori_restaurant",
-	"wine_bar",
-	"fast_food_restaurant",
-	"hamburger_restaurant",
-	"sushi_restaurant",
-	"japanese_restaurant",
-	"seafood_restaurant",
-	"steak_house",
-	"barbecue_restaurant",
-	"italian_restaurant",
-	"chinese_restaurant",
-	"korean_restaurant",
-	"american_restaurant",
-	"french_restaurant",
-	"thai_restaurant",
-	"vietnamese_restaurant",
-	"indian_restaurant",
-	"pizza_restaurant",
-	"sandwich_shop",
-	"breakfast_restaurant",
-	"brunch_restaurant",
-	"vegan_restaurant",
-	"vegetarian_restaurant",
-	"mediterranean_restaurant",
-	"middle_eastern_restaurant",
-	"spanish_restaurant",
-	"greek_restaurant",
-	"turkish_restaurant",
-	"indonesian_restaurant",
-	"lebanese_restaurant",
-	"brazilian_restaurant",
-	"coffee_shop",
-	"tea_house",
-	// 汎用タイプ
-	"ice_cream_shop",
-	"bakery",
-	"bar",
-	"night_club",
-	"restaurant",
-	"cafe",
-	// エンタメ・文化・リラクゼーション・ショッピング
-	"karaoke",
-	"amusement_center",
-	"video_arcade",
-	"bowling_alley",
-	"movie_theater",
-	"book_store",
-	"spa",
-	"public_bath",
-	"sauna",
-	"clothing_store",
-	"home_goods_store",
-}
-
 // breakoutLevelThreshold はチャレンジ判定の熟練度閾値
 // ジャンル熟練度がこのレベル未満（Lv.5以下 = 0〜499XP）ならチャレンジ扱い
 const breakoutLevelThreshold = 6
@@ -220,19 +148,25 @@ const maxDailySuggestions = 3
 // visitedExclusionDays は訪問済みフィルタの閾値日数
 const visitedExclusionDays = 30
 
-// GetGenreNameFromTypes はPlace TypesからGenreTag名を返す。
-// placeTypePriority の順で評価し、特化タイプが汎用タイプより優先されるようにする。
-func GetGenreNameFromTypes(types []string) string {
-	typeSet := make(map[string]bool, len(types))
-	for _, t := range types {
-		typeSet[t] = true
+// GetGenreNameFromPrimaryType はPlace primaryTypeからGenreTag名を返す。
+// primaryType → display_type → ジャンル名 の2段変換で解決するため、具体タイプを個別に列挙する必要がない。
+func GetGenreNameFromPrimaryType(primaryType string) string {
+	return displayTypeToGenreName[GetDisplayTypeFromPrimaryType(primaryType)]
+}
+
+// GetDisplayTypeFromPrimaryType は place primaryType から表示用 display_type を返す。
+func GetDisplayTypeFromPrimaryType(primaryType string) string {
+	if key, ok := placeTypeToDisplayType[primaryType]; ok {
+		return key
 	}
-	for _, t := range placeTypePriority {
-		if typeSet[t] {
-			if name, ok := placeTypeToGenreName[t]; ok {
-				return name
-			}
-		}
+	if primaryType == "izakaya_restaurant" || primaryType == "yakitori_restaurant" {
+		return "bar"
+	}
+	if strings.HasSuffix(primaryType, "_bar") {
+		return "bar"
+	}
+	if strings.HasSuffix(primaryType, "_restaurant") {
+		return "restaurant"
 	}
 	return ""
 }
@@ -364,7 +298,7 @@ func boolPtr(b bool) *bool {
 // ClassifyByInterest は候補を興味内・興味外に分類し、興味内には IsInterestMatch=true を設定する
 func ClassifyByInterest(places []PlaceResult, interestGenreNames map[string]bool) (inInterest, outOfInterest []PlaceResult) {
 	for _, p := range places {
-		genreName := GetGenreNameFromTypes(p.Types)
+		genreName := GetGenreNameFromPrimaryType(p.PrimaryType)
 		if genreName != "" && interestGenreNames[genreName] {
 			p.IsInterestMatch = boolPtr(true)
 			inInterest = append(inInterest, p)
@@ -422,14 +356,14 @@ func BuildPersonalizedSelections(db *gorm.DB, userID uint64, unvisited []PlaceRe
 		}
 		selected = SelectPersonalizedPlaces(inInterest, outOfInterest)
 		for i := range selected {
-			genreName := GetGenreNameFromTypes(selected[i].Types)
+			genreName := GetGenreNameFromPrimaryType(selected[i].PrimaryType)
 			match := genreName != "" && interestGenreNames[genreName]
 			selected[i].IsInterestMatch = &match
 		}
 	}
 
 	for i := range selected {
-		genreName := GetGenreNameFromTypes(selected[i].Types)
+		genreName := GetGenreNameFromPrimaryType(selected[i].PrimaryType)
 		isBreakout := IsBreakoutVisit(db, userID, genreName)
 		selected[i].IsBreakout = &isBreakout
 	}

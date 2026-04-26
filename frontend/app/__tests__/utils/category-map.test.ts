@@ -1,8 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  getCategoryInfo,
-  pickCategoryFromAPIPlaceTypes,
-} from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 
 describe("getCategoryInfo", () => {
   test("cafe → カフェのCategoryInfoが返る", () => {
@@ -86,53 +83,14 @@ describe("getCategoryInfo - 追加タイプ（Issue #226）", () => {
   });
 });
 
-describe("pickCategoryFromAPIPlaceTypes", () => {
-  test("cafeを含む場合はcafeを返す", () => {
-    expect(
-      pickCategoryFromAPIPlaceTypes(["cafe", "food", "establishment"]),
-    ).toBe("cafe");
+describe("getCategoryInfo - バックエンド集約後の表示", () => {
+  test("バックエンドで集約済みのキーをそのまま表示する", () => {
+    const info = getCategoryInfo("restaurant");
+    expect(info.label).toBe("レストラン");
   });
 
-  test("Googleの順序に関係なくbakeryがrestaurantより優先される", () => {
-    expect(
-      pickCategoryFromAPIPlaceTypes(["food", "bakery", "establishment"]),
-    ).toBe("bakery");
-  });
-
-  test("既知タイプが後続にあってもマッチする", () => {
-    expect(
-      pickCategoryFromAPIPlaceTypes([
-        "point_of_interest",
-        "establishment",
-        "restaurant",
-      ]),
-    ).toBe("restaurant");
-  });
-
-  test("優先リストにないタイプのみの場合はtypes[0]を返す", () => {
-    expect(
-      pickCategoryFromAPIPlaceTypes(["unknown_type", "also_unknown"]),
-    ).toBe("unknown_type");
-  });
-
-  test("空配列の場合は'other'を返す", () => {
-    expect(pickCategoryFromAPIPlaceTypes([])).toBe("other");
-  });
-
-  test("ramen_restaurantとrestaurantが混在するときramen_restaurantが優先される", () => {
-    expect(
-      pickCategoryFromAPIPlaceTypes([
-        "restaurant",
-        "ramen_restaurant",
-        "food",
-        "establishment",
-      ]),
-    ).toBe("ramen_restaurant");
-  });
-
-  test("meal_takeawayとrestaurantが混在するときrestaurantが返る", () => {
-    expect(
-      pickCategoryFromAPIPlaceTypes(["meal_takeaway", "restaurant", "food"]),
-    ).toBe("restaurant");
+  test("完全に未知のキーはデフォルト（お店）になる", () => {
+    const info = getCategoryInfo("some_unknown_key");
+    expect(info.label).toBe("お店");
   });
 });

@@ -12,7 +12,6 @@ import {
   sendFirstValueMilestone,
   sendSuggestionViewed,
 } from "~/lib/gtag";
-import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import { getPlacePhoto } from "~/api/places";
 import type { Place } from "~/types/suggestion";
 import AppHeader from "~/components/AppHeader";
@@ -110,7 +109,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     if (firstViewSentRef.current || !currentPlace) return;
     firstViewSentRef.current = true;
-    const category = pickCategoryFromAPIPlaceTypes(currentPlace.types ?? []);
+    const category = currentPlace.display_type;
     sendSuggestionViewed({
       placeName: currentPlace.name,
       category,

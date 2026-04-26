@@ -36,7 +36,7 @@ const defaultPlacesAPIBaseURL = "https://places.googleapis.com"
 
 // fieldMask は New Places API のレスポンスに含めるフィールド
 // currentOpeningHours は季節・祝日を考慮した現在の営業状況（regularOpeningHours より正確）
-const nearbySearchFieldMask = "places.id,places.displayName,places.location,places.types,places.photos,places.rating,places.shortFormattedAddress,places.currentOpeningHours"
+const nearbySearchFieldMask = "places.id,places.displayName,places.location,places.primaryType,places.photos,places.rating,places.shortFormattedAddress,places.currentOpeningHours"
 
 func NewGooglePlacesClient(apiKey string) (*GooglePlacesClient, error) {
 	return &GooglePlacesClient{
@@ -89,7 +89,7 @@ type nearbySearchAPIResponse struct {
 
 type nearbySearchPlace struct {
 	ID                    string                    `json:"id"`
-	Types                 []string                  `json:"types"`
+	PrimaryType           string                    `json:"primaryType"`
 	DisplayName           nearbySearchDisplayName   `json:"displayName"`
 	Location              nearbySearchLatLng        `json:"location"`
 	Rating                float32                   `json:"rating"`
@@ -187,7 +187,8 @@ func (g *GooglePlacesClient) NearbySearch(ctx context.Context, lat, lng float64,
 			Lat:            p.Location.Latitude,
 			Lng:            p.Location.Longitude,
 			Rating:         p.Rating,
-			Types:          p.Types,
+			PrimaryType:    p.PrimaryType,
+			DisplayType:    services.GetDisplayTypeFromPrimaryType(p.PrimaryType),
 			PhotoReference: photoRef,
 			IsOpenNow:      openNow,
 		})
@@ -307,7 +308,7 @@ func (h *SuggestionHandler) findDailySuggestionCache(ctx context.Context, userID
 			if len(filtered) > 0 {
 				interestNames, _ := services.GetUserInterestGenreNames(h.DB, userID)
 				for i := range filtered {
-					genreName := services.GetGenreNameFromTypes(filtered[i].Types)
+					genreName := services.GetGenreNameFromPrimaryType(filtered[i].PrimaryType)
 					if len(interestNames) > 0 {
 						match := genreName != "" && interestNames[genreName]
 						filtered[i].IsInterestMatch = &match
@@ -359,7 +360,7 @@ func (h *SuggestionHandler) fetchPlacesFromCacheOrAPI(ctx context.Context, req s
 
 		filtered := make([]services.PlaceResult, 0, len(places))
 		for _, p := range places {
-			if services.IsVisitablePlace(p.Types) {
+			if services.IsVisitablePlace(p.PrimaryType) {
 				filtered = append(filtered, p)
 			}
 		}

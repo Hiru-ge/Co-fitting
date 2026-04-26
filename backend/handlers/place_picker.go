@@ -66,7 +66,7 @@ func (h *PlacePickerHandler) GetNearbyVisitablePlaces(c *gin.Context) {
 
 	filtered := make([]services.PlaceResult, 0, len(places))
 	for _, p := range places {
-		if services.IsVisitablePlace(p.Types) {
+		if services.IsVisitablePlace(p.PrimaryType) {
 			filtered = append(filtered, p)
 		}
 	}
@@ -78,7 +78,7 @@ func (h *PlacePickerHandler) GetNearbyVisitablePlaces(c *gin.Context) {
 
 	interestGenres, _ := services.GetUserInterestGenreNames(h.DB, userID)
 	for i := range filtered {
-		genreName := services.GetGenreNameFromTypes(filtered[i].Types)
+		genreName := services.GetGenreNameFromPrimaryType(filtered[i].PrimaryType)
 		match := interestGenres[genreName]
 		filtered[i].IsInterestMatch = &match
 		isBreakout := services.IsBreakoutVisit(h.DB, userID, genreName)

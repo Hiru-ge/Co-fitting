@@ -6,10 +6,7 @@ import {
   InfoWindow,
 } from "@vis.gl/react-google-maps";
 import { Icon } from "~/components/Icon";
-import {
-  getCategoryInfo,
-  pickCategoryFromAPIPlaceTypes,
-} from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 import { getNearbyVisitablePlaces } from "~/api/places";
 import type { Place } from "~/types/suggestion";
 
@@ -57,8 +54,7 @@ function PlaceInfoContent({
   place: Place;
   onSelect: (place: Place) => void;
 }) {
-  const category = pickCategoryFromAPIPlaceTypes(place.types ?? []);
-  const categoryInfo = getCategoryInfo(category);
+  const categoryInfo = getCategoryInfo(place.display_type);
 
   return (
     <div className="min-w-45 max-w-55 p-1">
@@ -137,9 +133,7 @@ export default function PlacePickerMap({
                     )
                   }
                 >
-                  <PinMarker
-                    category={pickCategoryFromAPIPlaceTypes(place.types ?? [])}
-                  />
+                  <PinMarker category={place.display_type} />
                 </AdvancedMarker>
               ))}
 

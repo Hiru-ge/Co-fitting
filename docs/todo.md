@@ -161,7 +161,7 @@
 
 **🟢 GREEN**
 
-- [x] `backend/handlers/place_picker.go` に `PlacePickerHandler` と `GetNearbyVisitablePlaces` メソッドを実装（`GET /api/places/nearby?lat=X&lng=Y`・半径1km固定・`services.IsVisitablePlace` でタイプフィルタ・`services.FilterOutVisited` で30日内訪問済み除外・`services.FilterOutSnoozed` でスヌーズ除外・`GetUserInterestGenreNames`+`GetGenreNameFromTypes` で `is_interest_match`・`IsBreakoutVisit` で `is_breakout` を設定）
+- [x] `backend/handlers/place_picker.go` に `PlacePickerHandler` と `GetNearbyVisitablePlaces` メソッドを実装（`GET /api/places/nearby?lat=X&lng=Y`・半径1km固定・`services.IsVisitablePlace(primaryType)` でタイプフィルタ・`services.FilterOutVisited` で30日内訪問済み除外・`services.FilterOutSnoozed` でスヌーズ除外・`GetUserInterestGenreNames`+`GetGenreNameFromPrimaryType` で `is_interest_match`・`IsBreakoutVisit` で `is_breakout` を設定）
 - [x] `backend/routes.go` に `GET /api/places/nearby` ルートを追加
 - [x] `frontend/app/api/places.ts` に `getNearbyVisitablePlaces(authToken: string, lat: number, lng: number): Promise<Place[]>` を追加
 - [x] `frontend/app/hooks/use-suggestion-load.ts` に `prependPlace(place: PlaceWithPhoto) => void` を追加し `use-suggestions.ts` 経由で公開（`places` の先頭に挿入・`originalCardOrder` も更新して CardIndicator のドット表示に対応・描画上限は home.tsx で `slice(0, 4)` で制御）
@@ -201,6 +201,47 @@
 **🔵 REFACTOR**
 
 - [x] なし
+
+---
+
+### ジャンル判定を primaryType 単体に統一（Issue #351）
+
+> **背景**: Google Places APIのtypes[]配列に対して優先順位リストで判定するロジックが、バックエンド（`placeTypePriority` + `GetGenreNameFromTypes`）とフロントエンド（`PLACE_TYPE_PRIORITY` + `pickCategoryFromAPIPlaceTypes`）の両方に二重実装されている。New Places API（v1）が返す `primaryType`（単一フィールド）を使えば優先順位制御が不要になり、判定ロジックをバックエンドの単純なマップ参照1本に絞れる。フロントは受け取った `primary_type` をそのまま表示するだけにする。
+
+**🔴 RED**
+
+- [x] `backend/services/suggestion_test.go` の `TestGetGenreNameFromTypes` を `TestGetGenreNameFromPrimaryType` に書き換え（`"cafe"` → `"カフェ"`・未知タイプ → 空文字）
+- [x] `backend/services/suggestion_test.go` の `TestIsVisitablePlace` / `TestIsVisitablePlace_ExcludedTypes` を文字列単体引数に書き換え（`IsVisitablePlace("cafe")` → true、`IsVisitablePlace("park")` → false）
+- [x] `backend/services/suggestion_test.go` の `TestFilterAdultVenues` を `PrimaryType` フィールドベースに書き換え、`izakaya_restaurant` も除外されることを追加検証
+- [x] `backend/services/suggestion_test.go` の `TestClassifyByInterest` を `PrimaryType: "cafe"` フィールドに書き換え（`Types` フィールド削除）
+- [x] `backend/handlers/suggestion_test.go` の `PlaceResult` 生成箇所をすべて `Types: []string{...}` → `PrimaryType: "..."` に書き換え
+- [x] `backend/handlers/visit_test.go` の `createVisitRequest` に含まれる `place_types` を `primary_type` に書き換え
+- [x] `frontend/app/__tests__/components/discovery-card.test.tsx` のモックデータ `types: [...]` → `primary_type: "..."` に書き換え
+
+**🟢 GREEN**
+
+- [x] `backend/services/suggestion.go` の `PlaceResult` struct: `Types []string` を `PrimaryType string` に変更
+- [x] `backend/services/suggestion.go` の `placeTypePriority` 変数を削除
+- [x] `backend/services/suggestion.go` の `GetGenreNameFromTypes(types []string) string` → `GetGenreNameFromPrimaryType(primaryType string) string`（`placeTypeToGenreName[primaryType]` の単純マップ参照）
+- [x] `backend/services/suggestion.go` の `IsVisitablePlace(types []string) bool` → `IsVisitablePlace(primaryType string) bool`（`VisitableTypes[primaryType]` の単純マップ参照）
+- [x] `backend/services/suggestion.go` の `FilterAdultVenues`: `p.Types` ループ → `AdultVenueTypes[p.PrimaryType]` に変更、`AdultVenueTypes` に `izakaya_restaurant` / `yakitori_restaurant` / `wine_bar` を追加
+- [x] `backend/services/suggestion.go` の `ClassifyByInterest`: `GetGenreNameFromTypes(p.Types)` → `GetGenreNameFromPrimaryType(p.PrimaryType)` に変更
+- [x] `backend/services/suggestion.go` の `VisitableTypes` を拡張: `izakaya_restaurant` / `yakitori_restaurant` / `wine_bar` / `coffee_shop` / `tea_house` 等 `placeTypeToGenreName` に存在するタイプを追加
+- [x] `backend/handlers/suggestion.go` の `nearbySearchFieldMask`: `places.types` を削除し `places.primaryType` を追加
+- [x] `backend/handlers/suggestion.go` の `nearbySearchPlace` struct: `Types []string` を削除し `PrimaryType string` を追加
+- [x] `backend/handlers/suggestion.go` の `NearbySearch`: `PlaceResult` 生成時に `PrimaryType: p.PrimaryType` をセット、`Types` 削除、`IsVisitablePlace` 呼び出しを `IsVisitablePlace(p.PrimaryType)` に変更
+- [x] `backend/handlers/visit.go` の `createVisitRequest`: `PlaceTypes []string` → `PrimaryType string` に変更
+- [x] `backend/handlers/visit.go` の `resolveGenreFromPlaceTypes(db, userID, []string)` → `resolveGenreFromPrimaryType(db, userID, primaryType string)` に変更（`GetGenreNameFromPrimaryType` 使用）
+- [x] `backend/handlers/place_picker.go` の `GetGenreNameFromTypes` → `GetGenreNameFromPrimaryType` に変更、`IsVisitablePlace` 呼び出しも更新
+- [x] `frontend/app/types/suggestion.ts` の `Place`: `types: string[]` を削除し `primary_type: string` を追加
+- [x] `frontend/app/lib/category-map.ts` の `PLACE_TYPE_PRIORITY` と `pickCategoryFromAPIPlaceTypes()` を削除、`CATEGORY_MAP` に `izakaya_restaurant` / `yakitori_restaurant` / `wine_bar`（barと同デザイン）/ `coffee_shop` / `tea_house`（cafeと同デザイン）のエントリを追加
+- [x] `frontend/app/components/DiscoveryCard.tsx:36`: `getCategoryInfo(pickCategoryFromAPIPlaceTypes(place.types))` → `getCategoryInfo(place.display_type)` に変更
+- [x] `frontend/app/hooks/use-check-in.ts`: `pickCategoryFromAPIPlaceTypes(place.types ?? [])` → `place.primary_type ?? ""`、`place_types: place.types` → `primary_type: place.primary_type` に変更
+
+**🔵 REFACTOR**
+
+- [x] フロント側に `pickCategoryFromAPIPlaceTypes` の参照が残っていないことを確認（`grep` で検索）
+- [x] バックエンド側に `placeTypePriority` / `GetGenreNameFromTypes` の参照が残っていないことを確認
 
 ---
 

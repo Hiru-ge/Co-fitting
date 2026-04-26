@@ -5,7 +5,7 @@ export interface Place {
   lat: number;
   lng: number;
   rating: number;
-  types: string[];
+  display_type: string;
   photo_reference?: string;
   /** 興味ジャンル設定時のみ含まれる: true=興味内, false=興味外, undefined=興味ジャンル未設定 */
   is_interest_match?: boolean;

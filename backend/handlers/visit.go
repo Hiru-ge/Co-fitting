@@ -27,11 +27,11 @@ type genreResolution struct {
 	GenreTagID *uint64
 }
 
-func resolveGenreFromPlaceTypes(db *gorm.DB, userID uint64, placeTypes []string) genreResolution {
-	if len(placeTypes) == 0 {
+func resolveGenreFromPrimaryType(db *gorm.DB, userID uint64, primaryType string) genreResolution {
+	if primaryType == "" {
 		return genreResolution{}
 	}
-	genreName := services.GetGenreNameFromTypes(placeTypes)
+	genreName := services.GetGenreNameFromPrimaryType(primaryType)
 	resolution := genreResolution{
 		IsBreakout: services.IsBreakoutVisit(db, userID, genreName),
 	}
@@ -65,17 +65,17 @@ type VisitHandler struct {
 const checkinDistanceThreshold = 200.0
 
 type createVisitRequest struct {
-	PlaceID        string   `json:"place_id" binding:"required"`
-	PlaceName      string   `json:"place_name" binding:"required"`
-	Vicinity       string   `json:"vicinity"`
-	Category       string   `json:"category" binding:"required"`
-	Lat            float64  `json:"lat" binding:"required"`
-	Lng            float64  `json:"lng" binding:"required"`
-	PlaceTypes     []string `json:"place_types"`
-	PhotoReference *string  `json:"photo_reference"`
-	VisitedAt      string   `json:"visited_at" binding:"required"`
-	UserLat        float64  `json:"user_lat"`
-	UserLng        float64  `json:"user_lng"`
+	PlaceID        string  `json:"place_id" binding:"required"`
+	PlaceName      string  `json:"place_name" binding:"required"`
+	Vicinity       string  `json:"vicinity"`
+	Category       string  `json:"category" binding:"required"`
+	Lat            float64 `json:"lat" binding:"required"`
+	Lng            float64 `json:"lng" binding:"required"`
+	PrimaryType    string  `json:"primary_type"`
+	PhotoReference *string `json:"photo_reference"`
+	VisitedAt      string  `json:"visited_at" binding:"required"`
+	UserLat        float64 `json:"user_lat"`
+	UserLng        float64 `json:"user_lng"`
 }
 
 // createVisitResponse はゲーミフィケーション情報付きの訪問作成レスポンス。
@@ -148,7 +148,7 @@ func (h *VisitHandler) CreateVisit(c *gin.Context) {
 
 	// is_breakout の自動設定: 「興味タグ外 かつ 熟練度Lv.5以下」のジャンルへの訪問をチャレンジ扱いとする
 	// GenreTagID も同時に解決し、熟練度更新が正しく行われるようにする
-	genre := resolveGenreFromPlaceTypes(h.DB, userID, req.PlaceTypes)
+	genre := resolveGenreFromPrimaryType(h.DB, userID, req.PrimaryType)
 
 	visit := models.Visit{
 		UserID:         userID,

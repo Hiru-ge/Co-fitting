@@ -21,7 +21,7 @@ const basePlace = {
   lat: 35.66,
   lng: 139.7,
   rating: 4.2,
-  types: ["cafe"],
+  display_type: "cafe",
 };
 
 function renderCard(overrides = {}) {

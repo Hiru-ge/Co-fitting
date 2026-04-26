@@ -365,14 +365,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_bowling_001",
-			"place_name":  "渋谷ボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"place_types": []string{"bowling_alley", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-07T15:30:00Z",
+			"place_id":     "ChIJl_bowling_001",
+			"place_name":   "渋谷ボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"primary_type": "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-07T15:30:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -410,14 +410,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: cafeTag.ID})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_cafe_001",
-			"place_name":  "隠れ家カフェ",
-			"vicinity":    "東京都渋谷区",
-			"category":    "cafe",
-			"place_types": []string{"cafe", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-07T15:30:00Z",
+			"place_id":     "ChIJl_cafe_001",
+			"place_name":   "隠れ家カフェ",
+			"vicinity":     "東京都渋谷区",
+			"category":     "cafe",
+			"primary_type": "cafe",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-07T15:30:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -448,14 +448,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		// 興味タグを設定しない（初回訪問なので熟練度なし → チャレンジ扱い）
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_nointerest_001",
-			"place_name":  "テストカフェ",
-			"vicinity":    "東京都渋谷区",
-			"category":    "cafe",
-			"place_types": []string{"cafe"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-07T15:30:00Z",
+			"place_id":     "ChIJl_nointerest_001",
+			"place_name":   "テストカフェ",
+			"vicinity":     "東京都渋谷区",
+			"category":     "cafe",
+			"primary_type": "cafe",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-07T15:30:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -498,14 +498,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_cafe_2nd_001",
-			"place_name":  "2回目のカフェ",
-			"vicinity":    "東京都渋谷区",
-			"category":    "cafe",
-			"place_types": []string{"cafe"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-08T15:30:00Z",
+			"place_id":     "ChIJl_cafe_2nd_001",
+			"place_name":   "2回目のカフェ",
+			"vicinity":     "東京都渋谷区",
+			"category":     "cafe",
+			"primary_type": "cafe",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-08T15:30:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -553,14 +553,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_bowling_lv2_001",
-			"place_name":  "慣れ始めのボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"place_types": []string{"bowling_alley", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-08T10:00:00Z",
+			"place_id":     "ChIJl_bowling_lv2_001",
+			"place_name":   "慣れ始めのボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"primary_type": "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-08T10:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -583,7 +583,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		}
 	})
 
-	t.Run("place_types未指定の訪問はis_breakout=falseになる", func(t *testing.T) {
+	t.Run("primary_type未指定の訪問はis_breakout=falseになる", func(t *testing.T) {
 		cleanupUsers(t)
 
 		user := createTestUserForVisit(t)
@@ -600,7 +600,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 			"place_name": "タイプなし場所",
 			"vicinity":   "東京都渋谷区",
 			"category":   "cafe",
-			// place_types を送らない
+			// primary_type を送らない
 			"lat":        35.677,
 			"lng":        139.650,
 			"visited_at": "2024-02-07T15:30:00Z",
@@ -622,7 +622,7 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 			t.Fatalf("Visit not found in DB: %v", err)
 		}
 		if visit.IsBreakout {
-			t.Error("Expected is_breakout=false when place_types not provided, got true")
+			t.Error("Expected is_breakout=false when primary_type not provided, got true")
 		}
 	})
 
@@ -653,14 +653,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_bowling_lv5_001",
-			"place_name":  "熟練ボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"place_types": []string{"bowling_alley", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-09T10:00:00Z",
+			"place_id":     "ChIJl_bowling_lv5_001",
+			"place_name":   "熟練ボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"primary_type": "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-09T10:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -708,14 +708,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_bowling_lv6_001",
-			"place_name":  "通い慣れたボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"place_types": []string{"bowling_alley", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-09T10:30:00Z",
+			"place_id":     "ChIJl_bowling_lv6_001",
+			"place_name":   "通い慣れたボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"primary_type": "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-09T10:30:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -758,14 +758,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_cafe_lv5_001",
-			"place_name":  "常連カフェ",
-			"vicinity":    "東京都渋谷区",
-			"category":    "cafe",
-			"place_types": []string{"cafe", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-09T11:00:00Z",
+			"place_id":     "ChIJl_cafe_lv5_001",
+			"place_name":   "常連カフェ",
+			"vicinity":     "東京都渋谷区",
+			"category":     "cafe",
+			"primary_type": "cafe",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-09T11:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -812,14 +812,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_bowling_lv4_001",
-			"place_name":  "あと一歩のボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"place_types": []string{"bowling_alley", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-09T12:00:00Z",
+			"place_id":     "ChIJl_bowling_lv4_001",
+			"place_name":   "あと一歩のボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"primary_type": "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-09T12:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -867,14 +867,14 @@ func TestCreateVisitIsBreakout(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJl_bowling_lv20_001",
-			"place_name":  "極めたボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"place_types": []string{"bowling_alley", "point_of_interest"},
-			"lat":         35.677,
-			"lng":         139.650,
-			"visited_at":  "2024-02-09T13:00:00Z",
+			"place_id":     "ChIJl_bowling_lv20_001",
+			"place_name":   "極めたボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"primary_type": "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"visited_at":   "2024-02-09T13:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -1836,14 +1836,14 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJgamif_cafe",
-			"place_name":  "テストカフェ",
-			"vicinity":    "東京都渋谷区",
-			"category":    "cafe",
-			"lat":         35.677,
-			"lng":         139.650,
-			"place_types": []string{"cafe"},
-			"visited_at":  "2024-03-01T10:00:00Z",
+			"place_id":     "ChIJgamif_cafe",
+			"place_name":   "テストカフェ",
+			"vicinity":     "東京都渋谷区",
+			"category":     "cafe",
+			"lat":          35.677,
+			"lng":          139.650,
+			"primary_type": "cafe",
+			"visited_at":   "2024-03-01T10:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 
@@ -1882,14 +1882,14 @@ func TestCreateVisit_Gamification(t *testing.T) {
 		})
 
 		body := map[string]interface{}{
-			"place_id":    "ChIJgamif_bowling",
-			"place_name":  "テストボウリング場",
-			"vicinity":    "東京都渋谷区",
-			"category":    "bowling_alley",
-			"lat":         35.677,
-			"lng":         139.650,
-			"place_types": []string{"bowling_alley"},
-			"visited_at":  "2024-03-01T10:00:00Z",
+			"place_id":     "ChIJgamif_bowling",
+			"place_name":   "テストボウリング場",
+			"vicinity":     "東京都渋谷区",
+			"category":     "bowling_alley",
+			"lat":          35.677,
+			"lng":          139.650,
+			"primary_type": "bowling_alley",
+			"visited_at":   "2024-03-01T10:00:00Z",
 		}
 		jsonBody, _ := json.Marshal(body)
 

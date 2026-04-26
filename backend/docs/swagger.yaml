@@ -133,10 +133,8 @@ definitions:
         type: string
       place_name:
         type: string
-      place_types:
-        items:
-          type: string
-        type: array
+      primary_type:
+        type: string
       user_lat:
         type: number
       user_lng:
@@ -495,6 +493,8 @@ definitions:
     type: object
   services.PlaceResult:
     properties:
+      display_type:
+        type: string
       is_breakout:
         type: boolean
       is_interest_match:
@@ -511,12 +511,10 @@ definitions:
         type: string
       place_id:
         type: string
+      primary_type:
+        type: string
       rating:
         type: number
-      types:
-        items:
-          type: string
-        type: array
       vicinity:
         type: string
     type: object

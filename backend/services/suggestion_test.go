@@ -9,14 +9,14 @@ import (
 )
 
 func TestIsVisitablePlace(t *testing.T) {
-	t.Run("提案対象タイプを含む場合はtrue", func(t *testing.T) {
-		if !services.IsVisitablePlace([]string{"real_estate_agency", "cafe"}) {
+	t.Run("提案対象タイプはtrue", func(t *testing.T) {
+		if !services.IsVisitablePlace("cafe") {
 			t.Fatal("expected true")
 		}
 	})
 
-	t.Run("提案対象タイプを含まない場合はfalse", func(t *testing.T) {
-		if services.IsVisitablePlace([]string{"real_estate_agency", "locality"}) {
+	t.Run("提案対象外タイプはfalse", func(t *testing.T) {
+		if services.IsVisitablePlace("real_estate_agency") {
 			t.Fatal("expected false")
 		}
 	})
@@ -31,23 +31,67 @@ func TestIsVisitablePlace_ExcludedTypes(t *testing.T) {
 	for _, typ := range excluded {
 		typ := typ
 		t.Run(typ+"はfalse", func(t *testing.T) {
-			if services.IsVisitablePlace([]string{typ}) {
+			if services.IsVisitablePlace(typ) {
 				t.Fatalf("expected false for %s", typ)
 			}
 		})
 	}
 }
 
-func TestGetGenreNameFromTypes(t *testing.T) {
-	t.Run("最初に一致したジャンル名を返す", func(t *testing.T) {
-		got := services.GetGenreNameFromTypes([]string{"cafe", "park"})
+func TestGetGenreNameFromPrimaryType(t *testing.T) {
+	t.Run("既知のprimaryTypeはジャンル名を返す", func(t *testing.T) {
+		got := services.GetGenreNameFromPrimaryType("cafe")
 		if got != "カフェ" {
 			t.Fatalf("expected カフェ, got %s", got)
 		}
 	})
 
+	t.Run("placeTypeToGenreNameにない_restaurantサフィックスはレストランへ集約される", func(t *testing.T) {
+		got := services.GetGenreNameFromPrimaryType("sushi_restaurant")
+		if got != "レストラン" {
+			t.Fatalf("expected レストラン, got %s", got)
+		}
+	})
+
+	t.Run("japanese_izakaya_restaurantは居酒屋・バーへ集約される", func(t *testing.T) {
+		got := services.GetGenreNameFromPrimaryType("japanese_izakaya_restaurant")
+		if got != "居酒屋・バー" {
+			t.Fatalf("expected 居酒屋・バー, got %s", got)
+		}
+	})
+
 	t.Run("一致しない場合は空文字", func(t *testing.T) {
-		got := services.GetGenreNameFromTypes([]string{"airport", "locality"})
+		got := services.GetGenreNameFromPrimaryType("airport")
+		if got != "" {
+			t.Fatalf("expected empty, got %s", got)
+		}
+	})
+}
+
+func TestGetDisplayTypeFromPrimaryType(t *testing.T) {
+	t.Run("既知タイプは対応するdisplay_typeを返す", func(t *testing.T) {
+		got := services.GetDisplayTypeFromPrimaryType("coffee_shop")
+		if got != "cafe" {
+			t.Fatalf("expected cafe, got %s", got)
+		}
+	})
+
+	t.Run("*_barはbarへ集約される", func(t *testing.T) {
+		got := services.GetDisplayTypeFromPrimaryType("wine_bar")
+		if got != "bar" {
+			t.Fatalf("expected bar, got %s", got)
+		}
+	})
+
+	t.Run("*_restaurantはrestaurantへ集約される", func(t *testing.T) {
+		got := services.GetDisplayTypeFromPrimaryType("sushi_restaurant")
+		if got != "restaurant" {
+			t.Fatalf("expected restaurant, got %s", got)
+		}
+	})
+
+	t.Run("未知タイプは空文字", func(t *testing.T) {
+		got := services.GetDisplayTypeFromPrimaryType("airport")
 		if got != "" {
 			t.Fatalf("expected empty, got %s", got)
 		}
@@ -74,9 +118,9 @@ func TestFilterOpenNowPlaces(t *testing.T) {
 
 func TestClassifyByInterest(t *testing.T) {
 	places := []services.PlaceResult{
-		{PlaceID: "p1", Types: []string{"cafe"}},
-		{PlaceID: "p2", Types: []string{"park"}},
-		{PlaceID: "p3", Types: []string{"airport"}},
+		{PlaceID: "p1", PrimaryType: "cafe"},
+		{PlaceID: "p2", PrimaryType: "park"},
+		{PlaceID: "p3", PrimaryType: "airport"},
 	}
 	interest := map[string]bool{
 		"カフェ": true,
@@ -185,8 +229,8 @@ func TestFilterOutVisited(t *testing.T) {
 func TestFilterAdultVenues(t *testing.T) {
 	t.Run("barタイプの施設が除外される", func(t *testing.T) {
 		input := []services.PlaceResult{
-			{PlaceID: "bar_1", Types: []string{"bar", "food"}},
-			{PlaceID: "cafe_1", Types: []string{"cafe"}},
+			{PlaceID: "bar_1", PrimaryType: "bar"},
+			{PlaceID: "cafe_1", PrimaryType: "cafe"},
 		}
 		result := services.FilterAdultVenues(input)
 		if len(result) != 1 {
@@ -199,8 +243,8 @@ func TestFilterAdultVenues(t *testing.T) {
 
 	t.Run("night_clubタイプの施設が除外される", func(t *testing.T) {
 		input := []services.PlaceResult{
-			{PlaceID: "club_1", Types: []string{"night_club", "entertainment"}},
-			{PlaceID: "restaurant_1", Types: []string{"restaurant"}},
+			{PlaceID: "club_1", PrimaryType: "night_club"},
+			{PlaceID: "restaurant_1", PrimaryType: "restaurant"},
 		}
 		result := services.FilterAdultVenues(input)
 		if len(result) != 1 {
@@ -213,9 +257,9 @@ func TestFilterAdultVenues(t *testing.T) {
 
 	t.Run("成人向け以外のタイプは除外されない", func(t *testing.T) {
 		input := []services.PlaceResult{
-			{PlaceID: "cafe_1", Types: []string{"cafe"}},
-			{PlaceID: "restaurant_1", Types: []string{"restaurant"}},
-			{PlaceID: "karaoke_1", Types: []string{"karaoke"}},
+			{PlaceID: "cafe_1", PrimaryType: "cafe"},
+			{PlaceID: "restaurant_1", PrimaryType: "restaurant"},
+			{PlaceID: "karaoke_1", PrimaryType: "karaoke"},
 		}
 		result := services.FilterAdultVenues(input)
 		if len(result) != 3 {

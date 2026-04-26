@@ -121,6 +121,19 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
     gradientColor: "from-amber-500 to-orange-700",
     hexColor: "#f59e0b",
   },
+  // カフェ系の具体タイプ（cafe と同デザイン）
+  coffee_shop: {
+    label: "カフェ",
+    icon: "local_cafe",
+    gradientColor: "from-amber-600 to-orange-800",
+    hexColor: "#d97706",
+  },
+  tea_house: {
+    label: "カフェ",
+    icon: "local_cafe",
+    gradientColor: "from-amber-600 to-orange-800",
+    hexColor: "#d97706",
+  },
   プレミア: {
     label: "プレミア",
     icon: "award_star",
@@ -129,39 +142,7 @@ export const CATEGORY_MAP: Record<string, CategoryInfo> = {
   },
 };
 
-export function getCategoryInfo(category: string): CategoryInfo {
-  return CATEGORY_MAP[category] || DEFAULT_CATEGORY;
-}
-
-// PLACE_TYPE_PRIORITY はジャンル判定の優先順。
-// Googleが返す types 配列の順序に依存せず、特化タイプが汎用タイプより優先されるよう並べる。
-const PLACE_TYPE_PRIORITY = [
-  "ramen_restaurant",
-  "cafe",
-  "ice_cream_shop",
-  "bakery",
-  "bar",
-  "night_club",
-  "karaoke",
-  "amusement_center",
-  "video_arcade",
-  "bowling_alley",
-  "movie_theater",
-  "book_store",
-  "spa",
-  "public_bath",
-  "sauna",
-  "clothing_store",
-  "home_goods_store",
-  "restaurant",
-];
-
-export function pickCategoryFromAPIPlaceTypes(placeTypes: string[]): string {
-  const typeSet = new Set(placeTypes);
-  for (const type of PLACE_TYPE_PRIORITY) {
-    if (typeSet.has(type)) {
-      return type;
-    }
-  }
-  return placeTypes[0] || "other";
+export function getCategoryInfo(categoryKey: string): CategoryInfo {
+  if (CATEGORY_MAP[categoryKey]) return CATEGORY_MAP[categoryKey];
+  return DEFAULT_CATEGORY;
 }

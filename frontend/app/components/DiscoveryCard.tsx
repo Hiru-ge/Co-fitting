@@ -1,10 +1,7 @@
 import { useRef, useState } from "react";
 import { Icon } from "~/components/Icon";
 import type { Place } from "~/types/suggestion";
-import {
-  getCategoryInfo,
-  pickCategoryFromAPIPlaceTypes,
-} from "~/lib/category-map";
+import { getCategoryInfo } from "~/lib/category-map";
 import { calcHaversineDistance } from "~/lib/geolocation";
 import { buildGoogleMapsPlaceUrl, formatDistance } from "~/utils/helpers";
 import { useCardDrag } from "~/hooks/use-card-drag";
@@ -36,7 +33,7 @@ export default function DiscoveryCard({
   onSwipe,
   onSnooze,
 }: DiscoveryCardProps) {
-  const category = getCategoryInfo(pickCategoryFromAPIPlaceTypes(place.types));
+  const category = getCategoryInfo(place.display_type);
   const distance = calcHaversineDistance(
     userLat,
     userLng,

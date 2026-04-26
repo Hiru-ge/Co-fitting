@@ -82,7 +82,7 @@ describe("useCheckIn", () => {
         lat: 35.6,
         lng: 139.7,
         rating: 4.3,
-        types: ["cafe"],
+        display_type: "カフェ",
       },
     ];
 
@@ -149,7 +149,7 @@ describe("useCheckIn", () => {
         lat: 35.6,
         lng: 139.7,
         rating: 4.3,
-        types: ["cafe"],
+        display_type: "カフェ",
       },
     ];
 

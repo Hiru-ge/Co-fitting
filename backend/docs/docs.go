@@ -2135,11 +2135,8 @@ const docTemplate = `{
                 "place_name": {
                     "type": "string"
                 },
-                "place_types": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "primary_type": {
+                    "type": "string"
                 },
                 "user_lat": {
                     "type": "number"
@@ -2678,6 +2675,9 @@ const docTemplate = `{
         "services.PlaceResult": {
             "type": "object",
             "properties": {
+                "display_type": {
+                    "type": "string"
+                },
                 "is_breakout": {
                     "type": "boolean"
                 },
@@ -2702,14 +2702,11 @@ const docTemplate = `{
                 "place_id": {
                     "type": "string"
                 },
+                "primary_type": {
+                    "type": "string"
+                },
                 "rating": {
                     "type": "number"
-                },
-                "types": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "vicinity": {
                     "type": "string"

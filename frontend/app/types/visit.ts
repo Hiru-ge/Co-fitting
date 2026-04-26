@@ -34,7 +34,7 @@ export interface CreateVisitRequest {
   lat: number;
   lng: number;
   photo_reference?: string; // 画像参照（Redis TTL失効後の再解決に使用）
-  place_types?: string[]; // バックエンドの is_breakout 自動判定に使用
+  primary_type?: string; // バックエンドの is_breakout 自動判定に使用
   visited_at: string;
   user_lat?: number; // ユーザーの現在緯度（バックエンド距離検証用）
   user_lng?: number; // ユーザーの現在経度（バックエンド距離検証用）

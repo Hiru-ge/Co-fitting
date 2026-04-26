@@ -28,7 +28,7 @@ const stubPlace = {
   lat: 35.6762,
   lng: 139.6503,
   rating: 4.2,
-  types: ["cafe"],
+  display_type: "カフェ",
   photoUrl: undefined,
 };
 

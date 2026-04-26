@@ -457,15 +457,15 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 	}
 
 	cafePlaces := []services.PlaceResult{
-		{PlaceID: "cache_cafe_1", Name: "キャッシュカフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "cache_cafe_2", Name: "キャッシュカフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
-		{PlaceID: "cache_cafe_3", Name: "キャッシュカフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+		{PlaceID: "cache_cafe_1", Name: "キャッシュカフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "cache_cafe_2", Name: "キャッシュカフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, PrimaryType: "cafe"},
+		{PlaceID: "cache_cafe_3", Name: "キャッシュカフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, PrimaryType: "cafe"},
 	}
 	bowlingPlaces := []services.PlaceResult{
-		{PlaceID: "cache_bowling_1", Name: "キャッシュボウリング場A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"bowling_alley"}},
-		{PlaceID: "cache_bowling_2", Name: "キャッシュボウリング場B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"bowling_alley"}},
-		{PlaceID: "cache_bowling_3", Name: "キャッシュボウリング場C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"bowling_alley"}},
-		{PlaceID: "cache_bowling_4", Name: "キャッシュボウリング場D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"bowling_alley"}},
+		{PlaceID: "cache_bowling_1", Name: "キャッシュボウリング場A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, PrimaryType: "bowling_alley"},
+		{PlaceID: "cache_bowling_2", Name: "キャッシュボウリング場B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, PrimaryType: "bowling_alley"},
+		{PlaceID: "cache_bowling_3", Name: "キャッシュボウリング場C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, PrimaryType: "bowling_alley"},
+		{PlaceID: "cache_bowling_4", Name: "キャッシュボウリング場D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, PrimaryType: "bowling_alley"},
 	}
 	mixedPlaces := append(cafePlaces, bowlingPlaces...)
 
@@ -588,11 +588,8 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		// ボウリング場が多いことを確認（タグ変更がis_reloadで反映されている）
 		thirdBowlingCount := 0
 		for _, p := range thirdResp {
-			for _, typ := range p.Types {
-				if typ == "bowling_alley" {
-					thirdBowlingCount++
-					break
-				}
+			if p.PrimaryType == "bowling_alley" {
+				thirdBowlingCount++
 			}
 		}
 		if thirdBowlingCount < 2 {
@@ -661,21 +658,15 @@ func TestUpdateInterestsDoesNotClearDailyCache(t *testing.T) {
 		// ユーザーAはカフェが多い
 		cafeCountA := 0
 		for _, p := range respA {
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					cafeCountA++
-					break
-				}
+			if p.PrimaryType == "cafe" {
+				cafeCountA++
 			}
 		}
 		// ユーザーBはボウリング場が多い
 		bowlingCountB := 0
 		for _, p := range respB {
-			for _, typ := range p.Types {
-				if typ == "bowling_alley" {
-					bowlingCountB++
-					break
-				}
+			if p.PrimaryType == "bowling_alley" {
+				bowlingCountB++
 			}
 		}
 

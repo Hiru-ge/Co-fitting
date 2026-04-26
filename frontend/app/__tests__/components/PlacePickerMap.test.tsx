@@ -44,6 +44,7 @@ const mockPlaces = [
     lat: 35.6762,
     lng: 139.6503,
     rating: 4.2,
+    display_type: "カフェ",
     types: ["cafe"],
   },
   {
@@ -53,6 +54,7 @@ const mockPlaces = [
     lat: 35.677,
     lng: 139.651,
     rating: 3.8,
+    display_type: "レストラン",
     types: ["restaurant"],
   },
 ];

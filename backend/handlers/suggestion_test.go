@@ -94,9 +94,9 @@ func createTestUser(t *testing.T) models.User {
 
 func TestSuggest(t *testing.T) {
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
-		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "park"},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
 	}
 
 	t.Run("有効な座標で施設が返される", func(t *testing.T) {
@@ -272,10 +272,10 @@ func TestSuggest(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mixedPlaces := []services.PlaceResult{
-			{PlaceID: "realestate_1", Name: "○○不動産", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"real_estate_agency", "point_of_interest", "establishment"}},
-			{PlaceID: "city_1", Name: "渋谷区", Vicinity: "東京都", Lat: 35.6640, Lng: 139.6982, Rating: 0, Types: []string{"locality", "political"}},
-			{PlaceID: "cafe_1", Name: "隠れ家カフェ", Vicinity: "渋谷区1-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"cafe", "food", "point_of_interest", "establishment"}},
-			{PlaceID: "lawyer_1", Name: "○○法律事務所", Vicinity: "渋谷区2-2", Lat: 35.6780, Lng: 139.6520, Rating: 4.0, Types: []string{"lawyer", "point_of_interest", "establishment"}},
+			{PlaceID: "realestate_1", Name: "○○不動産", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, PrimaryType: "real_estate_agency"},
+			{PlaceID: "city_1", Name: "渋谷区", Vicinity: "東京都", Lat: 35.6640, Lng: 139.6982, Rating: 0, PrimaryType: "locality"},
+			{PlaceID: "cafe_1", Name: "隠れ家カフェ", Vicinity: "渋谷区1-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, PrimaryType: "cafe"},
+			{PlaceID: "lawyer_1", Name: "○○法律事務所", Vicinity: "渋谷区2-2", Lat: 35.6780, Lng: 139.6520, Rating: 4.0, PrimaryType: "lawyer"},
 		}
 
 		mock := &mockPlacesClient{Results: mixedPlaces}
@@ -315,8 +315,8 @@ func TestSuggest(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		onlyBadPlaces := []services.PlaceResult{
-			{PlaceID: "realestate_1", Name: "○○不動産", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"real_estate_agency", "establishment"}},
-			{PlaceID: "city_1", Name: "渋谷区", Vicinity: "東京都", Lat: 35.6640, Lng: 139.6982, Rating: 0, Types: []string{"locality", "political"}},
+			{PlaceID: "realestate_1", Name: "○○不動産", Vicinity: "渋谷区", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, PrimaryType: "real_estate_agency"},
+			{PlaceID: "city_1", Name: "渋谷区", Vicinity: "東京都", Lat: 35.6640, Lng: 139.6982, Rating: 0, PrimaryType: "locality"},
 		}
 
 		mock := &mockPlacesClient{Results: onlyBadPlaces}
@@ -461,11 +461,11 @@ func TestSuggestDailyCache(t *testing.T) {
 	}
 
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "place_2", Name: "Bowling Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"bowling_alley"}},
-		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
-		{PlaceID: "place_4", Name: "Karaoke Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 4.5, Types: []string{"karaoke"}},
-		{PlaceID: "place_5", Name: "Bar Epsilon", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.5, Types: []string{"bar"}},
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "place_2", Name: "Bowling Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "bowling_alley"},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
+		{PlaceID: "place_4", Name: "Karaoke Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 4.5, PrimaryType: "karaoke"},
+		{PlaceID: "place_5", Name: "Bar Epsilon", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.5, PrimaryType: "bar"},
 	}
 
 	t.Run("レスポンスが配列（最大3件）で返される", func(t *testing.T) {
@@ -602,8 +602,8 @@ func TestSuggestDailyCache(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		twoPlaces := []services.PlaceResult{
-			{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-			{PlaceID: "place_2", Name: "Restaurant Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"restaurant"}},
+			{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+			{PlaceID: "place_2", Name: "Restaurant Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "restaurant"},
 		}
 
 		mock := &trackingMockPlacesClient{Results: twoPlaces}
@@ -824,10 +824,10 @@ func TestSuggestDailyCache(t *testing.T) {
 // 全提案を使い切った後に興味タグを変更しても、3件提案の権利は復活しないことを確認する
 func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
-		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
-		{PlaceID: "place_4", Name: "Bar Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 3.5, Types: []string{"bar"}},
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "park"},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
+		{PlaceID: "place_4", Name: "Bar Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 3.5, PrimaryType: "bar"},
 	}
 
 	t.Run("全提案を訪問済み後に興味タグ変更しても日次上限は復活しない", func(t *testing.T) {
@@ -929,15 +929,15 @@ func TestInterestUpdateDoesNotResetDailyLimit(t *testing.T) {
 func TestPersonalizedSuggest(t *testing.T) {
 	// 興味内: cafe（"カフェ"）、興味外: bowling_alley（"スポーツ施設"）
 	cafePlaces := []services.PlaceResult{
-		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
-		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, PrimaryType: "cafe"},
+		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, PrimaryType: "cafe"},
 	}
 	bowlingPlaces := []services.PlaceResult{
-		{PlaceID: "bowling_1", Name: "ボウリング場A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"bowling_alley"}},
-		{PlaceID: "bowling_2", Name: "ボウリング場B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"bowling_alley"}},
-		{PlaceID: "bowling_3", Name: "ボウリング場C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"bowling_alley"}},
-		{PlaceID: "bowling_4", Name: "ボウリング場D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"bowling_alley"}},
+		{PlaceID: "bowling_1", Name: "ボウリング場A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, PrimaryType: "bowling_alley"},
+		{PlaceID: "bowling_2", Name: "ボウリング場B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, PrimaryType: "bowling_alley"},
+		{PlaceID: "bowling_3", Name: "ボウリング場C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, PrimaryType: "bowling_alley"},
+		{PlaceID: "bowling_4", Name: "ボウリング場D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, PrimaryType: "bowling_alley"},
 	}
 	mixedPlaces := append(cafePlaces, bowlingPlaces...)
 
@@ -983,11 +983,8 @@ func TestPersonalizedSuggest(t *testing.T) {
 		// 3件中少なくとも2件はcafe（興味内）であることを確認
 		cafeCount := 0
 		for _, p := range resp {
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					cafeCount++
-					break
-				}
+			if p.PrimaryType == "cafe" {
+				cafeCount++
 			}
 		}
 		if cafeCount < 2 {
@@ -1114,15 +1111,8 @@ func TestPersonalizedSuggest(t *testing.T) {
 			t.Errorf("Expected 3 places, got %d", len(resp))
 		}
 		for _, p := range resp {
-			isCafe := false
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					isCafe = true
-					break
-				}
-			}
-			if !isCafe {
-				t.Errorf("Expected all places to be cafe, but got %v", p.Types)
+			if p.PrimaryType != "cafe" {
+				t.Errorf("Expected all places to be cafe, but got %s", p.PrimaryType)
 			}
 		}
 	})
@@ -1194,7 +1184,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 	t.Run("radius=60000 should be limited to 50000", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
 			Results: []services.PlaceResult{
-				{PlaceID: "place1", Name: "Test Place 1", Types: []string{"restaurant"}},
+				{PlaceID: "place1", Name: "Test Place 1", PrimaryType: "restaurant"},
 			},
 			Err: nil,
 		}
@@ -1234,7 +1224,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 	t.Run("radius=30000 should remain 30000", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
 			Results: []services.PlaceResult{
-				{PlaceID: "place2", Name: "Test Place 2", Types: []string{"cafe"}},
+				{PlaceID: "place2", Name: "Test Place 2", PrimaryType: "cafe"},
 			},
 			Err: nil,
 		}
@@ -1285,7 +1275,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 
 		mock := &trackingMockPlacesClient{
 			Results: []services.PlaceResult{
-				{PlaceID: "place_r", Name: "Test Place R", Types: []string{"cafe"}},
+				{PlaceID: "place_r", Name: "Test Place R", PrimaryType: "cafe"},
 			},
 			Err: nil,
 		}
@@ -1324,7 +1314,7 @@ func TestSuggestRadiusLimit(t *testing.T) {
 	t.Run("radius=0 のときユーザーのsearch_radius設定値(デフォルト10000)が使われる", func(t *testing.T) {
 		mock := &trackingMockPlacesClient{
 			Results: []services.PlaceResult{
-				{PlaceID: "place3", Name: "Test Place 3", Types: []string{"cafe"}},
+				{PlaceID: "place3", Name: "Test Place 3", PrimaryType: "cafe"},
 			},
 			Err: nil,
 		}
@@ -1365,15 +1355,15 @@ func TestSuggestRadiusLimit(t *testing.T) {
 // === Issue #178: is_interest_match フラグのテスト ===
 func TestInterestMatchFlag(t *testing.T) {
 	cafePlaces := []services.PlaceResult{
-		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
-		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+		{PlaceID: "cafe_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "cafe_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, PrimaryType: "cafe"},
+		{PlaceID: "cafe_3", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, PrimaryType: "cafe"},
 	}
 	museumPlaces := []services.PlaceResult{
-		{PlaceID: "museum_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
-		{PlaceID: "museum_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
-		{PlaceID: "museum_3", Name: "博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"museum"}},
-		{PlaceID: "museum_4", Name: "博物館D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, Types: []string{"museum"}},
+		{PlaceID: "museum_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, PrimaryType: "museum"},
+		{PlaceID: "museum_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, PrimaryType: "museum"},
+		{PlaceID: "museum_3", Name: "博物館C", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, PrimaryType: "museum"},
+		{PlaceID: "museum_4", Name: "博物館D", Vicinity: "渋谷区2-4", Lat: 35.6773, Lng: 139.6513, Rating: 3.9, PrimaryType: "museum"},
 	}
 	mixedPlaces := append(cafePlaces, museumPlaces...)
 
@@ -1416,13 +1406,7 @@ func TestInterestMatchFlag(t *testing.T) {
 
 		// cafeはis_interest_match=true、museumはfalseであることを確認
 		for _, p := range resp {
-			isCafe := false
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					isCafe = true
-					break
-				}
-			}
+			isCafe := p.PrimaryType == "cafe"
 			if isCafe && (p.IsInterestMatch == nil || !*p.IsInterestMatch) {
 				t.Errorf("cafe place '%s' should have is_interest_match=true, got %v", p.PlaceID, p.IsInterestMatch)
 			}
@@ -1472,12 +1456,12 @@ func TestInterestMatchFlag(t *testing.T) {
 // 提案APIレスポンスの各施設に is_interest_match フラグが正しく設定されることを確認する
 func TestBreakoutModeSuggestion(t *testing.T) {
 	cafePlaces := []services.PlaceResult{
-		{PlaceID: "cafe_bm_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "cafe_bm_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
+		{PlaceID: "cafe_bm_1", Name: "カフェA", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "cafe_bm_2", Name: "カフェB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, PrimaryType: "cafe"},
 	}
 	museumPlaces := []services.PlaceResult{
-		{PlaceID: "museum_bm_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"museum"}},
-		{PlaceID: "museum_bm_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"museum"}},
+		{PlaceID: "museum_bm_1", Name: "博物館A", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, PrimaryType: "museum"},
+		{PlaceID: "museum_bm_2", Name: "博物館B", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, PrimaryType: "museum"},
 	}
 	mixedPlaces := append(cafePlaces, museumPlaces...)
 
@@ -1516,9 +1500,9 @@ func TestBreakoutModeSuggestion(t *testing.T) {
 		// is_interest_match フィールドを確認するために生のJSONをデコード
 		var result struct {
 			Places []struct {
-				PlaceID         string   `json:"place_id"`
-				Types           []string `json:"types"`
-				IsInterestMatch *bool    `json:"is_interest_match"`
+				PlaceID         string `json:"place_id"`
+				PrimaryType     string `json:"primary_type"`
+				IsInterestMatch *bool  `json:"is_interest_match"`
 			} `json:"places"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
@@ -1535,13 +1519,7 @@ func TestBreakoutModeSuggestion(t *testing.T) {
 				t.Errorf("Place %s: expected is_interest_match to be set (not nil)", p.PlaceID)
 				continue
 			}
-			isCafe := false
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					isCafe = true
-					break
-				}
-			}
+			isCafe := p.PrimaryType == "cafe"
 			if isCafe && !*p.IsInterestMatch {
 				t.Errorf("Place %s (cafe): expected is_interest_match=true, got false", p.PlaceID)
 			}
@@ -1604,11 +1582,11 @@ func TestSuggestForceReload(t *testing.T) {
 	}
 
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
-		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
-		{PlaceID: "place_4", Name: "Museum Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 4.5, Types: []string{"museum"}},
-		{PlaceID: "place_5", Name: "Bar Epsilon", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.5, Types: []string{"bar"}},
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "park"},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
+		{PlaceID: "place_4", Name: "Museum Delta", Vicinity: "渋谷区4-4", Lat: 35.6790, Lng: 139.6530, Rating: 4.5, PrimaryType: "museum"},
+		{PlaceID: "place_5", Name: "Bar Epsilon", Vicinity: "渋谷区5-5", Lat: 35.6800, Lng: 139.6540, Rating: 3.5, PrimaryType: "bar"},
 	}
 
 	t.Run("is_reload=trueで3回を超えるリクエストは429を返す", func(t *testing.T) {
@@ -1914,14 +1892,14 @@ func TestSuggestForceReload(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		cafePlaces := []services.PlaceResult{
-			{PlaceID: "cafe_r1", Name: "カフェR1", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-			{PlaceID: "cafe_r2", Name: "カフェR2", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
-			{PlaceID: "cafe_r3", Name: "カフェR3", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+			{PlaceID: "cafe_r1", Name: "カフェR1", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+			{PlaceID: "cafe_r2", Name: "カフェR2", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, PrimaryType: "cafe"},
+			{PlaceID: "cafe_r3", Name: "カフェR3", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, PrimaryType: "cafe"},
 		}
 		bowlingPlaces := []services.PlaceResult{
-			{PlaceID: "bowling_r1", Name: "ボウリング場R1", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, Types: []string{"bowling_alley"}},
-			{PlaceID: "bowling_r2", Name: "ボウリング場R2", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, Types: []string{"bowling_alley"}},
-			{PlaceID: "bowling_r3", Name: "ボウリング場R3", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, Types: []string{"bowling_alley"}},
+			{PlaceID: "bowling_r1", Name: "ボウリング場R1", Vicinity: "渋谷区2-1", Lat: 35.6770, Lng: 139.6510, Rating: 4.5, PrimaryType: "bowling_alley"},
+			{PlaceID: "bowling_r2", Name: "ボウリング場R2", Vicinity: "渋谷区2-2", Lat: 35.6771, Lng: 139.6511, Rating: 4.3, PrimaryType: "bowling_alley"},
+			{PlaceID: "bowling_r3", Name: "ボウリング場R3", Vicinity: "渋谷区2-3", Lat: 35.6772, Lng: 139.6512, Rating: 4.1, PrimaryType: "bowling_alley"},
 		}
 		allPlaces := append(cafePlaces, bowlingPlaces...)
 		mock := &trackingMockPlacesClient{Results: allPlaces}
@@ -1973,11 +1951,8 @@ func TestSuggestForceReload(t *testing.T) {
 		// パーソナライズにより興味内(cafe)が優先される
 		cafeCount := 0
 		for _, p := range resp2 {
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					cafeCount++
-					break
-				}
+			if p.PrimaryType == "cafe" {
+				cafeCount++
 			}
 		}
 		if cafeCount < 2 {
@@ -1994,9 +1969,9 @@ func TestCorruptedCacheHandling(t *testing.T) {
 	}
 
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
-		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+		{PlaceID: "place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "place_2", Name: "Park Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "park"},
+		{PlaceID: "place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
 	}
 
 	t.Run("Redisキャッシュに破損JSONがある場合でもPlaces APIを呼び出して正常に提案を返す", func(t *testing.T) {
@@ -2073,9 +2048,9 @@ func TestCorruptedCacheHandling(t *testing.T) {
 // 提案APIレスポンスに is_breakout フラグが設定されることを確認する
 func TestProficiencyBasedBreakout(t *testing.T) {
 	cafePlaces := []services.PlaceResult{
-		{PlaceID: "cafe_prof_1", Name: "カフェX", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "cafe_prof_2", Name: "カフェY", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, Types: []string{"cafe"}},
-		{PlaceID: "cafe_prof_3", Name: "カフェZ", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, Types: []string{"cafe"}},
+		{PlaceID: "cafe_prof_1", Name: "カフェX", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "cafe_prof_2", Name: "カフェY", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Rating: 4.0, PrimaryType: "cafe"},
+		{PlaceID: "cafe_prof_3", Name: "カフェZ", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.8, PrimaryType: "cafe"},
 	}
 
 	t.Run("初回訪問ユーザーへの提案にis_breakout=trueが設定される（熟練度Lv.1）", func(t *testing.T) {
@@ -2196,13 +2171,13 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 	t.Run("selectPersonalizedPlacesは興味内2枠+完全ランダム1枠で選出する（Issue #222）", func(t *testing.T) {
 		// 興味内ぴったり2件（2枠に対して2件）→ 必ず2件とも選ばれ、残り1枠は興味外から
 		inInterest := []services.PlaceResult{
-			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
-			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_1", PrimaryType: "cafe", IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_2", PrimaryType: "cafe", IsInterestMatch: boolPtr(true)},
 		}
 		outOfInterest := []services.PlaceResult{
-			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
-			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
-			{PlaceID: "museum_sel_3", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_1", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_2", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_3", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
 		}
 
 		// 複数回試行しても常に同じパターンになることを確認
@@ -2217,11 +2192,8 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 			// 興味内（cafe）が必ず2件含まれること（固定2枠）
 			cafeCount := 0
 			for _, p := range selected {
-				for _, typ := range p.Types {
-					if typ == "cafe" {
-						cafeCount++
-						break
-					}
+				if p.PrimaryType == "cafe" {
+					cafeCount++
 				}
 			}
 			if cafeCount != 2 {
@@ -2231,11 +2203,8 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 			// 残り1枠は興味外（museum）から選ばれること
 			museumCount := 0
 			for _, p := range selected {
-				for _, typ := range p.Types {
-					if typ == "museum" {
-						museumCount++
-						break
-					}
+				if p.PrimaryType == "museum" {
+					museumCount++
 				}
 			}
 			if museumCount != 1 {
@@ -2247,15 +2216,15 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 	t.Run("selectPersonalizedPlacesは興味内3件以上あっても2枠に制限する（Issue #222）", func(t *testing.T) {
 		// 興味内3件、興味外4件 → 2枠のみ興味内、1枠はすべての残り候補からランダム
 		inInterest := []services.PlaceResult{
-			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
-			{PlaceID: "cafe_sel_2", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
-			{PlaceID: "cafe_sel_3", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_1", PrimaryType: "cafe", IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_2", PrimaryType: "cafe", IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_3", PrimaryType: "cafe", IsInterestMatch: boolPtr(true)},
 		}
 		outOfInterest := []services.PlaceResult{
-			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
-			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
-			{PlaceID: "museum_sel_3", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
-			{PlaceID: "museum_sel_4", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_1", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_2", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_3", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_4", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
 		}
 
 		selected := services.SelectPersonalizedPlaces(inInterest, outOfInterest)
@@ -2267,11 +2236,8 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 		// 興味内は必ず2件（旧挙動の3件全取りは廃止）
 		cafeCount := 0
 		for _, p := range selected {
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					cafeCount++
-					break
-				}
+			if p.PrimaryType == "cafe" {
+				cafeCount++
 			}
 		}
 		if cafeCount < 2 {
@@ -2282,11 +2248,11 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 	t.Run("selectPersonalizedPlacesは興味内が2未満の場合は全件使い残りをランダム補充", func(t *testing.T) {
 		// 興味内1件のみ
 		inInterest := []services.PlaceResult{
-			{PlaceID: "cafe_sel_1", Types: []string{"cafe"}, IsInterestMatch: boolPtr(true)},
+			{PlaceID: "cafe_sel_1", PrimaryType: "cafe", IsInterestMatch: boolPtr(true)},
 		}
 		outOfInterest := []services.PlaceResult{
-			{PlaceID: "museum_sel_1", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
-			{PlaceID: "museum_sel_2", Types: []string{"museum"}, IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_1", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
+			{PlaceID: "museum_sel_2", PrimaryType: "museum", IsInterestMatch: boolPtr(false)},
 		}
 
 		selected := services.SelectPersonalizedPlaces(inInterest, outOfInterest)
@@ -2297,11 +2263,8 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 		// cafe が1件含まれること（興味内全件）
 		cafeCount := 0
 		for _, p := range selected {
-			for _, typ := range p.Types {
-				if typ == "cafe" {
-					cafeCount++
-					break
-				}
+			if p.PrimaryType == "cafe" {
+				cafeCount++
 			}
 		}
 		if cafeCount < 1 {
@@ -2315,7 +2278,7 @@ func TestProficiencyBasedBreakout(t *testing.T) {
 // TestSportsVenueGenreMapping は bowling_alley タイプが "スポーツ施設" にマッピングされることを確認する
 func TestSportsVenueGenreMapping(t *testing.T) {
 	t.Run("bowling_alleyタイプはスポーツ施設にマッピングされる", func(t *testing.T) {
-		name := services.GetGenreNameFromTypes([]string{"bowling_alley"})
+		name := services.GetGenreNameFromPrimaryType("bowling_alley")
 		if name != "スポーツ施設" {
 			t.Errorf("expected 'スポーツ施設', got '%s'", name)
 		}
@@ -2334,9 +2297,9 @@ func TestSportsVenueGenreMapping(t *testing.T) {
 		testDB.Create(&models.UserInterest{UserID: user.ID, GenreTagID: sportsTag.ID})
 
 		bowlingPlaces := []services.PlaceResult{
-			{PlaceID: "bowling_195_1", Name: "ボウリング場A", Vicinity: "渋谷区3-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"bowling_alley"}},
-			{PlaceID: "bowling_195_2", Name: "ボウリング場B", Vicinity: "渋谷区3-2", Lat: 35.6763, Lng: 139.6504, Rating: 3.8, Types: []string{"bowling_alley"}},
-			{PlaceID: "bowling_195_3", Name: "ボウリング場C", Vicinity: "渋谷区3-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.9, Types: []string{"bowling_alley"}},
+			{PlaceID: "bowling_195_1", Name: "ボウリング場A", Vicinity: "渋谷区3-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, PrimaryType: "bowling_alley"},
+			{PlaceID: "bowling_195_2", Name: "ボウリング場B", Vicinity: "渋谷区3-2", Lat: 35.6763, Lng: 139.6504, Rating: 3.8, PrimaryType: "bowling_alley"},
+			{PlaceID: "bowling_195_3", Name: "ボウリング場C", Vicinity: "渋谷区3-3", Lat: 35.6764, Lng: 139.6505, Rating: 3.9, PrimaryType: "bowling_alley"},
 		}
 		mock := &mockPlacesClient{Results: bowlingPlaces}
 		router := setupSuggestionRouter(mock)
@@ -2386,17 +2349,17 @@ func TestNewGenreTypeMapping(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.placeType+"→"+tt.genre, func(t *testing.T) {
-			name := services.GetGenreNameFromTypes([]string{tt.placeType})
+			name := services.GetGenreNameFromPrimaryType(tt.placeType)
 			if name != tt.genre {
 				t.Errorf("expected '%s', got '%s'", tt.genre, name)
 			}
 		})
 	}
 
-	// services.VisitableTypes にも含まれていることを確認
+	// services.VisitableTypes にも含まれていることを確認（抽象タイプのみ）
 	t.Run("ジャンルタイプがservices.VisitableTypesに含まれる", func(t *testing.T) {
 		validTypes := []string{
-			"ramen_restaurant", "karaoke", "amusement_center", "video_arcade",
+			"karaoke", "amusement_center", "video_arcade",
 			"public_bath", "sauna", "bowling_alley",
 		}
 		for _, tp := range validTypes {
@@ -2439,8 +2402,8 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 			resp := map[string]interface{}{
 				"places": []map[string]interface{}{
 					{
-						"id":    "ChIJN1t_tDeuEmsRUsoyG83frY4",
-						"types": []string{"cafe", "food", "point_of_interest", "establishment"},
+						"id":          "ChIJN1t_tDeuEmsRUsoyG83frY4",
+						"primaryType": "cafe",
 						"displayName": map[string]string{
 							"text":         "カフェ アルファ",
 							"languageCode": "ja",
@@ -2460,8 +2423,8 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 						"shortFormattedAddress": "渋谷区1-1",
 					},
 					{
-						"id":    "ChIJP3Sa8ziYEmsRUKgyFmh9AQM",
-						"types": []string{"park", "point_of_interest"},
+						"id":          "ChIJP3Sa8ziYEmsRUKgyFmh9AQM",
+						"primaryType": "park",
 						"displayName": map[string]string{
 							"text":         "公園 ベータ",
 							"languageCode": "ja",
@@ -2517,8 +2480,8 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 		if r1.PhotoReference != "places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/AUGGfZl" {
 			t.Errorf("expected PhotoReference 'places/ChIJN1t_tDeuEmsRUsoyG83frY4/photos/AUGGfZl', got '%s'", r1.PhotoReference)
 		}
-		if len(r1.Types) != 4 || r1.Types[0] != "cafe" {
-			t.Errorf("expected Types starting with 'cafe', got %v", r1.Types)
+		if r1.PrimaryType != "cafe" {
+			t.Errorf("expected PrimaryType 'cafe', got '%s'", r1.PrimaryType)
 		}
 
 		// 2件目: 写真なしの場合
@@ -2611,9 +2574,9 @@ func TestNewPlacesAPINearbySearch(t *testing.T) {
 // 30日以内の訪問済み施設は除外され、31日以上前の訪問済み施設は再提案候補に含まれることを確認する
 func TestVisitedFilterWithTimeThreshold(t *testing.T) {
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "thresh_1", Name: "Cafe A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "thresh_2", Name: "Park B", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"park"}},
-		{PlaceID: "thresh_3", Name: "Restaurant C", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+		{PlaceID: "thresh_1", Name: "Cafe A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "thresh_2", Name: "Park B", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "park"},
+		{PlaceID: "thresh_3", Name: "Restaurant C", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
 	}
 
 	t.Run("30日以内の訪問済み施設は提案から除外される", func(t *testing.T) {
@@ -2838,9 +2801,9 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "open_1", Name: "Open Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}, IsOpenNow: &openNow},
-			{PlaceID: "closed_1", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, Types: []string{"restaurant"}, IsOpenNow: &closedNow},
-			{PlaceID: "open_2", Name: "Open Park", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, Types: []string{"park"}, IsOpenNow: &openNow},
+			{PlaceID: "open_1", Name: "Open Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe", IsOpenNow: &openNow},
+			{PlaceID: "closed_1", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.8, PrimaryType: "restaurant", IsOpenNow: &closedNow},
+			{PlaceID: "open_2", Name: "Open Park", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 4.5, PrimaryType: "park", IsOpenNow: &openNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
@@ -2881,7 +2844,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "closed_only", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, IsOpenNow: &closedNow},
+			{PlaceID: "closed_only", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, PrimaryType: "cafe", IsOpenNow: &closedNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
@@ -2924,8 +2887,8 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "closed_1", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, Types: []string{"cafe"}, IsOpenNow: &closedNow},
-			{PlaceID: "closed_2", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.5, Types: []string{"restaurant"}, IsOpenNow: &closedNow},
+			{PlaceID: "closed_1", Name: "Closed Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 3.0, PrimaryType: "cafe", IsOpenNow: &closedNow},
+			{PlaceID: "closed_2", Name: "Closed Restaurant", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 3.5, PrimaryType: "restaurant", IsOpenNow: &closedNow},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
@@ -2956,7 +2919,7 @@ func TestSuggestFilterOpenNow(t *testing.T) {
 		token := generateTestToken(user.ID)
 
 		mockPlaces := []services.PlaceResult{
-			{PlaceID: "unknown_hours", Name: "Unknown Hours Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, Types: []string{"cafe"}, IsOpenNow: nil},
+			{PlaceID: "unknown_hours", Name: "Unknown Hours Cafe", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.0, PrimaryType: "cafe", IsOpenNow: nil},
 		}
 		mock := &mockPlacesClient{Results: mockPlaces}
 		router := setupSuggestionRouter(mock)
@@ -2999,9 +2962,9 @@ func TestSuggest_SnoozeFilter(t *testing.T) {
 	}
 
 	snoozePlaces := []services.PlaceResult{
-		{PlaceID: "snooze_place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, Types: []string{"cafe"}},
-		{PlaceID: "snooze_place_2", Name: "Bar Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, Types: []string{"bar"}},
-		{PlaceID: "snooze_place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, Types: []string{"restaurant"}},
+		{PlaceID: "snooze_place_1", Name: "Cafe Alpha", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Rating: 4.2, PrimaryType: "cafe"},
+		{PlaceID: "snooze_place_2", Name: "Bar Beta", Vicinity: "渋谷区2-2", Lat: 35.6770, Lng: 139.6510, Rating: 4.0, PrimaryType: "bar"},
+		{PlaceID: "snooze_place_3", Name: "Restaurant Gamma", Vicinity: "渋谷区3-3", Lat: 35.6780, Lng: 139.6520, Rating: 3.8, PrimaryType: "restaurant"},
 	}
 
 	t.Run("スキップ期間中の施設は提案に出ない", func(t *testing.T) {
@@ -3097,9 +3060,9 @@ func TestSuggest_SnoozeFilter(t *testing.T) {
 
 func TestSuggest_AdultVenueFilter(t *testing.T) {
 	mockPlaces := []services.PlaceResult{
-		{PlaceID: "bar_1", Name: "居酒屋A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, Types: []string{"bar", "food"}},
-		{PlaceID: "club_1", Name: "クラブB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, Types: []string{"night_club", "entertainment"}},
-		{PlaceID: "cafe_1", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, Types: []string{"cafe"}},
+		{PlaceID: "bar_1", Name: "居酒屋A", Vicinity: "渋谷区1-1", Lat: 35.6762, Lng: 139.6503, PrimaryType: "bar"},
+		{PlaceID: "club_1", Name: "クラブB", Vicinity: "渋谷区1-2", Lat: 35.6763, Lng: 139.6504, PrimaryType: "night_club"},
+		{PlaceID: "cafe_1", Name: "カフェC", Vicinity: "渋谷区1-3", Lat: 35.6764, Lng: 139.6505, PrimaryType: "cafe"},
 	}
 
 	t.Run("enable_adult_venues=false のユーザーには bar/night_club が含まれない", func(t *testing.T) {

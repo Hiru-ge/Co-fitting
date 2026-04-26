@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getSuggestions } from "~/api/suggestions";
 import { getPlacePhoto } from "~/api/places";
-import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import {
   ApiError,
   API_ERROR_CODES,
@@ -100,9 +99,7 @@ export function useSuggestionLoad({
         interestMatchCount: placesWithPhotos.filter((p) => p.is_interest_match)
           .length,
         breakoutCount: placesWithPhotos.filter((p) => p.is_breakout).length,
-        categories: placesWithPhotos.map((p) =>
-          pickCategoryFromAPIPlaceTypes(p.types ?? []),
-        ),
+        categories: placesWithPhotos.map((p) => p.display_type),
         isReload,
       });
     } catch (err) {

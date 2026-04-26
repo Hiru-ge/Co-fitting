@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router";
 import { isWithinCheckInRange } from "~/lib/geolocation";
-import { pickCategoryFromAPIPlaceTypes } from "~/lib/category-map";
 import { useLocation } from "~/hooks/use-location";
 import {
   useSuggestionLoad,
@@ -49,7 +48,7 @@ export function useSuggestions(authToken: string) {
     if (skippedPlace) {
       sendSuggestionSkipped({
         placeName: skippedPlace.name,
-        category: pickCategoryFromAPIPlaceTypes(skippedPlace.types ?? []),
+        category: skippedPlace.display_type,
         isInterestMatch: !!skippedPlace.is_interest_match,
         isBreakout: !!skippedPlace.is_breakout,
       });
@@ -60,7 +59,7 @@ export function useSuggestions(authToken: string) {
       if (nextPlace) {
         sendSuggestionViewed({
           placeName: nextPlace.name,
-          category: pickCategoryFromAPIPlaceTypes(nextPlace.types ?? []),
+          category: nextPlace.display_type,
           isInterestMatch: !!nextPlace.is_interest_match,
           isBreakout: !!nextPlace.is_breakout,
           cardIndex: suggestionLoad.originalCardOrder.indexOf(
@@ -79,7 +78,7 @@ export function useSuggestions(authToken: string) {
       if (!snoozedPlace) return;
       sendSuggestionSnoozed({
         placeName: snoozedPlace.name,
-        category: pickCategoryFromAPIPlaceTypes(snoozedPlace.types ?? []),
+        category: snoozedPlace.display_type,
         isInterestMatch: !!snoozedPlace.is_interest_match,
         isBreakout: !!snoozedPlace.is_breakout,
         snoozeDays: 7,
