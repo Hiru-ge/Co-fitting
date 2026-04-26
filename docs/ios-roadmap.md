@@ -12,106 +12,104 @@
 | 既読 | ドキュメント | URL | 目的 |
 |---|---|---|---|
 | [x] | Expo Get Started | https://docs.expo.dev/get-started/introduction/ | 環境構築・全体像の把握 |
-| [ ] | Expo Router | https://expo.github.io/router/docs/ | ルーティング（React Routerに近い） |
+| [x] | Expo チュートリアル | https://docs.expo.dev/tutorial/introduction/ | Expo Router・基本操作 |
 | [ ] | App Store Review Guidelines | https://developer.apple.com/app-store/review/guidelines/ | 審査でリジェクトされないために必読 |
-| [ ] | A Apple Human Interface Guidelines | https://developer.apple.com/design/human-interface-guidelines/ | iOSらしいUI設計のルール |
+| [ ] | Apple Human Interface Guidelines | https://developer.apple.com/design/human-interface-guidelines/ | iOSらしいUI設計のルール |
 | [ ] | Sign in with Apple（Expo） | https://docs.expo.dev/versions/latest/sdk/apple-authentication/ | Google認証に加えて必須実装 |
 
 > **注意**: App Store に Google等のサードパーティログインを使う場合、Sign in with Apple の併用が規約で必須（2020年6月〜）。未対応はリジェクト対象。
 
 ---
 
-## Phase A: 環境構築・認証基盤（5月）
+## 5月：認証基盤 + 全機能実装
 
-### A-1. 開発環境セットアップ
-- [x] https://docs.expo.dev/get-started/introduction/ を参考にiOSシミュレーターでの開発環境を構築(next-stepsまでやった)
-- [x] iOS シミュレーターで Hello World を動作確認
-- [x] https://docs.expo.dev/tutorial/introduction/ でチュートリアル
+Apple Developer Program は5月初旬に申請しておく（審査に数日かかるため早めに済ませる）。
+
+### 4月末先行（〜4/30）
+- [ ] Google OAuth 実装開始（`expo-auth-session` + `expo-secure-store`）
+
+### 1週目（GW・5/1〜5/6）
+- [ ] Apple Developer Program 申請
+- [ ] Google OAuth 完成・動作確認
+- [ ] 全画面プレースホルダー実装（タブ構成: 提案 / 訪問履歴 / マップ / プロフィール）
+- [ ] GET系APIの繋ぎ込み
+  - `GET /api/users/me` — プロフィール画面
+  - `GET /api/users/me/stats` — XP・レベル統計
+  - `GET /api/users/me/badges` — バッジ一覧
+  - `GET /api/users/me/proficiency` — ジャンル習熟度
+  - `GET /api/users/me/interests` — 興味タグ
+  - `GET /api/genres` — ジャンル一覧
+  - `GET /api/visits` — 訪問履歴一覧
+  - `GET /api/visits/map` — 訪問マップ（ピン表示）
+  - `GET /api/places/:placeId/photo` — 施設写真
+
+### 2週目
+- [ ] POST/PUT/PATCH/DELETE 繋ぎ込み
+  - `POST /api/suggestions` — 提案生成（`expo-location` で位置情報取得）
+  - `POST /api/visits` — 訪問記録入力
+  - `PATCH /api/visits/:id` — 訪問記録更新
+  - `GET /api/visits/:id` — 訪問記録詳細
+  - `PUT /api/users/me/interests` — 興味タグ更新
+  - `PATCH /api/users/me` — プロフィール編集
+  - `DELETE /api/users/me` — アカウント削除
+  - `POST /api/auth/refresh` — トークンリフレッシュ
+  - `POST /api/auth/logout` — ログアウト
+
+### 3週目
+- [ ] **Sign in with Apple 実装**
+  - フロントエンド: `expo-apple-authentication` 使用
+  - バックエンド: `/api/auth/oauth/apple` エンドポイント新規追加
+  - Apple Developer Program 登録後にシミュレーターでもテスト可能
+
+### 4週目（バッファ）
+- [ ] 積み残し対応
+- [ ] 実機ドッグフーディング（EAS Build → 自分のiPhoneに配信）
 - [ ] ESLint・Prettier・TypeScript 設定
 
-### A-2. プロジェクト基盤
-- [ ] Expo Router の導入・Navigation構造の設計
-  - タブ構成案: 提案 / 訪問履歴 / マップ / プロフィール
-- [ ] 既存 `app/api/client.ts` を移植（ベースURLのみ変更）
-- [ ] 認証トークン管理（`expo-secure-store` を使いSecure Storageに保存）
-- [ ] 認証保護ルートのパターン実装
-
-### A-3. 認証機能
-- [ ] Google OAuth 実装（`expo-auth-session` 使用）
-- [ ] **Sign in with Apple 実装**（`expo-apple-authentication` 使用）
-  - バックエンド: `/api/auth/oauth/apple` エンドポイント追加
-  - Apple Developer Program 登録前でもシミュレーター上でテスト可能
-- [ ] ログアウト・トークンリフレッシュ
-- [ ] ベータ合言葉ロジックの**削除**（iOS版では不要）
-
 ---
 
-## Phase B: コア機能移植（6月前半）
+## 6月：磨き込み + App Store申請素材準備
 
-### B-1. 提案機能
-- [ ] 提案生成画面（ジャンル選択・興味タグ連携）
-- [ ] GPS権限リクエスト（`expo-location` 使用）
-  - `NSLocationWhenInUseUsageDescription` に日本語で用途を明記
-- [ ] Google Maps 表示（`react-native-maps` 使用）
-- [ ] チャレンジモード UI
+インターン前学習（Rails/GCP）と並行して進める。各週のインターン前学習ノルマ達成後に初めてiOS作業に着手すること。
 
-### B-2. 訪問記録機能
-- [ ] 訪問記録入力画面
-- [ ] 感想メモ入力
-- [ ] 訪問記録一覧・詳細画面
-- [ ] 訪問マップ画面（ピン表示）
-
-### B-3. ゲーミフィケーション
-- [ ] XP・レベル・統計表示画面
-- [ ] バッジ一覧・取得演出（アニメーション）
-- [ ] ジャンル習熟度表示
-
-### B-4. プロフィール・設定
-- [ ] プロフィール表示・編集
-- [ ] 興味タグ設定
-- [ ] アカウント削除
-
----
-
-## Phase C: iOS固有対応・仕上げ（6月後半）
-
-### C-1. iOSネイティブ対応
-- [ ] 権限ダイアログの文言整備
-  - 位置情報: `NSLocationWhenInUseUsageDescription`
-- [ ] ディープリンク設定（将来的な共有機能向け）
+### iOSネイティブ対応・polish
+- [ ] 触覚フィードバック（`expo-haptics`）の導入
+  - 訪問記録完了時・バッジ獲得時などフィードバック箇所を設計してから入れる
 - [ ] Safe Area 対応（ノッチ・Dynamic Island）
+- [ ] 権限ダイアログの文言整備（位置情報: `NSLocationWhenInUseUsageDescription`）
+- [ ] アニメーション・UI polish（バッジ獲得演出など）
 
-### C-2. PWA関連の削除
-- [ ] `vite-plugin-pwa` 関連コードの削除（Web版のみ対象のため影響なし）
-- [ ] ベータ合言葉（`beta-access.ts`・`/beta-gate` ルート）はWeb側のみ維持
+### 課金設計
+- [ ] 課金体系の設計（サブスク vs 買い切り vs 広告モデル、広告を出すタイミング）
+- [ ] RevenueCat 導入・サブスク基盤構築
+- [ ] App Store Connect で In-App Purchase 商品登録（審査あり、早めに着手）
 
-### C-3. App Store 申請素材の準備
+### App Store申請素材準備
 - [ ] アプリアイコン（1024×1024px）
 - [ ] スプラッシュスクリーン
 - [ ] スクリーンショット（6.9インチ・6.5インチ用）
-- [ ] アプリ説明文（日本語）
+- [ ] アプリ説明文（日本語）・ASO設計（キーワード100文字）
 - [ ] プライバシーポリシー画面（アプリ内に組み込み必須）
 - [ ] 審査用テストアカウントの用意
 
+### ベータ合言葉・PWA関連の削除
+- [ ] ベータ合言葉ロジックの削除（iOS版では不要）
+
 ---
 
-## Phase D: 配信・審査（7月）
+## 7月：審査・公開
 
-### D-1. Apple Developer Program 登録
-- [ ] Apple Developer Program に登録（$99/年）
-  - ※審査に数日かかるため、Phase C 完了前に登録しておく
-- [ ] App Store Connect でアプリ登録
-
-### D-2. TestFlight ベータ配信
-- [ ] EAS Build で .ipa ビルド（`eas build --platform ios`）
-- [ ] TestFlight に自分のiPhoneで配信
-- [ ] 実機での動作確認・バグ修正
-
-### D-3. App Store 審査申請
+### App Store 審査申請
 - [ ] App Store Connect に申請情報入力
 - [ ] 審査申請（初回は1〜7日程度）
 - [ ] リジェクト対応（あれば修正→再申請）
 - [ ] リリース
+
+### リリース後
+- [ ] Product Hunt 登録
+- [ ] レビュー依頼 in-app prompt の動作確認
+- [ ] X・TikTok で「リリースしました」投稿
+- [ ] 初動データ確認（App Store 検索ワード流入・RevenueCat 転換率）
 
 ---
 
@@ -139,4 +137,6 @@
 | セキュアストレージ | expo-secure-store |
 | 位置情報 | expo-location |
 | 地図 | react-native-maps |
+| 触覚フィードバック | expo-haptics |
+| 課金管理 | RevenueCat |
 | ビルド・配信 | EAS Build / EAS Submit |
