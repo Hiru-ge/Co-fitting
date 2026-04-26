@@ -9,13 +9,13 @@
 
 ## 事前に目を通すドキュメント（着手前に読む）
 
-| ドキュメント | URL | 目的 |
-|---|---|---|
-| Expo Get Started | https://docs.expo.dev/get-started/introduction/ | 環境構築・全体像の把握 |
-| Expo Router | https://expo.github.io/router/docs/ | ルーティング（React Routerに近い） |
-| App Store Review Guidelines | https://developer.apple.com/app-store/review/guidelines/ | 審査でリジェクトされないために必読 |
-| Apple Human Interface Guidelines | https://developer.apple.com/design/human-interface-guidelines/ | iOSらしいUI設計のルール |
-| Sign in with Apple（Expo） | https://docs.expo.dev/versions/latest/sdk/apple-authentication/ | Google認証に加えて必須実装 |
+| 既読 | ドキュメント | URL | 目的 |
+|---|---|---|---|
+| [x] | Expo Get Started | https://docs.expo.dev/get-started/introduction/ | 環境構築・全体像の把握 |
+| [ ] | Expo Router | https://expo.github.io/router/docs/ | ルーティング（React Routerに近い） |
+| [ ] | App Store Review Guidelines | https://developer.apple.com/app-store/review/guidelines/ | 審査でリジェクトされないために必読 |
+| [ ] | A Apple Human Interface Guidelines | https://developer.apple.com/design/human-interface-guidelines/ | iOSらしいUI設計のルール |
+| [ ] | Sign in with Apple（Expo） | https://docs.expo.dev/versions/latest/sdk/apple-authentication/ | Google認証に加えて必須実装 |
 
 > **注意**: App Store に Google等のサードパーティログインを使う場合、Sign in with Apple の併用が規約で必須（2020年6月〜）。未対応はリジェクト対象。
 
@@ -24,10 +24,9 @@
 ## Phase A: 環境構築・認証基盤（5月）
 
 ### A-1. 開発環境セットアップ
-- [ ] Xcode インストール（Mac App Store から）
-- [ ] Expo CLI インストール（`npm install -g expo-cli`）
-- [ ] `npx create-expo-app roamble-ios --template` でプロジェクト作成
-- [ ] iOS シミュレーターで Hello World を動作確認
+- [x] https://docs.expo.dev/get-started/introduction/ を参考にiOSシミュレーターでの開発環境を構築(next-stepsまでやった)
+- [x] iOS シミュレーターで Hello World を動作確認
+- [x] https://docs.expo.dev/tutorial/introduction/ でチュートリアル
 - [ ] ESLint・Prettier・TypeScript 設定
 
 ### A-2. プロジェクト基盤
