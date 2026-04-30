@@ -743,16 +743,4 @@ $(document).ready(function() {
         }
     });
 
-    // 今月のおすすめレシピのインフォメーションボタン
-    $(document).on('click', '.recommended-info-btn', function(e) {
-        e.preventDefault();
-        e.stopPropagation(); // 親要素へのイベント伝播を防ぐ（プリセットボタンが反応しないように）
-
-        const content = `
-            <p>これは今月のおすすめレシピです。</p>
-            <p>このレシピに関する詳細な説明は、こちらの<a href="https://note.com/hiruge/n/n6dbfba296351" target="_blank" style="color: #876b36; text-decoration: underline;">note</a>から確認することができます。</p>
-        `;
-
-        ModalWindow.createAndShow('recommended-info-modal', '今月のおすすめレシピ', content);
-    });
 });
