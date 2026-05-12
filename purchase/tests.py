@@ -2,9 +2,48 @@ from django.urls import reverse
 from unittest.mock import MagicMock, patch
 from types import SimpleNamespace
 import json
+import time
+import stripe
 from Co_fitting.tests.helpers import create_test_user, create_test_recipe, login_test_user, BaseTestCase
 from recipes.models import PresetRecipe
 from Co_fitting.utils.constants import AppConstants
+
+
+def _ensure_webhook_secret():
+    if not AppConstants.STRIPE_WEBHOOK_SECRET:
+        AppConstants.STRIPE_WEBHOOK_SECRET = "whsec_test"
+    return AppConstants.STRIPE_WEBHOOK_SECRET
+
+
+def build_stripe_signature(payload, secret):
+    timestamp = int(time.time())
+    signed_payload = f"{timestamp}.{payload}"
+    signature = stripe.WebhookSignature._compute_signature(signed_payload, secret)
+    return f"t={timestamp},v1={signature}"
+
+
+def post_signed_webhook(client, event_data, content_type="application/json"):
+    if isinstance(event_data, str):
+        payload = event_data
+    else:
+        normalized = dict(event_data)
+        if "id" not in normalized:
+            normalized["id"] = "evt_test_123"
+        if "object" not in normalized:
+            normalized["object"] = "event"
+        if "api_version" not in normalized:
+            normalized["api_version"] = "2024-06-20"
+        if "livemode" not in normalized:
+            normalized["livemode"] = False
+        payload = json.dumps(normalized)
+    secret = _ensure_webhook_secret()
+    signature = build_stripe_signature(payload, secret)
+    return client.post(
+        reverse('purchase:webhook'),
+        data=payload,
+        content_type=content_type,
+        **{"HTTP_STRIPE_SIGNATURE": signature}
+    )
 
 
 class StripePaymentTest(BaseTestCase):
@@ -43,11 +82,7 @@ class StripePaymentTest(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type="application/json",
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
 
@@ -81,11 +116,7 @@ class StripePaymentTest(BaseTestCase):
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
              patch("stripe.Subscription.retrieve", return_value=mock_subscription):
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type="application/json",
-            )
+            response = post_signed_webhook(self.client, event_data)
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
 
@@ -129,11 +160,7 @@ class StripePaymentTest(BaseTestCase):
                 }
             }
         }
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type="application/json",
-        )
+        response = post_signed_webhook(self.client, event_data)
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertEqual(self.user.preset_limit_value, AppConstants.FREE_PRESET_LIMIT)
@@ -150,11 +177,7 @@ class StripePaymentTest(BaseTestCase):
                 "object": {}
             }
         }
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(invalid_event_data),
-            content_type="application/json",
-        )
+        response = post_signed_webhook(self.client, invalid_event_data)
 
         self.assertEqual(response.status_code, 400)  # 400 Bad Request
         response_data = json.loads(response.content)
@@ -176,11 +199,7 @@ class StripePaymentTest(BaseTestCase):
         }
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type="application/json",
-            )
+            response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
@@ -268,11 +287,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
 
     def test_webhook_invalid_json(self):
         """無効なJSONでのWebhookリクエストのテスト"""
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data='invalid json',
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, 'invalid json')
 
         self.assertEqual(response.status_code, 400)
 
@@ -299,11 +314,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
 
@@ -330,11 +341,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
 
@@ -352,11 +359,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         # イベントが処理されることを確認
         self.assertIn(response.status_code, [200, 400])
@@ -389,11 +392,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
              patch("stripe.Subscription.retrieve", return_value=mock_subscription):
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
+            response = post_signed_webhook(self.client, event_data)
 
         # イベントが処理されることを確認
         self.assertEqual(response.status_code, 200)
@@ -420,11 +419,7 @@ class PurchaseWebhookTestCase(BaseTestCase):
         }
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
+            response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
         mock_send_mail.assert_called_once()
@@ -476,11 +471,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
         }
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
+            response = post_signed_webhook(self.client, event_data)
             self.assertEqual(response.status_code, 200)
 
             # 初回登録メールが送信されることを確認
@@ -518,11 +509,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail, \
              patch("stripe.Subscription.retrieve", return_value=mock_subscription):
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
+            response = post_signed_webhook(self.client, event_data)
 
             self.assertEqual(response.status_code, 200)
             # 初回課金なので、メールは送信されない（checkout.session.completedで既に送信済み）
@@ -566,11 +553,7 @@ class PurchaseIntegrationTestCase(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
 
@@ -595,10 +578,9 @@ class PurchaseSecurityTestCase(BaseTestCase):
     def test_webhook_csrf_exempt(self):
         """WebhookエンドポイントがCSRF免除されていることをテスト"""
         # CSRFトークンなしでリクエストを送信
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps({"type": "test.event", "data": {"object": {}}}),
-            content_type='application/json'
+        response = post_signed_webhook(
+            self.client,
+            {"type": "test.event", "data": {"object": {}}}
         )
 
         # CSRFエラーではなく、イベントタイプエラーが返されることを確認
@@ -614,11 +596,7 @@ class PurchaseSecurityTestCase(BaseTestCase):
 
     def test_webhook_content_type_validation(self):
         """WebhookエンドポイントがJSONコンテンツタイプを要求することをテスト"""
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data="plain text",
-            content_type='text/plain'
-        )
+        response = post_signed_webhook(self.client, "plain text", content_type='text/plain')
 
         self.assertEqual(response.status_code, 400)
 
@@ -638,11 +616,7 @@ class PurchaseSecurityTestCase(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         # エラーが発生することを確認
         self.assertIn(response.status_code, [400, 404, 500])
@@ -1272,11 +1246,7 @@ class SubscriptionManagerEdgeCaseTestCase(BaseTestCase):
         }
 
         with patch("Co_fitting.services.email_service.send_mail") as mock_send_mail:
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
+            response = post_signed_webhook(self.client, event_data)
 
         # エラーにならず、メールが送信されることを確認
         self.assertEqual(response.status_code, 200)
@@ -1309,11 +1279,7 @@ class SubscriptionManagerEdgeCaseTestCase(BaseTestCase):
         }
 
         with patch("Co_fitting.services.email_service.send_mail"):
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
+            response = post_signed_webhook(self.client, event_data)
 
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
@@ -1341,11 +1307,7 @@ class SubscriptionManagerEdgeCaseTestCase(BaseTestCase):
             }
         }
 
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
+        response = post_signed_webhook(self.client, event_data)
 
         # エラーにならず、プランが変更されないことを確認
         self.assertEqual(response.status_code, 200)
