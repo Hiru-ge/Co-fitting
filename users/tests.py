@@ -381,12 +381,10 @@ class UserModelTestCase(BaseTestCase):
         """ユーザーが正常に作成されることをテスト"""
         self.assertEqual(self.user.username, 'testuser')
         self.assertEqual(self.user.email, 'test@example.com')
-        self.assertEqual(self.user.plan_type, 'FREE')
         # setUpでis_activeをTrueに設定しているため、Trueであることを確認
         self.assertTrue(self.user.is_active)
         self.assertFalse(self.user.is_staff)
         self.assertIsNone(self.user.deactivated_at)
-        self.assertIsNone(self.user.stripe_customer_id)
 
     def test_user_string_representation(self):
         """ユーザーの文字列表現が正しいことをテスト"""
@@ -402,7 +400,7 @@ class UserModelTestCase(BaseTestCase):
 
         self.assertEqual(user.username, 'newuser')
         self.assertEqual(user.email, 'new@example.com')
-        self.assertEqual(user.preset_limit_value, 1)
+        self.assertEqual(user.preset_limit_value, 5)
         self.assertFalse(user.is_active)
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
@@ -417,7 +415,7 @@ class UserModelTestCase(BaseTestCase):
 
         self.assertEqual(superuser.username, 'admin')
         self.assertEqual(superuser.email, 'admin@example.com')
-        self.assertEqual(superuser.preset_limit_value, 1)
+        self.assertEqual(superuser.preset_limit_value, 5)
         self.assertTrue(superuser.is_active)
         self.assertTrue(superuser.is_staff)
         self.assertTrue(superuser.is_superuser)

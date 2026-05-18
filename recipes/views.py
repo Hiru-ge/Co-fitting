@@ -3,10 +3,7 @@ from django.views.decorators.http import require_POST, require_GET, require_http
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
-from .models import (
-    PresetRecipe, PresetRecipeStep, User, SharedRecipe, SharedRecipeStep,
-    generate_recipe_image
-)
+from .models import PresetRecipe, PresetRecipeStep, SharedRecipe, generate_recipe_image
 from Co_fitting.utils.response_helper import ResponseHelper
 from .forms import RecipeForm, SharedRecipeDataForm
 from django.views.generic import DeleteView
@@ -48,13 +45,9 @@ def mypage(request):
     user = request.user
     recipes = PresetRecipe.objects.filter(created_by=user)
 
-    # サブスクリプション状態を取得（Model層で実行）
-    subscription_status = User.objects.get_subscription_status(user)
-
     params = {
         'user': user,
         'recipes': recipes,
-        'subscription_status': subscription_status,
     }
 
     return render(request, 'mypage.html', params)

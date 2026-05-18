@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db import connection
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from django_recaptcha.client import RecaptchaResponse
 import json
 import time
@@ -153,142 +153,52 @@ class EndToEndWorkflowTestCase(BaseTestCase):
         """レシピ共有制限のワークフローテスト"""
         login_test_user(self, user=self.user)
 
-        # 無料ユーザーであることを確認
-        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
+        for i in range(5):
+            recipe = PresetRecipe.objects.create(
+                name=f'共有テストレシピ{i+1}',
+                created_by=self.user,
+                is_ice=False,
+                len_steps=1,
+                bean_g=20.0,
+                water_ml=200.0,
+                memo=f'共有テスト用メモ{i+1}'
+            )
 
-        # 1. 最初のレシピを作成・共有（成功するはず）
-        recipe1 = PresetRecipe.objects.create(
-            name='共有テストレシピ1',
+            PresetRecipeStep.objects.create(
+                recipe_id=recipe,
+                step_number=1,
+                minute=0,
+                seconds=30,
+                total_water_ml_this_step=200.0
+            )
+
+            response = self.client.post(reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id}))
+            self.assertEqual(response.status_code, 200)
+
+        recipe6 = PresetRecipe.objects.create(
+            name='共有テストレシピ6',
             created_by=self.user,
             is_ice=False,
             len_steps=1,
             bean_g=20.0,
             water_ml=200.0,
-            memo='共有テスト用メモ1'
+            memo='共有テスト用メモ6'
         )
 
         PresetRecipeStep.objects.create(
-            recipe_id=recipe1,
+            recipe_id=recipe6,
             step_number=1,
             minute=0,
             seconds=30,
             total_water_ml_this_step=200.0
         )
 
-        response = self.client.post(reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe1.id}))
-        self.assertEqual(response.status_code, 200)
-
-        # 2. 2個目のレシピを作成・共有（制限超過で失敗するはず）
-        recipe2 = PresetRecipe.objects.create(
-            name='共有テストレシピ2',
-            created_by=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo='共有テスト用メモ2'
-        )
-
-        PresetRecipeStep.objects.create(
-            recipe_id=recipe2,
-            step_number=1,
-            minute=0,
-            seconds=30,
-            total_water_ml_this_step=200.0
-        )
-
-        response = self.client.post(reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe2.id}))
+        response = self.client.post(reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe6.id}))
         self.assertEqual(response.status_code, 429)
 
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertFalse(response_data['is_premium'])
-        self.assertEqual(response_data['limit'], 1)
-
-    def test_complete_purchase_workflow(self):
-        """完全な購入ワークフローのテスト"""
-        login_test_user(self, user=self.user)
-
-        # 1. チェックアウトセッション作成
-        with patch("purchase.views.stripe.checkout.Session.create") as mock_stripe_session:
-            mock_session = MagicMock()
-            mock_session.url = reverse("purchase:checkout_success")
-            mock_stripe_session.return_value = mock_session
-
-            response = self.client.post(reverse('purchase:create_checkout_session'))
-            self.assertEqual(response.status_code, 302)
-
-        # 2. チェックアウト完了イベント
-        customer_id = 'cus_test123'
-        event_data = {
-            "type": "checkout.session.completed",
-            "data": {
-                "object": {
-                    "id": "cs_test_456",
-                    "object": "checkout.session",
-                    "customer": customer_id,
-                    "metadata": {
-                        "user_id": str(self.user.id)
-                    }
-                }
-            }
-        }
-
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps(event_data),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, 200)
-
-        # 3. ユーザーにStripe顧客IDが設定されることを確認
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.stripe_customer_id, customer_id)
-
-        # 4. 支払い完了イベント
-        event_data = {
-            "type": "invoice.paid",
-            "data": {
-                "object": {
-                    "customer": customer_id,
-                    "subscription": "sub_test123",
-                }
-            }
-        }
-
-        # Stripeのサブスクリプション取得をモック
-        mock_subscription = {
-            "metadata": {"plan_type": AppConstants.PLAN_BASIC},
-            "items": {
-                "data": [{
-                    "price": {
-                        "id": AppConstants.STRIPE_PRICE_IDS.get(AppConstants.PLAN_BASIC, "price_test")
-                    }
-                }]
-            }
-        }
-
-        with patch("purchase.views.send_mail") as mock_send_mail, \
-             patch("stripe.Subscription.retrieve", return_value=mock_subscription):
-            response = self.client.post(
-                reverse('purchase:webhook'),
-                data=json.dumps(event_data),
-                content_type='application/json'
-            )
-
-        self.assertEqual(response.status_code, 200)
-
-        # 5. ユーザーのサブスクリプション状態が更新されることを確認
-        self.user.refresh_from_db()
-        self.assertEqual(self.user.preset_limit_value, 5)
-        self.assertNotEqual(self.user.plan_type, AppConstants.PLAN_FREE)
-
-        # 6. プリセット制限が増加することを確認
-        response = self.client.get(reverse('purchase:get_preset_limit'))
-        self.assertEqual(response.status_code, 200)
-
-        response_data = json.loads(response.content)
-        self.assertEqual(response_data['preset_limit'], 5)
+        self.assertEqual(response_data['details']['limit'], 5)
 
 
 class ErrorHandlingTestCase(TestCase):
@@ -352,17 +262,6 @@ class ErrorHandlingTestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)  # フォームエラーは200で返される
         self.assertContains(response, "エラー")
-
-    def test_500_error_handling(self):
-        """500エラーのハンドリングテスト"""
-        # 無効なWebhookイベント
-        response = self.client.post(
-            reverse('purchase:webhook'),
-            data=json.dumps({"type": "invalid.event", "data": {"object": {}}}),
-            content_type='application/json'
-        )
-
-        self.assertIn(response.status_code, [400, 500])  # 400 Bad Request or 500 Internal Server Error
 
     def test_database_error_handling(self):
         """データベースエラーのハンドリングテスト"""

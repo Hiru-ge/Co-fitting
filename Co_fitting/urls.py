@@ -32,7 +32,6 @@ urlpatterns = [
     path('recipes/', include('recipes.urls')),           # その他レシピ関連
     path('articles/', include('articles.urls')),
     path('users/', include('users.urls')),
-    path('purchase/', include('purchase.urls')),
     # SEO: サイトマップとrobots.txt
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),

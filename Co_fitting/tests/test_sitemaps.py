@@ -28,8 +28,6 @@ class SitemapTests(TestCase):
         self.assertIn('/articles/how-to-use/', content)
         # プライバシーポリシー
         self.assertIn('/articles/privacy-policy/', content)
-        # 特定商取引法に基づく表記
-        self.assertIn('/articles/commerce-law/', content)
 
     def test_sitemap_contains_shared_recipes(self):
         """サイトマップに共有レシピが含まれること"""
@@ -95,4 +93,3 @@ class RobotsTxtTests(TestCase):
 
         self.assertIn('Disallow: /mypage/', content)
         self.assertIn('Disallow: /users/', content)
-        self.assertIn('Disallow: /purchase/', content)

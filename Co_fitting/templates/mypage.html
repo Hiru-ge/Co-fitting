@@ -18,12 +18,8 @@
             <button class="long-button" id="password-change-btn">パスワード変更</button>
         </div>
         
-        <h3>サブスクリプション</h3>
-        <p>現在のプラン: <b id="current-plan-display">{{ user.plan_type }}</b></p>
+        <h3>利用枠</h3>
         <p>プリセット枠: <b>{{ user.preset_limit_value }}</b> / 共有可能数: <b>{{ user.share_limit_value }}</b></p>
-        <div class="button-parent">
-            <button class="long-button" onclick="location.href='{% url 'purchase:select_plan' %}'">プラン変更</button>
-        </div>
         <h3>マイプリセット</h3>
         <p><a href="{% url 'articles:mypreset-describe' %}">マイプリセット機能とは</a></p>
         <div>
@@ -135,45 +131,6 @@
         </div>
     </div>
 
-    <!-- 購入キャンセルモーダル -->
-    <div id="purchase-cancel-modal" class="modal modal-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>購入キャンセル</h3>
-                </div>
-                <span class="close" id="close-purchase-cancel-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>購入がキャンセルされました。</p>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-primary" id="close-purchase-cancel-btn">閉じる</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 購入成功モーダル -->
-    <div id="purchase-success-modal" class="modal modal-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>購入完了</h3>
-                </div>
-                <span class="close" id="close-purchase-success-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>購入が完了しました。ありがとうございます。</p>
-                <p>現在あなたが所有しているプリセット枠： <b id="modal-preset-limit">{{ user.preset_limit_value }}</b></p>
-                <p>購入いただいたプリセット枠は、マイページの新規プリセット作成時にご利用いただけます。</p>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-primary" id="close-purchase-success-btn">閉じる</button>
-                    <button type="button" class="btn btn-secondary" id="portal-session-btn">サブスクリプションポータル</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- パスワードリセット送信完了モーダル -->
     <div id="password-reset-sent-modal" class="modal modal-hidden">
         <div class="modal-content">
@@ -207,26 +164,6 @@
                 <p>新しいパスワードでログインしてください。</p>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-primary" id="close-password-reset-success-btn">閉じる</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- サブスク未契約モーダル -->
-    <div id="not-subscribed-modal" class="modal modal-hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <h3>サブスクリプション未契約</h3>
-                </div>
-                <span class="close" id="close-not-subscribed-modal">&times;</span>
-            </div>
-            <div class="modal-body">
-                <p>あなたは現在サブスクリプションを契約していません。</p>
-                <p>プリセット枠や共有レシピ枠を増やせる有料プランをご用意しています。</p>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-primary" id="subscribe-from-modal-btn">プランを見る</button>
-                    <button type="button" class="btn btn-secondary" id="close-not-subscribed-btn">閉じる</button>
                 </div>
             </div>
         </div>

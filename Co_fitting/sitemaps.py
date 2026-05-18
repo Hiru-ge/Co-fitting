@@ -20,7 +20,6 @@ class StaticViewSitemap(Sitemap):
             'landing_page',
             'articles:how-to-use',
             'articles:privacy-policy',
-            'articles:commerce-law',
         ]
 
     def location(self, item):

@@ -17,9 +17,5 @@ def privacy_policy(request):
     return render(request, 'articles/privacy-policy.html')
 
 
-def commerce_law(request):
-    return render(request, 'articles/commerce-law.html')
-
-
 def mypreset_describe(request):
     return render(request, 'articles/mypreset-describe.html')

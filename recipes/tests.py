@@ -9,7 +9,6 @@ from Co_fitting.tests.helpers import (
 from users.models import User
 from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedRecipeStep
 from recipes.forms import RecipeForm
-from Co_fitting.utils.constants import AppConstants
 
 
 class RecipeCreateTestCase(BaseTestCase):
@@ -323,25 +322,21 @@ class SharedRecipeTestCase(BaseTestCase):
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'validation_error')
 
-    def test_create_shared_recipe_free_user_limit(self):
-        """無料ユーザーのレシピ共有制限テスト"""
-        # 無料ユーザーであることを確認
-        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
+    def test_create_shared_recipe_limit(self):
+        """レシピ共有制限テスト"""
+        for i in range(5):
+            create_test_shared_recipe(
+                user=self.user,
+                name=f"共有レシピ{i+1}",
+                is_ice=False,
+                len_steps=1,
+                bean_g=20.0,
+                water_ml=200.0,
+                memo="共有上限テスト"
+            )
 
-        # 無料ユーザーの制限（1個）まで共有レシピを作成
-        create_test_shared_recipe(
-            user=self.user,
-            name="無料ユーザー共有レシピ1",
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo="無料ユーザーテスト"
-        )
-
-        # 2個目の共有レシピ作成を試行（制限超過）
         recipe_data = create_recipe_data(
-            name="2個目の共有レシピ",
+            name="6個目の共有レシピ",
             bean_g=20.0,
             water_ml=200.0,
             is_ice=False,
@@ -357,98 +352,13 @@ class SharedRecipeTestCase(BaseTestCase):
         assert_json_response(self, response, expected_status=429, expected_keys=['error', 'details'])
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertFalse(response_data['details']['is_premium'])  # 無料ユーザーであることを確認
-        self.assertEqual(response_data['details']['limit'], 1)  # 無料ユーザーの制限値
+        self.assertEqual(response_data['details']['limit'], 5)
 
-    def test_create_shared_recipe_free_user_success(self):
-        """無料ユーザーが1個のレシピを正常に共有できることをテスト"""
-        # 無料ユーザーであることを確認
-        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
-
-        recipe_data = create_recipe_data(
-            name="無料ユーザー共有レシピ",
-            bean_g=20.0,
-            water_ml=200.0,
-            is_ice=False,
-            len_steps=1
-        )
-
-        response = self.client.post(
-            self.create_url,
-            data=json.dumps(recipe_data),
-            content_type='application/json'
-        )
-
-        assert_json_response(self, response, expected_status=200, expected_keys=['access_token'])
-
-        # 共有レシピが正しく作成されたことを確認
-        self.assertTrue(SharedRecipe.objects.filter(created_by=self.user).exists())
-
-    def test_create_shared_recipe_subscription_limit(self):
-        """サブスクリプション契約者のレシピ共有制限テスト"""
-        # サブスクリプション契約ユーザーに変更
-        self.user.plan_type = AppConstants.PLAN_BASIC
-        self.user.save()
-
-        # サブスクリプション契約者の制限（5個）まで共有レシピを作成
-        for i in range(5):
-            shared_recipe = SharedRecipe.objects.create(
-                name=f"サブスク共有レシピ{i+1}",
-                created_by=self.user,
-                is_ice=False,
-                len_steps=1,
-                bean_g=20.0,
-                water_ml=200.0,
-                memo="サブスクリプションテスト",
-                access_token=f'sub_test_token_{i:02d}_12345678901234567890123456789012'[:32]
-            )
-            SharedRecipeStep.objects.create(
-                recipe=shared_recipe,
-                step_number=1,
-                minute=0,
-                seconds=0,
-                total_water_ml_this_step=200.0,
-            )
-
-        # 6個目の共有レシピ作成を試行（制限超過）
-        recipe_data = {
-            "name": "6個目の共有レシピ",
-            "bean_g": 20.0,
-            "water_ml": 200.0,
-            "is_ice": False,
-            "len_steps": 1,
-            "steps": [
-                {
-                    "step_number": 1,
-                    "minute": 0,
-                    "seconds": 0,
-                    "total_water_ml_this_step": 200.0
-                }
-            ]
-        }
-
-        response = self.client.post(
-            self.create_url,
-            data=json.dumps(recipe_data),
-            content_type='application/json'
-        )
-
-        self.assertEqual(response.status_code, 429)
-        response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertTrue(response_data['details']['is_premium'])  # サブスクリプション契約中であることを確認
-        self.assertEqual(response_data['details']['limit'], 5)  # サブスクリプション契約者の制限値
-
-    def test_create_shared_recipe_subscription_success(self):
-        """サブスクリプション契約ユーザーが5個のレシピを正常に共有できることをテスト"""
-        # サブスクリプション契約ユーザーに変更
-        self.user.plan_type = AppConstants.PLAN_BASIC
-        self.user.save()
-
-        # 5個のレシピを順次作成して、すべて成功することを確認
+    def test_create_shared_recipe_success_until_limit(self):
+        """5個のレシピを正常に共有できることをテスト"""
         for i in range(5):
             recipe_data = {
-                "name": f"サブスク共有レシピ{i+1}",
+                "name": f"共有レシピ{i+1}",
                 "bean_g": 20.0,
                 "water_ml": 200.0,
                 "is_ice": False,
@@ -638,31 +548,6 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         self.assertEqual(response.status_code, 400)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'preset_limit_exceeded')
-
-    def test_add_shared_recipe_to_preset_limit_exceeded_premium_user(self):
-        """有料ユーザーのプリセット枠上限時のエラーハンドリング"""
-        # ユーザーを有料ユーザーに設定
-        self.user.plan_type = AppConstants.PLAN_BASIC
-        self.user.save()
-
-        # プリセット枠を上限まで埋める
-        for i in range(self.user.preset_limit_value):
-            create_test_recipe(
-                user=self.user,
-                name=f"プリセット{i+1}",
-                is_ice=False,
-                len_steps=1,
-                bean_g=20.0,
-                water_ml=200.0,
-                memo="プリセット上限テスト"
-            )
-
-        add_url = reverse('recipes:add_shared_recipe_to_preset', kwargs={'token': self.shared_recipe.access_token})
-        response = self.client.post(add_url)
-
-        self.assertEqual(response.status_code, 400)
-        response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'preset_limit_exceeded_premium')
 
     def test_add_shared_recipe_to_preset_not_found(self):
         """存在しないトークンでのエラーハンドリング"""
@@ -1524,18 +1409,22 @@ class RecipeManagerTestCase(TestCase):
 
     def test_check_preset_limit_or_error(self):
         """プリセット上限チェックのテスト"""
-        # 上限に達した場合（無料ユーザー）
-        self.user1.plan_type = AppConstants.PLAN_FREE
-        self.user1.save()
+        for i in range(4):
+            create_test_recipe(
+                user=self.user1,
+                name=f'追加レシピ{i+1}',
+                is_ice=False,
+                len_steps=1,
+                bean_g=20.0,
+                water_ml=200.0,
+                memo='上限テスト'
+            )
 
         error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNotNone(error_response)
         self.assertEqual(error_response.status_code, 400)
 
-        # 上限内の場合（プランをアップグレード）
-        self.user1.plan_type = AppConstants.PLAN_BASIC
-        self.user1.save()
-
+        PresetRecipe.objects.filter(created_by=self.user1).last().delete()
         error_response = PresetRecipe.check_preset_limit_or_error(self.user1)
         self.assertIsNone(error_response)
 
@@ -1856,74 +1745,20 @@ class RecipeAPITestCase(TestCase):
         self.assertIn(response.status_code, [404, 405, 500])
         self.assertFalse(SharedRecipe.objects.filter(name='他人のレシピ', created_by=self.user).exists())
 
-    def test_share_preset_recipe_free_user_limit(self):
-        """無料ユーザーのプリセットレシピ共有制限テスト"""
-        # ログイン
+    def test_share_preset_recipe_limit(self):
+        """プリセットレシピ共有制限テスト"""
         self.client.login(username='test@example.com', password='securepassword123')
 
-        # 無料ユーザーであることを確認
-        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
-
-        # 無料ユーザーの制限（1個）まで共有レシピを作成
-        shared_recipe = SharedRecipe.objects.create(
-            name="無料ユーザー共有レシピ1",
-            created_by=self.user,
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo="無料ユーザーテスト",
-            access_token='free_test_token_12345678901234567890123456789012'[:32]
-        )
-        SharedRecipeStep.objects.create(
-            recipe=shared_recipe,
-            step_number=1,
-            minute=0,
-            seconds=0,
-            total_water_ml_this_step=200.0,
-        )
-
-        # プリセットレシピを作成
-        recipe = create_test_recipe(
-            user=self.user,
-            name='共有対象レシピ2',
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo='共有用メモ'
-        )
-
-        # 2個目の共有レシピ作成を試行（制限超過）
-        share_url = reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id})
-        response = self.client.post(share_url)
-
-        self.assertEqual(response.status_code, 429)
-        response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertFalse(response_data['details']['is_premium'])  # 無料ユーザーであることを確認
-        self.assertEqual(response_data['details']['limit'], 1)  # 無料ユーザーの制限値
-
-    def test_share_preset_recipe_subscription_limit(self):
-        """サブスクリプション契約ユーザーのプリセットレシピ共有制限テスト"""
-        # ログイン
-        self.client.login(username='test@example.com', password='securepassword123')
-
-        # サブスクリプション契約ユーザーに変更
-        self.user.plan_type = AppConstants.PLAN_BASIC
-        self.user.save()
-
-        # サブスクリプション契約者の制限（5個）まで共有レシピを作成
         for i in range(5):
             shared_recipe = SharedRecipe.objects.create(
-                name=f"サブスク共有レシピ{i+1}",
+                name=f"共有レシピ{i+1}",
                 created_by=self.user,
                 is_ice=False,
                 len_steps=1,
                 bean_g=20.0,
                 water_ml=200.0,
-                memo="サブスクリプションテスト",
-                access_token=f'sub_test_token_{i:02d}_12345678901234567890123456789012'[:32]
+                memo="共有上限テスト",
+                access_token=f'share_limit_token_{i:02d}_12345678901234567890123456789012'[:32]
             )
             SharedRecipeStep.objects.create(
                 recipe=shared_recipe,
@@ -1936,7 +1771,7 @@ class RecipeAPITestCase(TestCase):
         # プリセットレシピを作成
         recipe = create_test_recipe(
             user=self.user,
-            name='共有対象レシピ6',
+            name='共有対象レシピ2',
             is_ice=False,
             len_steps=1,
             bean_g=20.0,
@@ -1944,55 +1779,18 @@ class RecipeAPITestCase(TestCase):
             memo='共有用メモ'
         )
 
-        # 6個目の共有レシピ作成を試行（制限超過）
         share_url = reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id})
         response = self.client.post(share_url)
 
         self.assertEqual(response.status_code, 429)
         response_data = json.loads(response.content)
         self.assertEqual(response_data['error'], 'share_limit_exceeded')
-        self.assertTrue(response_data['details']['is_premium'])  # サブスクリプション契約中であることを確認
-        self.assertEqual(response_data['details']['limit'], 5)  # サブスクリプション契約者の制限値
+        self.assertEqual(response_data['details']['limit'], 5)
 
-    def test_share_preset_recipe_free_user_success(self):
-        """無料ユーザーが1個のプリセットレシピを正常に共有できることをテスト"""
-        # ログイン
+    def test_share_preset_recipe_success_until_limit(self):
+        """5個のプリセットレシピを正常に共有できることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
 
-        # 無料ユーザーであることを確認
-        self.assertEqual(self.user.plan_type, AppConstants.PLAN_FREE)
-
-        # プリセットレシピを作成
-        recipe = create_test_recipe(
-            user=self.user,
-            name='共有対象レシピ',
-            is_ice=False,
-            len_steps=1,
-            bean_g=20.0,
-            water_ml=200.0,
-            memo='共有用メモ'
-        )
-
-        share_url = reverse('recipes:share_preset_recipe', kwargs={'recipe_id': recipe.id})
-        response = self.client.post(share_url)
-
-        self.assertEqual(response.status_code, 200)
-        response_data = json.loads(response.content)
-        self.assertIn('access_token', response_data)
-
-        # 共有レシピが正しく作成されたことを確認
-        self.assertTrue(SharedRecipe.objects.filter(name='共有対象レシピ', created_by=self.user).exists())
-
-    def test_share_preset_recipe_subscription_success(self):
-        """サブスクリプション契約ユーザーが5個のプリセットレシピを正常に共有できることをテスト"""
-        # ログイン
-        self.client.login(username='test@example.com', password='securepassword123')
-
-        # サブスクリプション契約ユーザーに変更
-        self.user.plan_type = AppConstants.PLAN_BASIC
-        self.user.save()
-
-        # 5個のプリセットレシピを順次作成して、すべて成功することを確認
         for i in range(5):
             recipe = create_test_recipe(
                 user=self.user,

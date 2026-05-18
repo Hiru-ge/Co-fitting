@@ -17,8 +17,7 @@ $(document).ready(function() {
         HEADER_Y: 30,
         DIVIDER_Y: 40,
         DATA_START_Y: 70,
-        ROW_HEIGHT: 30,
-        PREMIUM_PRESET_LIMIT: 1 // この値より大きければプレミアム
+        ROW_HEIGHT: 30
     };
 
     // ========================================
@@ -67,11 +66,6 @@ $(document).ready(function() {
         return document.pictureInPictureEnabled ||
                (videoElement.webkitSupportsPresentationMode &&
                 typeof videoElement.webkitSetPresentationMode === 'function');
-    }
-
-    // ログイン状態チェック
-    function isUserLoggedIn() {
-        return document.getElementById('is-logged-in')?.dataset?.loggedIn === 'true';
     }
 
     // レシピテーブルの存在チェック
@@ -246,45 +240,12 @@ $(document).ready(function() {
 
     // PiP機能が利用可能かチェック
     const isPipSupported = isPictureInPictureSupported(pipVideo);
-    const isLoggedIn = isUserLoggedIn();
-
     if (!isPipSupported) {
         return; // PiP非対応の場合は早期リターン
     }
 
-    // ログイン状態に関わらずPiPボタンを表示
-    if (isLoggedIn) {
-        // ログインユーザー：プラン情報を取得して権限チェック
-        $.ajax({
-            url: '/purchase/get_current_plan/',
-            method: 'GET',
-            success: function(response) {
-                // PiPボタンを表示
-                $('#pip-btn').show();
-
-                // クリックイベントハンドラーを設定
-                $('#pip-btn').on('click', function() {
-                    if (response.has_pip_access) {
-                        // プレミアムユーザーの場合：PiP機能を起動
-                        handlePipButtonClick(pipCanvas, pipVideo);
-                    } else {
-                        // 非プレミアムユーザーの場合：プレミアム限定機能モーダルを表示
-                        ModalWindow.showPremiumFeature('ピクチャーインピクチャー');
-                    }
-                });
-            },
-            error: function(xhr) {
-                if (xhr.status !== 401) {
-                    console.error('プラン情報の取得に失敗しました:', xhr);
-                }
-            }
-        });
-    } else {
-        // 非ログインユーザー：ボタンを表示し、クリック時にプレミアム機能案内
-        $('#pip-btn').show();
-
-        $('#pip-btn').on('click', function() {
-            ModalWindow.showPremiumFeature('ピクチャーインピクチャー');
-        });
-    }
+    $('#pip-btn').show();
+    $('#pip-btn').on('click', function() {
+        handlePipButtonClick(pipCanvas, pipVideo);
+    });
 });

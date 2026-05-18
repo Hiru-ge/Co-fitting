@@ -39,12 +39,6 @@ class ArticlesViewsTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'プライバシー')
 
-    def test_commerce_law_page_access(self):
-        """特定商取引法ページにアクセスできることをテスト"""
-        response = self.client.get(reverse('articles:commerce-law'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '特定商取引')
-
     def test_mypreset_describe_page_access(self):
         """マイプリセット説明ページにアクセスできることをテスト"""
         response = self.client.get(reverse('articles:mypreset-describe'))
@@ -58,7 +52,6 @@ class ArticlesViewsTestCase(BaseTestCase):
             'articles:introduce-preset': 'articles/introduce-preset.html',
             'articles:coffee-theory': 'articles/coffee-theory.html',
             'articles:privacy-policy': 'articles/privacy-policy.html',
-            'articles:commerce-law': 'articles/commerce-law.html',
             'articles:mypreset-describe': 'articles/mypreset-describe.html',
         }
         
@@ -74,7 +67,6 @@ class ArticlesViewsTestCase(BaseTestCase):
             'articles:introduce-preset',
             'articles:coffee-theory',
             'articles:privacy-policy',
-            'articles:commerce-law',
             'articles:mypreset-describe',
         ]
         
@@ -91,7 +83,6 @@ class ArticlesViewsTestCase(BaseTestCase):
             'articles:introduce-preset',
             'articles:coffee-theory',
             'articles:privacy-policy',
-            'articles:commerce-law',
             'articles:mypreset-describe',
         ]
         

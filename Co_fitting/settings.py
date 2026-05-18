@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'articles',
     'recipes',
     'users',
-    'purchase',
     'django_recaptcha',
 ]
 
@@ -219,10 +218,3 @@ RECAPTCHA_USE_SSL = True
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-# Stripe設定
-STRIPE_API_KEY = env('STRIPE_API_KEY')
-STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET')
-STRIPE_PRICE_ID_BASIC = env('STRIPE_PRICE_ID_BASIC')
-STRIPE_PRICE_ID_PREMIUM = env('STRIPE_PRICE_ID_PREMIUM')
-STRIPE_PRICE_ID_UNLIMITED = env('STRIPE_PRICE_ID_UNLIMITED')

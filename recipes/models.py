@@ -328,19 +328,12 @@ class PresetRecipe(BaseRecipe):
     @classmethod
     def check_preset_limit_or_error(cls, user):
         """ユーザーのプリセット上限をチェックし、エラーの場合はレスポンスを返す"""
-        from Co_fitting.utils.constants import AppConstants
         current_preset_count = cls.objects.filter(created_by=user).count()
         if current_preset_count >= user.preset_limit_value:
-            if user.plan_type != AppConstants.PLAN_FREE:
-                return ResponseHelper.create_error_response(
-                    'preset_limit_exceeded_premium',
-                    'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
-                )
-            else:
-                return ResponseHelper.create_error_response(
-                    'preset_limit_exceeded',
-                    'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。'
-                )
+            return ResponseHelper.create_error_response(
+                'preset_limit_exceeded',
+                'プリセットの保存上限に達しました。既存のプリセットを整理してください。'
+            )
         return None
 
     def get_steps(self):
@@ -456,23 +449,16 @@ class SharedRecipe(BaseRecipe):
     def check_share_limit_or_error(cls, user):
         """共有レシピ上限チェック、上限超過の場合はエラーレスポンスを返す"""
         current_count = cls.objects.filter(created_by=user).count()
-        is_premium = user.plan_type != AppConstants.PLAN_FREE
         limit = user.share_limit_value
-
-        if is_premium:
-            limit_message = f'サブスクリプション契約中でも共有できるレシピは{limit}個までです。'
-        else:
-            limit_message = f'共有できるレシピは{limit}個までです。サブスクリプション契約で{AppConstants.SHARE_LIMIT_PREMIUM}個まで共有可能になります。'
 
         if current_count >= limit:
             return ResponseHelper.create_error_response(
                 'share_limit_exceeded',
-                limit_message,
+                f'共有できるレシピは{limit}個までです。既存の共有レシピを整理してください。',
                 status_code=429,
                 details={
                     'current_count': current_count,
-                    'limit': limit,
-                    'is_premium': is_premium
+                    'limit': limit
                 }
             )
 

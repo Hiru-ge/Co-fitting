@@ -512,8 +512,6 @@ $(document).ready(function() {
                 } else if (xhr.status === 400) {
                     const data = xhr.responseJSON;
                     if (data.error === 'preset_limit_exceeded') {
-                        errorMessage = 'プリセットの保存上限に達しました。枠を増やすにはサブスクリプションをご検討ください。';
-                    } else if (data.error === 'preset_limit_exceeded_premium') {
                         errorMessage = 'プリセットの保存上限に達しました。既存のプリセットを整理してください。';
                     }
                 } else if (xhr.status === 404) {

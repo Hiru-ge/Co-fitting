@@ -123,37 +123,19 @@ const ModalWindow = {
 
     // レシピ共有制限オーバー時のモーダルを表示
     showShareLimit(shareLimitData) {
-        const isPremium = shareLimitData.is_premium || false;
         const currentCount = shareLimitData.current_count || 0;
-        const limit = shareLimitData.limit || 1;
+        const limit = shareLimitData.limit || 5;
 
-        let content = `
+        const content = `
             <p>${shareLimitData.message}</p>
             <p>現在の共有レシピ数: ${currentCount}/${limit}</p>
             <div class="modal-actions">
-        `;
-
-        if (!isPremium) {
-            content += `
-                <button id="subscribe-btn" class="btn btn-primary">サブスク契約</button>
-                <button id="manage-shares-btn" class="btn btn-secondary">共有レシピ管理</button>
-            `;
-        } else {
-            content += `
                 <button id="manage-shares-btn" class="btn btn-primary">共有レシピ管理</button>
                 <button type="button" class="btn btn-secondary" data-modal-close>閉じる</button>
-            `;
-        }
-
-        content += `</div>`;
+            </div>
+        `;
 
         const modal = this.createAndShow('share-limit-modal', '共有制限に達しました', content);
-
-        // イベント設定
-        modal.find('#subscribe-btn').on('click', () => {
-            this.hide('share-limit-modal');
-            window.location.href = '/purchase/create_checkout_session/';
-        });
 
         modal.find('#manage-shares-btn').on('click', () => {
             this.hide('share-limit-modal');
@@ -195,35 +177,6 @@ const ModalWindow = {
         });
 
         modal.find('#recipe-name-input').focus().select();
-
-        return modal;
-    },
-
-    // プレミアム機能限定モーダルを表示
-    showPremiumFeature(featureName) {
-        // GA4カスタムイベント: premium_modal_view
-        if (typeof gtag === 'function') {
-            gtag('event', 'premium_modal_view', {
-                'trigger': featureName
-            });
-        }
-
-        const content = `
-            <p>${featureName}はプレミアムプラン以上で利用できる機能です。</p>
-            <p>サインアップ・ログインののち、プレミアムプランにアップグレードして、さらに便利な機能をお楽しみください。</p>
-            <div class="modal-actions">
-                <button id="view-plans-btn" class="btn btn-primary">ログイン</button>
-                <button type="button" class="btn btn-secondary" data-modal-close>閉じる</button>
-            </div>
-        `;
-
-        const modal = this.createAndShow('premium-feature-modal', 'プレミアム限定機能', content);
-
-        // プラン確認ボタンクリック時の処理
-        modal.find('#view-plans-btn').on('click', () => {
-            this.hide('premium-feature-modal');
-            window.location.href = '/purchase/';
-        });
 
         return modal;
     },

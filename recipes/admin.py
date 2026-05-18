@@ -6,13 +6,12 @@ from recipes.models import PresetRecipe, PresetRecipeStep, SharedRecipe, SharedR
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'plan_type', 'email', 'preset_limit_value', 'share_limit_value', 'has_pip_access')
-    list_filter = ('plan_type', 'is_active', 'is_staff')
+    list_display = ('username', 'email', 'preset_limit_value', 'share_limit_value', 'is_active', 'is_staff')
+    list_filter = ('is_active', 'is_staff')
 
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('username', 'stripe_customer_id')}),
-        ('Plan Settings', {'fields': ('plan_type',)}),
+        ('Personal Info', {'fields': ('username',)}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
     )
 
@@ -20,27 +19,19 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'username', 'password1', 'password2', 'plan_type'),
+            'fields': ('email', 'username', 'password1', 'password2'),
         }),
     )
 
     search_fields = ('email', 'username')
 
     def preset_limit_value(self, obj):
-        """プランに基づくプリセット枠を表示"""
         return obj.preset_limit_value
     preset_limit_value.short_description = 'Preset Limit'
 
     def share_limit_value(self, obj):
-        """プランに基づく共有枠を表示"""
         return obj.share_limit_value
     share_limit_value.short_description = 'Share Limit'
-
-    def has_pip_access(self, obj):
-        """PiPアクセス権限を表示"""
-        return obj.has_pip_access
-    has_pip_access.short_description = 'PiP Access'
-    has_pip_access.boolean = True
 
 
 class RecipeStepInline(admin.TabularInline):  # PresetRecipeStepをPresetRecipeの詳細ページにインラインで表示するための設定

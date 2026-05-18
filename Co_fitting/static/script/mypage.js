@@ -11,32 +11,6 @@ $(document).ready(function() {
     };
 
     // ========================================
-    // ユーティリティ関数
-    // ========================================
-
-    // サブスクリプション状態表示を更新する関数
-    function updateSubscriptionStatus() {
-        $.ajax({
-            url: '/purchase/get_preset_limit/',
-            method: 'GET',
-            success: function(response) {
-                $('p:contains("所有プリセット枠")').html(`所有プリセット枠: <b>${response.preset_limit}</b>`);
-
-                // サブスクリプション状態を判定して表示を更新
-                const isSubscribed = response.preset_limit > 1;
-                const statusText = isSubscribed ? '契約中' : '未契約';
-                $('p:contains("サブスクリプション契約状況")').html(`サブスクリプション契約状況: <b>${statusText}</b>`);
-
-                // ボタンのdata属性も更新
-                $('#subscription-status-btn').data('subscription-status', statusText);
-            },
-            error: function(xhr) {
-                console.error('サブスクリプション状態の取得に失敗しました:', xhr);
-            }
-        });
-    }
-
-    // ========================================
     // プリセット共有関連
     // ========================================
 
@@ -235,7 +209,7 @@ $(document).ready(function() {
     });
 
     // モーダル閉じるボタンのイベント（ModalManagerが自動処理するため、個別のキャンセルボタンのみ）
-    $('#cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-purchase-cancel-btn, #close-purchase-success-btn, #close-password-reset-sent-btn, #close-password-reset-success-btn, #close-not-subscribed-modal, #close-not-subscribed-btn, #cancel-delete-btn, #close-delete-confirm-modal').on('click', function() {
+    $('#cancel-email-change, #cancel-password-change, #cancel-account-delete, #close-password-reset-sent-btn, #close-password-reset-success-btn, #cancel-delete-btn, #close-delete-confirm-modal').on('click', function() {
         const modalId = $(this).closest('.modal').attr('id');
         ModalWindow.hide(modalId);
     });
@@ -346,23 +320,6 @@ $(document).ready(function() {
         });
     });
 
-    // サブスク状況確認・解約ボタン
-    $('#subscription-status-btn').on('click', function() {
-        const subscriptionStatus = $(this).data('subscription-status');
-        if (subscriptionStatus === '未契約') {
-            ModalWindow.show('not-subscribed-modal');
-        } else {
-            // 契約済みの場合はカスタマーポータルに遷移
-            window.location.href = '/purchase/create_portal_session/';
-        }
-    });
-
-    // モーダル内のプラン選択ページへボタン
-    $('#subscribe-from-modal-btn').on('click', function() {
-        ModalWindow.hide('not-subscribed-modal');
-        window.location.href = '/purchase/select_plan/';
-    });
-
     // プリセット共有ボタンのイベント（マイプリセットセクション）
     $(document).on('click', '.item:not(.shared-recipe-item) .share-button', function() {
         const recipeId = $(this).data('recipe-id');
@@ -412,20 +369,7 @@ $(document).ready(function() {
 
     // URLパラメータからモーダル表示・GA4イベント発火を判定
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('purchase_cancel') === 'true') {
-        ModalWindow.show('purchase-cancel-modal');
-        // URLからパラメータを削除
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('purchase_success') === 'true') {
-        // GA4カスタムイベント: purchase
-        if (typeof gtag === 'function') {
-            gtag('event', 'purchase');
-        }
-        // サブスクリプション状態を更新してからモーダルを表示
-        updateSubscriptionStatus();
-        ModalWindow.show('purchase-success-modal');
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('password_reset_sent') === 'true') {
+    if (urlParams.get('password_reset_sent') === 'true') {
         ModalWindow.show('password-reset-sent-modal');
         window.history.replaceState({}, document.title, window.location.pathname);
     } else if (urlParams.get('password_reset_success') === 'true') {
