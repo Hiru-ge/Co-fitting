@@ -13,6 +13,7 @@ Django==6.0.5
 django-environ==0.13.0
 django-extensions==4.1
 django-recaptcha==4.1.0
+gunicorn==23.0.0
 idna==3.14
 jmespath==1.1.0
 MarkupSafe==3.0.3
@@ -32,3 +33,4 @@ sqlparse==0.5.5
 typing_extensions==4.15.0
 urllib3==2.7.0
 Werkzeug==3.1.8
+whitenoise==6.11.0

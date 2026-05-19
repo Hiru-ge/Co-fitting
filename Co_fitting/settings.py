@@ -21,8 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 環境変数の読み込み
 env = environ.Env(
     DEBUG=(bool, False),
+    DJANGO_ALLOWED_HOSTS=(str, "localhost,127.0.0.1,[::1]"),
+    DATABASE_NAME=(str, "Co_fitting"),
+    DATABASE_HOST=(str, "localhost"),
+    DATABASE_PORT=(str, "3306"),
+    DATABASE_SSL_MODE=(str, ""),
     STATIC_URL=(str, "/static/"),
-    STATIC_ROOT=(str, "/var/www/html/Co_fitting/static/")
+    STATIC_ROOT=(str, str(BASE_DIR / "staticfiles")),
+    FORCE_SSL_REDIRECT=(bool, True),
+    SECURE_HSTS_SECONDS=(int, 31536000),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -31,6 +38,8 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = env('DJANGO_ALLOWED_HOSTS').split(',')
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+SILENCED_SYSTEM_CHECKS = env.list('SILENCED_SYSTEM_CHECKS', default=[])
 
 # Application definition
 
@@ -56,6 +65,7 @@ if USE_DJANGO_EXTENSIONS:
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -97,17 +107,23 @@ LOGOUT_REDIRECT_URL = '/users/login/'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+database_options = {
+    'charset': 'utf8mb4',
+}
+
+database_ssl_mode = env('DATABASE_SSL_MODE')
+if database_ssl_mode:
+    database_options['ssl_mode'] = database_ssl_mode
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'Co_fitting',
+        'NAME': env('DATABASE_NAME'),
         'USER': env('DATABASE_USER'),
         'PASSWORD': env('DATABASE_KEY'),
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        }
+        'HOST': env('DATABASE_HOST'),
+        'PORT': env('DATABASE_PORT'),
+        'OPTIONS': database_options,
     }
 }
 
@@ -146,14 +162,22 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "/static/"
+STATIC_URL = env("STATIC_URL")
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'Co_fitting', 'static'),
     os.path.join(BASE_DIR, 'recipes', 'static'),
     os.path.join(BASE_DIR, 'users', 'static'),
 ]
-STATIC_ROOT = env('STATIC_ROOT', default="/var/www/html/Co_fitting/static/")
+STATIC_ROOT = env('STATIC_ROOT')
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -172,19 +196,20 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # ログ取得用の設定
 
+LOG_FILE = env('LOG_FILE', default='')
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
-        "file": {
+        "console": {
             "level": "ERROR",
-            "class": "logging.FileHandler",
-            "filename": env('LOG_FILE'),
+            "class": "logging.StreamHandler",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["file"],
+            "handlers": ["console"],
             "level": "ERROR",
             "propagate": True,
         },
@@ -196,13 +221,24 @@ LOGGING = {
     },
 }
 
+if LOG_FILE:
+    Path(LOG_FILE).parent.mkdir(parents=True, exist_ok=True)
+    LOGGING["handlers"]["file"] = {
+        "level": "ERROR",
+        "class": "logging.FileHandler",
+        "filename": LOG_FILE,
+    }
+    LOGGING["loggers"]["django"]["handlers"].append("file")
+
 # SSL
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = env('FORCE_SSL_REDIRECT')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 31536000  # HSTSの有効期限（1年）
+SECURE_HSTS_SECONDS = env('SECURE_HSTS_SECONDS')  # HSTSの有効期限（1年）
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 # テスト環境ではSECURE_SSL_REDIRECTを無効化
 # こうしないとリダイレクト関係のテストが通らない

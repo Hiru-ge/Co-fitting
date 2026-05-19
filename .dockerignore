@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.env
+Co-fitting-KeyPair.pem
+cert.pem
+key.pem
+db-volumes/
+media/
+logs/
+shared_recipes/
