@@ -1,11 +1,8 @@
 from django.db import models
 import secrets
-import os
-from django.conf import settings
-from PIL import Image, ImageDraw, ImageFont
 from users.models import User
 from Co_fitting.utils.response_helper import ResponseHelper
-from Co_fitting.utils.constants import AppConstants, ImageConstants
+from Co_fitting.utils.constants import AppConstants
 
 
 class BaseRecipe(models.Model):
@@ -153,157 +150,6 @@ class BaseRecipeStep(models.Model):
             if step:
                 cumulative += step.pour_ml_this_step
         return cumulative
-
-
-class RecipeImageGenerator:
-    """レシピ画像生成クラス"""
-
-    def __init__(self, recipe_data, steps_data):
-        self.recipe_data = recipe_data
-        self.steps_data = steps_data
-        self._setup_colors()
-        self._setup_dimensions()
-
-    def _setup_colors(self):
-        if self.recipe_data.get('is_ice'):
-            self.bg_color = (162, 169, 175)  # アイスコーヒー用の青系背景
-        else:
-            self.bg_color = (236, 231, 219)  # 通常コーヒー用の背景
-        self.card_color = (71, 71, 71)
-        self.text_color = (255, 255, 255)
-        self.accent_color = (199, 161, 110)
-
-    def _setup_dimensions(self):
-        n_steps = len(self.steps_data)
-        extra_rows = max(0, n_steps - 5)
-        card_height = ImageConstants.BASE_HEIGHT + ImageConstants.ROW_HEIGHT * extra_rows
-        self.img_height = card_height + ImageConstants.CARD_MARGIN * 2
-        self.img_width = ImageConstants.IMAGE_WIDTH
-
-    def _setup_fonts(self):
-        try:
-            font_path = "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"
-            font_bold_path = "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc"
-            font = ImageFont.truetype(font_path, ImageConstants.FONT_SIZE_MEDIUM)
-            font_bold = ImageFont.truetype(font_bold_path, ImageConstants.FONT_SIZE_LARGE)
-            font_small = ImageFont.truetype(font_path, ImageConstants.FONT_SIZE_SMALL)
-        except Exception:
-            font = font_bold = font_small = ImageFont.load_default()
-
-        return font, font_bold, font_small
-
-    def _draw_basic_info(self, draw, font_small, y_position):
-        draw.text((ImageConstants.CARD_MARGIN+40, y_position),
-                  f"豆量: {int(self.recipe_data['bean_g'])}g", font=font_small, fill=self.text_color)
-        y_position += 40
-        if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
-            draw.text((ImageConstants.CARD_MARGIN+40, y_position),
-                      f"氷量: {int(self.recipe_data['ice_g'])}g", font=font_small, fill=self.text_color)
-            y_position += 40
-        return y_position
-
-    def _draw_table(self, draw, font_small, start_y):
-        table_x = ImageConstants.CARD_MARGIN + 40
-        table_y = start_y
-        row_h = ImageConstants.ROW_HEIGHT
-
-        # カラム幅の設定
-        col1_width = 200  # 時間
-        col2_width = 300  # 総注湯量
-
-        # ヘッダー行を描画
-        header_y = table_y
-        draw.text((table_x, header_y), "時間", font=font_small, fill=self.text_color)
-        draw.text((table_x + col1_width, header_y), "総注湯量", font=font_small, fill=self.text_color)
-
-        # データ行を描画
-        for i, step in enumerate(self.steps_data):
-            y = table_y + (i + 1) * row_h + 10  # ヘッダー分のオフセット
-            # 時間表記を0:00形式に変更
-            time_str = f"{step['minute']}:{step['seconds']:02d}"
-            draw.text((table_x, y), time_str,
-                      font=font_small, fill=self.text_color)
-
-            # 総注湯量（pour_mlは既に累積総注湯量、整数表示）
-            draw.text((table_x + col1_width, y), f"{int(step['pour_ml'])}ml",
-                      font=font_small, fill=self.text_color)
-
-        return table_y + (len(self.steps_data) + 1) * row_h + 20
-
-    def generate_image(self, access_token):
-        try:
-            img = Image.new('RGB', (self.img_width, self.img_height), self.bg_color)
-            draw = ImageDraw.Draw(img)
-
-            def rounded_rectangle(draw, xy, radius, fill):
-                draw.rounded_rectangle(xy, radius=radius, fill=fill)
-
-            rounded_rectangle(draw,
-                              (
-                                  ImageConstants.CARD_MARGIN,
-                                  ImageConstants.CARD_MARGIN,
-                                  self.img_width - ImageConstants.CARD_MARGIN,
-                                  self.img_height - ImageConstants.CARD_MARGIN
-                              ),
-                              radius=ImageConstants.CARD_RADIUS,
-                              fill=self.card_color)
-
-            font, font_bold, font_small = self._setup_fonts()
-
-            # タイトル（レシピ名）
-            title_text = self.recipe_data['name']
-            title_bbox = draw.textbbox((0, 0), title_text, font=font_bold)
-            title_width = title_bbox[2] - title_bbox[0]
-            title_x = (self.img_width - title_width) // 2
-            draw.text((title_x, ImageConstants.CARD_MARGIN + 30), title_text, font=font_bold, fill=self.text_color)
-
-            # 基本情報
-            y_position = ImageConstants.CARD_MARGIN + 100
-            y_position = self._draw_basic_info(draw, font_small, y_position)
-
-            # テーブル
-            table_start_y = y_position + 20
-            table_end_y = self._draw_table(draw, font_small, table_start_y)
-
-            # 出来上がり量の表示
-            total_water = self.recipe_data['water_ml']
-            # アイスモードの場合は氷量も加算
-            if self.recipe_data.get('is_ice') and self.recipe_data.get('ice_g'):
-                try:
-                    ice_g = float(self.recipe_data['ice_g'])
-                except (ValueError, TypeError):
-                    ice_g = 0
-                total_water += ice_g
-            draw.text((ImageConstants.CARD_MARGIN + 40, table_end_y),
-                      f"出来上がり量: {int(total_water)} ml",
-                      font=font_small, fill=self.text_color)
-
-            # Powered by Co-fittingの表示
-            pb_text = "Powered by Co-fitting"
-            pb_bbox = draw.textbbox((0, 0), pb_text, font=font_small)
-            pb_w = pb_bbox[2] - pb_bbox[0]
-            pb_h = pb_bbox[3] - pb_bbox[1]
-            draw.text((self.img_width - ImageConstants.CARD_MARGIN - pb_w - 20,
-                      self.img_height - ImageConstants.CARD_MARGIN - pb_h - 40),
-                      pb_text, font=font_small, fill=self.bg_color)
-
-            # 画像保存
-            img_dir = os.path.join(settings.MEDIA_ROOT, 'shared_recipes')
-            os.makedirs(img_dir, exist_ok=True)
-            img_filename = f"{access_token}.png"
-            img_path = os.path.join(img_dir, img_filename)
-            img.save(img_path)
-
-            return f"{settings.MEDIA_URL}shared_recipes/{img_filename}"
-
-        except Exception:
-            return None
-
-
-def generate_recipe_image(recipe_data, steps_data, access_token):
-    """レシピ画像を生成する共通関数"""
-    image_generator = RecipeImageGenerator(recipe_data, steps_data)
-    return image_generator.generate_image(access_token)
 
 
 class PresetRecipe(BaseRecipe):
@@ -465,23 +311,6 @@ class SharedRecipe(BaseRecipe):
         return None
 
     @classmethod
-    def prepare_image_data(cls, recipe_data):
-        """画像生成用のステップデータを準備"""
-        steps_for_image = []
-
-        for i, step in enumerate(recipe_data['steps']):
-            cumulative_water_ml = step['total_water_ml_this_step']
-
-            steps_for_image.append({
-                'minute': step['minute'],
-                'seconds': step['seconds'],
-                'step_number': step.get('step_number', i+1),
-                'pour_ml': cumulative_water_ml,
-                'cumulative_water_ml': cumulative_water_ml
-            })
-        return steps_for_image
-
-    @classmethod
     def copy_to_preset(cls, shared_recipe, user):
         """共有レシピをプリセットとして複製"""
         # プリセット上限チェック
@@ -523,14 +352,8 @@ class SharedRecipe(BaseRecipe):
 
     @classmethod
     def delete_with_image(cls, shared_recipe):
-        """共有レシピと画像ファイルを削除"""
+        """共有レシピを削除"""
         try:
-            # 画像ファイルを削除
-            image_path = os.path.join(settings.MEDIA_ROOT, 'shared_recipes', f'{shared_recipe.access_token}.png')
-            if os.path.exists(image_path):
-                os.remove(image_path)
-
-            # 共有レシピを削除
             shared_recipe.delete()
 
             return ResponseHelper.create_success_response('共有レシピを削除しました。')

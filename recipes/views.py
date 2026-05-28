@@ -3,13 +3,12 @@ from django.views.decorators.http import require_POST, require_GET, require_http
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
-from .models import PresetRecipe, PresetRecipeStep, SharedRecipe, generate_recipe_image
+from .models import PresetRecipe, PresetRecipeStep, SharedRecipe
 from Co_fitting.utils.response_helper import ResponseHelper
 from .forms import RecipeForm, SharedRecipeDataForm
 from django.views.generic import DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
-from django.conf import settings
 import json
 
 
@@ -143,19 +142,12 @@ def create_shared_recipe(request):
     # 共通関数を使用して共有レシピを作成
     shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, user)
 
-    # 画像生成用のステップデータを準備（Model層で実行）
-    steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
-
-    # 画像を生成
-    image_path = generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
-
     share_url = request.build_absolute_uri(f'/?shared={shared_recipe.access_token}')
     return ResponseHelper.create_success_response(
         '共有レシピを作成しました。',
         {
             'url': share_url,
             'access_token': shared_recipe.access_token,
-            'image_url': image_path
         }
     )
 
@@ -189,12 +181,7 @@ def shared_recipe_ogp(request, token):
     shared_recipe = SharedRecipe.get_by_token(token)
     if not shared_recipe:
         raise Http404("共有レシピが見つかりません。")
-    image_url = request.build_absolute_uri(f"{settings.MEDIA_URL}shared_recipes/{shared_recipe.access_token}.png")
-    params = {
-        'shared_recipe': shared_recipe,
-        'image_url': image_url,
-    }
-    return render(request, 'recipes/shared_recipe_ogp.html', params)
+    return render(request, 'recipes/shared_recipe_ogp.html', {'shared_recipe': shared_recipe})
 
 
 @require_GET
@@ -222,17 +209,10 @@ def share_preset_recipe(request, recipe_id):
         # 共通関数を使用して共有レシピを作成
         shared_recipe = SharedRecipe.create_shared_recipe_from_data(recipe_data, request.user)
 
-        # 画像生成用のステップデータを準備（Model層で実行）
-        steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
-
-        # 共通関数を使用して画像を生成
-        image_url = generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
-
         return ResponseHelper.create_success_response(
             'プリセットを共有しました。',
             {
                 'access_token': shared_recipe.access_token,
-                'image_url': image_url
             }
         )
     except Exception:
@@ -262,15 +242,6 @@ def shared_recipe_edit(request, token):
         if recipe_form.is_valid():
             # Model層のメソッドを使用してレシピとステップを更新
             shared_recipe.update_with_steps(request.POST)
-
-            # レシピデータを準備（Model層で実行）
-            recipe_data = shared_recipe.to_dict()
-
-            # 画像生成用のステップデータを準備（Model層で実行）
-            steps_for_image = SharedRecipe.prepare_image_data(recipe_data)
-
-            # 共通関数を使用して画像を生成
-            generate_recipe_image(recipe_data, steps_for_image, shared_recipe.access_token)
 
             return redirect('mypage')
         else:
