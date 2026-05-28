@@ -1,9 +1,6 @@
 from django.test import TestCase, override_settings, RequestFactory
 from django.core import mail
 from django.urls import reverse
-from django.utils import timezone
-from datetime import timedelta
-from django.core.management import call_command
 from unittest.mock import patch
 from django_recaptcha.client import RecaptchaResponse
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -337,36 +334,21 @@ class AccountDeleteTestCase(BaseTestCase):
         self.delete_account_url = reverse('users:account_delete')
 
     def test_user_cannot_login_after_deletion(self):
-        """退会処理後、非アクティブになりログインできなくなることをテスト"""
+        """退会処理後、DBから削除されてログインできなくなることをテスト"""
+        user_pk = self.user.pk
         response = self.client.post(self.delete_account_url)
-        self.assertRedirects(response, reverse('home'))  # 退会後のリダイレクト先は変換ページ
+        self.assertRedirects(response, reverse('home'))
 
-        # ユーザーが非アクティブになっているか確認
-        self.user.refresh_from_db()
-        self.assertFalse(self.user.is_active)
+        self.assertFalse(User.objects.filter(pk=user_pk).exists())
 
-        # ログインを試みて失敗することを確認
         login_successful = self.client.login(username='test@example.com', password='securepassword123')
         self.assertFalse(login_successful)
 
     def test_user_data_after_deletion(self):
-        """退会後にユーザーデータが論理削除されていることをテスト"""
+        """退会後にユーザーがDBから即座に削除されることをテスト"""
+        user_pk = self.user.pk
         self.client.post(self.delete_account_url)
-        self.user.refresh_from_db()
-        self.assertFalse(self.user.is_active)
-
-    def test_inactive_user_deletion(self):
-        """一定期間(30日)を過ぎた非アクティブユーザーが削除されることをテスト"""
-        self.user.is_active = False
-        self.user.deactivated_at = timezone.now() - timedelta(days=31)
-        self.user.save()
-
-        # コマンドを実行して非アクティブユーザーを削除
-        call_command('delete_inactive_users')
-
-        # ユーザーが削除されていることを確認
-        with self.assertRaises(User.DoesNotExist):
-            User.objects.get(username='testuser')
+        self.assertFalse(User.objects.filter(pk=user_pk).exists())
 
 
 class UserModelTestCase(BaseTestCase):
@@ -384,7 +366,6 @@ class UserModelTestCase(BaseTestCase):
         # setUpでis_activeをTrueに設定しているため、Trueであることを確認
         self.assertTrue(self.user.is_active)
         self.assertFalse(self.user.is_staff)
-        self.assertIsNone(self.user.deactivated_at)
 
     def test_user_string_representation(self):
         """ユーザーの文字列表現が正しいことをテスト"""

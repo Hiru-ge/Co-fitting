@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
-from django.utils import timezone
 from django.contrib.auth import logout
 from Co_fitting.services.email_service import EmailService
 from Co_fitting.utils.security_utils import SecurityUtils
@@ -57,14 +56,6 @@ class UserManager(BaseUserManager):
         return user
 
     @staticmethod
-    def deactivate_user(user):
-        """ユーザーアカウントを論理削除"""
-        user.is_active = False
-        user.deactivated_at = timezone.now()
-        user.save()
-        return user
-
-    @staticmethod
     def create_inactive_user_with_confirmation(form, request):
         """非アクティブユーザーを作成して確認メールを送信"""
         user = form.save(commit=False)
@@ -103,8 +94,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True)
     is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    deactivated_at = models.DateTimeField(null=True, blank=True)  # 退会日時を記録するフィールド(退会から30日経ったらDBから完全削除する)
-
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

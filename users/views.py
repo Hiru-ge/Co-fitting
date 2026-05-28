@@ -136,7 +136,7 @@ def password_reset_complete_redirect(request):
 def account_delete(request):
     if request.method == 'POST':
         user = request.user
-        User.objects.deactivate_user(user)
+        user.delete()
         logout(request)
         return redirect(reverse_lazy('home'))
     else:
