@@ -174,67 +174,6 @@
 }
 
 /* ===================
-   プラン比較セクション
-   =================== */
-.lp-plan-table {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.lp-plan-table table {
-    width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
-    border-collapse: collapse;
-    background-color: #474747;
-    border-radius: 1rem;
-    overflow: hidden;
-}
-
-.lp-plan-table th,
-.lp-plan-table td {
-    padding: 0.5rem 0.25rem;
-    text-align: center;
-    color: #fff;
-    border-bottom: 1px solid #666;
-    font-size: 0.75rem;
-}
-
-.lp-plan-table th {
-    background-color: #3a3a3a;
-    font-weight: 700;
-}
-
-.lp-plan-table th:first-child,
-.lp-plan-table td:first-child {
-    text-align: left;
-    padding-left: 0.5rem;
-}
-
-.lp-plan-feature-name {
-    color: #ccc;
-}
-
-.lp-plan-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-.lp-plan-highlight {
-    background-color: rgba(135, 107, 54, 0.2);
-}
-
-.lp-plan-table th.lp-plan-highlight {
-    background-color: #876b36;
-}
-
-.lp-plan-note {
-    font-size: 0.8rem;
-    color: #666;
-    text-align: center;
-    margin-top: 0.5rem;
-}
-
-/* ===================
    FAQセクション
    =================== */
 .lp-faq-list {
@@ -341,16 +280,6 @@
     .lp-step-arrow {
         transform: rotate(0deg);
         align-self: center;
-    }
-
-    .lp-plan-table th,
-    .lp-plan-table td {
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-    }
-
-    .sp-only {
-        display: none;
     }
 }
 
