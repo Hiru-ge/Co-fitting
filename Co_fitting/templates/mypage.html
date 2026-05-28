@@ -21,7 +21,7 @@
         <h3>利用枠</h3>
         <p>プリセット枠: <b>{{ user.preset_limit_value }}</b> / 共有可能数: <b>{{ user.share_limit_value }}</b></p>
         <h3>マイプリセット</h3>
-        <p><a href="{% url 'articles:mypreset-describe' %}">マイプリセット機能とは</a></p>
+        <p><a href="{% url 'articles:how-to-use' %}#mypreset">マイプリセット機能とは</a></p>
         <div>
             {% if recipes %}
                 {% for recipe in recipes %}

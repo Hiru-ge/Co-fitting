@@ -39,11 +39,12 @@ class ArticlesViewsTestCase(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'プライバシー')
 
-    def test_mypreset_describe_page_access(self):
-        """マイプリセット説明ページにアクセスできることをテスト"""
-        response = self.client.get(reverse('articles:mypreset-describe'))
+    def test_how_to_use_page_contains_mypreset_section(self):
+        """使い方ページにマイプリセットセクションが含まれていることをテスト"""
+        response = self.client.get(reverse('articles:how-to-use'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'マイプリセット')
+        self.assertContains(response, 'id="mypreset"')
 
     def test_articles_pages_use_correct_templates(self):
         """各記事ページが正しいテンプレートを使用することをテスト"""
@@ -52,7 +53,6 @@ class ArticlesViewsTestCase(BaseTestCase):
             'articles:introduce-preset': 'articles/introduce-preset.html',
             'articles:coffee-theory': 'articles/coffee-theory.html',
             'articles:privacy-policy': 'articles/privacy-policy.html',
-            'articles:mypreset-describe': 'articles/mypreset-describe.html',
         }
         
         for url_name, expected_template in templates.items():
@@ -67,7 +67,6 @@ class ArticlesViewsTestCase(BaseTestCase):
             'articles:introduce-preset',
             'articles:coffee-theory',
             'articles:privacy-policy',
-            'articles:mypreset-describe',
         ]
         
         for url_name in article_urls:
@@ -77,13 +76,12 @@ class ArticlesViewsTestCase(BaseTestCase):
     def test_articles_pages_accessible_with_login(self):
         """記事ページはログイン状態でもアクセスできることをテスト"""
         self.client.login(username='test@example.com', password='securepassword123')
-        
+
         article_urls = [
             'articles:how-to-use',
             'articles:introduce-preset',
             'articles:coffee-theory',
             'articles:privacy-policy',
-            'articles:mypreset-describe',
         ]
         
         for url_name in article_urls:
