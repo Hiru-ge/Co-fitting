@@ -30,6 +30,7 @@ env = environ.Env(
     STATIC_ROOT=(str, str(BASE_DIR / "staticfiles")),
     FORCE_SSL_REDIRECT=(bool, True),
     SECURE_HSTS_SECONDS=(int, 31536000),
+    DEFAULT_FROM_EMAIL=(str, ""),
 )
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
@@ -191,7 +192,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # アプリパスワード
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL') or EMAIL_HOST_USER
 
 
 # ログ取得用の設定
