@@ -523,7 +523,7 @@ class UserFormTestCase(BaseTestCase):
             user = form.save()
             self.assertEqual(user.username, 'newuser')
             self.assertEqual(user.email, 'new@example.com')
-            self.assertEqual(user.preset_limit_value, 1)
+            self.assertEqual(user.preset_limit_value, 5)
 
 
 class UserViewsIntegrationTestCase(BaseTestCase):

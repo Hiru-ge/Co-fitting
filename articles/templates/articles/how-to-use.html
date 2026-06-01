@@ -85,9 +85,6 @@
         <div class="container-item">
             <h2>使い方</h2>
 
-            <h3>使い方デモ動画</h3>
-            <iframe width="484" height="861" src="https://www.youtube.com/embed/E19gBYYvDdo" title="Co-fitting：コーヒーの味を維持しながら量を調整する変換器" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-
             <ol>
                 <h3>
                     <li>プリセットレシピ呼び出し</li>
@@ -151,6 +148,27 @@
                     <li>ログインしている場合は、共有レシピを自分のマイプリセットに追加できます</li>
                 </ul>
             </ol>
+        </div>
+        <div class="container-item">
+            <h2>マイプリセット機能</h2>
+            <p>マイプリセット機能は、自分専用のコーヒーレシピを登録・管理できる機能です。よく使うレシピを保存しておくと、変換ページのプリセットレシピ呼び出しからすぐに入力欄へ反映できます。</p>
+
+            <h3>マイプリセットの登録</h3>
+            <p><a href="{% url 'users:signup_request' %}">ユーザー登録</a>後、マイページのプリセット新規登録からレシピを保存できます。</p>
+            <p>プリセット名、豆量、投数、各投の経過時間と総注湯量、アイスコーヒー用の氷量、メモを入力し、保存ボタンを押すとマイプリセットに登録されます。</p>
+            <img class="how-to-image" src="{% static 'images/mypreset-description/preset-create.png' %}" alt="マイプリセット作成">
+
+            <h3>マイプリセットの呼び出し</h3>
+            <p>ログインした状態で変換ページを開くと、プリセットレシピ呼び出し欄に登録済みのマイプリセットが表示されます。使いたいプリセットを選ぶと、変換前レシピ入力欄に内容が入ります。</p>
+            <img class="how-to-image" src="{% static 'images/mypreset-description/mypreset-activate.png' %}" alt="マイプリセット呼び出し">
+
+            <h3>編集と削除</h3>
+            <p>作成済みのプリセットはマイページから編集・削除できます。内容を変えたい場合は編集ボタンから入力内容を更新し、使わなくなったプリセットは削除ボタンから整理できます。</p>
+            <img class="how-to-image" src="{% static 'images/mypreset-description/mypreset-edit.png' %}" alt="マイプリセット編集">
+
+            <h3>保存上限</h3>
+            <p>マイプリセットは5個まで保存できます。上限に達した場合は、使わなくなったプリセットを削除してから新しいプリセットを登録してください。</p>
+            <p>一度削除したプリセットは復元できません。削除前に、残しておきたい内容がないか確認してください。</p>
         </div>
         <div class="container-item">
             <h2>既知の問題：湯の抜け</h2>

@@ -528,8 +528,8 @@ class SharedRecipeAddToPresetTestCase(TestCase):
         self.assertEqual(added_recipe.water_ml, 200.0)
         self.assertEqual(added_recipe.len_steps, 2)
 
-    def test_add_shared_recipe_to_preset_limit_exceeded_free_user(self):
-        """無料ユーザーのプリセット枠上限時のエラーハンドリング"""
+    def test_add_shared_recipe_to_preset_limit_exceeded(self):
+        """プリセット枠上限時のエラーハンドリング"""
         # プリセット枠を上限まで埋める
         for i in range(self.user.preset_limit_value):
             create_test_recipe(
