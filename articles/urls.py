@@ -7,4 +7,5 @@ urlpatterns = [
     path('introduce-preset/', views.introduce_preset, name='introduce-preset'),
     path('coffee-theory/', views.coffee_theory, name='coffee-theory'),
     path('privacy-policy/', views.privacy_policy, name='privacy-policy'),
+    path('about/', views.about, name='about'),
 ]

@@ -15,3 +15,7 @@ def coffee_theory(request):
 
 def privacy_policy(request):
     return render(request, 'articles/privacy-policy.html')
+
+
+def about(request):
+    return render(request, 'articles/about.html')
